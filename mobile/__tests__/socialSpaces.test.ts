@@ -1,6 +1,6 @@
 import {describe, expect, it} from '@jest/globals';
 
-import {SOCIAL_ROOMS, getSocialRoom} from '../../shared/social/socialSpaces';
+import {SOCIAL_ROOMS, getSocialRoom} from '../src/shared/social/socialSpaces';
 
 describe('shared RadioTEDU social spaces', () => {
   it('defines only approved TEDU social rooms with multi-angle references', () => {

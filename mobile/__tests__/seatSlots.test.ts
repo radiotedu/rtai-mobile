@@ -1,6 +1,6 @@
 import {describe, expect, it} from '@jest/globals';
 
-import {resolveSeatSlot, seatSlotToAvatarPose, type SeatSlot} from '../../shared/social/seatSlots';
+import {resolveSeatSlot, seatSlotToAvatarPose, type SeatSlot} from '../src/shared/social/seatSlots';
 
 describe('shared social seat slots', () => {
   it('resolves a seat slot into a deterministic sitting pose', () => {

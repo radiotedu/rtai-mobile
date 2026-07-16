@@ -1,6 +1,6 @@
 import {describe, expect, it} from '@jest/globals';
 
-import {buildSeatOccupancyEvent} from '../../shared/social/presence';
+import {buildSeatOccupancyEvent} from '../src/shared/social/presence';
 
 describe('shared social room presence events', () => {
   it('builds a backend-ready seat occupancy event', () => {

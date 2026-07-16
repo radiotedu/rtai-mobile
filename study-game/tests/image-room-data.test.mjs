@@ -3,8 +3,31 @@ import { access, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { generateImageRoomData } from '../scripts/generate-image-room-data.mjs'
+
+const studyRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+test('packages image-room generator inputs inside the standalone Study package', async () => {
+  const sourceRoot = path.join(studyRoot, 'scripts', 'image-room-source')
+  const requiredInputs = [
+    path.join(sourceRoot, 'app.js'),
+    path.join(sourceRoot, 'chim.js'),
+    path.join(sourceRoot, 'data', 'library-habbo-map-mask.json'),
+  ]
+  const missingInputs = []
+
+  for (const inputPath of requiredInputs) {
+    try {
+      await access(inputPath)
+    } catch {
+      missingInputs.push(path.relative(studyRoot, inputPath))
+    }
+  }
+
+  assert.deepEqual(missingInputs, [])
+})
 
 test('generates exact user-supplied Library and Chim Alan navigation data', async () => {
   const outputDir = await mkdtemp(path.join(tmpdir(), 'rtjukebox-image-rooms-'))

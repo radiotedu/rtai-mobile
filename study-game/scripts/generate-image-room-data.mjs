@@ -8,8 +8,7 @@ import sharp from 'sharp'
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const studyRoot = path.resolve(scriptDir, '..')
-const repoRoot = path.resolve(studyRoot, '..')
-const prototypeRoot = path.join(repoRoot, 'prototypes', 'library-study')
+const prototypeRoot = path.join(scriptDir, 'image-room-source')
 
 function extractLiteral(source, name) {
   const marker = `const ${name} =`

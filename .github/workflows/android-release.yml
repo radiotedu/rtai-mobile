@@ -1,0 +1,158 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (for example, v1.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish signed APK
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      RELEASE_TAG: ${{ inputs.tag }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            study-game/package-lock.json
+            mobile/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Validate release inputs and configure signing
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for value in \
+            "$ANDROID_RELEASE_KEYSTORE_BASE64" \
+            "$ANDROID_KEYSTORE_PASSWORD" \
+            "$ANDROID_KEY_ALIAS" \
+            "$ANDROID_KEY_PASSWORD"; do
+            if [[ -n "$value" ]]; then
+              printf '::add-mask::%s\n' "$value"
+            fi
+          done
+
+          missing=()
+          [[ -n "$ANDROID_RELEASE_KEYSTORE_BASE64" ]] || missing+=(ANDROID_RELEASE_KEYSTORE_BASE64)
+          [[ -n "$ANDROID_KEYSTORE_PASSWORD" ]] || missing+=(ANDROID_KEYSTORE_PASSWORD)
+          [[ -n "$ANDROID_KEY_ALIAS" ]] || missing+=(ANDROID_KEY_ALIAS)
+          [[ -n "$ANDROID_KEY_PASSWORD" ]] || missing+=(ANDROID_KEY_PASSWORD)
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing required release signing secrets: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9A-Za-z][0-9A-Za-z._-]*$ ]]; then
+            printf 'Release tag may contain only letters, digits, dots, underscores, and hyphens.\n' >&2
+            exit 1
+          fi
+
+          keystore_path="$RUNNER_TEMP/radiotedu-release.jks"
+          printf '%s' "$ANDROID_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          chmod 600 "$keystore_path"
+          if [[ ! -s "$keystore_path" ]]; then
+            printf 'Decoded release keystore is empty.\n' >&2
+            exit 1
+          fi
+
+          {
+            printf 'storeFile=%s\n' "$keystore_path"
+            printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+          } > mobile/android/keystore.properties
+          chmod 600 mobile/android/keystore.properties
+
+      - name: Install Study dependencies
+        working-directory: study-game
+        run: npm ci
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Package Study game for mobile
+        working-directory: mobile
+        run: npm run package:study
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x mobile/android/gradlew
+
+      - name: Build signed release APK
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify signature and prepare APK
+        id: verify_apk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -d '' apks < <(
+            find mobile/android/app/build/outputs/apk/release \
+              -maxdepth 1 -type f -name '*-release.apk' -print0
+          )
+          if (( ${#apks[@]} != 1 )); then
+            printf 'Expected exactly one release APK, found %d.\n' "${#apks[@]}" >&2
+            exit 1
+          fi
+
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "$sdk_root" ]]; then
+            printf 'Android SDK location is not configured.\n' >&2
+            exit 1
+          fi
+          apksigner="$(find "$sdk_root/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          if [[ -z "$apksigner" || ! -x "$apksigner" ]]; then
+            printf 'Android SDK apksigner was not found.\n' >&2
+            exit 1
+          fi
+
+          "$apksigner" verify --verbose --print-certs "${apks[0]}"
+
+          release_apk="$RUNNER_TEMP/RadioTEDU-Mobile-${RELEASE_TAG}.apk"
+          mv "${apks[0]}" "$release_apk"
+          printf 'apk_path=%s\n' "$release_apk" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RadioTEDU-Mobile-${{ inputs.tag }}
+          path: ${{ steps.verify_apk.outputs.apk_path }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: RadioTEDU Mobile ${{ inputs.tag }}
+          files: ${{ steps.verify_apk.outputs.apk_path }}
+          fail_on_unmatched_files: true

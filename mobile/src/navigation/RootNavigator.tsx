@@ -1,0 +1,188 @@
+import React from 'react';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {ActivityIndicator, Text, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AuthGuard from '../components/AuthGuard';
+import {useAuth} from '../context/AuthContext';
+import HomeScreen from '../screens/HomeScreen';
+import RadioScreen from '../screens/RadioScreen';
+import PodcastScreen from '../screens/PodcastScreen';
+import JukeLocalWebViewScreen from '../screens/jukebox/JukeLocalWebViewScreen';
+import NextSongVoteScreen from '../screens/next-song-vote/NextSongVoteScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import EventsScreen from '../screens/EventsScreen';
+import GamesScreen from '../screens/GamesScreen';
+import MarketScreen from '../screens/MarketScreen';
+import SocialWebViewScreen from '../screens/social/SocialWebViewScreen';
+import StudyHomeScreen from '../screens/study/StudyHomeScreen';
+import AvatarClosetScreen from '../screens/study/AvatarClosetScreen';
+import LibraryStudyWebView from '../screens/study/LibraryStudyWebView';
+import SnakeScreen from '../screens/games/SnakeScreen';
+import MemoryGameScreen from '../screens/games/MemoryGameScreen';
+import TetrisScreen from '../screens/games/TetrisScreen';
+import RhythmTapScreen from '../screens/games/RhythmTapScreen';
+import WordGuessScreen from '../screens/games/WordGuessScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import LanguageScreen from '../screens/LanguageScreen';
+import FocusScreen from '../screens/FocusScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
+import PlayerScreen from '../screens/PlayerScreen';
+import {COLORS} from '../theme/theme';
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{headerShown: false, animation: 'slide_from_right'}}>
+      <Stack.Screen name="Prompt" component={AuthGuard} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function MainTabs() {
+  const {t} = useTranslation();
+  return (
+    <Tab.Navigator
+      screenOptions={({route}) => ({
+        tabBarIcon: ({focused, color, size}) => {
+          let iconName = 'help-circle';
+          if (route.name === 'Home') {
+            iconName = focused ? 'home-variant' : 'home-variant-outline';
+          } else if (route.name === 'Radio') {
+            iconName = 'radio-tower';
+          } else if (route.name === 'Podcasts') {
+            iconName = 'microphone';
+          } else if (route.name === 'Jukebox') {
+            iconName = 'music-box-multiple';
+          } else if (route.name === 'Study') {
+            iconName = 'stairs';
+          }
+
+          return (
+            <View
+              style={{
+                minWidth: 42,
+                height: 30,
+                borderRadius: 999,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: focused ? 'rgba(227,30,36,0.16)' : 'transparent',
+              }}>
+              <Icon name={iconName} size={size} color={color} />
+            </View>
+          );
+        },
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: '#8F8F94',
+        tabBarLabelStyle: {
+          fontSize: 11,
+        },
+        tabBarLabel: ({focused, color}) => (
+          <Text
+            style={{
+              color,
+              fontSize: 11,
+              textAlign: 'center',
+              fontWeight: focused ? '900' : '700',
+            }}
+            maxFontSizeMultiplier={1.1}
+            numberOfLines={1}>
+            {getTabLabel(t, route.name)}
+          </Text>
+        ),
+        tabBarStyle: {
+          backgroundColor: COLORS.background,
+          borderTopColor: COLORS.border,
+          height: 76,
+          paddingTop: 8,
+          paddingBottom: 14,
+        },
+        tabBarItemStyle: {
+          paddingHorizontal: 2,
+        },
+        headerStyle: {
+          backgroundColor: COLORS.background,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        headerTitleStyle: {
+          color: COLORS.text,
+          fontWeight: 'bold',
+        },
+      })}>
+      <Tab.Screen name="Home" component={HomeScreen} options={{title: t('tabs.home'), headerShown: false}} />
+      <Tab.Screen name="Radio" component={RadioScreen} options={{title: t('tabs.radio'), headerShown: false}} />
+      <Tab.Screen name="Podcasts" component={PodcastScreen} options={{title: t('tabs.podcasts'), headerShown: false}} />
+      <Tab.Screen name="Jukebox" component={JukeLocalWebViewScreen} options={{title: t('tabs.jukebox'), headerShown: false}} />
+      <Tab.Screen name="Study" component={StudyHomeScreen} options={{title: t('tabs.study'), headerShown: false}} />
+    </Tab.Navigator>
+  );
+}
+
+function getTabLabel(t: (key: string) => string, routeName: string) {
+  if (routeName === 'Home') {
+    return t('tabs.home');
+  }
+  if (routeName === 'Radio') {
+    return t('tabs.radio');
+  }
+  if (routeName === 'Podcasts') {
+    return t('tabs.podcasts');
+  }
+  if (routeName === 'Jukebox') {
+    return t('tabs.jukebox');
+  }
+  if (routeName === 'Study') {
+    return 'Study';
+  }
+  return t('tabs.leaderboard');
+}
+
+export function RootNavigator() {
+  const {user, isLoading} = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center'}}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen
+        name="Player"
+        component={PlayerScreen}
+        options={{presentation: 'modal', animation: 'slide_from_bottom'}}
+      />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Language" component={LanguageScreen} />
+      <Stack.Screen name="Focus" component={FocusScreen} />
+      <Stack.Screen name="Privacy" component={PrivacyScreen} />
+      <Stack.Screen name="Events" component={EventsScreen} />
+      <Stack.Screen name="Games" component={GamesScreen} />
+      <Stack.Screen name="Market" component={MarketScreen} />
+      <Stack.Screen name="NextSongVote" component={NextSongVoteScreen} />
+      <Stack.Screen name="Social" component={SocialWebViewScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="LibraryStudyWeb" component={LibraryStudyWebView} />
+      <Stack.Screen name="StudyRoom" component={LibraryStudyWebView} />
+      <Stack.Screen name="AvatarCloset" component={AvatarClosetScreen} />
+      <Stack.Screen name="SnakeGame" component={SnakeScreen} />
+      <Stack.Screen name="MemoryGame" component={MemoryGameScreen} />
+      <Stack.Screen name="TetrisGame" component={TetrisScreen} />
+      <Stack.Screen name="RhythmTapGame" component={RhythmTapScreen} />
+      <Stack.Screen name="WordGuessGame" component={WordGuessScreen} />
+      {(!user || user.is_guest) && <Stack.Screen name="Auth" component={AuthStack} />}
+    </Stack.Navigator>
+  );
+}

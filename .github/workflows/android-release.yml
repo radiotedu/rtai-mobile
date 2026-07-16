@@ -20,10 +20,6 @@ jobs:
     name: Build and publish signed APK
     runs-on: ubuntu-latest
     env:
-      ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       RELEASE_TAG: ${{ inputs.tag }}
 
     steps:
@@ -45,8 +41,28 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Install Study dependencies
+        working-directory: study-game
+        run: npm ci
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Package Study game for mobile
+        working-directory: mobile
+        run: npm run package:study
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x mobile/android/gradlew
+
       - name: Validate release inputs and configure signing
         shell: bash
+        env:
+          ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
 
@@ -91,24 +107,16 @@ jobs:
           } > mobile/android/keystore.properties
           chmod 600 mobile/android/keystore.properties
 
-      - name: Install Study dependencies
-        working-directory: study-game
-        run: npm ci
-
-      - name: Install mobile dependencies
-        working-directory: mobile
-        run: npm ci
-
-      - name: Package Study game for mobile
-        working-directory: mobile
-        run: npm run package:study
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x mobile/android/gradlew
-
       - name: Build signed release APK
         working-directory: mobile/android
         run: ./gradlew assembleRelease --no-daemon
+
+      - name: Remove release signing files
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/radiotedu-release.jks"
+          rm -f mobile/android/keystore.properties
 
       - name: Verify signature and prepare APK
         id: verify_apk

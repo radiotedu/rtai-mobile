@@ -63,7 +63,7 @@ runtime locations:
   `194C1771AD3905E8DC3D4601D0F6701341BDE7BE9D9A43BCB8C44DA4D246E03F`.
 
 Both original assets are tracked and will be included in the private
-`radiotedu/radiotedumobile` repository.
+`radiotedu/rtai-mobile` repository.
 
 `src/screens/SplashScreen.tsx` owns the responsive logo stack and animation,
 while `App.tsx` starts it on every cold launch. The splash remains visible for at

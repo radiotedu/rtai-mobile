@@ -64,8 +64,8 @@ repository and CI baseline.
 Clone the canonical repository:
 
 ```powershell
-git clone https://github.com/radiotedu/rtai-mobile.git
-Set-Location rtai-mobile
+git clone https://github.com/radiotedu/radiotedumobile.git
+Set-Location radiotedumobile
 ```
 
 ### Study

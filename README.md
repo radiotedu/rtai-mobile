@@ -1,17 +1,74 @@
-# RadioTEDU Mobile
+<p align="center">
+  <img src="docs/images/rtai.png" width="360" alt="RTAI logo">
+</p>
 
-Private standalone source repository for the RadioTEDU React Native mobile app and its Study web game. The app keeps Study, voting, and Jukebox controller flows separate: Study opens `radiotedu.com/study`, voting opens `radiotedu.com/vote`, and the QR/controller Jukebox opens `radiotedu.com/juke-local/controller`.
+<p align="center">
+  <img src="mobile/logos/logo-radiotedu-splash.png" width="150" alt="RadioTEDU logo">
+</p>
 
-The imported mobile application retains its documented `## Startup branding` contract in `mobile/README.md`. Every cold launch shows the original RadioTEDU and RTAI assets; the RTAI artwork is placed on a contrast card without recoloring the supplied black/red logo.
+<h1 align="center">RTAI Mobile</h1>
 
-## Prerequisites
+<p align="center">
+  The RadioTEDU companion app for live listening, Android Auto, Study, voting,
+  and Jukebox controller experiences.
+</p>
 
-- Node.js 20
-- npm (from Node.js 20)
-- Java 17 (Temurin is used in CI)
-- Android SDK and Build Tools for local Android builds
+RTAI Mobile is a standalone React Native application with a separately built
+Study web game. The app keeps its interactive experiences deliberately
+separated: Study opens `radiotedu.com/study`, voting opens
+`radiotedu.com/vote`, and the QR/controller Jukebox opens
+`radiotedu.com/juke-local/controller`.
 
-## Install and verify Study
+## What is included
+
+| Component | Responsibility |
+| --- | --- |
+| `mobile/` | React Native application, native Android project, Android Auto integration, and bundled Study assets |
+| `study-game/` | Vite and Phaser Study experience, avatar tooling, tests, and production build |
+| `scripts/` | Repository-level source and boundary verification |
+| `tests/` | Contracts that keep this repository standalone and reproducible |
+| `docs/` | API configuration, signing, release, and source-provenance guides |
+
+The mobile app preserves the documented startup-branding contract in
+[`mobile/README.md`](mobile/README.md): every cold launch shows the original
+RadioTEDU and RTAI marks, and the black/red RTAI artwork is displayed on a
+contrast card without recoloring.
+
+## Experience map
+
+```text
+RTAI Mobile
+├── Radio and station discovery
+├── Android Auto playback controls
+├── Study ─────────────── radiotedu.com/study
+├── Voting ────────────── radiotedu.com/vote
+└── Jukebox controller ── radiotedu.com/juke-local/controller
+```
+
+Study has two delivery paths: it is developed and tested in `study-game/`, then
+`mobile/scripts/package-study-game.mjs` prepares the Android-bundled copy used by
+the app. Run the packaging command whenever Study changes.
+
+## Requirements
+
+- Node.js 20 with npm
+- Java 17; CI uses Temurin
+- Android SDK and Android Build Tools for local Android builds
+- Xcode and CocoaPods for iOS development
+
+The package manifests accept broader Node versions in places, but Node 20 is the
+repository and CI baseline.
+
+## Quick start
+
+Clone the canonical repository:
+
+```powershell
+git clone https://github.com/radiotedu/rtai-mobile.git
+Set-Location rtai-mobile
+```
+
+### Study
 
 ```powershell
 Set-Location study-game
@@ -20,7 +77,19 @@ npm test
 npm run build
 ```
 
-## Install and verify the mobile app
+For browser development:
+
+```powershell
+npm run dev
+```
+
+Return to the repository root before continuing:
+
+```powershell
+Set-Location ..
+```
+
+### Mobile application
 
 ```powershell
 Set-Location mobile
@@ -32,30 +101,54 @@ npm run package:study
 npm run audit:android
 ```
 
-Focused startup-branding verification:
+Start Metro and launch the desired target from separate terminals:
+
+```powershell
+npm start
+npm run android
+```
+
+Use `npm run android:auto` for the Android Auto build variant. For iOS setup and
+native dependency notes, follow [`mobile/README.md`](mobile/README.md).
+
+## Verification
+
+Run focused startup-branding tests from `mobile/`:
 
 ```powershell
 npm test -- --runInBand __tests__/dualLogoSplashSource.test.ts __tests__/androidThemeSource.test.ts __tests__/App.test.tsx
 ```
 
-Build an Android debug APK from `mobile`:
-
-```powershell
-android/gradlew.bat assembleDebug
-```
-
-The checked-in Android debug keystore is development-only. It must never be treated as production signing material. Production-signed releases require the encrypted GitHub Actions secrets documented in [docs/GITHUB_SECRETS.md](docs/GITHUB_SECRETS.md); no production signing secret is stored in this repository.
-
-## Operational documentation
-
-- [API and WebView configuration](docs/API_CONFIGURATION.md)
-- [GitHub signing secrets](docs/GITHUB_SECRETS.md)
-- [Android release procedure](docs/RELEASE.md)
-- [Source provenance and export scope](docs/SOURCE_PROVENANCE.md)
-
-Repository boundary checks:
+Run repository-boundary checks from the repository root:
 
 ```powershell
 node --test tests/repository-contract.test.mjs
 node scripts/verify-repository.mjs
 ```
+
+Build a local Android debug APK from `mobile/`:
+
+```powershell
+android/gradlew.bat assembleDebug
+```
+
+The checked-in Android debug keystore is development-only. It is not production
+signing material. Production releases require the encrypted GitHub Actions
+secrets documented in
+[`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md); no production signing secret
+is stored in this repository.
+
+## Configuration and operations
+
+- [API and WebView configuration](docs/API_CONFIGURATION.md)
+- [GitHub signing secrets](docs/GITHUB_SECRETS.md)
+- [Android release procedure](docs/RELEASE.md)
+- [Source provenance and export scope](docs/SOURCE_PROVENANCE.md)
+- [Detailed mobile architecture and development guide](mobile/README.md)
+
+## Security boundaries
+
+- Never commit Android production-signing credentials.
+- Treat `.env` files, API credentials, and service tokens as local secrets.
+- Keep remote WebView origins restricted to the documented RadioTEDU endpoints.
+- Use the repository audit and contract checks before preparing a release.

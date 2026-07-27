@@ -27,12 +27,12 @@ Keep `$keystoreBase64` in memory only and do not write it to a tracked file.
 The commands below read values from standard input so the values do not appear as command-line arguments. Replace only the local variables or secure prompts; never commit their values.
 
 ```powershell
-$keystoreBase64 | gh secret set ANDROID_RELEASE_KEYSTORE_BASE64 --repo akgularda/radiotedumobile
-$keystorePassword | gh secret set ANDROID_KEYSTORE_PASSWORD --repo akgularda/radiotedumobile
-$keyAlias | gh secret set ANDROID_KEY_ALIAS --repo akgularda/radiotedumobile
-$keyPassword | gh secret set ANDROID_KEY_PASSWORD --repo akgularda/radiotedumobile
+$keystoreBase64 | gh secret set ANDROID_RELEASE_KEYSTORE_BASE64 --repo radiotedu/rtai-mobile
+$keystorePassword | gh secret set ANDROID_KEYSTORE_PASSWORD --repo radiotedu/rtai-mobile
+$keyAlias | gh secret set ANDROID_KEY_ALIAS --repo radiotedu/rtai-mobile
+$keyPassword | gh secret set ANDROID_KEY_PASSWORD --repo radiotedu/rtai-mobile
 ```
 
-After provisioning, confirm only the secret names and update timestamps with `gh secret list --repo akgularda/radiotedumobile`. GitHub does not reveal stored secret values.
+After provisioning, confirm only the secret names and update timestamps with `gh secret list --repo radiotedu/rtai-mobile`. GitHub does not reveal stored secret values.
 
 The workflow must fail when any required secret is absent. It must never silently fall back to the checked-in debug keystore for a production release.

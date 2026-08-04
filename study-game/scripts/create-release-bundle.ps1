@@ -33,7 +33,7 @@ $excluded = @(
   (Join-Path $sourceRoot "playwright-report"),
   (Join-Path $sourceRoot "test-results")
 )
-$copyResult = & robocopy $sourceRoot $stagingRoot /E /R:1 /W:1 /XD $excluded /XF ".env" ".env.*" "*.pem" "*.key" "*.p12" "*.pfx" "*.jks" "*.keystore" /NFL /NDL /NJH /NJS /NP
+$copyResult = & robocopy $sourceRoot $stagingRoot /E /R:1 /W:1 /XD $excluded /XF ".env" ".env.*" "*.pem" "*.key" "*.p12" "*.pfx" "*.jks" "*.keystore" "*.log" /NFL /NDL /NJH /NJS /NP
 if ($LASTEXITCODE -gt 7) { throw "Robocopy failed with exit code $LASTEXITCODE" }
 
 $stressReport = Join-Path $repoRoot "artifacts\study-game\stress\stress-60-players-report.json"

@@ -12,7 +12,7 @@ describe('IMAGE_ROOMS', () => {
     expect(IMAGE_ROOMS.auditorium.image.sha256).toBe('75c424a223515a3bd455c6a4c09694db28bd33dcdb472484ecb67da91454ff9c')
     expect(IMAGE_ROOMS['sports-center'].image.width / IMAGE_ROOMS['sports-center'].image.height).toBeCloseTo(16 / 9, 2)
     expect(IMAGE_ROOMS.auditorium.image.width / IMAGE_ROOMS.auditorium.image.height).toBeCloseTo(16 / 9, 2)
-    expect(IMAGE_ROOMS['learning-lab'].image.sha256).toBe('3c7026b976cd596bee61fd7a37b1dd423e780605d89a5475e9d0e176c7676044')
+    expect(IMAGE_ROOMS['learning-lab'].image.sha256).toBe('3a9dc739ad7d94a4a422c36a30841b8e6a417d8e1025ae69912c6eee5cc92bcc')
     expect(IMAGE_ROOMS['learning-lab'].image.width / IMAGE_ROOMS['learning-lab'].image.height).toBeCloseTo(16 / 9, 2)
   })
 

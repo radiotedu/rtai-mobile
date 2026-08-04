@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "test:evidence": "playwright test e2e/professional-world.spec.ts",
     "qa:account-hud": "node scripts/qa-account-hud-headed.mjs",
+    "qa:ambience": "node scripts/qa-ambient-headed.mjs",
     "stress:players": "npm run build && node scripts/stress-realtime-players.mjs",
     "release:verify": "node scripts/verify-release-bundle.mjs .",
     "release:rar": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-release-bundle.ps1",

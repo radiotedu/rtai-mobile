@@ -19,6 +19,7 @@ import { AvatarActivityMachine, type ActivityToken } from './AvatarActivityMachi
 import { calculateOverviewZoom, calculatePlayableZoom } from './CameraFraming'
 import { imageRoomActorDepth } from './ImageRoomDepth'
 import { buildMotionPath, sampleMotionPathAtTime, walkFrameAtDistance } from './PathMotion'
+import { ROOM_AMBIENCE } from './RoomAmbience'
 import { SeatReservationBook } from './SeatReservationBook'
 import { resolveTouchIntent, type TouchWorldPoint } from './TouchIntentResolver'
 
@@ -275,6 +276,7 @@ export class ImageRoomScene extends Phaser.Scene {
     this.#auditoriumScreenEvent?.remove(false)
     this.#auditoriumScreenEvent = null
     delete document.documentElement.dataset.auditoriumScreen
+    this.tweens.killTweensOf(this.#roomObjects)
     for (const object of [...this.#roomObjects, ...this.#seatForegroundObjects, ...this.#socialObjects]) object.destroy()
     this.#roomObjects = []
     this.#seatForegroundObjects = []
@@ -285,6 +287,9 @@ export class ImageRoomScene extends Phaser.Scene {
     delete document.documentElement.dataset.lastCampusCat
     delete document.documentElement.dataset.chatBubble
     delete document.documentElement.dataset.chatSpeaker
+    delete document.documentElement.dataset.roomAmbience
+    delete document.documentElement.dataset.ambientObjects
+    delete document.documentElement.dataset.ambientMotion
   }
 
   #showChatBubble(message: StudyChatMessage): void {
@@ -359,6 +364,7 @@ export class ImageRoomScene extends Phaser.Scene {
 
     this.#background = this.add.image(0, 0, `room:${roomId}`).setOrigin(0).setDepth(-100_000)
     this.#roomObjects.push(this.#background)
+    this.#createRoomAmbience()
     if (roomId === 'auditorium') this.#createAuditoriumEventScreen()
     this.#createOcclusionLayers()
     this.#createWorldActors()
@@ -412,6 +418,75 @@ export class ImageRoomScene extends Phaser.Scene {
       image.setDepth(occluder.depthY * 100)
       this.#roomObjects.push(image)
     }
+  }
+
+  #createRoomAmbience(): void {
+    const plan = ROOM_AMBIENCE[this.#roomId]
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+    let objectCount = 0
+
+    for (const item of plan.glows) {
+      const glow = this.add.ellipse(
+        (item.x / 100) * this.#room.image.width,
+        (item.y / 100) * this.#room.image.height,
+        (item.width / 100) * this.#room.image.width,
+        (item.height / 100) * this.#room.image.height,
+        item.color,
+        item.alpha,
+      ).setDepth(-97_000).setBlendMode(Phaser.BlendModes.ADD)
+      glow.setData('ambientEffect', 'glow')
+      this.#roomObjects.push(glow)
+      objectCount += 1
+      if (!reducedMotion) {
+        this.tweens.add({
+          targets: glow,
+          alpha: { from: item.alpha * 0.58, to: item.alpha },
+          scaleX: { from: 0.94, to: 1.04 },
+          scaleY: { from: 0.94, to: 1.04 },
+          duration: item.durationMs,
+          delay: item.delayMs ?? 0,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.InOut',
+        })
+      }
+    }
+
+    for (const drift of plan.drifts) {
+      for (let index = 0; index < drift.count; index += 1) {
+        const horizontal = ((index * 37 + 17) % 101) / 100
+        const vertical = ((index * 53 + 29) % 101) / 100
+        const x = ((drift.x + drift.width * horizontal) / 100) * this.#room.image.width
+        const y = ((drift.y + drift.height * vertical) / 100) * this.#room.image.height
+        const size = drift.kind === 'sheen' ? drift.size * 2.4 : drift.size
+        const ambient = drift.kind === 'dust'
+          ? this.add.circle(x, y, Math.max(1, size / 2), drift.color, drift.alpha)
+          : this.add.rectangle(x, y, size, drift.kind === 'leaf' ? Math.max(2, size * 0.42) : 2, drift.color, drift.alpha)
+        ambient.setDepth(-96_000 + index).setBlendMode(drift.kind === 'leaf' ? Phaser.BlendModes.NORMAL : Phaser.BlendModes.ADD)
+        ambient.setAngle(drift.kind === 'leaf' ? index * 31 - 40 : -18)
+        ambient.setData('ambientEffect', drift.kind)
+        this.#roomObjects.push(ambient)
+        objectCount += 1
+        if (!reducedMotion) {
+          this.tweens.add({
+            targets: ambient,
+            x: x + (drift.travelX / 100) * this.#room.image.width,
+            y: y + (drift.travelY / 100) * this.#room.image.height,
+            alpha: { from: drift.alpha * 0.25, to: drift.alpha },
+            angle: ambient.angle + (drift.kind === 'leaf' ? 95 : 8),
+            duration: drift.durationMs + index * 290,
+            delay: index * 410,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.InOut',
+          })
+        }
+      }
+    }
+
+    document.documentElement.dataset.roomAmbience = plan.label
+    document.documentElement.dataset.ambientObjects = String(objectCount)
+    document.documentElement.dataset.ambientMotion = reducedMotion ? 'reduced' : 'animated'
   }
 
   #createCampusCats(): void {

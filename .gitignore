@@ -1,5 +1,6 @@
 node_modules/
 dist/
+study-game/test-results/
 build/
 .gradle/
 mobile/android/.gradle/

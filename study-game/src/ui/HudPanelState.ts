@@ -1,4 +1,4 @@
-export type HudPanelName = 'navigator' | 'people' | 'wardrobe' | 'chat' | 'events' | 'profile'
+export type HudPanelName = 'navigator' | 'people' | 'wardrobe' | 'chat' | 'events' | 'profile' | 'account'
 
 export type HudPanelSnapshot = Readonly<{
   current: HudPanelName | 'closed'

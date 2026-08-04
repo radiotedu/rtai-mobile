@@ -125,7 +125,7 @@ export class LocalStudyAdapter implements StudyAdapter {
     return {
       id: `${roomId}-1`, roomId, number: 1,
       occupancy: this.presence(roomId).length + 1,
-      capacity: { library: 51, 'chim-alan': 9, 'sports-center': 18, auditorium: 90 }[roomId],
+      capacity: { library: 51, 'chim-alan': 9, 'sports-center': 18, auditorium: 90, 'learning-lab': 24 }[roomId],
       preferredInstanceFull: false,
     }
   }

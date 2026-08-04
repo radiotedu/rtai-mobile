@@ -19,5 +19,9 @@ describe('production Study access gate', () => {
     expect(source).not.toContain(
       "import.meta.env.PROD && parameters.get('embedded') === 'mobile' && !secureBridge",
     );
+    expect(source).toContain('Secure account handoff')
+    expect(source).toContain('entryConfig.loginUrl')
+    expect(source).toContain('entryConfig.registerUrl')
+    expect(source).not.toMatch(/type="password"/)
   });
 });

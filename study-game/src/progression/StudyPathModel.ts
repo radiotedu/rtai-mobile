@@ -47,10 +47,10 @@ export function buildStudyPath(input: StudyPathInput): readonly StudyPathGoal[] 
       id: 'campus-explorer',
       title: 'Explore the Campus',
       description: 'Visit every available TEDU place in this session.',
-      progress: clampProgress(input.visitedRooms.size, 4),
-      target: 4,
+      progress: clampProgress(input.visitedRooms.size, 5),
+      target: 5,
       unit: 'rooms',
-      complete: input.visitedRooms.size >= 4,
+      complete: input.visitedRooms.size >= 5,
     },
     {
       id: 'study-together',

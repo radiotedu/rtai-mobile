@@ -36,6 +36,7 @@ const CAMPUS_CAT_COUNTS: Readonly<Record<ImageRoomId, number>> = Object.freeze({
   'chim-alan': 2,
   'sports-center': 1,
   auditorium: 1,
+  'learning-lab': 1,
 })
 
 type CampusCat = {

@@ -3,7 +3,7 @@ import type { NavigationEdge, NavigationNode } from '../pathfinding/NavigationGr
 import { CURATED_CAMPUS_ROOMS } from './CuratedCampusRooms'
 import generatedRooms from './data/image-rooms.generated.json'
 
-export type ImageRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium'
+export type ImageRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium' | 'learning-lab'
 
 export type ImageRoomSeat = Readonly<{
   id: string
@@ -57,6 +57,7 @@ export const IMAGE_ROOMS: Readonly<Record<ImageRoomId, ImageRoomDefinition>> = O
   'chim-alan': Object.freeze({ ...rooms['chim-alan'], title: 'Çim Alan' }),
   'sports-center': CURATED_CAMPUS_ROOMS['sports-center'],
   auditorium: CURATED_CAMPUS_ROOMS.auditorium,
+  'learning-lab': CURATED_CAMPUS_ROOMS['learning-lab'],
 })
 
 export function roomPointToPixel(

@@ -6,12 +6,15 @@ Date: 2026-08-04
 
 | Gate | Result |
 | --- | --- |
-| Contract and unit suite | Passed — 31 files, 145 unit tests; contract runner passed |
+| Contract and unit suite | Passed — 32 files, 150 unit tests; 3 contract tests passed |
 | Production TypeScript/Vite build | Passed |
 | Desktop/mobile Playwright suite | Passed — 27 tests, 1 intentional platform skip |
 | Exhaustive wardrobe matrix | Passed on desktop and mobile |
 | Authoritative Gold purchase journey | Passed on desktop and mobile |
 | Campus navigator, study path, chat reactions, ignore/report journey | Passed on desktop and mobile |
+| Account entry, same-origin URL policy, signed-in profile HUD | Passed — headed desktop/mobile visual QA and focused security tests |
+| Early Childhood Learning Lab | Passed — official-source 16:9 visual, connected navigation graph, 5 reachable seats |
+| Android authenticated Study bridge | Passed — 6 focused mobile WebView tests |
 | 60-player concurrent stress run | Passed |
 | Secret scan | Passed — no findings |
 
@@ -48,9 +51,11 @@ The final local shared-backend simulation ran 60 simultaneous real-time protocol
 - 60 simultaneous room-scoped chat messages accepted
 - 482 API requests, 0 request errors, 0 server errors
 - 60 maximum concurrent requests
-- response latency: 76.9 ms median, 172.2 ms p95
+- response latency: 74.4 ms median, 852.4 ms p95
 
 Visual rendering and interaction are covered separately by the passing desktop/mobile evidence suite. The no-headless stress harness verifies real-time join, room occupancy, presence fan-out, walking heartbeats, freshness, chat, concurrency, and error behavior. The deployed RadioTEDU API must still be load-tested with real staging accounts.
+
+The account-entry QA used a visible headed browser—never the failing headless launcher—to capture desktop login, desktop signed-in profile HUD, desktop Learning Lab, and mobile login states. The entry screen contains no password field and rejects cross-origin or credential-bearing action URLs. The Android bridge test verifies that the existing mobile account token remains in memory and that the game receives only the authenticated request function and public account identity.
 
 ## Known non-blocking build warnings
 

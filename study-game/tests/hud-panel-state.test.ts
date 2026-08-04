@@ -59,4 +59,13 @@ describe('HudPanelState', () => {
     expect(panels.expanded('events')).toBe('false')
     expect(panels.expanded('navigator')).toBe('false')
   })
+
+  it('treats the signed-in account as a first-class HUD panel', () => {
+    const panels = new HudPanelState()
+    panels.open('account')
+    expect(panels.snapshot().current).toBe('account')
+    expect(panels.expanded('account')).toBe('true')
+    panels.toggle('account')
+    expect(panels.snapshot().current).toBe('closed')
+  })
 })

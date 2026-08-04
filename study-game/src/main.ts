@@ -1,6 +1,7 @@
 import './styles.css'
 
-import { Armchair, BookOpen, CalendarDays, Check, Coins, createIcons, Hand, Keyboard, LockKeyhole, Map, MapPin, MessageCircle, Pause, Play, Radio, Send, ShieldCheck, Shirt, Sparkles, Star, UserRound, UsersRound, Volume2, X } from 'lucide'
+import { Armchair, BookOpen, CalendarDays, Check, Coins, createIcons, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, UserPlus, UserRound, UsersRound, Volume2, X } from 'lucide'
+import { resolveStudyEntry, type StudyEntryConfig } from './account/StudyEntry'
 import { LocalStudyAdapter } from './adapters/LocalStudyAdapter'
 import { RadioTEDUStudyAdapter } from './adapters/RadioTEDUStudyAdapter'
 import { StudyAdapterError, type StudyAccount, type StudyAdapter, type StudyChatMessage, type StudyPlayerReportReason, type StudyPresence, type StudyRoomId, type StudyRoomInstance, type StudySession, type StudyTimeSummary, type StudyWorldEvent } from './adapters/StudyAdapter'
@@ -23,6 +24,7 @@ const requestedRoom = parameters.get('room')
 const initialRoom: ImageRoomId = requestedRoom && requestedRoom in IMAGE_ROOMS ? requestedRoom as ImageRoomId : 'library'
 document.documentElement.dataset.roomId = initialRoom
 const secureBridge = readSecureBridge()
+const entry = resolveStudyEntry(window.RadioTEDUStudyEntry, window.location)
 const isHostedProduction = import.meta.env.PROD && window.location.protocol !== 'file:'
 const STUDY_RADIO_STREAM_URL = 'https://stream.radiotedu.com/radio?q=medium'
 const ROOM_SUMMARIES: Readonly<Record<StudyRoomId, string>> = Object.freeze({
@@ -30,18 +32,19 @@ const ROOM_SUMMARIES: Readonly<Record<StudyRoomId, string>> = Object.freeze({
   'chim-alan': 'Open campus · social seating',
   'sports-center': 'Training · team activities',
   auditorium: 'Talks · live campus events',
+  'learning-lab': 'Creative learning · reading cushions',
 })
 
 if (isHostedProduction && !secureBridge) {
-  renderLockedStudy()
+  renderLockedStudy(entry)
 } else if (mode === 'engine-proof') {
   renderEngineProof()
   createStudyGame('game-canvas', mode, new LocalStudyAdapter(), initialRoom)
 } else {
-  void bootStudy(secureBridge)
+  void bootStudy(secureBridge, entry)
 }
 
-async function bootStudy(secureBridge: ReturnType<typeof readSecureBridge>) {
+async function bootStudy(secureBridge: ReturnType<typeof readSecureBridge>, entryConfig: ReturnType<typeof resolveStudyEntry>) {
   const adapter: StudyAdapter = secureBridge
     ? new RadioTEDUStudyAdapter(secureBridge)
     : createLocalAdapter()
@@ -54,7 +57,7 @@ async function bootStudy(secureBridge: ReturnType<typeof readSecureBridge>) {
   }
 
   const session = adapter.session()
-  renderStudyShell(session, Boolean(secureBridge))
+  renderStudyShell(session, Boolean(secureBridge), entryConfig)
 
   const tracker = createSessionTracker(adapter)
   const panels = bindPanels()
@@ -85,7 +88,7 @@ function renderEngineProof() {
   `
 }
 
-function renderStudyShell(session: StudySession, serverAuthoritative: boolean) {
+function renderStudyShell(session: StudySession, serverAuthoritative: boolean, entryConfig: ReturnType<typeof resolveStudyEntry>) {
   document.documentElement.dataset.studyAuthority = serverAuthoritative ? 'verified' : 'preview'
   ui!.innerHTML = `
     <header class="study-bar" data-study-ui>
@@ -109,7 +112,7 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean) {
       </section>
       <div class="authority-chip" data-authority="${serverAuthoritative ? 'verified' : 'preview'}" aria-label="${serverAuthoritative ? 'Server verified session' : 'Local preview session'}"><i data-lucide="${serverAuthoritative ? 'shield-check' : 'lock-keyhole'}" aria-hidden="true"></i><span><small>${serverAuthoritative ? 'VERIFIED' : 'PREVIEW'}</small><b>${serverAuthoritative ? 'Server session' : 'No rewards'}</b></span></div>
       <div class="point-balance" aria-label="Gold balance"><i data-lucide="coins" aria-hidden="true"></i><span><small>GOLD</small><strong id="point-balance"></strong></span><span>Gold</span></div>
-      <div class="account-chip" aria-label="Signed-in account"><span id="account-avatar" class="account-avatar" aria-hidden="true"></span><span><small>ONLINE</small><strong id="account-name"></strong></span></div>
+      <button id="account-toggle" class="account-chip" data-hud-toggle="account" type="button" aria-label="Open signed-in account" aria-expanded="false" aria-controls="account-panel"><span id="account-avatar" class="account-avatar" aria-hidden="true"></span><span><small>${serverAuthoritative ? 'ONLINE' : 'PREVIEW'}</small><strong id="account-name"></strong></span></button>
     </header>
     <aside id="room-arrival" class="room-arrival" data-study-ui aria-live="polite" hidden>
       <span class="room-arrival-icon"><i data-lucide="map-pin" aria-hidden="true"></i></span>
@@ -129,6 +132,7 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean) {
         <button type="button" role="tab" data-room-id="chim-alan" aria-label="Çim Alan" aria-selected="false"><span class="room-icon"><i data-lucide="sparkles" aria-hidden="true"></i></span><span>Çim Alan<small>Outdoor campus</small></span></button>
         <button type="button" role="tab" data-room-id="sports-center" aria-label="Sports Center" aria-selected="false"><span class="room-icon"><i data-lucide="star" aria-hidden="true"></i></span><span>Sports Center<small>Train together</small></span></button>
         <button type="button" role="tab" data-room-id="auditorium" aria-label="Auditorium" aria-selected="false"><span class="room-icon"><i data-lucide="users-round" aria-hidden="true"></i></span><span>Auditorium<small>Group sessions</small></span></button>
+        <button type="button" role="tab" data-room-id="learning-lab" aria-label="Learning Lab" aria-selected="false"><span class="room-icon"><i data-lucide="book-open" aria-hidden="true"></i></span><span>Learning Lab<small>Creative study</small></span></button>
       </nav>
       <section id="study-mission" class="study-mission" data-testid="study-mission" aria-live="polite">
         <span class="mission-icon"><i data-lucide="armchair" aria-hidden="true"></i></span>
@@ -208,20 +212,45 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean) {
       <div id="chat-feedback" class="chat-feedback" role="status" aria-live="polite">Be kind · No spam · Room chat</div>
       <form id="chat-form"><span class="chat-input-wrap"><input id="chat-input" maxlength="180" autocomplete="off" placeholder="Message this room…" aria-label="Chat message" /><small id="chat-counter">0/180</small></span><button type="submit" aria-label="Send message" title="Send message"><i data-lucide="send" aria-hidden="true"></i><span class="button-label">Send</span></button></form>
     </aside>
+    <aside id="account-panel" class="hud-sheet account-panel" data-hud-panel="account" data-study-ui aria-label="Your RadioTEDU account" hidden>
+      <header><span class="panel-heading"><i data-lucide="user-round" aria-hidden="true"></i><span><small>RADIOTEDU ACCOUNT</small><strong>Your profile</strong></span></span><button data-hud-close class="close-button" type="button" aria-label="Close account panel"><i data-lucide="x" aria-hidden="true"></i></button></header>
+      <div class="account-panel-hero"><span id="account-panel-avatar" class="account-avatar" aria-hidden="true"></span><span><small>${serverAuthoritative ? 'SIGNED IN' : 'LOCAL PREVIEW'}</small><strong id="account-panel-name"></strong><b>${serverAuthoritative ? 'Verified server session' : 'Rewards and purchases disabled'}</b></span></div>
+      <div class="account-security" data-state="${serverAuthoritative ? 'verified' : 'preview'}"><i data-lucide="${serverAuthoritative ? 'shield-check' : 'lock-keyhole'}" aria-hidden="true"></i><span><strong>${serverAuthoritative ? 'Account protected' : 'Preview mode'}</strong><small>${serverAuthoritative ? 'Identity, Gold and inventory are verified by RadioTEDU servers.' : 'This browser preview cannot create rewards or permanent account changes.'}</small></span></div>
+      <nav class="account-actions" aria-label="Account actions">
+        <a href="${entryConfig.accountUrl}" target="_top"><i data-lucide="settings" aria-hidden="true"></i><span><strong>Account settings</strong><small>Profile, password and security</small></span></a>
+        <a href="${entryConfig.helpUrl}" target="_top"><i data-lucide="help-circle" aria-hidden="true"></i><span><strong>Help & safety</strong><small>Community rules and support</small></span></a>
+        <a class="account-sign-out" href="${entryConfig.logoutUrl}" target="_top"><i data-lucide="log-out" aria-hidden="true"></i><span><strong>Sign out</strong><small>End this RadioTEDU session</small></span></a>
+      </nav>
+    </aside>
   `
-  createIcons({ icons: { Armchair, BookOpen, CalendarDays, Check, Coins, Hand, Keyboard, LockKeyhole, Map, MapPin, MessageCircle, Pause, Play, Radio, Send, ShieldCheck, Shirt, Sparkles, Star, UserRound, UsersRound, Volume2, X } })
+  createIcons({ icons: { Armchair, BookOpen, CalendarDays, Check, Coins, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, UserPlus, UserRound, UsersRound, Volume2, X } })
   document.querySelector('#account-name')!.textContent = session.account.displayName
   document.querySelector('#account-avatar')!.textContent = session.account.displayName.trim().slice(0, 1).toUpperCase() || 'R'
+  document.querySelector('#account-panel-name')!.textContent = session.account.displayName
+  document.querySelector('#account-panel-avatar')!.textContent = session.account.displayName.trim().slice(0, 1).toUpperCase() || 'R'
   document.querySelector('#point-balance')!.textContent = String(session.points.global)
 }
 
-function renderLockedStudy() {
+function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
   ui!.innerHTML = `
-    <section class="study-gate" role="alert">
-      <strong>RadioTEDU Study</strong>
-      <span>Open Study from the signed-in RadioTEDU app.</span>
+    <section class="study-gate" aria-labelledby="study-entry-title">
+      <div class="study-entry-room" aria-hidden="true"><img src="assets/rooms/library-wide.png" alt="" /><span class="study-entry-shade"></span><span class="study-entry-avatar"></span><span class="study-entry-bubble">Ready to focus?</span></div>
+      <main class="study-entry-card">
+        <div class="study-entry-brand"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU</strong><small>STUDY WORLD</small></b></div>
+        <p class="study-entry-kicker">TEDU CAMPUS · LIVE STUDY ROOMS</p>
+        <h1 id="study-entry-title">Study together.<br />Stay on campus.</h1>
+        <p class="study-entry-copy">Enter the social campus to find a desk, join room chat, listen to RadioTEDU and build your verified study streak.</p>
+        <div class="study-entry-features" aria-label="Study World features"><span><i data-lucide="book-open" aria-hidden="true"></i> Focus rooms</span><span><i data-lucide="message-circle" aria-hidden="true"></i> Room chat</span><span><i data-lucide="shirt" aria-hidden="true"></i> Your look</span></div>
+        <nav class="study-entry-actions" aria-label="Account entry">
+          <a class="study-entry-primary" href="${entryConfig.loginUrl}" target="_top"><i data-lucide="log-in" aria-hidden="true"></i><span><strong>Log in</strong><small>Continue with your RadioTEDU account</small></span></a>
+          <a class="study-entry-secondary" href="${entryConfig.registerUrl}" target="_top"><i data-lucide="user-plus" aria-hidden="true"></i><span><strong>Create account</strong><small>Join the RadioTEDU community</small></span></a>
+        </nav>
+        <p class="study-entry-security"><i data-lucide="shield-check" aria-hidden="true"></i><span><strong>Secure account handoff</strong><small>The game never stores your password. Login and rewards are handled by RadioTEDU servers.</small></span></p>
+        <a class="study-entry-help" href="${entryConfig.helpUrl}" target="_top">Need help signing in?</a>
+      </main>
     </section>
   `
+  createIcons({ icons: { BookOpen, LogIn, MessageCircle, Radio, ShieldCheck, Shirt, UserPlus } })
   document.documentElement.dataset.studyReady = 'locked'
 }
 
@@ -1099,5 +1128,6 @@ declare global {
       account: StudyAccount
       globalPoints?: number
     } | null
+    RadioTEDUStudyEntry?: StudyEntryConfig | null
   }
 }

@@ -1,6 +1,6 @@
 import type { ImageRoomDefinition } from './ImageRoomDefinition'
 
-type CuratedRoomId = 'sports-center' | 'auditorium'
+type CuratedRoomId = 'sports-center' | 'auditorium' | 'learning-lab'
 const curatedRoom = (room: ImageRoomDefinition): ImageRoomDefinition => Object.freeze(room)
 
 export const CURATED_CAMPUS_ROOMS: Readonly<Record<CuratedRoomId, ImageRoomDefinition>> = Object.freeze({
@@ -87,6 +87,55 @@ export const CURATED_CAMPUS_ROOMS: Readonly<Record<CuratedRoomId, ImageRoomDefin
       { id: 'auditorium-lower', label: 'Lower row', approachNodeId: 'lower-row', sit: { x: 64, y: 79, z: 0 }, facing: 'nw', foregroundMask: null, occlusion: null, foregroundAsset: null },
       { id: 'auditorium-middle', label: 'Middle row', approachNodeId: 'middle-row', sit: { x: 64, y: 64, z: 0 }, facing: 'nw', foregroundMask: null, occlusion: null, foregroundAsset: null },
       { id: 'auditorium-upper', label: 'Upper row', approachNodeId: 'upper-row', sit: { x: 64, y: 47, z: 0 }, facing: 'nw', foregroundMask: null, occlusion: null, foregroundAsset: null },
+    ],
+    occluders: [],
+    actors: {},
+  }),
+  'learning-lab': curatedRoom({
+    id: 'learning-lab',
+    title: 'Early Childhood Learning Lab',
+    spawnNodeId: 'entrance',
+    image: {
+      url: 'assets/rooms/tedu-learning-lab-wide.png',
+      width: 1672,
+      height: 941,
+      sha256: '3c7026b976cd596bee61fd7a37b1dd423e780605d89a5475e9d0e176c7676044',
+    },
+    nodes: [
+      { id: 'entrance', x: 52, y: 94, z: 0 },
+      { id: 'front-left', x: 27, y: 86, z: 0 },
+      { id: 'front-right', x: 78, y: 86, z: 0 },
+      { id: 'round-rug', x: 65, y: 76, z: 0 },
+      { id: 'center-floor', x: 49, y: 70, z: 0 },
+      { id: 'window-aisle', x: 18, y: 63, z: 0 },
+      { id: 'blue-cushion', x: 35, y: 62, z: 0 },
+      { id: 'gray-cushion', x: 52, y: 59, z: 0 },
+      { id: 'right-cushion', x: 80, y: 61, z: 0 },
+      { id: 'back-aisle', x: 52, y: 49, z: 0 },
+      { id: 'activity-table', x: 50, y: 39, z: 0 },
+    ],
+    edges: [
+      { from: 'entrance', to: 'front-left', kind: 'walk' },
+      { from: 'entrance', to: 'front-right', kind: 'walk' },
+      { from: 'entrance', to: 'center-floor', kind: 'walk' },
+      { from: 'front-left', to: 'window-aisle', kind: 'walk' },
+      { from: 'front-left', to: 'center-floor', kind: 'walk' },
+      { from: 'front-right', to: 'round-rug', kind: 'walk' },
+      { from: 'round-rug', to: 'right-cushion', kind: 'walk' },
+      { from: 'round-rug', to: 'center-floor', kind: 'walk' },
+      { from: 'window-aisle', to: 'blue-cushion', kind: 'walk' },
+      { from: 'blue-cushion', to: 'center-floor', kind: 'walk' },
+      { from: 'center-floor', to: 'gray-cushion', kind: 'walk' },
+      { from: 'gray-cushion', to: 'back-aisle', kind: 'walk' },
+      { from: 'right-cushion', to: 'back-aisle', kind: 'walk' },
+      { from: 'back-aisle', to: 'activity-table', kind: 'walk' },
+    ],
+    seats: [
+      { id: 'window-chair', label: 'Window reading chair', approachNodeId: 'window-aisle', sit: { x: 15, y: 59, z: 0 }, facing: 'se', foregroundMask: null, occlusion: null, foregroundAsset: null },
+      { id: 'blue-floor-cushion', label: 'Blue reading cushion', approachNodeId: 'blue-cushion', sit: { x: 36, y: 57, z: 0 }, facing: 'ne', foregroundMask: null, occlusion: null, foregroundAsset: null },
+      { id: 'gray-floor-cushion', label: 'Gray reading cushion', approachNodeId: 'gray-cushion', sit: { x: 52, y: 53, z: 0 }, facing: 'nw', foregroundMask: null, occlusion: null, foregroundAsset: null },
+      { id: 'right-floor-cushion', label: 'Brick-wall reading cushion', approachNodeId: 'right-cushion', sit: { x: 83, y: 57, z: 0 }, facing: 'nw', foregroundMask: null, occlusion: null, foregroundAsset: null },
+      { id: 'activity-table-seat', label: 'Activity table', approachNodeId: 'activity-table', sit: { x: 49, y: 36, z: 0 }, facing: 's', foregroundMask: null, occlusion: null, foregroundAsset: null },
     ],
     occluders: [],
     actors: {},

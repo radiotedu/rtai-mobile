@@ -4,14 +4,16 @@ import { NavigationGraph } from '../src/pathfinding/NavigationGraph'
 import { IMAGE_ROOMS, roomPointToPixel } from '../src/rooms/ImageRoomDefinition'
 
 describe('IMAGE_ROOMS', () => {
-  it('preserves the two original rooms and exposes both source-backed campus additions', () => {
-    expect(Object.keys(IMAGE_ROOMS)).toEqual(['library', 'chim-alan', 'sports-center', 'auditorium'])
+  it('preserves the two original rooms and exposes the source-backed campus additions', () => {
+    expect(Object.keys(IMAGE_ROOMS)).toEqual(['library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab'])
     expect(IMAGE_ROOMS.library.title).toBe('Library')
     expect(IMAGE_ROOMS['chim-alan'].title).toBe('Çim Alan')
     expect(IMAGE_ROOMS['sports-center'].image.sha256).toBe('4ad9bb8bbeb6a2a5ff55d15ef4a99b25872f4092d2fbf1ddc5e371f0c12e9313')
     expect(IMAGE_ROOMS.auditorium.image.sha256).toBe('75c424a223515a3bd455c6a4c09694db28bd33dcdb472484ecb67da91454ff9c')
     expect(IMAGE_ROOMS['sports-center'].image.width / IMAGE_ROOMS['sports-center'].image.height).toBeCloseTo(16 / 9, 2)
     expect(IMAGE_ROOMS.auditorium.image.width / IMAGE_ROOMS.auditorium.image.height).toBeCloseTo(16 / 9, 2)
+    expect(IMAGE_ROOMS['learning-lab'].image.sha256).toBe('3c7026b976cd596bee61fd7a37b1dd423e780605d89a5475e9d0e176c7676044')
+    expect(IMAGE_ROOMS['learning-lab'].image.width / IMAGE_ROOMS['learning-lab'].image.height).toBeCloseTo(16 / 9, 2)
   })
 
   it('routes from each exact room spawn to every configured seat', () => {

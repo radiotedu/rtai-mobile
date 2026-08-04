@@ -83,9 +83,11 @@ The bridge base becomes `/jukebox/api/v1/study` inside the client. Implement or 
 
 Enforce authentication, authorization, room-instance membership, payload schemas, idempotency, rate limits, profanity/spam policy, server timestamps, and server-authoritative Gold/rewards on every write. Never trust a client-supplied user ID, Gold balance, owned item list, reward amount, elapsed study time, or moderation authority. Ignore/report on the client is only a local UX layer; sanctions require server review.
 
+Accept only the shipped room IDs `library`, `chim-alan`, `sports-center`, `auditorium`, and `learning-lab`; validate every node and seat against the corresponding server-side room manifest. Before the module script, render `window.RadioTEDUStudyEntry` with same-origin login, registration, account, help, and CSRF-protected logout URLs. These are navigation URLs, not secrets. Do not expose a password, cookie, bearer token, private key, database credential, or reusable CSRF token in HTML or JavaScript.
+
 ## Acceptance and rollback
 
-- Verify PC at 16:9 and Android WebView URLs for `room=library` and `room=chim-alan`.
+- Verify PC at 16:9 and Android WebView URLs for `room=library`, `room=chim-alan`, and `room=learning-lab`.
 - Verify login reuse, chat isolation, study start/heartbeat/finish, wardrobe persistence, authoritative purchases, events, presence, reports, cache headers, CSP, and no console/request errors.
 - Confirm `/`, `/wp-admin/`, public WordPress pages, uploads, plugins, cron, and the separate `/social/` route still behave exactly as before.
 - Run API/load checks against a staging account set before production. Do not aim the included local 60-player harness at production credentials without explicit operator approval.

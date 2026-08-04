@@ -43,9 +43,19 @@ window.RadioTEDUStudyBridge = {
   globalPoints: 240,
   request: (input, init) => firstPartyAuthenticatedFetch(input, init),
 }
+
+window.RadioTEDUStudyEntry = {
+  loginUrl: '/account/sign-in',
+  registerUrl: '/account/register',
+  accountUrl: '/account/',
+  logoutUrl: '/account/sign-out?csrf=server-rendered-action-token',
+  helpUrl: '/help/',
+}
 ```
 
 The authenticated request function—not a token on the public bridge—owns credentials. The game restricts its remote calls to the Study and gamification event contracts. Study time, event registration, inventory purchases, room presence, and Gold remain server-authoritative.
+
+`RadioTEDUStudyEntry` contains navigation URLs only. The client accepts same-origin URLs and rejects cross-origin or credential-bearing values. Render a short-lived CSRF-protected logout action on the server; never place passwords, access tokens, cookies, private keys, or reusable secrets in either public object.
 
 For the PC site, render this bridge from the signed-in RadioTEDU web session. For the later Android WebView phase, provide the same contract at document start and load `https://radiotedu.com/study/`; do not copy the game bundle into the APK.
 
@@ -61,7 +71,7 @@ npm run release:verify
 The evidence run covers desktop Chromium and a Pixel-sized mobile viewport, including:
 
 - Library and Çim Alan preservation
-- Sports Center and Fatma–Semih Akbil Auditorium
+- Sports Center, Fatma–Semih Akbil Auditorium, and the official Early Childhood Learning Lab
 - consistent high overhead isometric room cameras and the animated Auditorium event screen
 - keyboard movement and touch-ready controls
 - events and server-awarded Gold messaging

@@ -1,4 +1,4 @@
-export type StudyRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium'
+export type StudyRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium' | 'learning-lab'
 
 export interface StudyAccount {
   id: string

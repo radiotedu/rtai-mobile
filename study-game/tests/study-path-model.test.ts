@@ -7,7 +7,7 @@ describe('study path model', () => {
     const goals = buildStudyPath({
       todaySeconds: 1_620,
       totalSeconds: 1_620,
-      visitedRooms: new Set(['library', 'chim-alan', 'sports-center', 'auditorium']),
+      visitedRooms: new Set(['library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab']),
       socialActions: 1,
       seatedNow: false,
     })

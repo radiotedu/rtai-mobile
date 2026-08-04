@@ -1211,6 +1211,181 @@ button { cursor: pointer; }
   .avatar-preview-stack > span { top: 6px; left: 12px; }
 }
 
+/* Account entry and signed-in identity layer. Authentication remains a
+   first-party server handoff; these controls never collect credentials. */
+.study-gate {
+  grid-template-columns: minmax(0, 1.45fr) minmax(340px, .72fr);
+  padding: 0;
+  place-content: stretch;
+  gap: 0;
+  color: #eef5f1;
+  background: #091214;
+  text-align: left;
+  overflow: hidden;
+}
+
+.study-entry-room {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: #111d1f;
+}
+
+.study-entry-room > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  filter: saturate(.9) contrast(1.04) brightness(.78);
+  transform: scale(1.02);
+}
+
+.study-entry-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 45%, rgba(7, 15, 17, .35) 76%, #091214 100%), linear-gradient(0deg, rgba(6, 14, 16, .68), transparent 48%);
+}
+
+.study-entry-avatar {
+  position: absolute;
+  left: 51%;
+  bottom: 13%;
+  width: clamp(58px, 5vw, 76px);
+  aspect-ratio: 2 / 3;
+  background-image: url('/assets/avatars/engine-proof/canonical-idle.png');
+  background-position: 0 57.142857%;
+  background-size: 100% 800%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 8px 5px rgba(0, 0, 0, .52));
+}
+
+.study-entry-bubble {
+  position: absolute;
+  left: 56%;
+  bottom: 37%;
+  padding: 8px 11px;
+  border: 2px solid #172321;
+  border-radius: 4px 4px 4px 0;
+  color: #19211f;
+  background: #f3f7f3;
+  box-shadow: 0 4px 0 rgba(4, 10, 11, .28);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.study-entry-card {
+  z-index: 2;
+  display: flex;
+  min-width: 0;
+  padding: clamp(24px, 4.4vh, 48px) clamp(24px, 3.4vw, 44px);
+  flex-direction: column;
+  justify-content: center;
+  border-left: 1px solid #2a3b38;
+  background: linear-gradient(155deg, #111d1f 0%, #0a1416 70%);
+  box-shadow: -20px 0 46px rgba(0, 0, 0, .34);
+}
+
+.study-entry-brand { display: flex; align-items: center; gap: 10px; }
+.study-entry-brand > span { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #6dc6a6; border-radius: 3px; color: #0d1b18; background: #79d5b2; box-shadow: inset 0 -3px rgba(19, 64, 50, .25); }
+.study-entry-brand svg { width: 21px; height: 21px; stroke-width: 2.4; }
+.study-entry-brand b { display: flex; flex-direction: column; }
+.study-entry-brand b strong { color: #f1f6f3; font-size: 16px; line-height: 1; letter-spacing: -.2px; }
+.study-entry-brand b small { margin-top: 4px; color: #79d5b2; font-size: 7px; font-weight: 900; letter-spacing: 2px; }
+.study-entry-kicker { margin: clamp(20px, 4vh, 34px) 0 8px; color: #8ca29d; font-size: 7px; font-weight: 900; letter-spacing: 1.5px; }
+.study-entry-card h1 { margin: 0; max-width: 410px; color: #f0f5f2; font-size: clamp(28px, 3.4vw, 46px); line-height: .98; letter-spacing: -1.6px; }
+.study-entry-copy { max-width: 400px; margin: 14px 0 0; color: #9db0ab; font-size: 11px; line-height: 1.58; }
+.study-entry-features { display: flex; margin-top: 16px; gap: 6px; flex-wrap: wrap; }
+.study-entry-features span { display: inline-flex; max-width: none; min-height: 26px; padding: 0 8px; align-items: center; gap: 5px; border: 1px solid #30433e; border-radius: 2px; color: #c5d3ce; background: #162321; font-size: 8px; font-weight: 800; }
+.study-entry-features svg { width: 12px; height: 12px; color: #83cdb1; }
+.study-entry-actions { display: grid; margin-top: clamp(20px, 4vh, 34px); gap: 8px; }
+.study-entry-actions a { display: grid; min-height: 50px; padding: 7px 12px; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 10px; border: 1px solid #547168; border-radius: 3px; color: #f4f8f5; text-decoration: none; transition: border-color .14s ease, background .14s ease, transform .14s ease; }
+.study-entry-actions a:hover, .study-entry-actions a:focus-visible { border-color: #b6ead5; outline: none; transform: translateY(-1px); }
+.study-entry-actions a > svg { width: 19px; height: 19px; justify-self: center; }
+.study-entry-actions a > span { display: flex; max-width: none; flex-direction: column; color: inherit; }
+.study-entry-actions a strong { font-size: 11px; line-height: 1.2; }
+.study-entry-actions a small { margin-top: 3px; color: currentColor; font-size: 7px; opacity: .75; }
+.study-entry-primary { background: #337e67; box-shadow: inset 0 -3px rgba(9, 36, 27, .28); }
+.study-entry-primary:hover, .study-entry-primary:focus-visible { background: #3f9278; }
+.study-entry-secondary { background: #182527; }
+.study-entry-secondary:hover, .study-entry-secondary:focus-visible { background: #223334; }
+.study-entry-security { display: grid; margin: 16px 0 0; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; color: #87b9a7; }
+.study-entry-security > svg { width: 16px; height: 16px; margin-top: 1px; }
+.study-entry-security > span { display: flex; max-width: none; flex-direction: column; color: inherit; }
+.study-entry-security strong { font-size: 8px; }
+.study-entry-security small { margin-top: 2px; color: #718780; font-size: 7px; line-height: 1.45; }
+.study-entry-help { width: max-content; margin-top: 14px; color: #a1b7b0; font-size: 8px; text-underline-offset: 3px; }
+
+button.account-chip {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.account-chip:hover,
+button.account-chip:focus-visible,
+button.account-chip[aria-expanded="true"] {
+  border-color: #7ccbad;
+  outline: none;
+  background: #1b2d2a;
+}
+
+.account-panel {
+  top: 56px;
+  right: 8px;
+  bottom: auto;
+  width: min(332px, calc(100vw - 16px));
+  max-height: calc(100dvh - 130px);
+}
+.account-panel[hidden] { display: none; }
+.account-panel-hero { display: grid; min-height: 82px; padding: 12px; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 11px; border-bottom: 1px solid #31403d; background: #152220; }
+.account-panel-hero .account-avatar { width: 54px; height: 54px; font-size: 18px; }
+.account-panel-hero > span:last-child { display: flex; min-width: 0; flex-direction: column; }
+.account-panel-hero small { color: #78cbaa; font-size: 7px; font-weight: 900; letter-spacing: 1px; }
+.account-panel-hero strong { margin-top: 4px; overflow: hidden; color: #eef4f1; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.account-panel-hero b { margin-top: 4px; color: #859b94; font-size: 8px; font-weight: 600; }
+.account-security { display: grid; margin: 10px; padding: 10px; grid-template-columns: 26px minmax(0, 1fr); align-items: start; gap: 8px; border: 1px solid #365249; border-radius: 3px; color: #7dd0af; background: #152721; }
+.account-security[data-state="preview"] { border-color: #5a5741; color: #d0bb7d; background: #262319; }
+.account-security > svg { width: 20px; height: 20px; }
+.account-security span { display: flex; min-width: 0; flex-direction: column; }
+.account-security strong { color: #dceae4; font-size: 9px; }
+.account-security small { margin-top: 3px; color: #8ba099; font-size: 7px; line-height: 1.45; }
+.account-actions { display: grid; padding: 0 10px 10px; gap: 5px; }
+.account-actions a { display: grid; min-height: 46px; padding: 7px 9px; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 8px; border: 1px solid #344642; border-radius: 3px; color: #dce6e2; background: #172321; text-decoration: none; }
+.account-actions a:hover, .account-actions a:focus-visible { border-color: #77c5a8; outline: none; background: #20312d; }
+.account-actions a > svg { width: 17px; height: 17px; color: #86cdb3; }
+.account-actions a > span { display: flex; min-width: 0; flex-direction: column; }
+.account-actions strong { font-size: 9px; }
+.account-actions small { margin-top: 2px; color: #82968f; font-size: 7px; }
+.account-actions .account-sign-out { color: #dab1ad; }
+.account-actions .account-sign-out > svg { color: #c98781; }
+
+@media (max-width: 700px) {
+  .study-gate { display: block; }
+  .study-entry-room { position: absolute; inset: 0; }
+  .study-entry-shade { background: linear-gradient(0deg, #091214 15%, rgba(9, 18, 20, .74) 59%, rgba(6, 14, 16, .18) 100%); }
+  .study-entry-avatar { left: 57%; bottom: 49%; width: 62px; }
+  .study-entry-bubble { left: 58%; bottom: 68%; }
+  .study-entry-card { position: absolute; right: 0; bottom: 0; left: 0; max-height: 68dvh; padding: 18px 18px max(16px, env(safe-area-inset-bottom)); justify-content: flex-end; border-top: 1px solid #344944; border-left: 0; background: linear-gradient(0deg, #0a1416 82%, rgba(10, 20, 22, .88) 100%); overflow-y: auto; box-shadow: 0 -16px 32px rgba(0, 0, 0, .36); }
+  .study-entry-brand > span { width: 30px; height: 30px; }
+  .study-entry-brand > span svg { width: 17px; height: 17px; }
+  .study-entry-brand b strong { font-size: 13px; }
+  .study-entry-kicker { margin: 13px 0 5px; }
+  .study-entry-card h1 { font-size: clamp(25px, 8.5vw, 38px); }
+  .study-entry-copy { margin-top: 8px; font-size: 10px; }
+  .study-entry-features { margin-top: 10px; }
+  .study-entry-actions { margin-top: 14px; grid-template-columns: 1fr 1fr; }
+  .study-entry-actions a { min-height: 46px; padding: 6px 8px; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; }
+  .study-entry-actions a > svg { width: 16px; height: 16px; }
+  .study-entry-actions a small { display: none; }
+  .study-entry-security { margin-top: 10px; }
+  .study-entry-help { margin-top: 8px; }
+  .account-panel { top: max(58px, calc(env(safe-area-inset-top) + 58px)); right: 6px; width: min(332px, calc(100vw - 12px)); max-height: calc(100dvh - 126px); }
+}
+
 /* Game-native HUD and desktop 16:9 stage */
 @media (min-width: 701px) {
   html,

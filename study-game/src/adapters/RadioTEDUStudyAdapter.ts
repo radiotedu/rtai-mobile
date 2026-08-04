@@ -5,15 +5,21 @@ import {
   type StudyChatMessage,
   type StudyHeartbeatInput,
   type StudyPresence,
+  type StudyPlayerReportReason,
   type StudyRoomId,
   type StudyRoomInstance,
   type StudySeatReservation,
   type StudySession,
   type StudyTimeSummary,
+  type StudyWorldEvent,
 } from './StudyAdapter'
 import { getOrCreateStudyClientSessionId, normalizeStudyClientSessionId } from './StudyClientSession'
 
 const STARTER_WEARABLES = Object.freeze(['short-hair', 'radio-hoodie', 'jeans', 'sneakers', 'bucket-hat'])
+const CHAT_LIMIT = 5
+const CHAT_WINDOW_MS = 10_000
+const CHAT_MAX_LENGTH = 180
+const CHAT_UNSAFE_CONTROLS = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g
 const LEGACY_TO_CLIENT_WEARABLE: Readonly<Record<string, string>> = Object.freeze({
   'default-hair': 'short-hair',
   'default-top': 'radio-hoodie',
@@ -39,7 +45,7 @@ interface ActiveRemoteSession {
 
 export interface RadioTEDUStudyAdapterConfig {
   apiBase: string
-  accessToken: string
+  accessToken?: string
   account: StudyAccount
   globalPoints?: number
   fetchImpl?: typeof fetch
@@ -50,16 +56,19 @@ export interface RadioTEDUStudyAdapterConfig {
 export class RadioTEDUStudyAdapter implements StudyAdapter {
   readonly authoritativeInventory = true
   readonly #apiBase: string
-  readonly #accessToken: string
+  readonly #gamificationBase: string
+  readonly #accessToken: string | null
   readonly #fetch: typeof fetch
   readonly #now: () => number
   readonly #account: StudyAccount
   readonly #clientSessionId: string
   readonly #owned = new Set<string>(STARTER_WEARABLES)
   readonly #equipped = new Set<string>()
+  readonly #equippedBySlot = new Map<string, string>()
   readonly #presence = new Map<StudyRoomId, readonly StudyPresence[]>()
   readonly #instances = new Map<StudyRoomId, StudyRoomInstance>()
   readonly #roomJoins = new Map<StudyRoomId, Promise<StudyRoomInstance>>()
+  readonly #chatTimestamps: number[] = []
   #globalPoints: number
   #summary: StudyTimeSummary = EMPTY_SUMMARY
   #activeSession: ActiveRemoteSession | null = null
@@ -67,11 +76,15 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
   #activeRoomId: StudyRoomId | null = null
 
   constructor(config: RadioTEDUStudyAdapterConfig) {
-    if (!config.account.authenticated || !config.accessToken.trim()) {
+    const accessToken = config.accessToken?.trim() ?? ''
+    if (!config.account.authenticated || (!accessToken && !config.fetchImpl)) {
       throw new StudyAdapterError('AUTH_REQUIRED')
     }
     this.#apiBase = config.apiBase.replace(/\/+$/, '')
-    this.#accessToken = config.accessToken
+    this.#gamificationBase = this.#apiBase.endsWith('/study')
+      ? this.#apiBase.slice(0, -'/study'.length) + '/gamification'
+      : `${this.#apiBase}/gamification`
+    this.#accessToken = accessToken || null
     this.#fetch = config.fetchImpl ?? globalThis.fetch.bind(globalThis)
     this.#now = config.now ?? Date.now
     this.#account = Object.freeze({ ...config.account })
@@ -96,8 +109,12 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
       }
     }
     this.#equipped.clear()
-    for (const id of Object.values(profile.equipped ?? {})) {
-      if (typeof id === 'string') this.#equipped.add(clientWearableId(id))
+    this.#equippedBySlot.clear()
+    for (const [slot, id] of Object.entries(profile.equipped ?? {})) {
+      if (typeof id !== 'string') continue
+      const clientId = clientWearableId(id)
+      this.#equipped.add(clientId)
+      this.#equippedBySlot.set(slot, clientId)
     }
     this.#globalPoints = nonNegativeInteger(profile.points?.spendable_points, this.#globalPoints)
     this.#summary = summary
@@ -152,6 +169,9 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
     await this.#request('/avatar/equip', {
       method: 'POST', body: { itemId: serverWearableId(id), slot },
     })
+    const previous = this.#equippedBySlot.get(slot)
+    if (previous) this.#equipped.delete(previous)
+    this.#equippedBySlot.set(slot, id)
     this.#equipped.add(id)
     return this.session()
   }
@@ -164,13 +184,16 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
     }>('/avatar/purchase', {
       method: 'POST', body: { itemId: serverWearableId(id), idempotencyKey },
     })
-    for (const itemId of Array.isArray(data.ownedItemIds) ? data.ownedItemIds : []) {
-      if (typeof itemId === 'string') this.#owned.add(clientWearableId(itemId))
+    const ownedIds = (Array.isArray(data.ownedItemIds) ? data.ownedItemIds : [])
+      .filter((itemId): itemId is string => typeof itemId === 'string')
+      .map(clientWearableId)
+    const rawPoints = data.points?.spendable_points ?? data.spendable_points
+    const authoritativePoints = typeof rawPoints === 'number' ? rawPoints : Number(rawPoints)
+    if (!ownedIds.includes(id) || !Number.isInteger(authoritativePoints) || authoritativePoints < 0) {
+      throw new StudyAdapterError('INVALID_PURCHASE_RESPONSE', id)
     }
-    this.#globalPoints = nonNegativeInteger(
-      data.points?.spendable_points ?? data.spendable_points,
-      this.#globalPoints,
-    )
+    for (const itemId of ownedIds) this.#owned.add(itemId)
+    this.#globalPoints = authoritativePoints
     return this.session()
   }
 
@@ -203,9 +226,14 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
         },
       },
     )
-    if (typeof data.nonce !== 'string') throw new StudyAdapterError('INVALID_HEARTBEAT_RESPONSE')
+    if (typeof data.nonce !== 'string' || data.nonce === active.nonce) throw new StudyAdapterError('INVALID_HEARTBEAT_RESPONSE')
+    const acceptedSeconds = nonNegativeInteger(data.accepted_seconds ?? data.acceptedSeconds)
+    const eligible = input.interaction === 'seated' && input.focused && input.foreground && Boolean(input.seatId)
+    if (acceptedSeconds > 15 || (!eligible && acceptedSeconds !== 0)) {
+      throw new StudyAdapterError('INVALID_HEARTBEAT_RESPONSE')
+    }
     this.#activeSession = { id: active.id, nonce: data.nonce }
-    return nonNegativeInteger(data.accepted_seconds ?? data.acceptedSeconds)
+    return acceptedSeconds
   }
 
   async finishStudySession(): Promise<StudyTimeSummary> {
@@ -301,13 +329,51 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
   }
 
   async sendChat(text: string, roomId: StudyRoomId = 'library'): Promise<StudyChatMessage> {
+    const normalized = text.replace(CHAT_UNSAFE_CONTROLS, ' ').replace(/\s+/g, ' ').trim()
+    if (!normalized) throw new StudyAdapterError('CHAT_EMPTY')
+    if (normalized.length > CHAT_MAX_LENGTH) throw new StudyAdapterError('CHAT_TOO_LONG')
+    const now = this.#now()
+    while (this.#chatTimestamps.length && now - this.#chatTimestamps[0]! >= CHAT_WINDOW_MS) this.#chatTimestamps.shift()
+    if (this.#chatTimestamps.length >= CHAT_LIMIT) throw new StudyAdapterError('CHAT_RATE_LIMITED')
+    this.#chatTimestamps.push(now)
     const instance = await this.#ensureRoomJoined(roomId)
     const data = await this.#request<{ message?: unknown }>('/chat', {
-      method: 'POST', body: { roomId, instanceId: instance.id, text },
+      method: 'POST', body: { roomId, instanceId: instance.id, text: normalized },
     })
     const messages = mapRemoteMessage(data.message)
-    if (!messages[0]) throw new StudyAdapterError('INVALID_CHAT_RESPONSE')
+    if (!messages[0] || messages[0].userId !== this.#account.id || messages[0].text !== normalized) {
+      throw new StudyAdapterError('INVALID_CHAT_RESPONSE')
+    }
     return messages[0]
+  }
+
+  async reportPlayer(targetUserId: string, roomId: StudyRoomId, reason: StudyPlayerReportReason): Promise<void> {
+    if (!targetUserId || targetUserId === this.#account.id) throw new StudyAdapterError('INVALID_REPORT_TARGET')
+    const instance = await this.#ensureRoomJoined(roomId)
+    await this.#request('/moderation/reports', {
+      method: 'POST',
+      body: {
+        targetUserId,
+        roomId,
+        instanceId: instance.id,
+        reason,
+        idempotencyKey: crypto.randomUUID(),
+      },
+    })
+  }
+
+  async listEvents(): Promise<readonly StudyWorldEvent[]> {
+    const data = await this.#requestFrom<{ events?: unknown }>(this.#gamificationBase, '/events')
+    return (Array.isArray(data.events) ? data.events : []).flatMap((event) => mapWorldEvent(event, this.#now()))
+  }
+
+  async registerEvent(eventId: string): Promise<StudyWorldEvent> {
+    await this.#requestFrom(this.#gamificationBase, `/events/${encodeURIComponent(eventId)}/register`, {
+      method: 'POST',
+    })
+    const event = (await this.listEvents()).find((candidate) => candidate.id === eventId)
+    if (!event) throw new StudyAdapterError('EVENT_NOT_FOUND')
+    return { ...event, registered: true }
   }
 
   async #ensureRoomJoined(roomId: StudyRoomId, nodeId = 'spawn'): Promise<StudyRoomInstance> {
@@ -357,11 +423,19 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
     path: string,
     options: { method?: 'GET' | 'POST'; body?: Record<string, unknown>; keepalive?: boolean } = {},
   ): Promise<T> {
-    const response = await this.#fetch(`${this.#apiBase}${path}`, {
+    return this.#requestFrom(this.#apiBase, path, options)
+  }
+
+  async #requestFrom<T = Record<string, never>>(
+    base: string,
+    path: string,
+    options: { method?: 'GET' | 'POST'; body?: Record<string, unknown>; keepalive?: boolean } = {},
+  ): Promise<T> {
+    const response = await this.#fetch(`${base}${path}`, {
       method: options.method ?? 'GET',
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${this.#accessToken}`,
+        ...(this.#accessToken ? { Authorization: `Bearer ${this.#accessToken}` } : {}),
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
@@ -386,6 +460,31 @@ function clientWearableId(id: string) {
 
 function serverWearableId(id: string) {
   return CLIENT_TO_LEGACY_WEARABLE[id] ?? id
+}
+
+function mapWorldEvent(value: unknown, now: number): StudyWorldEvent[] {
+  const row = value as Record<string, unknown> | null
+  if (!row || typeof row.id !== 'string' || typeof row.title !== 'string') return []
+  const startsAt = typeof row.starts_at === 'string' ? row.starts_at : null
+  const endsAt = typeof row.ends_at === 'string' ? row.ends_at : null
+  const starts = startsAt ? Date.parse(startsAt) : Number.NaN
+  const ends = endsAt ? Date.parse(endsAt) : Number.NaN
+  const status: StudyWorldEvent['status'] = Number.isFinite(ends) && ends < now
+    ? 'completed'
+    : Number.isFinite(starts) && starts <= now
+      ? 'active'
+      : 'upcoming'
+  return [Object.freeze({
+    id: row.id,
+    title: row.title.slice(0, 100),
+    description: typeof row.description === 'string' ? row.description.slice(0, 320) : '',
+    location: typeof row.location === 'string' && row.location.trim() ? row.location.slice(0, 120) : 'TEDU Campus',
+    startsAt,
+    endsAt,
+    rewardGold: nonNegativeInteger(row.check_in_points),
+    registered: row.registered === true,
+    status,
+  })]
 }
 
 function mapRoomInstance(value: unknown, expectedRoomId: StudyRoomId): StudyRoomInstance {
@@ -420,11 +519,14 @@ function mapRemoteMessage(value: unknown): StudyChatMessage[] {
   const row = value as Record<string, unknown> | null
   if (!row || typeof row.id !== 'string' || typeof row.userId !== 'string' || typeof row.displayName !== 'string' || typeof row.text !== 'string') return []
   const parsedTime = typeof row.createdAt === 'number' ? row.createdAt : Date.parse(String(row.createdAt ?? ''))
+  const displayName = row.displayName.replace(CHAT_UNSAFE_CONTROLS, ' ').replace(/\s+/g, ' ').trim()
+  const text = row.text.replace(CHAT_UNSAFE_CONTROLS, ' ').replace(/\s+/g, ' ').trim()
+  if (!row.id || row.id.length > 160 || !row.userId || row.userId.length > 160 || !displayName || displayName.length > 80 || !text || text.length > CHAT_MAX_LENGTH || !Number.isFinite(parsedTime) || parsedTime <= 0) return []
   return [{
     id: row.id,
     userId: row.userId,
-    displayName: row.displayName.slice(0, 80),
-    text: row.text.slice(0, 180),
-    createdAt: Number.isFinite(parsedTime) ? parsedTime : Date.now(),
+    displayName,
+    text,
+    createdAt: parsedTime,
   }]
 }

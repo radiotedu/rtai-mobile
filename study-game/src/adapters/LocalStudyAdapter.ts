@@ -6,10 +6,12 @@ import {
   type StudyHeartbeatInput,
   type StudyPresence,
   type StudyRoomId,
+  type StudyPlayerReportReason,
   type StudyRoomInstance,
   type StudySeatReservation,
   type StudySession,
   type StudyTimeSummary,
+  type StudyWorldEvent,
 } from './StudyAdapter'
 
 const OWNED = Object.freeze([
@@ -21,6 +23,55 @@ const FAKE_PRESENCE: readonly StudyPresence[] = Object.freeze([
   { userId: 'local-selin', displayName: 'Selin', roomId: 'library', nodeId: 'approach:quiet-window', seatId: 'quiet-window', color: 0xd99249 },
   { userId: 'local-mert', displayName: 'Mert', roomId: 'library', nodeId: 'approach:corner-sofa', seatId: 'corner-sofa', color: 0x4f91c7 },
   { userId: 'local-deniz', displayName: 'Deniz', roomId: 'chim-alan', nodeId: 'row-2-mid', seatId: 'amfi-b2', color: 0x9d6fc0 },
+])
+const CHAT_UNSAFE_CONTROLS = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g
+
+const LOCAL_WEARABLE_SLOTS: Readonly<Record<string, string>> = Object.freeze({
+  'short-hair': 'hair',
+  'radio-hoodie': 'top',
+  'varsity-jacket': 'top',
+  jeans: 'bottom',
+  'black-cargos': 'bottom',
+  sneakers: 'shoes',
+  boots: 'shoes',
+  'bucket-hat': 'hat',
+  beanie: 'hat',
+})
+
+const LOCAL_EVENTS: readonly StudyWorldEvent[] = Object.freeze([
+  Object.freeze({
+    id: 'campus-care-saturday',
+    title: 'Campus Care Saturday',
+    description: 'Meet at the campus garden, form a team, and help clean shared outdoor spaces.',
+    location: 'TEDU Campus Garden',
+    startsAt: null,
+    endsAt: null,
+    rewardGold: 40,
+    registered: false,
+    status: 'upcoming',
+  }),
+  Object.freeze({
+    id: 'library-focus-night',
+    title: 'Library Focus Night',
+    description: 'Join a quiet group study session and complete a focused study block together.',
+    location: 'Library',
+    startsAt: null,
+    endsAt: null,
+    rewardGold: 20,
+    registered: false,
+    status: 'active',
+  }),
+  Object.freeze({
+    id: 'auditorium-live-broadcast',
+    title: 'TEDU Live: Auditorium',
+    description: 'Join the student audience and help RadioTEDU produce a live campus broadcast.',
+    location: 'Fatma–Semih Akbil Auditorium',
+    startsAt: null,
+    endsAt: null,
+    rewardGold: 30,
+    registered: false,
+    status: 'upcoming',
+  }),
 ])
 
 export interface LocalStudyAdapterOptions {
@@ -38,8 +89,10 @@ export class LocalStudyAdapter implements StudyAdapter {
   readonly #account: StudyAccount
   readonly #globalPoints: number
   readonly #equipped = new Set<string>()
+  readonly #equippedBySlot = new Map<string, string>()
   readonly #chatTimestamps: number[] = []
-  readonly #messages: StudyChatMessage[] = []
+  readonly #messages = new Map<StudyRoomId, StudyChatMessage[]>()
+  readonly #registeredEvents = new Set<string>()
   #activeSeat: StudySeatReservation | null = null
   #activeRoom: StudyRoomId = 'library'
   #activeNodeId = 'spawn'
@@ -72,7 +125,7 @@ export class LocalStudyAdapter implements StudyAdapter {
     return {
       id: `${roomId}-1`, roomId, number: 1,
       occupancy: this.presence(roomId).length + 1,
-      capacity: roomId === 'library' ? 51 : 9,
+      capacity: { library: 51, 'chim-alan': 9, 'sports-center': 18, auditorium: 90 }[roomId],
       preferredInstanceFull: false,
     }
   }
@@ -99,8 +152,13 @@ export class LocalStudyAdapter implements StudyAdapter {
     this.#activeSeat = null
   }
 
-  equipWearable(id: string): StudySession {
+  equipWearable(id: string, requestedSlot?: string): StudySession {
     if (!OWNED.includes(id)) throw new StudyAdapterError('WEARABLE_NOT_OWNED', id)
+    const slot = requestedSlot ?? LOCAL_WEARABLE_SLOTS[id]
+    if (!slot || LOCAL_WEARABLE_SLOTS[id] !== slot) throw new StudyAdapterError('WEARABLE_SLOT_REQUIRED', id)
+    const previous = this.#equippedBySlot.get(slot)
+    if (previous) this.#equipped.delete(previous)
+    this.#equippedBySlot.set(slot, id)
     this.#equipped.add(id)
     return this.session()
   }
@@ -109,8 +167,8 @@ export class LocalStudyAdapter implements StudyAdapter {
     throw new StudyAdapterError('LOCAL_POINTS_READ_ONLY')
   }
 
-  sendChat(text: string): StudyChatMessage {
-    const normalized = text.trim().replace(/\s+/g, ' ')
+  sendChat(text: string, roomId: StudyRoomId = this.#activeRoom): StudyChatMessage {
+    const normalized = text.replace(CHAT_UNSAFE_CONTROLS, ' ').replace(/\s+/g, ' ').trim()
     if (!normalized) throw new StudyAdapterError('CHAT_EMPTY')
     if (normalized.length > 180) throw new StudyAdapterError('CHAT_TOO_LONG')
     const now = this.#now()
@@ -124,8 +182,14 @@ export class LocalStudyAdapter implements StudyAdapter {
       text: normalized,
       createdAt: now,
     }
-    this.#messages.push(message)
+    const roomMessages = this.#messages.get(roomId) ?? []
+    roomMessages.push(message)
+    this.#messages.set(roomId, roomMessages)
     return message
+  }
+
+  async reportPlayer(targetUserId: string, _roomId: StudyRoomId, _reason: StudyPlayerReportReason): Promise<void> {
+    if (!targetUserId || targetUserId === this.#account.id) throw new StudyAdapterError('INVALID_REPORT_TARGET')
   }
 
   async startStudySession(): Promise<void> {
@@ -157,11 +221,22 @@ export class LocalStudyAdapter implements StudyAdapter {
     return this.presence(roomId)
   }
 
-  async refreshChat(): Promise<readonly StudyChatMessage[]> {
-    return [...this.#messages]
+  async refreshChat(roomId: StudyRoomId): Promise<readonly StudyChatMessage[]> {
+    return [...(this.#messages.get(roomId) ?? [])]
   }
 
   async heartbeatPresence(): Promise<void> {
     // The local adapter has no shared server; its deterministic actors remain static.
+  }
+
+  async listEvents(): Promise<readonly StudyWorldEvent[]> {
+    return LOCAL_EVENTS.map((event) => ({ ...event, registered: this.#registeredEvents.has(event.id) }))
+  }
+
+  async registerEvent(eventId: string): Promise<StudyWorldEvent> {
+    const event = LOCAL_EVENTS.find((candidate) => candidate.id === eventId)
+    if (!event) throw new StudyAdapterError('EVENT_NOT_FOUND')
+    this.#registeredEvents.add(eventId)
+    return { ...event, registered: true }
   }
 }

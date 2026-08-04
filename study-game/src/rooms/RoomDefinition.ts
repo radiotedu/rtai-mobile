@@ -35,7 +35,7 @@ export type RoomCameraDefinition = {
 }
 
 export type RoomDefinition = {
-  id: 'engine-proof' | 'library' | 'chim-alan'
+  id: 'engine-proof' | 'library' | 'chim-alan' | 'sports-center' | 'auditorium'
   spawn: GridPoint
   tiles: TileDefinition[]
   objects: WorldObjectDefinition[]

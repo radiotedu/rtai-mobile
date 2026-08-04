@@ -1,4 +1,4 @@
-export type StudyRoomId = 'library' | 'chim-alan'
+export type StudyRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium'
 
 export interface StudyAccount {
   id: string
@@ -59,6 +59,20 @@ export interface StudyRoomInstance {
   preferredInstanceFull: boolean
 }
 
+export interface StudyWorldEvent {
+  id: string
+  title: string
+  description: string
+  location: string
+  startsAt: string | null
+  endsAt: string | null
+  rewardGold: number
+  registered: boolean
+  status: 'upcoming' | 'active' | 'completed'
+}
+
+export type StudyPlayerReportReason = 'harassment' | 'spam' | 'unsafe-profile' | 'other'
+
 export interface StudyHeartbeatInput {
   roomId: StudyRoomId
   nodeId: string
@@ -82,6 +96,9 @@ export interface StudyAdapter {
   equipWearable(id: string, slot?: string): Awaitable<StudySession>
   purchaseWearable(id: string, idempotencyKey: string): Awaitable<StudySession>
   sendChat(text: string, roomId?: StudyRoomId): Awaitable<StudyChatMessage>
+  reportPlayer?(targetUserId: string, roomId: StudyRoomId, reason: StudyPlayerReportReason): Promise<void>
+  listEvents?(): Promise<readonly StudyWorldEvent[]>
+  registerEvent?(eventId: string): Promise<StudyWorldEvent>
   initialize?(): Promise<void>
   refreshPresence?(roomId: StudyRoomId): Promise<readonly StudyPresence[]>
   refreshChat?(roomId: StudyRoomId): Promise<readonly StudyChatMessage[]>

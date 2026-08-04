@@ -132,7 +132,7 @@ async function compileRoomCutouts(room, image, assetOutputRoot) {
   return { ...room, image: publicImage, occluders, seats }
 }
 
-function libraryRoomData(appSource, mapMask) {
+function libraryRoomData(appSource, mapMask, roomImage) {
   const walkableTiles = evaluateLiteral(appSource, 'WALKABLE_TILES')
   const chairTargets = evaluateLiteral(appSource, 'CHAIR_SEAT_TARGETS')
   const nodes = Object.entries(walkableTiles).map(([id, node]) => ({ id, x: node.x, y: node.y, z: 0 }))
@@ -151,8 +151,8 @@ function libraryRoomData(appSource, mapMask) {
   const baseNodes = [...nodes]
   const seats = chairTargets.map((seat) => {
     const approachNodeId = `approach:${seat.seatId}`
-    const deltaX = ((seat.standX - seat.sitX) / 100) * mapMask.imageWidth
-    const deltaY = ((seat.standY - seat.sitY) / 100) * mapMask.imageHeight
+    const deltaX = ((seat.standX - seat.sitX) / 100) * roomImage.width
+    const deltaY = ((seat.standY - seat.sitY) / 100) * roomImage.height
     const distance = Math.hypot(deltaX, deltaY)
     const scale = distance > 56 ? 56 / distance : 1
     const approach = {
@@ -166,8 +166,8 @@ function libraryRoomData(appSource, mapMask) {
       .map((node) => ({
         id: node.id,
         distance: Math.hypot(
-          ((node.x - approach.x) / 100) * mapMask.imageWidth,
-          ((node.y - approach.y) / 100) * mapMask.imageHeight,
+          ((node.x - approach.x) / 100) * roomImage.width,
+          ((node.y - approach.y) / 100) * roomImage.height,
         ),
       }))
       .sort((left, right) => left.distance - right.distance)[0]?.id ?? 'bottom-center-aisle'
@@ -271,10 +271,10 @@ export async function generateImageRoomData(
     readFile(path.join(prototypeRoot, 'app.js'), 'utf8'),
     readFile(path.join(prototypeRoot, 'chim.js'), 'utf8'),
     readFile(path.join(prototypeRoot, 'data', 'library-habbo-map-mask.json'), 'utf8').then(JSON.parse),
-    imageRecord('library.png'),
-    imageRecord('chim-alan.png'),
+    imageRecord('library-wide.png'),
+    imageRecord('chim-alan-wide.png'),
   ])
-  const library = await compileRoomCutouts(libraryRoomData(appSource, libraryMapMask), libraryImage, assetOutputRoot)
+  const library = await compileRoomCutouts(libraryRoomData(appSource, libraryMapMask, libraryImage), libraryImage, assetOutputRoot)
   const chim = await compileRoomCutouts(chimRoomData(chimSource), chimImage, assetOutputRoot)
   const output = {
     schemaVersion: 1,

@@ -40,4 +40,11 @@ describe('NavigationGraph', () => {
     expect(graph.findPath('spawn', 'missing')).toEqual([])
     expect(graph.findPath('spawn', 'seat', new Set(['seat']))).toEqual([])
   })
+
+  it('exposes only directly connected neighbors for directional keyboard movement', () => {
+    const graph = new NavigationGraph(nodes, edges)
+
+    expect(graph.neighbors('aisle').map((node) => node.id)).toEqual(['spawn', 'stair-top'])
+    expect(graph.neighbors('missing')).toEqual([])
+  })
 })

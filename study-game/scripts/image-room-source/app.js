@@ -140,7 +140,7 @@ const WALKABLE_TILES = {
   'right-mid-link-a': {x: 69.5, y: 50.25, neighbors: ['right-spine-upper', 'right-mid-link-b']},
   'right-mid-link-b': {x: 66.25, y: 50.25, neighbors: ['right-mid-link-a', 'right-mid-link-c']},
   'right-mid-link-c': {x: 63, y: 53.5, neighbors: ['right-mid-link-b', 'middle-right-aisle']},
-  'seat-front-left-stand': {x: 42, y: 37.4, neighbors: ['upper-left-aisle', 'upper-center-aisle']},
+  'seat-front-left-stand': {x: 43, y: 39, neighbors: ['upper-left-aisle', 'upper-center-aisle']},
   'seat-front-desk-stand': {x: 55, y: 45.2, neighbors: ['upper-center-aisle']},
   'seat-front-right-stand': {x: 67, y: 45.7, neighbors: ['upper-right-aisle', 'upper-center-aisle']},
   'seat-lamp-left-stand': {x: 26, y: 53.2, neighbors: ['middle-left-aisle']},
@@ -248,7 +248,7 @@ const seatCopy = {
 };
 
 const CHAIR_SEAT_TARGETS = [
-  {seatId: 'front-left', label: 'Upper desk', emptyVisualRef: 'library-habbo:front-left-chair', sitX: 46.2, sitY: 29.5, standX: 42, standY: 37.4, facing: 'south-east', sitPose: 'front', visualPose: 'hidden', visualWidth: 1, visualHeight: 1, visualHidden: true, occlusion: null, entryTileId: 'upper-left-aisle'},
+  {seatId: 'front-left', label: 'Upper desk', emptyVisualRef: 'library-wide:front-left-chair', sitX: 46.2, sitY: 34, standX: 43, standY: 39, facing: 'south-east', sitPose: 'front', visualPose: 'hidden', visualWidth: 1, visualHeight: 1, visualHidden: true, occlusion: null, entryTileId: 'upper-left-aisle'},
   {seatId: 'front-desk', label: 'Upper desk', emptyVisualRef: 'library-habbo:front-desk-chair', sitX: 57.3, sitY: 40.0, standX: 55, standY: 45.2, facing: 'north', assetDirection: 'east', bodyDirection: 'east', headDirection: 'east', avatarAction: 'sit', seatZ: 0, spriteOffset: {x: 1.1, y: 0.55}, avatarClip: 'polygon(0 0, 100% 0, 100% 44%, 76% 44%, 76% 40%, 0 40%)', sitPose: 'front', layerBounds: {left: 55.2, top: 28.7, width: 6.2, height: 7.6}, foregroundMask: [{x: 54.4, y: 35.1}, {x: 61.2, y: 35.6}, {x: 61.4, y: 41.3}, {x: 56.2, y: 42.7}, {x: 54.0, y: 37.5}], occlusion: {x1: 55.2, y1: 35.7, x2: 60.4, y2: 41.2}, entryTileId: 'upper-center-aisle'},
   {seatId: 'front-right', label: 'Upper desk', emptyVisualRef: 'library-habbo:front-right-chair', sitX: 65.0, sitY: 36.8, standX: 67, standY: 45.7, facing: 'north', sitPose: 'front', layerBounds: {left: 61.1, top: 25.8, width: 6.2, height: 7.6}, occlusion: {x1: 63.0, y1: 32.7, x2: 66.5, y2: 36.9}, entryTileId: 'upper-right-aisle'},
   {seatId: 'lamp-left', label: 'Middle desk', emptyVisualRef: 'library-habbo:lamp-left-chair', sitX: 26.7, sitY: 44.6, standX: 26, standY: 53.2, facing: 'south', sitPose: 'front', layerBounds: {left: 23.0, top: 36.7, width: 7.2, height: 8.7}, occlusion: {x1: 25.3, y1: 42.0, x2: 28.1, y2: 44.8}, entryTileId: 'middle-left-aisle'},

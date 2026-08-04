@@ -38,6 +38,8 @@ describe('LocalStudyAdapter', () => {
 
     expect(() => adapter.equipWearable('premium-cap')).toThrowError(/WEARABLE_NOT_OWNED/)
     expect(adapter.equipWearable('beanie').equippedWearableIds).toContain('beanie')
+    expect(adapter.equipWearable('bucket-hat', 'hat').equippedWearableIds).toEqual(['bucket-hat'])
+    expect(() => adapter.equipWearable('boots', 'top')).toThrowError(/WEARABLE_SLOT_REQUIRED/)
     expect(() => adapter.purchaseWearable('premium-cap', 'fake-key')).toThrowError(/LOCAL_POINTS_READ_ONLY/)
     expect(adapter.session().points.global).toBe(240)
     expect('awardPoints' in adapter).toBe(false)
@@ -53,5 +55,26 @@ describe('LocalStudyAdapter', () => {
     expect(() => adapter.sendChat('third')).toThrowError(/CHAT_RATE_LIMITED/)
     now += 10_001
     expect(adapter.sendChat('allowed again').text).toBe('allowed again')
+  })
+
+  it('keeps local preview chat scoped to its room and strips spoofing controls', async () => {
+    const adapter = new LocalStudyAdapter({ now: () => 1_000 })
+
+    expect(adapter.sendChat('hello\u202e  library', 'library').text).toBe('hello library')
+    adapter.sendChat('hello outside', 'chim-alan')
+
+    expect((await adapter.refreshChat('library')).map((message) => message.text)).toEqual(['hello library'])
+    expect((await adapter.refreshChat('chim-alan')).map((message) => message.text)).toEqual(['hello outside'])
+  })
+
+  it('lists campus events and registers without minting local Gold', async () => {
+    const adapter = new LocalStudyAdapter({ now: () => 1_000 })
+
+    const events = await adapter.listEvents()
+    expect(events.map((event) => event.title)).toContain('Campus Care Saturday')
+    expect(events.map((event) => event.title)).toContain('TEDU Live: Auditorium')
+    const registered = await adapter.registerEvent(events[0]!.id)
+    expect(registered.registered).toBe(true)
+    expect(adapter.session().points.global).toBe(240)
   })
 })

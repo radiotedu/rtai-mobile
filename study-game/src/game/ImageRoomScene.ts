@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 
 import { LocalStudyAdapter } from '../adapters/LocalStudyAdapter'
-import type { StudyAdapter, StudyPresence } from '../adapters/StudyAdapter'
+import type { StudyAdapter, StudyChatMessage, StudyPresence } from '../adapters/StudyAdapter'
 import { DIRECTIONS, type AvatarAction, type AvatarAppearance, type AvatarLayerSlot, type Direction8 } from '../avatar/AvatarAppearance'
 import { DEFAULT_AVATAR_ASSET_MANIFEST } from '../avatar/AvatarAssetManifest'
 import { resolveInitialAvatarAppearance } from '../avatar/InitialAvatarAppearance'
@@ -16,7 +16,7 @@ import type { StudySessionTracker } from '../session/StudySessionTracker'
 import { StudyPresenceLoop } from '../session/StudyPresenceLoop'
 import { AvatarController } from './AvatarController'
 import { AvatarActivityMachine, type ActivityToken } from './AvatarActivityMachine'
-import { calculateOverviewZoom } from './CameraFraming'
+import { calculateOverviewZoom, calculatePlayableZoom } from './CameraFraming'
 import { imageRoomActorDepth } from './ImageRoomDepth'
 import { buildMotionPath, sampleMotionPathAtTime, walkFrameAtDistance } from './PathMotion'
 import { SeatReservationBook } from './SeatReservationBook'
@@ -25,10 +25,25 @@ import { resolveTouchIntent, type TouchWorldPoint } from './TouchIntentResolver'
 const ACTION_FRAMES: Record<AvatarAction, number> = { idle: 1, walk: 4, sit: 1, stand: 3 }
 const RENDERED_LAYERS: AvatarLayerSlot[] = ['body', 'skin', 'hair', 'top', 'bottom', 'shoes', 'hat']
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/avatars/engine-proof`
+const CAMPUS_CAT_ASSETS = ['campus-cat-tarcin.png', 'campus-cat-benek.png', 'campus-cat-komur.png'] as const
 const ROOM_BASE = import.meta.env.BASE_URL
 const SUPPORTED_ITEMS = ['short-hair', 'radio-hoodie', 'varsity-jacket', 'jeans', 'black-cargos', 'sneakers', 'boots', 'bucket-hat', 'beanie'] as const
 const AVATAR_WALK_SPEED = 280
 const AVATAR_WALK_STRIDE = 18
+const CAMPUS_CAT_NAMES = ['Tarçın', 'Benek', 'Kömür'] as const
+const CAMPUS_CAT_COUNTS: Readonly<Record<ImageRoomId, number>> = Object.freeze({
+  library: 1,
+  'chim-alan': 2,
+  'sports-center': 1,
+  auditorium: 1,
+})
+
+type CampusCat = {
+  name: (typeof CAMPUS_CAT_NAMES)[number]
+  nodeId: string
+  roomId: ImageRoomId
+  sprite: Phaser.GameObjects.Sprite
+}
 
 type GameState = 'ready' | 'walking' | 'stair' | 'sitting' | 'seated' | 'standing' | 'spark' | 'rock'
 
@@ -99,10 +114,46 @@ export class ImageRoomScene extends Phaser.Scene {
   #seatedUpperSprites = new Map<AvatarLayerSlot, Phaser.GameObjects.Sprite>()
   #avatarController!: AvatarController
   #wardrobe!: WardrobeController
+  #wearableOperations = new Map<string, Promise<void>>()
   #roomObjects: Phaser.GameObjects.GameObject[] = []
   #seatForegroundObjects: Phaser.GameObjects.GameObject[] = []
   #socialObjects: Phaser.GameObjects.GameObject[] = []
+  #campusCats: CampusCat[] = []
+  #chatBubbles = new Map<string, Phaser.GameObjects.Container>()
+  #auditoriumScreenEvent: Phaser.Time.TimerEvent | null = null
   #intentMarker: Phaser.GameObjects.GameObject | null = null
+  #keyboardHandler = (event: KeyboardEvent): void => {
+    const target = event.target
+    if (target instanceof HTMLElement && (
+      target.isContentEditable
+      || target.matches('input, textarea, select, button')
+    )) return
+
+    const direction = new Map<string, { x: number; y: number }>([
+      ['arrowup', { x: 0, y: -1 }],
+      ['w', { x: 0, y: -1 }],
+      ['arrowdown', { x: 0, y: 1 }],
+      ['s', { x: 0, y: 1 }],
+      ['arrowleft', { x: -1, y: 0 }],
+      ['a', { x: -1, y: 0 }],
+      ['arrowright', { x: 1, y: 0 }],
+      ['d', { x: 1, y: 0 }],
+    ]).get(event.key.toLowerCase())
+    if (!direction) return
+    event.preventDefault()
+    void this.moveByDirection(direction.x, direction.y)
+  }
+  #chatMessageHandler = (event: Event): void => {
+    const detail = (event as CustomEvent<{ message: StudyChatMessage; roomId: ImageRoomId }>).detail
+    if (!detail?.message || detail.roomId !== this.#roomId) return
+    this.#showChatBubble(detail.message)
+  }
+  #ignoreChangedHandler = (event: Event): void => {
+    const detail = (event as CustomEvent<{ userId: string; ignored: boolean }>).detail
+    if (!detail?.ignored) return
+    this.#chatBubbles.get(detail.userId)?.destroy()
+    this.#chatBubbles.delete(detail.userId)
+  }
   #presenceRefreshBusy = false
   #presenceLoop: StudyPresenceLoop | null = null
   readonly #adapter: StudyAdapter
@@ -117,13 +168,18 @@ export class ImageRoomScene extends Phaser.Scene {
   }
 
   preload(): void {
+    CAMPUS_CAT_ASSETS.forEach((asset, index) => {
+      this.load.image(`campus-cat:${index}`, `${import.meta.env.BASE_URL}assets/npcs/${asset}`)
+    })
     for (const room of Object.values(IMAGE_ROOMS)) {
       this.load.image(`room:${room.id}`, `${ROOM_BASE}${room.image.url}`)
       for (const occluder of room.occluders) {
         this.load.image(`occluder:${room.id}:${occluder.id}`, `${ROOM_BASE}${occluder.asset.url}`)
       }
       for (const seat of room.seats) {
-        this.load.image(`seat-foreground:${room.id}:${seat.id}`, `${ROOM_BASE}${seat.foregroundAsset.url}`)
+        if (seat.foregroundAsset) {
+          this.load.image(`seat-foreground:${room.id}:${seat.id}`, `${ROOM_BASE}${seat.foregroundAsset.url}`)
+        }
       }
     }
     for (const action of Object.keys(ACTION_FRAMES) as AvatarAction[]) {
@@ -173,6 +229,7 @@ export class ImageRoomScene extends Phaser.Scene {
     this.#createAvatar()
     this.#renderRoom(this.#initialRoom)
     this.#bindPointerMovement()
+    this.#bindKeyboardMovement()
     this.#bindHud()
     this.#exposeDebugApi()
     this.#presenceLoop = new StudyPresenceLoop(
@@ -180,12 +237,17 @@ export class ImageRoomScene extends Phaser.Scene {
       () => this.#refreshSocialActors(),
     )
     this.#presenceLoop.start()
+    window.addEventListener('radiotedu:study-chat-message', this.#chatMessageHandler)
+    window.addEventListener('radiotedu:study-ignore-changed', this.#ignoreChangedHandler)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.#presenceLoop?.stop()
       this.#presenceLoop = null
       const ownerId = this.#adapter.session().account.id
       if (this.#seatReservations.releaseOwner(ownerId) > 0) void this.#adapter.releaseSeat()
       void this.#sessionTracker?.stood().catch(() => undefined)
+      window.removeEventListener('keydown', this.#keyboardHandler)
+      window.removeEventListener('radiotedu:study-chat-message', this.#chatMessageHandler)
+      window.removeEventListener('radiotedu:study-ignore-changed', this.#ignoreChangedHandler)
     })
     this.scale.on(Phaser.Scale.Events.RESIZE, this.#fitCamera, this)
     document.documentElement.dataset.studyReady = 'true'
@@ -209,10 +271,76 @@ export class ImageRoomScene extends Phaser.Scene {
   }
 
   #clearRoomObjects(): void {
+    this.#auditoriumScreenEvent?.remove(false)
+    this.#auditoriumScreenEvent = null
+    delete document.documentElement.dataset.auditoriumScreen
     for (const object of [...this.#roomObjects, ...this.#seatForegroundObjects, ...this.#socialObjects]) object.destroy()
     this.#roomObjects = []
     this.#seatForegroundObjects = []
     this.#socialObjects = []
+    this.#campusCats = []
+    this.#chatBubbles.clear()
+    delete document.documentElement.dataset.campusCats
+    delete document.documentElement.dataset.lastCampusCat
+    delete document.documentElement.dataset.chatBubble
+    delete document.documentElement.dataset.chatSpeaker
+  }
+
+  #showChatBubble(message: StudyChatMessage): void {
+    const accountId = this.#adapter.session().account.id
+    let anchor = message.userId === accountId
+      ? { x: this.#avatar.x, y: this.#avatar.y }
+      : null
+    if (!anchor) {
+      const presence = this.#adapter.presence(this.#roomId).find((person) => person.userId === message.userId)
+      if (!presence) return
+      const seat = presence.seatId ? this.#room.seats.find((candidate) => candidate.id === presence.seatId) : null
+      const node = this.#graph.node(presence.nodeId)
+      if (!seat && !node) return
+      anchor = roomPointToPixel(this.#room, seat?.sit ?? node!)
+    }
+
+    this.#chatBubbles.get(message.userId)?.destroy()
+    const safeText = message.text.slice(0, 180)
+    const name = this.add.text(0, 0, message.displayName, {
+      color: '#1c5546', fontFamily: 'Segoe UI, sans-serif', fontSize: '11px', fontStyle: 'bold',
+    })
+    const body = this.add.text(0, 16, safeText, {
+      color: '#17201e', fontFamily: 'Segoe UI, sans-serif', fontSize: '13px',
+      lineSpacing: 2, wordWrap: { width: 210, useAdvancedWrap: true },
+    })
+    const bubbleWidth = Phaser.Math.Clamp(Math.max(name.width, body.width) + 22, 92, 232)
+    const bubbleHeight = body.height + 36
+    name.setX(-bubbleWidth / 2 + 11)
+    body.setX(-bubbleWidth / 2 + 11)
+    const background = this.add.graphics()
+    background.fillStyle(0xf7fbf8, 0.98).fillRoundedRect(-bubbleWidth / 2, -8, bubbleWidth, bubbleHeight, 8)
+    background.lineStyle(2, 0x263d37, 1).strokeRoundedRect(-bubbleWidth / 2, -8, bubbleWidth, bubbleHeight, 8)
+    background.fillStyle(0xf7fbf8, 0.98).fillTriangle(-7, bubbleHeight - 8, 7, bubbleHeight - 8, 0, bubbleHeight + 3)
+    const container = this.add.container(anchor.x, anchor.y - bubbleHeight - 100, [background, name, body])
+      .setDepth(900_000_000)
+    this.#chatBubbles.set(message.userId, container)
+    this.#roomObjects.push(container)
+    document.documentElement.dataset.chatBubble = safeText
+    document.documentElement.dataset.chatSpeaker = message.displayName
+
+    this.time.delayedCall(4_500, () => {
+      if (!container.active) return
+      this.tweens.add({
+        targets: container,
+        alpha: 0,
+        y: container.y - 10,
+        duration: 220,
+        onComplete: () => {
+          if (this.#chatBubbles.get(message.userId) === container) this.#chatBubbles.delete(message.userId)
+          if (document.documentElement.dataset.chatBubble === safeText) {
+            delete document.documentElement.dataset.chatBubble
+            delete document.documentElement.dataset.chatSpeaker
+          }
+          container.destroy()
+        },
+      })
+    })
   }
 
   #renderRoom(roomId: ImageRoomId): void {
@@ -230,9 +358,11 @@ export class ImageRoomScene extends Phaser.Scene {
 
     this.#background = this.add.image(0, 0, `room:${roomId}`).setOrigin(0).setDepth(-100_000)
     this.#roomObjects.push(this.#background)
+    if (roomId === 'auditorium') this.#createAuditoriumEventScreen()
     this.#createOcclusionLayers()
     this.#createWorldActors()
     this.#createSocialActors()
+    this.#createCampusCats()
 
     const spawn = this.#graph.node(this.#currentNodeId)!
     const pixel = roomPointToPixel(this.#room, spawn)
@@ -257,9 +387,22 @@ export class ImageRoomScene extends Phaser.Scene {
 
   #fitCamera(): void {
     const viewport = this.scale.gameSize
-    const zoom = calculateOverviewZoom(viewport, this.#room.image)
-    this.cameras.main.setZoom(zoom)
-    this.cameras.main.centerOn(this.#room.image.width / 2, this.#room.image.height / 2)
+    const desktopStage = viewport.width / viewport.height >= 1.45
+    const zoom = desktopStage
+      ? calculateOverviewZoom(viewport, this.#room.image)
+      : calculatePlayableZoom(viewport, this.#room.image)
+    const camera = this.cameras.main
+    camera.stopFollow()
+    camera.removeBounds()
+    if (!desktopStage) {
+      camera.setBounds(0, 0, this.#room.image.width, this.#room.image.height)
+      camera.setZoom(zoom)
+      camera.startFollow(this.#avatar, true, 0.12, 0.12)
+      camera.centerOn(this.#avatar.x, this.#avatar.y)
+      return
+    }
+    camera.setZoom(zoom)
+    camera.centerOn(this.#room.image.width / 2, this.#room.image.height / 2)
   }
 
   #createOcclusionLayers(): void {
@@ -268,6 +411,95 @@ export class ImageRoomScene extends Phaser.Scene {
       image.setDepth(occluder.depthY * 100)
       this.#roomObjects.push(image)
     }
+  }
+
+  #createCampusCats(): void {
+    const reservedNodes = new Set([
+      this.#room.spawnNodeId,
+      ...this.#room.seats.flatMap((seat) => [seat.approachNodeId]),
+    ])
+    const candidates = this.#room.nodes.filter((node) => !reservedNodes.has(node.id))
+    const fallback = this.#room.nodes.filter((node) => node.id !== this.#room.spawnNodeId)
+    const available = candidates.length > 0 ? candidates : fallback
+    const count = Math.min(CAMPUS_CAT_COUNTS[this.#roomId], available.length)
+    const remaining = [...available]
+
+    for (let index = 0; index < count; index += 1) {
+      const candidateIndex = Phaser.Math.Between(0, Math.max(0, remaining.length - 1))
+      const [node] = remaining.splice(candidateIndex, 1)
+      if (!node) break
+      const pixel = roomPointToPixel(this.#room, node)
+      const name = CAMPUS_CAT_NAMES[(index + this.#room.id.length) % CAMPUS_CAT_NAMES.length]!
+      const sprite = this.add.sprite(pixel.x, pixel.y, `campus-cat:${CAMPUS_CAT_NAMES.indexOf(name)}`)
+        .setOrigin(0.5, 0.88)
+        .setScale(0.35)
+        .setDepth(node.y * 100 + 45)
+        .setInteractive({ useHandCursor: true })
+      const cat: CampusCat = { name, nodeId: node.id, roomId: this.#roomId, sprite }
+      sprite.setData('campusCatName', name)
+      sprite.on('pointerdown', (
+        _pointer: Phaser.Input.Pointer,
+        _localX: number,
+        _localY: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
+        event.stopPropagation()
+        this.#showCampusCatGreeting(cat)
+      })
+      this.#campusCats.push(cat)
+      this.#roomObjects.push(sprite)
+      this.#scheduleCampusCatWander(cat)
+    }
+
+    document.documentElement.dataset.campusCats = String(this.#campusCats.length)
+  }
+
+  #scheduleCampusCatWander(cat: CampusCat): void {
+    this.time.delayedCall(Phaser.Math.Between(1_800, 4_800), () => {
+      if (!cat.sprite.active || cat.roomId !== this.#roomId) return
+      const neighbors = this.#graph.neighbors(cat.nodeId)
+      if (neighbors.length === 0) return
+      const target = Phaser.Utils.Array.GetRandom([...neighbors])
+      const pixel = roomPointToPixel(this.#room, target)
+      cat.sprite.setFlipX(pixel.x < cat.sprite.x)
+      this.tweens.add({
+        targets: cat.sprite,
+        x: pixel.x,
+        y: pixel.y,
+        duration: Phaser.Math.Between(1_350, 2_350),
+        ease: 'Sine.InOut',
+        onUpdate: () => cat.sprite.setDepth(cat.sprite.y * 100 + 45),
+        onComplete: () => {
+          cat.nodeId = target.id
+          this.#scheduleCampusCatWander(cat)
+        },
+      })
+    })
+  }
+
+  #showCampusCatGreeting(cat: CampusCat): void {
+    if (!cat.sprite.active) return
+    document.documentElement.dataset.lastCampusCat = cat.name
+    const copy = this.add.text(0, 0, `${cat.name}\nCampus cat · purrs softly`, {
+      align: 'center',
+      color: '#17201e',
+      fontFamily: 'Segoe UI, sans-serif',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      lineSpacing: 3,
+      padding: { x: 9, y: 7 },
+      backgroundColor: '#f7fbf8',
+    }).setOrigin(0.5, 1)
+    const bubble = this.add.container(cat.sprite.x, cat.sprite.y - 76, [copy]).setDepth(900_000_000)
+    this.#roomObjects.push(bubble)
+    this.tweens.add({
+      targets: bubble,
+      alpha: 0,
+      y: bubble.y - 8,
+      delay: 1_500,
+      duration: 240,
+      onComplete: () => bubble.destroy(),
+    })
   }
 
   #createWorldActors(): void {
@@ -382,6 +614,7 @@ export class ImageRoomScene extends Phaser.Scene {
     this.#seatForegroundObjects = []
     if (!seat) return
     const asset = seat.foregroundAsset
+    if (!asset) return
     const image = this.add.image(asset.x, asset.y, `seat-foreground:${this.#roomId}:${seat.id}`)
       .setOrigin(0)
       .setDepth(Math.max(seat.sit.y * 100 + 20, this.#seatedUpperAvatar.depth + 5))
@@ -458,7 +691,7 @@ export class ImageRoomScene extends Phaser.Scene {
     beforeRoute?: () => Promise<boolean>,
   ): Promise<void> {
     const resumeState = this.#activity.snapshot().state
-    this.#cancelActiveRoute()
+    this.#cancelActiveRoute(targetId)
     if (this.#seatTransitionPromise) await this.#seatTransitionPromise
     if (!this.#activity.isCurrent(activityToken)) return
     if (this.#seatedSeat || this.#standPromise) {
@@ -549,26 +782,138 @@ export class ImageRoomScene extends Phaser.Scene {
     void this.#pushPresence()
   }
 
-  #cancelActiveRoute(): void {
+  #cancelActiveRoute(targetId?: string): void {
     if (!this.#routeTween) return
     const candidates = [...new Set([this.#activeSegmentFromId, this.#activeSegmentToId])]
       .filter((id): id is string => Boolean(id))
       .map((id) => this.#graph.node(id))
       .filter((node): node is NavigationNode => Boolean(node))
     if (candidates.length > 0) {
-      const nearest = candidates
-        .map((node) => ({ node, pixel: roomPointToPixel(this.#room, node) }))
-        .sort((left, right) => (
-          Math.hypot(left.pixel.x - this.#avatar.x, left.pixel.y - this.#avatar.y)
-          - Math.hypot(right.pixel.x - this.#avatar.x, right.pixel.y - this.#avatar.y)
-        ))[0]
-      this.#currentNodeId = nearest!.node.id
+      const ranked = candidates.map((node) => {
+        const pixel = roomPointToPixel(this.#room, node)
+        const entryDistance = Math.hypot(pixel.x - this.#avatar.x, pixel.y - this.#avatar.y)
+        if (!targetId) return { node, cost: entryDistance }
+
+        const route = smoothNavigationRoute(
+          this.#graph.findPath(node.id, targetId).map((id) => this.#graph.node(id)!),
+          this.#room.edges,
+        )
+        if (route.length === 0) return { node, cost: Number.POSITIVE_INFINITY }
+
+        let remainingDistance = 0
+        for (let index = 1; index < route.length; index += 1) {
+          const from = roomPointToPixel(this.#room, route[index - 1]!)
+          const to = roomPointToPixel(this.#room, route[index]!)
+          remainingDistance += Math.hypot(to.x - from.x, to.y - from.y)
+        }
+        return { node, cost: entryDistance + remainingDistance }
+      }).sort((left, right) => left.cost - right.cost)
+      this.#currentNodeId = ranked[0]!.node.id
     }
     const tween = this.#routeTween
     this.#routeTween = null
     this.#activeSegmentFromId = null
     this.#activeSegmentToId = null
     tween.stop()
+  }
+
+  #createAuditoriumEventScreen(): void {
+    const slides = [
+      { id: 'tedu', eyebrow: 'TED UNIVERSITY', title: 'TEDU', subtitle: 'CAMPUS LIVE', color: 0xffcc4d },
+      { id: 'radiotedu', eyebrow: 'ON AIR', title: 'RADIOTEDU', subtitle: 'STUDENT RADIO', color: 0xff334f },
+      { id: 'tedu-live', eyebrow: 'AUDITORIUM EVENT', title: 'TEDU LIVE', subtitle: 'JOIN THE SHOW · +30 GOLD', color: 0x7ff5db },
+      { id: 'campus-care', eyebrow: 'CAMPUS EVENT', title: 'CARE DAY', subtitle: 'JOIN · EARN 40 GOLD', color: 0x8fd7ff },
+    ] as const
+
+    const screen = this.add.container(785, 240).setDepth(-90_000)
+    const shell = this.add.graphics()
+    shell.fillStyle(0x04080f, 0.96).fillRoundedRect(-137, -104, 274, 208, 8)
+    shell.lineStyle(5, 0x172a3b, 1).strokeRoundedRect(-137, -104, 274, 208, 8)
+    shell.lineStyle(2, 0x57e7ff, 0.72).strokeRoundedRect(-128, -95, 256, 190, 5)
+    for (let y = -88; y <= 88; y += 8) {
+      shell.lineStyle(1, 0x66ddeb, 0.08).lineBetween(-123, y, 123, y)
+    }
+
+    const cornerPixels = this.add.graphics()
+    cornerPixels.fillStyle(0xffcc4d, 1)
+      .fillRect(-126, -93, 18, 4).fillRect(-126, -93, 4, 18)
+      .fillRect(108, -93, 18, 4).fillRect(122, -93, 4, 18)
+      .fillRect(-126, 89, 18, 4).fillRect(-126, 75, 4, 18)
+      .fillRect(108, 89, 18, 4).fillRect(122, 75, 4, 18)
+
+    const signal = this.add.graphics().setPosition(-93, 42)
+    signal.fillStyle(0xff334f, 1).fillCircle(0, 15, 4)
+    signal.lineStyle(3, 0xff334f, 1)
+    for (const radius of [11, 18, 25]) {
+      signal.beginPath().arc(0, 15, radius, Phaser.Math.DegToRad(285), Phaser.Math.DegToRad(355), false).strokePath()
+    }
+
+    const eyebrow = this.add.text(0, -72, '', {
+      color: '#ffcc4d', fontFamily: 'monospace', fontSize: '13px', fontStyle: 'bold', letterSpacing: 2,
+    }).setOrigin(0.5)
+    const title = this.add.text(0, -14, '', {
+      color: '#ffffff', fontFamily: 'monospace', fontSize: '28px', fontStyle: 'bold', align: 'center',
+      stroke: '#0b111a', strokeThickness: 4,
+    }).setOrigin(0.5)
+    const subtitle = this.add.text(0, 44, '', {
+      color: '#9fffea', fontFamily: 'monospace', fontSize: '11px', fontStyle: 'bold', letterSpacing: 1,
+    }).setOrigin(0.5)
+    const ticker = this.add.text(0, 78, '● LIVE  •  TEDU CAMPUS  •  EVENTS  •  STUDY', {
+      color: '#d8f8f2', fontFamily: 'monospace', fontSize: '9px',
+    }).setOrigin(0.5)
+    const scanline = this.add.rectangle(0, -83, 242, 5, 0x8ffff0, 0.2)
+
+    screen.add([shell, cornerPixels, signal, eyebrow, title, subtitle, ticker, scanline])
+    this.#roomObjects.push(screen)
+    this.tweens.add({ targets: scanline, y: 83, duration: 1500, repeat: -1, ease: 'Linear' })
+    this.tweens.add({ targets: cornerPixels, alpha: { from: 0.45, to: 1 }, duration: 620, yoyo: true, repeat: -1 })
+
+    let slideIndex = 0
+    const showSlide = () => {
+      const slide = slides[slideIndex]!
+      document.documentElement.dataset.auditoriumScreen = slide.id
+      eyebrow.setText(slide.eyebrow).setColor(`#${slide.color.toString(16).padStart(6, '0')}`)
+      title.setText(slide.title)
+      subtitle.setText(slide.subtitle)
+      signal.setVisible(slide.id === 'radiotedu')
+      title.setX(slide.id === 'radiotedu' ? 18 : 0)
+      this.tweens.add({
+        targets: [eyebrow, title, subtitle],
+        alpha: { from: 0, to: 1 },
+        scaleX: { from: 0.92, to: 1 },
+        duration: 260,
+        ease: 'Stepped',
+      })
+      slideIndex = (slideIndex + 1) % slides.length
+    }
+    showSlide()
+    this.#auditoriumScreenEvent = this.time.addEvent({ delay: 3000, loop: true, callback: showSlide })
+  }
+
+  async moveByDirection(x: number, y: number): Promise<void> {
+    const origin = this.#graph.node(this.#currentNodeId)
+    const requestedLength = Math.hypot(x, y)
+    if (!origin || requestedLength === 0) return
+
+    const target = this.#graph.neighbors(origin.id)
+      .map((candidate) => {
+        const dx = candidate.x - origin.x
+        const dy = candidate.y - origin.y
+        const length = Math.hypot(dx, dy)
+        return {
+          candidate,
+          score: length === 0 ? -1 : ((dx * x) + (dy * y)) / (length * requestedLength),
+          distance: length,
+        }
+      })
+      .filter(({ score }) => score > 0.18)
+      .sort((left, right) => right.score - left.score || left.distance - right.distance)[0]
+
+    if (!target) {
+      this.#showActionError('BU YONDE YOL YOK')
+      return
+    }
+    await this.#walkToNode(target.candidate.id)
   }
 
   async walkToSeat(seatId: string): Promise<void> {
@@ -711,7 +1056,19 @@ export class ImageRoomScene extends Phaser.Scene {
     await this.#refreshSocialActors()
   }
 
-  async equip(slot: WardrobeSlot, id: string): Promise<void> {
+  equip(slot: WardrobeSlot, id: string): Promise<void> {
+    const operationKey = `${slot}:${id}`
+    const pending = this.#wearableOperations.get(operationKey)
+    if (pending) return pending
+    let operation: Promise<void>
+    operation = this.#equipOnce(slot, id).finally(() => {
+      if (this.#wearableOperations.get(operationKey) === operation) this.#wearableOperations.delete(operationKey)
+    })
+    this.#wearableOperations.set(operationKey, operation)
+    return operation
+  }
+
+  async #equipOnce(slot: WardrobeSlot, id: string): Promise<void> {
     if (this.#wardrobe.inventory.state(id) === 'locked') {
       await this.#adapter.purchaseWearable(id, globalThis.crypto?.randomUUID?.() ?? `wardrobe-${Date.now()}-${id}`)
       this.#wardrobe.inventory.addOwned(id)
@@ -818,6 +1175,10 @@ export class ImageRoomScene extends Phaser.Scene {
     })
   }
 
+  #bindKeyboardMovement(): void {
+    window.addEventListener('keydown', this.#keyboardHandler)
+  }
+
   #bindHud(): void {
     document.querySelectorAll<HTMLButtonElement>('[data-room-id]').forEach((button) => {
       button.addEventListener('click', () => { void this.switchRoom(button.dataset.roomId as ImageRoomId) })
@@ -843,7 +1204,13 @@ export class ImageRoomScene extends Phaser.Scene {
 
   #syncHud(): void {
     document.documentElement.dataset.roomId = this.#roomId
-    document.documentElement.dataset.hatId = this.#avatarController.appearance.hatId ?? 'none'
+    const appearance = this.#avatarController.appearance
+    const pointBalance = document.querySelector<HTMLElement>('#point-balance')
+    if (pointBalance) pointBalance.textContent = String(this.#adapter.session().points.global)
+    document.documentElement.dataset.topId = appearance.topId
+    document.documentElement.dataset.bottomId = appearance.bottomId
+    document.documentElement.dataset.shoesId = appearance.shoesId
+    document.documentElement.dataset.hatId = appearance.hatId ?? 'none'
     document.querySelectorAll<HTMLButtonElement>('[data-room-id]').forEach((button) => {
       const selected = button.dataset.roomId === this.#roomId
       button.setAttribute('aria-selected', String(selected))
@@ -855,23 +1222,40 @@ export class ImageRoomScene extends Phaser.Scene {
       button.setAttribute('aria-pressed', String(equipped))
       button.dataset.state = equipped ? 'equipped' : this.#wardrobe.inventory.state(button.dataset.wearableId!)
     })
+    const southFrameY = -(DIRECTIONS.indexOf('s') * 96)
+    document.querySelectorAll<HTMLElement>('[data-avatar-preview-layer]').forEach((layer) => {
+      const slot = layer.dataset.avatarPreviewLayer as AvatarLayerSlot
+      const file = textureFile(slot, 'idle', appearance)
+      layer.hidden = !file
+      layer.style.backgroundImage = file ? `url("${ASSET_BASE}/${file}")` : ''
+      layer.style.backgroundPosition = `0 ${southFrameY}px`
+    })
+    const lookName = document.querySelector<HTMLElement>('#wardrobe-look-name')
+    if (lookName) {
+      const readable = (id: string) => id.split('-').map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' ')
+      lookName.textContent = [appearance.topId, appearance.hatId].filter(Boolean).map((id) => readable(id!)).join(' + ')
+    }
     const title = document.querySelector<HTMLElement>('#room-title')
-    if (title) title.textContent = this.#roomId === 'library' ? 'Library' : 'Çim Alan'
+    if (title) title.textContent = this.#room.title
   }
 
   #exposeDebugApi(): void {
     window.__STUDY_GAME_APP__ = {
       switchRoom: (roomId) => this.switchRoom(roomId),
       walkToNode: (nodeId) => this.#walkToNode(nodeId),
+      moveByDirection: (x, y) => this.moveByDirection(x, y),
       walkToSeat: (seatId) => this.walkToSeat(seatId),
       stand: () => this.stand(),
       equip: (slot, id) => this.equip(slot, id),
       tapTargets: () => {
         const camera = this.cameras.main
+        const canvasBounds = this.game.canvas.getBoundingClientRect()
+        const displayScaleX = canvasBounds.width / this.game.canvas.width
+        const displayScaleY = canvasBounds.height / this.game.canvas.height
         const accountId = this.#adapter.session().account.id
         const screen = (world: { x: number; y: number }) => ({
-          x: camera.x + (world.x - camera.worldView.x) * camera.zoom,
-          y: camera.y + (world.y - camera.worldView.y) * camera.zoom,
+          x: canvasBounds.left + (camera.x + (world.x - camera.worldView.x) * camera.zoom) * displayScaleX,
+          y: canvasBounds.top + (camera.y + (world.y - camera.worldView.y) * camera.zoom) * displayScaleY,
         })
         return {
           nodes: this.#room.nodes.map((node) => {
@@ -894,11 +1278,19 @@ export class ImageRoomScene extends Phaser.Scene {
         roomId: this.#roomId,
         state: this.#state,
         nodeId: this.#currentNodeId,
+        activeSegment: this.#activeSegmentFromId && this.#activeSegmentToId
+          ? { fromId: this.#activeSegmentFromId, toId: this.#activeSegmentToId }
+          : null,
         seatId: this.#seatedSeat?.id ?? null,
         position: { x: this.#avatar.x, y: this.#avatar.y },
         z: this.#seatedSeat?.sit.z ?? this.#graph.node(this.#currentNodeId)?.z ?? 0,
         hatId: this.#avatarController.appearance.hatId,
         topId: this.#avatarController.appearance.topId,
+        bottomId: this.#avatarController.appearance.bottomId,
+        shoesId: this.#avatarController.appearance.shoesId,
+        layerTextures: Object.fromEntries(
+          [...this.#avatarSprites].map(([slot, sprite]) => [slot, sprite.visible ? sprite.texture.key : null]),
+        ) as Partial<Record<AvatarLayerSlot, string | null>>,
         sparkLabel: this.#room.actors.spark?.label ?? null,
         camera: {
           zoom: this.cameras.main.zoom,
@@ -920,6 +1312,7 @@ declare global {
     __STUDY_GAME_APP__: {
       switchRoom(roomId: ImageRoomId): Promise<void>
       walkToNode(nodeId: string): Promise<void>
+      moveByDirection(x: number, y: number): Promise<void>
       walkToSeat(seatId: string): Promise<void>
       stand(): Promise<void>
       equip(slot: WardrobeSlot, id: string): Promise<void>
@@ -942,11 +1335,15 @@ declare global {
         roomId: ImageRoomId
         state: GameState
         nodeId: string
+        activeSegment: { fromId: string; toId: string } | null
         seatId: string | null
         position: { x: number; y: number }
         z: number
         hatId: string | null
         topId: string
+        bottomId: string
+        shoesId: string
+        layerTextures: Partial<Record<AvatarLayerSlot, string | null>>
         sparkLabel: string | null
         camera: {
           zoom: number

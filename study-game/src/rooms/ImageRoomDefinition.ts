@@ -1,8 +1,9 @@
 import type { Direction8 } from '../avatar/AvatarAppearance'
 import type { NavigationEdge, NavigationNode } from '../pathfinding/NavigationGraph'
+import { CURATED_CAMPUS_ROOMS } from './CuratedCampusRooms'
 import generatedRooms from './data/image-rooms.generated.json'
 
-export type ImageRoomId = 'library' | 'chim-alan'
+export type ImageRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium'
 
 export type ImageRoomSeat = Readonly<{
   id: string
@@ -12,7 +13,7 @@ export type ImageRoomSeat = Readonly<{
   facing: Direction8
   foregroundMask: readonly Readonly<{ x: number; y: number }>[] | null
   occlusion: Readonly<{ x1: number; y1: number; x2: number; y2: number }> | null
-  foregroundAsset: ImageRoomCutoutAsset
+  foregroundAsset: ImageRoomCutoutAsset | null
 }>
 
 export type ImageRoomActor = Readonly<{
@@ -53,7 +54,9 @@ const rooms = (generatedRooms as unknown as { rooms: Record<ImageRoomId, ImageRo
 
 export const IMAGE_ROOMS: Readonly<Record<ImageRoomId, ImageRoomDefinition>> = Object.freeze({
   library: rooms.library,
-  'chim-alan': rooms['chim-alan'],
+  'chim-alan': Object.freeze({ ...rooms['chim-alan'], title: 'Çim Alan' }),
+  'sports-center': CURATED_CAMPUS_ROOMS['sports-center'],
+  auditorium: CURATED_CAMPUS_ROOMS.auditorium,
 })
 
 export function roomPointToPixel(

@@ -180,8 +180,8 @@
         },
         {
           "id": "seat-front-left-stand",
-          "x": 42,
-          "y": 37.4,
+          "x": 43,
+          "y": 39,
           "z": 0
         },
         {
@@ -252,32 +252,32 @@
         },
         {
           "id": "approach:front-left",
-          "x": 44.49409408546949,
-          "y": 32.70872779161691,
+          "x": 43.684867199209144,
+          "y": 37.92989500123572,
           "z": 0
         },
         {
           "id": "approach:front-desk",
-          "x": 55.86245689764605,
-          "y": 43.25009744880025,
+          "x": 55.23042749600205,
+          "y": 44.67903348729972,
           "z": 0
         },
         {
           "id": "approach:front-right",
-          "x": 65.74669963395097,
-          "y": 40.12281337108178,
+          "x": 66.24198372168064,
+          "y": 42.326827561478865,
           "z": 0
         },
         {
           "id": "approach:lamp-left",
-          "x": 26.4276695900074,
-          "y": 47.945773608480515,
+          "x": 26.220594684083665,
+          "y": 50.4898367384007,
           "z": 0
         },
         {
           "id": "approach:lamp-desk",
-          "x": 31.5683319050183,
-          "y": 43.46793567576998,
+          "x": 31.038829737798324,
+          "y": 44.33631923001075,
           "z": 0
         },
         {
@@ -288,230 +288,230 @@
         },
         {
           "id": "approach:middle-left",
-          "x": 46.49104306874345,
-          "y": 67.42066614942247,
+          "x": 45.404150287221704,
+          "y": 66.83285678798724,
           "z": 0
         },
         {
           "id": "approach:middle-row",
-          "x": 52.701772968422375,
-          "y": 69.6789744052174,
+          "x": 51.86259023398077,
+          "y": 69.1591266936164,
           "z": 0
         },
         {
           "id": "approach:middle-right",
-          "x": 69.10824974736194,
-          "y": 70.6488842212892,
+          "x": 69.03714857720426,
+          "y": 73.24407693204417,
           "z": 0
         },
         {
           "id": "approach:lower-left",
-          "x": 34.891297944014084,
-          "y": 66.125448108857,
+          "x": 34.413918221598045,
+          "y": 68.36546065250148,
           "z": 0
         },
         {
           "id": "approach:lower-row",
-          "x": 51.67628381219475,
-          "y": 72.11260732531498,
+          "x": 52.284786155636105,
+          "y": 71.68567422951338,
           "z": 0
         },
         {
           "id": "approach:lower-right",
-          "x": 59.54513493935253,
-          "y": 74.75104657537614,
+          "x": 59.2554891951082,
+          "y": 75.11103485750839,
           "z": 0
         },
         {
           "id": "approach:upper-back-left",
-          "x": 49.31020948714079,
-          "y": 28.93964293209234,
+          "x": 49.936483981288774,
+          "y": 30.28310273405496,
           "z": 0
         },
         {
           "id": "approach:upper-back-mid",
-          "x": 54.21263683352546,
-          "y": 30.84892138152409,
+          "x": 54.144920007100936,
+          "y": 33.44473306113083,
           "z": 0
         },
         {
           "id": "approach:upper-back-right",
-          "x": 62.48175128795837,
-          "y": 34.170675700307555,
+          "x": 63.1139049993238,
+          "y": 35.783757584481414,
           "z": 0
         },
         {
           "id": "approach:upper-near-left",
-          "x": 41.84295798537466,
-          "y": 36.43531333873005,
+          "x": 42,
+          "y": 37.4,
           "z": 0
         },
         {
           "id": "approach:upper-near-mid",
-          "x": 52.229467476205365,
-          "y": 39.33678000778344,
+          "x": 52.85363397735892,
+          "y": 40.65769051022469,
           "z": 0
         },
         {
           "id": "approach:upper-near-right",
-          "x": 69.22674121184114,
-          "y": 43.797148418972114,
+          "x": 69.48164941474722,
+          "y": 43.57931777285238,
           "z": 0
         },
         {
           "id": "approach:middle-back-left",
-          "x": 29.91829991073385,
-          "y": 37.43655567534918,
+          "x": 30.291123858644262,
+          "y": 39.83660984002243,
           "z": 0
         },
         {
           "id": "approach:middle-back-mid-left",
-          "x": 33.295518957251744,
-          "y": 42.19110439962567,
+          "x": 33.35487308732653,
+          "y": 42.133990048044275,
           "z": 0
         },
         {
           "id": "approach:middle-back-mid-right",
-          "x": 44.217628119733824,
-          "y": 46.741024957870586,
+          "x": 44.52619343752087,
+          "y": 49.20954750016695,
           "z": 0
         },
         {
           "id": "approach:middle-back-right",
-          "x": 48.467524894156746,
-          "y": 50.23603088146926,
+          "x": 48.84412756967924,
+          "y": 49.9358403430093,
           "z": 0
         },
         {
           "id": "approach:middle-front-left-edge",
-          "x": 19.729356241863925,
-          "y": 44.38841964542731,
+          "x": 20.344639480022774,
+          "y": 46.17997966241925,
           "z": 0
         },
         {
           "id": "approach:middle-front-left",
-          "x": 25.41919146571287,
-          "y": 51.10908927656633,
+          "x": 25.98236266212208,
+          "y": 53.13650558363949,
           "z": 0
         },
         {
           "id": "approach:middle-front-mid",
-          "x": 26,
-          "y": 53.2,
+          "x": 27.878613068092932,
+          "y": 52.76647390736317,
           "z": 0
         },
         {
           "id": "approach:middle-front-right",
-          "x": 44.10096627773403,
-          "y": 56.733894579245145,
+          "x": 41.546418162968074,
+          "y": 56.546060159041765,
           "z": 0
         },
         {
           "id": "approach:middle-front-far-right",
-          "x": 45.224440647121504,
-          "y": 57.10523928008524,
+          "x": 45,
+          "y": 56.8,
           "z": 0
         },
         {
           "id": "approach:left-lower-back-left",
-          "x": 10.463205641601522,
-          "y": 44.977648228005826,
+          "x": 9.313472342698716,
+          "y": 44.37747298392449,
           "z": 0
         },
         {
           "id": "approach:left-lower-back-mid",
-          "x": 19.349705601161645,
-          "y": 50.34560632127448,
+          "x": 17.217404849852322,
+          "y": 49.81911230860551,
           "z": 0
         },
         {
           "id": "approach:left-lower-back-right",
-          "x": 21.731382901100133,
-          "y": 57.0359037680175,
+          "x": 22.112134050751138,
+          "y": 59.426174874159926,
           "z": 0
         },
         {
           "id": "approach:left-lower-front-left",
-          "x": 7.938233567448461,
-          "y": 59.09791839071864,
+          "x": 8.535076106597598,
+          "y": 60.99377116213355,
           "z": 0
         },
         {
           "id": "approach:left-lower-front-mid",
-          "x": 20.01613501166253,
-          "y": 63.40588034869642,
+          "x": 18.907435489764314,
+          "y": 62.81356142603847,
           "z": 0
         },
         {
           "id": "approach:left-lower-front-right",
-          "x": 25.72863276378255,
-          "y": 69.90825422097532,
+          "x": 26.294871085730204,
+          "y": 71.92547824291385,
           "z": 0
         },
         {
           "id": "approach:left-edge-back",
-          "x": 2.0334325126493282,
-          "y": 43.087975397054805,
+          "x": 2.6493930482782075,
+          "y": 44.87481586978002,
           "z": 0
         },
         {
           "id": "approach:left-edge-front",
-          "x": 4.257604203279394,
-          "y": 65.03894689836129,
+          "x": 4.08847907161798,
+          "y": 64.88688944053727,
           "z": 0
         },
         {
           "id": "approach:right-mid-back-left",
-          "x": 63.939871872419644,
-          "y": 53.002945946954334,
+          "x": 64.5259890800241,
+          "y": 54.08193444277165,
           "z": 0
         },
         {
           "id": "approach:right-mid-back-mid",
-          "x": 68.59855448596643,
-          "y": 56.01899208229797,
+          "x": 69.11658148949681,
+          "y": 58.1720418157211,
           "z": 0
         },
         {
           "id": "approach:right-mid-back-right",
-          "x": 81.93485955918764,
-          "y": 57.96884587613322,
+          "x": 80.6341733516479,
+          "y": 57.34677855948378,
           "z": 0
         },
         {
           "id": "approach:right-mid-front-left",
-          "x": 59.570372372173864,
-          "y": 64.79316463694212,
+          "x": 59.73273885487963,
+          "y": 64.9751578373376,
           "z": 0
         },
         {
           "id": "approach:right-mid-front-mid",
-          "x": 65.92176658622708,
-          "y": 69.84858112124473,
+          "x": 66,
+          "y": 72,
           "z": 0
         },
         {
           "id": "approach:right-mid-front-right",
-          "x": 68.29379299349019,
-          "y": 71.47066315534842,
+          "x": 70.47861306809293,
+          "y": 70.96647390736317,
           "z": 0
         },
         {
           "id": "approach:bottom-back-left",
-          "x": 39.71886637818519,
-          "y": 63.024756999106515,
+          "x": 40.20113676384215,
+          "y": 65.25525753276996,
           "z": 0
         },
         {
           "id": "approach:bottom-back-mid-left",
-          "x": 48.108308737125334,
-          "y": 69.0938844251244,
+          "x": 47.53554568520266,
+          "y": 70.11489682203003,
           "z": 0
         },
         {
           "id": "approach:bottom-back-mid-right",
-          "x": 57.33867491651633,
-          "y": 73.78489095042524,
+          "x": 56.71841662430536,
+          "y": 75.53933583410769,
           "z": 0
         },
         {
@@ -522,8 +522,8 @@
         },
         {
           "id": "approach:bottom-front-left",
-          "x": 37.718131559506254,
-          "y": 71.83467136658446,
+          "x": 37.97187029640309,
+          "y": 72.14045907515244,
           "z": 0
         },
         {
@@ -540,20 +540,20 @@
         },
         {
           "id": "approach:bottom-front-right",
-          "x": 60.26748176754603,
-          "y": 84.24703724596058,
+          "x": 60.80219459770687,
+          "y": 84.63755785225784,
           "z": 0
         },
         {
           "id": "approach:far-left-partial-back",
-          "x": 2.7865341205933607,
-          "y": 57.35717029880016,
+          "x": 3.2963812230679146,
+          "y": 58.16746301523294,
           "z": 0
         },
         {
           "id": "approach:far-left-partial-front",
-          "x": 11.567691277407718,
-          "y": 71.86104362488105,
+          "x": 9.69578954725187,
+          "y": 71.25936092590239,
           "z": 0
         }
       ],
@@ -850,7 +850,7 @@
         },
         {
           "from": "approach:front-desk",
-          "to": "upper-center-aisle",
+          "to": "seat-front-desk-stand",
           "kind": "walk"
         },
         {
@@ -860,7 +860,7 @@
         },
         {
           "from": "approach:lamp-left",
-          "to": "seat-lamp-desk-stand",
+          "to": "seat-lamp-left-stand",
           "kind": "walk"
         },
         {
@@ -875,7 +875,7 @@
         },
         {
           "from": "approach:middle-left",
-          "to": "seat-middle-left-stand",
+          "to": "lower-center-aisle",
           "kind": "walk"
         },
         {
@@ -890,7 +890,7 @@
         },
         {
           "from": "approach:lower-left",
-          "to": "lower-left-aisle",
+          "to": "seat-lower-left-stand",
           "kind": "walk"
         },
         {
@@ -905,17 +905,17 @@
         },
         {
           "from": "approach:upper-back-left",
-          "to": "seat-front-left-stand",
+          "to": "middle-center-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:upper-back-mid",
-          "to": "seat-front-left-stand",
+          "to": "upper-center-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:upper-back-right",
-          "to": "upper-right-aisle",
+          "to": "seat-front-right-stand",
           "kind": "walk"
         },
         {
@@ -945,17 +945,17 @@
         },
         {
           "from": "approach:middle-back-mid-right",
-          "to": "middle-center-aisle",
+          "to": "seat-lamp-right-stand",
           "kind": "walk"
         },
         {
           "from": "approach:middle-back-right",
-          "to": "seat-front-desk-stand",
+          "to": "middle-center-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:middle-front-left-edge",
-          "to": "seat-lamp-desk-stand",
+          "to": "middle-left-aisle",
           "kind": "walk"
         },
         {
@@ -980,12 +980,12 @@
         },
         {
           "from": "approach:left-lower-back-left",
-          "to": "seat-lamp-desk-stand",
+          "to": "middle-open-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:left-lower-back-mid",
-          "to": "seat-lamp-left-stand",
+          "to": "middle-open-aisle",
           "kind": "walk"
         },
         {
@@ -995,22 +995,22 @@
         },
         {
           "from": "approach:left-lower-front-left",
-          "to": "middle-open-aisle",
+          "to": "left-lower-turn",
           "kind": "walk"
         },
         {
           "from": "approach:left-lower-front-mid",
-          "to": "lower-left-aisle",
+          "to": "middle-open-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:left-lower-front-right",
-          "to": "lower-left-aisle",
+          "to": "bottom-left-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:left-edge-back",
-          "to": "seat-lamp-desk-stand",
+          "to": "middle-open-aisle",
           "kind": "walk"
         },
         {
@@ -1020,7 +1020,7 @@
         },
         {
           "from": "approach:right-mid-back-left",
-          "to": "right-mid-link-c",
+          "to": "middle-right-aisle",
           "kind": "walk"
         },
         {
@@ -1035,12 +1035,12 @@
         },
         {
           "from": "approach:right-mid-front-left",
-          "to": "seat-middle-left-stand",
+          "to": "seat-middle-row-stand",
           "kind": "walk"
         },
         {
           "from": "approach:right-mid-front-mid",
-          "to": "seat-middle-right-stand",
+          "to": "bottom-right-aisle",
           "kind": "walk"
         },
         {
@@ -1050,27 +1050,27 @@
         },
         {
           "from": "approach:bottom-back-left",
-          "to": "seat-lamp-right-stand",
+          "to": "stair-top",
           "kind": "walk"
         },
         {
           "from": "approach:bottom-back-mid-left",
-          "to": "seat-middle-left-stand",
+          "to": "lower-center-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:bottom-back-mid-right",
-          "to": "seat-middle-row-stand",
+          "to": "seat-lower-right-stand",
           "kind": "walk"
         },
         {
           "from": "approach:bottom-back-right",
-          "to": "seat-middle-right-stand",
+          "to": "bottom-right-aisle",
           "kind": "walk"
         },
         {
           "from": "approach:bottom-front-left",
-          "to": "seat-lower-left-stand",
+          "to": "stair-top",
           "kind": "walk"
         },
         {
@@ -1085,12 +1085,12 @@
         },
         {
           "from": "approach:bottom-front-right",
-          "to": "seat-lower-right-stand",
+          "to": "seat-middle-row-stand",
           "kind": "walk"
         },
         {
           "from": "approach:far-left-partial-back",
-          "to": "middle-open-aisle",
+          "to": "left-lower-turn",
           "kind": "walk"
         },
         {
@@ -1106,7 +1106,7 @@
           "approachNodeId": "approach:front-left",
           "sit": {
             "x": 46.2,
-            "y": 29.5,
+            "y": 34,
             "z": 0
           },
           "facing": "s",
@@ -1114,10 +1114,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-front-left.png",
-            "x": 397,
-            "y": 476,
-            "width": 77,
-            "height": 86
+            "x": 705,
+            "y": 310,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1160,10 +1160,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-front-desk.png",
-            "x": 508,
-            "y": 586,
-            "width": 71,
-            "height": 129
+            "x": 902,
+            "y": 330,
+            "width": 126,
+            "height": 73
           }
         },
         {
@@ -1185,10 +1185,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-front-right.png",
-            "x": 592,
-            "y": 546,
-            "width": 35,
-            "height": 72
+            "x": 1053,
+            "y": 307,
+            "width": 60,
+            "height": 42
           }
         },
         {
@@ -1210,10 +1210,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-lamp-left.png",
-            "x": 238,
-            "y": 702,
-            "width": 28,
-            "height": 49
+            "x": 423,
+            "y": 395,
+            "width": 48,
+            "height": 28
           }
         },
         {
@@ -1235,10 +1235,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-lamp-desk.png",
-            "x": 295,
-            "y": 630,
-            "width": 41,
-            "height": 49
+            "x": 525,
+            "y": 354,
+            "width": 72,
+            "height": 29
           }
         },
         {
@@ -1260,10 +1260,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-lamp-right.png",
-            "x": 405,
-            "y": 932,
-            "width": 29,
-            "height": 54
+            "x": 720,
+            "y": 525,
+            "width": 51,
+            "height": 31
           }
         },
         {
@@ -1285,10 +1285,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-left.png",
-            "x": 377,
-            "y": 1043,
-            "width": 41,
-            "height": 50
+            "x": 670,
+            "y": 587,
+            "width": 72,
+            "height": 29
           }
         },
         {
@@ -1310,10 +1310,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-row.png",
-            "x": 439,
-            "y": 1080,
-            "width": 41,
-            "height": 48
+            "x": 780,
+            "y": 607,
+            "width": 73,
+            "height": 29
           }
         },
         {
@@ -1335,10 +1335,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-right.png",
-            "x": 630,
-            "y": 1080,
-            "width": 43,
-            "height": 50
+            "x": 1120,
+            "y": 607,
+            "width": 75,
+            "height": 30
           }
         },
         {
@@ -1360,10 +1360,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-lower-left.png",
-            "x": 318,
-            "y": 1008,
-            "width": 36,
-            "height": 45
+            "x": 565,
+            "y": 567,
+            "width": 63,
+            "height": 26
           }
         },
         {
@@ -1385,10 +1385,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-lower-row.png",
-            "x": 500,
-            "y": 1116,
-            "width": 43,
-            "height": 51
+            "x": 889,
+            "y": 628,
+            "width": 74,
+            "height": 29
           }
         },
         {
@@ -1410,10 +1410,10 @@
           },
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-lower-right.png",
-            "x": 564,
-            "y": 1153,
-            "width": 42,
-            "height": 51
+            "x": 1003,
+            "y": 649,
+            "width": 72,
+            "height": 29
           }
         },
         {
@@ -1430,10 +1430,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-upper-back-left.png",
-            "x": 412,
-            "y": 412,
-            "width": 77,
-            "height": 86
+            "x": 732,
+            "y": 232,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1450,10 +1450,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-upper-back-mid.png",
-            "x": 473,
-            "y": 443,
-            "width": 77,
-            "height": 85
+            "x": 841,
+            "y": 249,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -1470,10 +1470,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-upper-back-right.png",
-            "x": 538,
-            "y": 499,
-            "width": 77,
-            "height": 86
+            "x": 956,
+            "y": 281,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1490,10 +1490,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-upper-near-left.png",
-            "x": 350,
-            "y": 536,
-            "width": 78,
-            "height": 86
+            "x": 623,
+            "y": 302,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1510,10 +1510,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-upper-near-mid.png",
-            "x": 439,
-            "y": 586,
-            "width": 77,
-            "height": 86
+            "x": 780,
+            "y": 330,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1530,10 +1530,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-upper-near-right.png",
-            "x": 644,
-            "y": 668,
-            "width": 77,
-            "height": 86
+            "x": 1145,
+            "y": 376,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1550,10 +1550,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-back-left.png",
-            "x": 239,
-            "y": 553,
-            "width": 77,
-            "height": 86
+            "x": 424,
+            "y": 311,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1570,10 +1570,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-back-mid-left.png",
-            "x": 303,
-            "y": 640,
-            "width": 78,
-            "height": 85
+            "x": 540,
+            "y": 360,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -1590,10 +1590,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-back-mid-right.png",
-            "x": 374,
-            "y": 708,
-            "width": 77,
-            "height": 86
+            "x": 665,
+            "y": 398,
+            "width": 136,
+            "height": 50
           }
         },
         {
@@ -1610,10 +1610,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-back-right.png",
-            "x": 450,
-            "y": 777,
-            "width": 78,
-            "height": 86
+            "x": 800,
+            "y": 437,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1630,10 +1630,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-front-left-edge.png",
-            "x": 137,
-            "y": 670,
-            "width": 77,
-            "height": 86
+            "x": 244,
+            "y": 377,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -1650,10 +1650,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-front-left.png",
-            "x": 192,
-            "y": 782,
-            "width": 78,
-            "height": 86
+            "x": 342,
+            "y": 440,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1670,10 +1670,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-front-mid.png",
-            "x": 255,
-            "y": 852,
-            "width": 78,
-            "height": 86
+            "x": 454,
+            "y": 479,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1690,10 +1690,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-front-right.png",
-            "x": 321,
-            "y": 924,
-            "width": 78,
-            "height": 86
+            "x": 571,
+            "y": 520,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1710,10 +1710,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-middle-front-far-right.png",
-            "x": 409,
-            "y": 989,
-            "width": 77,
-            "height": 86
+            "x": 727,
+            "y": 557,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1730,10 +1730,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-lower-back-left.png",
-            "x": 19,
-            "y": 697,
-            "width": 78,
-            "height": 85
+            "x": 35,
+            "y": 392,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -1750,10 +1750,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-lower-back-mid.png",
-            "x": 93,
-            "y": 802,
-            "width": 77,
-            "height": 86
+            "x": 165,
+            "y": 451,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1770,10 +1770,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-lower-back-right.png",
-            "x": 161,
-            "y": 881,
-            "width": 78,
-            "height": 85
+            "x": 287,
+            "y": 495,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1790,10 +1790,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-lower-front-left.png",
-            "x": 27,
-            "y": 916,
-            "width": 77,
-            "height": 85
+            "x": 48,
+            "y": 515,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1810,10 +1810,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-lower-front-mid.png",
-            "x": 110,
-            "y": 1004,
-            "width": 77,
-            "height": 86
+            "x": 195,
+            "y": 565,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1830,10 +1830,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-lower-front-right.png",
-            "x": 195,
-            "y": 1096,
-            "width": 78,
-            "height": 86
+            "x": 347,
+            "y": 617,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1851,9 +1851,9 @@
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-edge-back.png",
             "x": 0,
-            "y": 648,
-            "width": 48,
-            "height": 86
+            "y": 365,
+            "width": 83,
+            "height": 49
           }
         },
         {
@@ -1871,9 +1871,9 @@
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-left-edge-front.png",
             "x": 0,
-            "y": 1023,
-            "width": 49,
-            "height": 85
+            "y": 575,
+            "width": 87,
+            "height": 49
           }
         },
         {
@@ -1890,10 +1890,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-right-mid-back-left.png",
-            "x": 547,
-            "y": 815,
-            "width": 77,
-            "height": 86
+            "x": 973,
+            "y": 459,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -1910,10 +1910,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-right-mid-back-mid.png",
-            "x": 600,
-            "y": 864,
-            "width": 77,
-            "height": 86
+            "x": 1066,
+            "y": 486,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1930,10 +1930,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-right-mid-back-right.png",
-            "x": 690,
-            "y": 916,
-            "width": 77,
-            "height": 85
+            "x": 1227,
+            "y": 515,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1950,10 +1950,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-right-mid-front-left.png",
-            "x": 497,
-            "y": 1016,
-            "width": 78,
-            "height": 86
+            "x": 884,
+            "y": 572,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1970,10 +1970,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-right-mid-front-mid.png",
-            "x": 581,
-            "y": 1095,
-            "width": 77,
-            "height": 85
+            "x": 1033,
+            "y": 616,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -1990,10 +1990,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-right-mid-front-right.png",
-            "x": 656,
-            "y": 1157,
-            "width": 78,
-            "height": 85
+            "x": 1167,
+            "y": 651,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -2010,10 +2010,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-back-left.png",
-            "x": 329,
-            "y": 981,
-            "width": 77,
-            "height": 86
+            "x": 585,
+            "y": 552,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -2030,10 +2030,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-back-mid-left.png",
-            "x": 431,
-            "y": 1085,
-            "width": 78,
-            "height": 85
+            "x": 767,
+            "y": 610,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -2050,10 +2050,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-back-mid-right.png",
-            "x": 512,
-            "y": 1162,
-            "width": 78,
-            "height": 85
+            "x": 911,
+            "y": 653,
+            "width": 135,
+            "height": 50
           }
         },
         {
@@ -2070,10 +2070,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-back-right.png",
-            "x": 596,
-            "y": 1233,
-            "width": 77,
-            "height": 86
+            "x": 1060,
+            "y": 694,
+            "width": 135,
+            "height": 49
           }
         },
         {
@@ -2090,10 +2090,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-front-left.png",
-            "x": 293,
-            "y": 1133,
-            "width": 77,
-            "height": 86
+            "x": 521,
+            "y": 637,
+            "width": 136,
+            "height": 50
           }
         },
         {
@@ -2110,10 +2110,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-front-mid-left.png",
-            "x": 379,
-            "y": 1254,
-            "width": 77,
-            "height": 85
+            "x": 673,
+            "y": 705,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -2130,10 +2130,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-front-mid-right.png",
-            "x": 480,
-            "y": 1357,
-            "width": 78,
-            "height": 86
+            "x": 854,
+            "y": 764,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -2150,10 +2150,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-bottom-front-right.png",
-            "x": 563,
-            "y": 1436,
-            "width": 77,
-            "height": 85
+            "x": 1001,
+            "y": 808,
+            "width": 136,
+            "height": 49
           }
         },
         {
@@ -2171,9 +2171,9 @@
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-far-left-partial-back.png",
             "x": 0,
-            "y": 889,
-            "width": 47,
-            "height": 86
+            "y": 500,
+            "width": 82,
+            "height": 49
           }
         },
         {
@@ -2190,10 +2190,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/library/seat-far-left-partial-front.png",
-            "x": 22,
-            "y": 1157,
-            "width": 77,
-            "height": 85
+            "x": 40,
+            "y": 651,
+            "width": 135,
+            "height": 49
           }
         }
       ],
@@ -2222,10 +2222,10 @@
           "depthY": 36.004784688995215,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-upper-study-table.png",
-            "x": 358,
-            "y": 484,
-            "width": 330,
-            "height": 119
+            "x": 636,
+            "y": 272,
+            "width": 586,
+            "height": 68
           }
         },
         {
@@ -2252,10 +2252,10 @@
           "depthY": 51.01674641148325,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-middle-study-table.png",
-            "x": 132,
-            "y": 719,
-            "width": 368,
-            "height": 135
+            "x": 234,
+            "y": 404,
+            "width": 654,
+            "height": 78
           }
         },
         {
@@ -2282,10 +2282,10 @@
           "depthY": 65.01196172248804,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-lower-study-table.png",
-            "x": 471,
-            "y": 953,
-            "width": 358,
-            "height": 135
+            "x": 836,
+            "y": 536,
+            "width": 637,
+            "height": 77
           }
         },
         {
@@ -2312,10 +2312,10 @@
           "depthY": 68.00239234449761,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-bottom-study-table.png",
-            "x": 282,
-            "y": 936,
-            "width": 360,
-            "height": 202
+            "x": 501,
+            "y": 526,
+            "width": 638,
+            "height": 115
           }
         },
         {
@@ -2343,9 +2343,9 @@
           "asset": {
             "url": "assets/rooms/occlusion/library/object-left-study-table.png",
             "x": 0,
-            "y": 719,
-            "width": 76,
-            "height": 235
+            "y": 404,
+            "width": 135,
+            "height": 134
           }
         },
         {
@@ -2372,10 +2372,10 @@
           "depthY": 51.973684210526315,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-lounge-furniture.png",
-            "x": 809,
-            "y": 484,
-            "width": 132,
-            "height": 386
+            "x": 1437,
+            "y": 272,
+            "width": 235,
+            "height": 219
           }
         },
         {
@@ -2403,9 +2403,9 @@
           "asset": {
             "url": "assets/rooms/occlusion/library/object-bookcase-edge.png",
             "x": 0,
-            "y": 484,
-            "width": 96,
-            "height": 320
+            "y": 272,
+            "width": 169,
+            "height": 181
           }
         },
         {
@@ -2432,10 +2432,10 @@
           "depthY": 40.66985645933015,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-plant-left.png",
-            "x": 40,
-            "y": 510,
-            "width": 91,
-            "height": 172
+            "x": 71,
+            "y": 287,
+            "width": 161,
+            "height": 97
           }
         },
         {
@@ -2462,10 +2462,10 @@
           "depthY": 26.913875598086122,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-plant-upper.png",
-            "x": 570,
-            "y": 270,
-            "width": 96,
-            "height": 181
+            "x": 1012,
+            "y": 151,
+            "width": 171,
+            "height": 104
           }
         },
         {
@@ -2492,10 +2492,10 @@
           "depthY": 33.49282296650718,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-radiator-left.png",
-            "x": 90,
-            "y": 419,
-            "width": 51,
-            "height": 142
+            "x": 159,
+            "y": 236,
+            "width": 91,
+            "height": 81
           }
         },
         {
@@ -2522,10 +2522,10 @@
           "depthY": 25.717703349282296,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-radiator-upper.png",
-            "x": 660,
-            "y": 270,
-            "width": 51,
-            "height": 161
+            "x": 1172,
+            "y": 151,
+            "width": 91,
+            "height": 93
           }
         },
         {
@@ -2552,19 +2552,19 @@
           "depthY": 95.99282296650718,
           "asset": {
             "url": "assets/rooms/occlusion/library/object-entry-planters.png",
-            "x": 210,
-            "y": 1370,
-            "width": 301,
-            "height": 236
+            "x": 373,
+            "y": 771,
+            "width": 535,
+            "height": 134
           }
         }
       ],
       "actors": {},
       "image": {
-        "url": "assets/rooms/library.png",
-        "width": 941,
-        "height": 1672,
-        "sha256": "7c4b055c9ed8c5cea91e9cc7d2ce55bf718299a2804d0d1e0dc91b7027fa3828"
+        "url": "assets/rooms/library-wide.png",
+        "width": 1672,
+        "height": 941,
+        "sha256": "50d1b58448c156cc6c47b823b450ffb26c43815ff6f346f27b6f1705b2d8c993"
       }
     },
     "chim-alan": {
@@ -2833,10 +2833,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-a1.png",
-            "x": 404,
-            "y": 799,
-            "width": 96,
-            "height": 42
+            "x": 718,
+            "y": 449,
+            "width": 170,
+            "height": 25
           }
         },
         {
@@ -2870,10 +2870,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-a2.png",
-            "x": 545,
-            "y": 782,
-            "width": 96,
-            "height": 42
+            "x": 969,
+            "y": 440,
+            "width": 169,
+            "height": 24
           }
         },
         {
@@ -2907,10 +2907,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-a3.png",
-            "x": 677,
-            "y": 765,
-            "width": 96,
-            "height": 42
+            "x": 1203,
+            "y": 430,
+            "width": 170,
+            "height": 25
           }
         },
         {
@@ -2944,10 +2944,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-b1.png",
-            "x": 404,
-            "y": 682,
-            "width": 96,
-            "height": 42
+            "x": 718,
+            "y": 383,
+            "width": 170,
+            "height": 25
           }
         },
         {
@@ -2981,10 +2981,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-b2.png",
-            "x": 545,
-            "y": 665,
-            "width": 96,
-            "height": 42
+            "x": 969,
+            "y": 374,
+            "width": 169,
+            "height": 25
           }
         },
         {
@@ -3018,10 +3018,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-b3.png",
-            "x": 677,
-            "y": 648,
-            "width": 96,
-            "height": 42
+            "x": 1203,
+            "y": 365,
+            "width": 170,
+            "height": 24
           }
         },
         {
@@ -3055,10 +3055,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-c1.png",
-            "x": 414,
-            "y": 565,
-            "width": 96,
-            "height": 42
+            "x": 735,
+            "y": 318,
+            "width": 169,
+            "height": 24
           }
         },
         {
@@ -3092,10 +3092,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-c2.png",
-            "x": 555,
-            "y": 548,
-            "width": 96,
-            "height": 42
+            "x": 986,
+            "y": 308,
+            "width": 169,
+            "height": 25
           }
         },
         {
@@ -3129,10 +3129,10 @@
           "occlusion": null,
           "foregroundAsset": {
             "url": "assets/rooms/occlusion/chim-alan/seat-amfi-c3.png",
-            "x": 686,
-            "y": 531,
-            "width": 97,
-            "height": 42
+            "x": 1220,
+            "y": 299,
+            "width": 169,
+            "height": 24
           }
         }
       ],
@@ -3161,10 +3161,10 @@
           "depthY": 52,
           "asset": {
             "url": "assets/rooms/occlusion/chim-alan/object-amphi-row-front-1.png",
-            "x": 319,
-            "y": 744,
-            "width": 482,
-            "height": 127
+            "x": 568,
+            "y": 418,
+            "width": 855,
+            "height": 73
           }
         },
         {
@@ -3191,10 +3191,10 @@
           "depthY": 45,
           "asset": {
             "url": "assets/rooms/occlusion/chim-alan/object-amphi-row-front-2.png",
-            "x": 319,
-            "y": 627,
-            "width": 482,
-            "height": 127
+            "x": 568,
+            "y": 352,
+            "width": 855,
+            "height": 73
           }
         },
         {
@@ -3221,10 +3221,10 @@
           "depthY": 38,
           "asset": {
             "url": "assets/rooms/occlusion/chim-alan/object-amphi-row-front-3.png",
-            "x": 319,
-            "y": 509,
-            "width": 482,
-            "height": 128
+            "x": 568,
+            "y": 287,
+            "width": 855,
+            "height": 72
           }
         }
       ],
@@ -3241,10 +3241,10 @@
         }
       },
       "image": {
-        "url": "assets/rooms/chim-alan.png",
-        "width": 941,
-        "height": 1672,
-        "sha256": "1ea2ffa9252ad8cb59ddc72eae6832ad742d5c97714c4cf1cd6f2626992a1718"
+        "url": "assets/rooms/chim-alan-wide.png",
+        "width": 1672,
+        "height": 941,
+        "sha256": "26802c5e683a9afed2661ef5380c8f0114081bf1eec07031cbab9c84e4ea9bcb"
       }
     }
   }

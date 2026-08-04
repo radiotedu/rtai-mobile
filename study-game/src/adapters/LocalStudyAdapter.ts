@@ -4,6 +4,7 @@ import {
   type StudyAccount,
   type StudyChatMessage,
   type StudyHeartbeatInput,
+  type StudyHomeSnapshot,
   type StudyPresence,
   type StudyRoomId,
   type StudyPlayerReportReason,
@@ -215,6 +216,28 @@ export class LocalStudyAdapter implements StudyAdapter {
 
   async fetchSummary(): Promise<StudyTimeSummary> {
     return { ...this.#summary }
+  }
+
+  async fetchHome(): Promise<StudyHomeSnapshot> {
+    const rooms = (['library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab'] as const).map((roomId) => {
+      const instance = this.roomInstance(roomId)
+      return { roomId, occupancy: instance.occupancy, capacity: instance.capacity, instanceCount: 1 }
+    })
+    const current = this.#account
+    const ranking = (scale: number) => [
+      { rank: 1, userId: 'preview-ece', displayName: 'Ece', studySeconds: 58_320 * scale, streakDays: 12, isCurrentUser: false },
+      { rank: 2, userId: 'preview-mert', displayName: 'Mert', studySeconds: 51_840 * scale, streakDays: 9, isCurrentUser: false },
+      { rank: 3, userId: 'preview-selin', displayName: 'Selin', studySeconds: 46_260 * scale, streakDays: 8, isCurrentUser: false },
+      { rank: 4, userId: current.id, displayName: current.displayName, studySeconds: 39_900 * scale, streakDays: 6, isCurrentUser: true },
+      { rank: 5, userId: 'preview-deniz', displayName: 'Deniz', studySeconds: 35_040 * scale, streakDays: 5, isCurrentUser: false },
+    ]
+    return {
+      activePlayers: rooms.reduce((sum, room) => sum + room.occupancy, 0),
+      summary: { ...this.#summary },
+      rooms,
+      leaderboard: { week: ranking(1), month: ranking(3), all: ranking(12) },
+      generatedAt: new Date(this.#now()).toISOString(),
+    }
   }
 
   async refreshPresence(roomId: StudyRoomId): Promise<readonly StudyPresence[]> {

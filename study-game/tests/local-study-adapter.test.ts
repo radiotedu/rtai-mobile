@@ -77,4 +77,20 @@ describe('LocalStudyAdapter', () => {
     expect(registered.registered).toBe(true)
     expect(adapter.session().points.global).toBe(240)
   })
+
+  it('provides a complete clearly non-authoritative home preview', async () => {
+    const adapter = new LocalStudyAdapter({
+      now: () => Date.parse('2026-08-04T12:00:00.000Z'),
+      account: { id: 'user-42', displayName: 'Ada', authenticated: true },
+    })
+
+    const home = await adapter.fetchHome()
+
+    expect(home.rooms.map((room) => room.roomId)).toEqual([
+      'library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab',
+    ])
+    expect(home.activePlayers).toBe(home.rooms.reduce((sum, room) => sum + room.occupancy, 0))
+    expect(home.leaderboard.week.find((entry) => entry.isCurrentUser)).toMatchObject({ userId: 'user-42', displayName: 'Ada' })
+    expect(home.generatedAt).toBe('2026-08-04T12:00:00.000Z')
+  })
 })

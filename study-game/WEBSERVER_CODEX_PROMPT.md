@@ -68,6 +68,7 @@ The bridge base becomes `/jukebox/api/v1/study` inside the client. Implement or 
 - `GET /jukebox/api/v1/study/avatar/me`
 - `POST /jukebox/api/v1/study/avatar/equip`
 - `POST /jukebox/api/v1/study/avatar/purchase`
+- `GET /jukebox/api/v1/study/home`
 - `GET /jukebox/api/v1/study/summary`
 - `POST /jukebox/api/v1/study/sessions/start`
 - `POST /jukebox/api/v1/study/sessions/{id}/heartbeat`
@@ -88,7 +89,7 @@ Accept only the shipped room IDs `library`, `chim-alan`, `sports-center`, `audit
 ## Acceptance and rollback
 
 - Verify PC at 16:9 and Android WebView URLs for `room=library`, `room=chim-alan`, and `room=learning-lab`.
-- Verify login reuse, chat isolation, study start/heartbeat/finish, wardrobe persistence, authoritative purchases, events, presence, reports, cache headers, CSP, and no console/request errors.
+- Verify login reuse, authenticated home, weekly/month/all-time leaderboards, room deep links, chat isolation, study start/heartbeat/finish, wardrobe persistence, authoritative purchases, events, presence, reports, cache headers, CSP, and no console/request errors.
 - Confirm `/`, `/wp-admin/`, public WordPress pages, uploads, plugins, cron, and the separate `/social/` route still behave exactly as before.
 - Run API/load checks against a staging account set before production. Do not aim the included local 60-player harness at production credentials without explicit operator approval.
 - If any acceptance check fails, atomically restore the prior `/study/` release. Do not repair by resetting WordPress or the database.

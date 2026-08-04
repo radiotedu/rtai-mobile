@@ -11,6 +11,7 @@ The browser is never an authority for identity, Gold, inventory, study credit, s
 - Finish sessions idempotently. Mint Gold once from server-calculated eligible seconds and return the authoritative balance and summary.
 - Price and grant wearables on the server in one transaction. Require a unique idempotency key, reject insufficient balance, and return proof of ownership plus the authoritative remaining balance.
 - Treat chat identity and timestamps as server-owned. Normalize text, reject empty or over-180-character messages, strip control/bidirectional spoofing characters, scope messages to the assigned room instance, and rate-limit by account and IP.
+- Derive leaderboard time only from accepted server-side study heartbeats. Publish only the public user ID, moderated display name, rank, verified duration, and streak; never include email, student number, IP address, session identifiers, or authentication claims.
 - Escape chat on every non-browser consumer. The web client uses text nodes and never injects chat as HTML.
 - Log rejected nonce replays, impossible movement, conflicting seats, purchase replays, reward-cap attempts, and chat throttling for abuse review.
 

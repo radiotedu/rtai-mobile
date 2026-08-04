@@ -6,13 +6,14 @@ Date: 2026-08-04
 
 | Gate | Result |
 | --- | --- |
-| Contract and unit suite | Passed — 33 files, 152 unit tests; 3 contract tests passed |
+| Contract and unit suite | Passed — 33 files, 155 unit tests; 3 contract tests passed |
 | Production TypeScript/Vite build | Passed |
-| Desktop/mobile Playwright suite | Passed — 27 tests, 1 intentional platform skip |
+| Desktop/mobile Playwright suite | Passed — 31 tests, 1 intentional platform skip |
 | Exhaustive wardrobe matrix | Passed on desktop and mobile |
 | Authoritative Gold purchase journey | Passed on desktop and mobile |
 | Campus navigator, study path, chat reactions, ignore/report journey | Passed on desktop and mobile |
 | Account entry, same-origin URL policy, signed-in profile HUD | Passed — headed desktop/mobile visual QA and focused security tests |
+| Authenticated campus home and leaderboard | Passed — headed desktop/mobile QA, 5 room cards, 3 ranking periods, authoritative response validation |
 | Early Childhood Learning Lab | Passed — source-faithful 16:9 pixel room, connected navigation graph, 5 reachable seats |
 | Room ambience | Passed — visible headed QA across all 5 rooms, fixed 12-object ceiling, reduced-motion fallback |
 | Android authenticated Study bridge | Passed — 6 focused mobile WebView tests |
@@ -52,7 +53,7 @@ The final local shared-backend simulation ran 60 simultaneous real-time protocol
 - 60 simultaneous room-scoped chat messages accepted
 - 482 API requests, 0 request errors, 0 server errors
 - 60 maximum concurrent requests
-- response latency: 99.1 ms median, 214.6 ms p95
+- response latency: 83.1 ms median, 168.5 ms p95
 
 Visual rendering and interaction are covered separately by the passing desktop/mobile evidence suite. The no-headless stress harness verifies real-time join, room occupancy, presence fan-out, walking heartbeats, freshness, chat, concurrency, and error behavior. The deployed RadioTEDU API must still be load-tested with real staging accounts.
 

@@ -1,10 +1,10 @@
 import './styles.css'
 
-import { Armchair, BookOpen, CalendarDays, Check, Coins, createIcons, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, UserPlus, UserRound, UsersRound, Volume2, X } from 'lucide'
+import { ArrowRight, Armchair, BookOpen, CalendarDays, Check, Clock3, Coins, createIcons, Flame, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, Trophy, UserPlus, UserRound, UsersRound, Volume2, X } from 'lucide'
 import { resolveStudyEntry, type StudyEntryConfig } from './account/StudyEntry'
 import { LocalStudyAdapter } from './adapters/LocalStudyAdapter'
 import { RadioTEDUStudyAdapter } from './adapters/RadioTEDUStudyAdapter'
-import { StudyAdapterError, type StudyAccount, type StudyAdapter, type StudyChatMessage, type StudyPlayerReportReason, type StudyPresence, type StudyRoomId, type StudyRoomInstance, type StudySession, type StudyTimeSummary, type StudyWorldEvent } from './adapters/StudyAdapter'
+import { StudyAdapterError, type StudyAccount, type StudyAdapter, type StudyChatMessage, type StudyHomeSnapshot, type StudyLeaderboardPeriod, type StudyPlayerReportReason, type StudyPresence, type StudyRoomId, type StudyRoomInstance, type StudySession, type StudyTimeSummary, type StudyWorldEvent } from './adapters/StudyAdapter'
 import { createStudyGame } from './game/StudyGame'
 import { IMAGE_ROOMS, type ImageRoomId } from './rooms/ImageRoomDefinition'
 import { buildStudyPath } from './progression/StudyPathModel'
@@ -57,24 +57,238 @@ async function bootStudy(secureBridge: ReturnType<typeof readSecureBridge>, entr
   }
 
   const session = adapter.session()
-  renderStudyShell(session, Boolean(secureBridge), entryConfig)
+  let worldStarted = false
+  const launchWorld = (roomId: ImageRoomId) => {
+    if (worldStarted) return
+    worldStarted = true
+    const nextUrl = new URL(window.location.href)
+    nextUrl.searchParams.delete('view')
+    nextUrl.searchParams.set('room', roomId)
+    window.history.replaceState({}, '', nextUrl)
+    document.documentElement.dataset.roomId = roomId
+    renderStudyShell(session, Boolean(secureBridge), entryConfig)
 
-  const tracker = createSessionTracker(adapter)
-  const panels = bindPanels()
-  const safety = new IgnoredPlayerStore(window.localStorage)
-  bindRoomInstance(adapter, initialRoom)
-  bindRoomArrival(initialRoom)
-  bindCampusNavigator(adapter, panels)
-  bindChat(adapter, safety)
-  bindPresence(adapter, panels, safety)
-  bindEvents(adapter, panels)
-  bindStudyPath(tracker, initialRoom)
-  bindAttention(tracker)
-  bindStudyClock(tracker, adapter)
-  bindRadioPlayer()
-  bindGlobalShortcuts(panels)
+    const tracker = createSessionTracker(adapter)
+    const panels = bindPanels()
+    const safety = new IgnoredPlayerStore(window.localStorage)
+    bindRoomInstance(adapter, roomId)
+    bindRoomArrival(roomId)
+    bindCampusNavigator(adapter, panels)
+    bindChat(adapter, safety)
+    bindPresence(adapter, panels, safety)
+    bindEvents(adapter, panels)
+    bindStudyPath(tracker, roomId)
+    bindAttention(tracker)
+    bindStudyClock(tracker, adapter)
+    bindRadioPlayer()
+    bindGlobalShortcuts(panels)
 
-  createStudyGame('game-canvas', mode, adapter, initialRoom, tracker)
+    createStudyGame('game-canvas', mode, adapter, roomId, tracker)
+  }
+
+  const wantsHome = parameters.get('view') === 'home' || (Boolean(secureBridge) && !parameters.has('room'))
+  if (wantsHome) {
+    await renderStudyHome(adapter, session, Boolean(secureBridge), entryConfig, launchWorld)
+    return
+  }
+  launchWorld(initialRoom)
+}
+
+async function renderStudyHome(
+  adapter: StudyAdapter,
+  session: StudySession,
+  serverAuthoritative: boolean,
+  entryConfig: ReturnType<typeof resolveStudyEntry>,
+  launchWorld: (roomId: ImageRoomId) => void,
+) {
+  const [homeResult, eventsResult] = await Promise.allSettled([
+    adapter.fetchHome?.() ?? Promise.reject(new StudyAdapterError('HOME_UNAVAILABLE')),
+    adapter.listEvents?.() ?? Promise.resolve([]),
+  ])
+  const degraded = homeResult.status === 'rejected'
+  const snapshot = homeResult.status === 'fulfilled'
+    ? homeResult.value
+    : fallbackHomeSnapshot(adapter, session)
+  const events = eventsResult.status === 'fulfilled' ? eventsResult.value : []
+  document.documentElement.dataset.studyAuthority = serverAuthoritative ? 'verified' : 'preview'
+  document.documentElement.dataset.studyReady = 'home'
+  document.documentElement.dataset.homeData = degraded ? 'degraded' : serverAuthoritative ? 'live' : 'preview'
+  ui!.innerHTML = `
+    <section class="study-home" data-testid="study-home">
+      <header class="home-topbar">
+        <a class="home-brand" href="?view=home" aria-label="RadioTEDU Study home"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU</strong><small>STUDY</small></b></a>
+        <nav aria-label="Study home sections"><a href="#home-rooms">Rooms</a><a href="#home-ranking">Ranking</a><a href="#home-events">Events</a></nav>
+        <div class="home-account-summary"><span class="home-gold"><i data-lucide="coins" aria-hidden="true"></i><b id="home-gold"></b><small>Gold</small></span><a href="${entryConfig.accountUrl}" target="_top"><span id="home-account-avatar" aria-hidden="true"></span><b id="home-account-name"></b><i data-lucide="settings" aria-hidden="true"></i></a></div>
+      </header>
+      <main>
+        <section class="home-hero" aria-labelledby="home-title">
+          <img src="assets/rooms/library-wide.png" alt="" />
+          <span class="home-hero-shade"></span>
+          <div class="home-hero-copy">
+            <p><i></i><span id="home-live-count"></span> students live on campus</p>
+            <h1 id="home-title">Your campus.<br />Your focus room.</h1>
+            <span>Meet friends, choose a desk, listen live and build your verified study streak.</span>
+            <div><button id="home-enter-primary" type="button"><i data-lucide="book-open" aria-hidden="true"></i><b>Enter Library</b><small>Continue studying</small><i data-lucide="arrow-right" aria-hidden="true"></i></button><a href="#home-rooms"><i data-lucide="map" aria-hidden="true"></i>Explore rooms</a></div>
+          </div>
+          <aside class="home-focus-card" aria-label="Your study progress">
+            <span><i data-lucide="clock-3" aria-hidden="true"></i><small>TODAY</small><strong id="home-today-time"></strong></span>
+            <span><i data-lucide="flame" aria-hidden="true"></i><small>THIS MONTH</small><strong id="home-month-time"></strong></span>
+            <b>${serverAuthoritative ? '<i data-lucide="shield-check" aria-hidden="true"></i> Server verified' : '<i data-lucide="lock-keyhole" aria-hidden="true"></i> Preview data'}</b>
+          </aside>
+        </section>
+        <section class="home-status-strip" aria-label="Campus status">
+          <span><i data-lucide="users-round" aria-hidden="true"></i><b id="home-active-players"></b><small>Students online</small></span>
+          <span><i data-lucide="map-pin" aria-hidden="true"></i><b>${CAMPUS_ROOM_CARDS.length}</b><small>Campus rooms</small></span>
+          <span><i data-lucide="trophy" aria-hidden="true"></i><b>Weekly</b><small>Study ranking</small></span>
+          <span data-home-health="${degraded ? 'degraded' : 'ready'}"><i data-lucide="${degraded ? 'lock-keyhole' : 'shield-check'}" aria-hidden="true"></i><b>${degraded ? 'Game available' : serverAuthoritative ? 'Live data' : 'Local preview'}</b><small>${degraded ? 'Ranking temporarily unavailable' : 'Updated securely'}</small></span>
+        </section>
+        <div class="home-dashboard-grid">
+          <section id="home-rooms" class="home-panel home-rooms-panel">
+            <header><span><small>TEDU CAMPUS</small><h2>Choose a place</h2></span><b><i></i> LIVE ROOMS</b></header>
+            <div id="home-room-list" class="home-room-list"></div>
+          </section>
+          <section id="home-ranking" class="home-panel home-ranking-panel" data-testid="home-leaderboard">
+            <header><span><small>STUDY LEAGUE</small><h2>Leaderboard</h2></span><i data-lucide="trophy" aria-hidden="true"></i></header>
+            <nav aria-label="Leaderboard period"><button type="button" data-home-period="week" aria-pressed="true">This week</button><button type="button" data-home-period="month" aria-pressed="false">Month</button><button type="button" data-home-period="all" aria-pressed="false">All time</button></nav>
+            <ol id="home-ranking-list" class="home-ranking-list" aria-live="polite"></ol>
+            <footer><i data-lucide="shield-check" aria-hidden="true"></i><span>Only server-verified focus time counts.</span></footer>
+          </section>
+          <section id="home-events" class="home-panel home-events-panel">
+            <header><span><small>WHAT'S HAPPENING</small><h2>Campus events</h2></span><i data-lucide="calendar-days" aria-hidden="true"></i></header>
+            <div id="home-event-list" class="home-event-list"></div>
+            <button id="home-enter-events" type="button"><i data-lucide="map-pin" aria-hidden="true"></i><span><b>Visit the Auditorium</b><small>Talks, broadcasts and group sessions</small></span><i data-lucide="arrow-right" aria-hidden="true"></i></button>
+          </section>
+        </div>
+      </main>
+      <footer class="home-footer"><span>RadioTEDU Study</span><b>Be kind · Study honestly · Help keep campus safe</b><a href="${entryConfig.helpUrl}" target="_top">Help &amp; safety</a></footer>
+    </section>
+  `
+
+  document.querySelector('#home-account-name')!.textContent = session.account.displayName
+  document.querySelector('#home-account-avatar')!.textContent = session.account.displayName.trim().slice(0, 1).toUpperCase() || 'R'
+  document.querySelector('#home-gold')!.textContent = String(session.points.global)
+  document.querySelector('#home-live-count')!.textContent = String(snapshot.activePlayers)
+  document.querySelector('#home-active-players')!.textContent = String(snapshot.activePlayers)
+  document.querySelector('#home-today-time')!.textContent = formatHomeDuration(snapshot.summary.todaySeconds)
+  document.querySelector('#home-month-time')!.textContent = formatHomeDuration(snapshot.summary.monthSeconds)
+
+  const roomList = document.querySelector<HTMLElement>('#home-room-list')!
+  for (const card of CAMPUS_ROOM_CARDS) {
+    const overview = snapshot.rooms.find((room) => room.roomId === card.id)
+    const roomButton = document.createElement('button')
+    roomButton.type = 'button'
+    roomButton.className = 'home-room-card'
+    roomButton.dataset.roomId = card.id
+    const image = document.createElement('img')
+    image.src = card.imageUrl
+    image.alt = ''
+    const shade = document.createElement('span')
+    shade.className = 'home-room-card-shade'
+    const copy = document.createElement('span')
+    copy.className = 'home-room-card-copy'
+    const title = document.createElement('strong')
+    title.textContent = card.title
+    const description = document.createElement('small')
+    description.textContent = card.description
+    const population = document.createElement('b')
+    population.textContent = overview ? `${overview.occupancy}/${overview.capacity} online` : 'Open room'
+    copy.append(title, description, population)
+    const arrow = document.createElement('i')
+    arrow.dataset.lucide = 'arrow-right'
+    arrow.setAttribute('aria-hidden', 'true')
+    roomButton.append(image, shade, copy, arrow)
+    roomButton.addEventListener('click', () => launchWorld(card.id))
+    roomList.append(roomButton)
+  }
+
+  const renderRanking = (period: StudyLeaderboardPeriod) => {
+    const list = document.querySelector<HTMLOListElement>('#home-ranking-list')!
+    list.replaceChildren()
+    const entries = snapshot.leaderboard[period].slice(0, 10)
+    if (entries.length === 0) {
+      const empty = document.createElement('li')
+      empty.className = 'home-ranking-empty'
+      empty.textContent = degraded ? 'Live ranking is temporarily unavailable.' : 'No verified study time yet.'
+      list.append(empty)
+      return
+    }
+    for (const entry of entries) {
+      const item = document.createElement('li')
+      if (entry.isCurrentUser) item.dataset.currentUser = 'true'
+      const rank = document.createElement('b')
+      rank.textContent = String(entry.rank)
+      const avatar = document.createElement('span')
+      avatar.textContent = entry.displayName.trim().slice(0, 1).toUpperCase() || 'R'
+      const identity = document.createElement('span')
+      const name = document.createElement('strong')
+      name.textContent = entry.displayName
+      const streak = document.createElement('small')
+      streak.textContent = `${entry.streakDays} day streak`
+      identity.append(name, streak)
+      const duration = document.createElement('em')
+      duration.textContent = formatHomeDuration(entry.studySeconds)
+      item.append(rank, avatar, identity, duration)
+      list.append(item)
+    }
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-home-period]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const period = button.dataset.homePeriod as StudyLeaderboardPeriod
+      document.querySelectorAll<HTMLButtonElement>('[data-home-period]').forEach((candidate) => { candidate.ariaPressed = String(candidate === button) })
+      renderRanking(period)
+    })
+  })
+  renderRanking('week')
+
+  const eventList = document.querySelector<HTMLElement>('#home-event-list')!
+  for (const worldEvent of events.filter((event) => event.status !== 'completed').slice(0, 3)) {
+    const article = document.createElement('article')
+    const icon = document.createElement('span')
+    icon.innerHTML = '<i data-lucide="star" aria-hidden="true"></i>'
+    const copy = document.createElement('span')
+    const title = document.createElement('strong')
+    title.textContent = worldEvent.title
+    const location = document.createElement('small')
+    location.textContent = worldEvent.location
+    copy.append(title, location)
+    const reward = document.createElement('b')
+    reward.textContent = `+${worldEvent.rewardGold} Gold`
+    article.append(icon, copy, reward)
+    eventList.append(article)
+  }
+  if (!eventList.childElementCount) {
+    const empty = document.createElement('p')
+    empty.textContent = 'No campus events are scheduled yet.'
+    eventList.append(empty)
+  }
+
+  document.querySelector<HTMLButtonElement>('#home-enter-primary')!.addEventListener('click', () => launchWorld('library'))
+  document.querySelector<HTMLButtonElement>('#home-enter-events')!.addEventListener('click', () => launchWorld('auditorium'))
+  createIcons({ icons: { ArrowRight, BookOpen, CalendarDays, Clock3, Coins, Flame, LockKeyhole, Map, MapPin, Radio, Settings, ShieldCheck, Star, Trophy, UsersRound } })
+}
+
+function fallbackHomeSnapshot(adapter: StudyAdapter, session: StudySession): StudyHomeSnapshot {
+  const capacities: Readonly<Record<StudyRoomId, number>> = Object.freeze({
+    library: 51, 'chim-alan': 9, 'sports-center': 18, auditorium: 90, 'learning-lab': 24,
+  })
+  const rooms = CAMPUS_ROOM_CARDS.map((card) => {
+    const instance = adapter.roomInstance?.(card.id)
+    return { roomId: card.id, occupancy: instance?.occupancy ?? 0, capacity: instance?.capacity ?? capacities[card.id], instanceCount: 1 }
+  })
+  return {
+    activePlayers: rooms.reduce((sum, room) => sum + room.occupancy, 0),
+    summary: { todaySeconds: session.points.studyToday * 60, monthSeconds: 0, totalSeconds: 0 },
+    rooms,
+    leaderboard: { week: [], month: [], all: [] },
+    generatedAt: null,
+  }
+}
+
+function formatHomeDuration(seconds: number) {
+  const totalMinutes = Math.max(0, Math.floor(seconds / 60))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return hours > 0 ? `${hours}h ${String(minutes).padStart(2, '0')}m` : `${minutes}m`
 }
 
 function renderEngineProof() {

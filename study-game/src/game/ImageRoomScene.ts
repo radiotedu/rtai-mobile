@@ -1333,6 +1333,25 @@ export class ImageRoomScene extends Phaser.Scene {
           x: canvasBounds.left + (camera.x + (world.x - camera.worldView.x) * camera.zoom) * displayScaleX,
           y: canvasBounds.top + (camera.y + (world.y - camera.worldView.y) * camera.zoom) * displayScaleY,
         })
+        const blockers: Array<{ id: string; kind: 'actor' | 'cat' | 'player'; radius: number; world: { x: number; y: number }; screen: { x: number; y: number } }> = []
+        for (const [id, actor] of Object.entries(this.#room.actors)) {
+          if (!actor) continue
+          const node = this.#graph.node(actor.nodeId)
+          if (!node) continue
+          const world = roomPointToPixel(this.#room, node)
+          blockers.push({ id, kind: 'actor', radius: 105, world, screen: screen(world) })
+        }
+        for (const cat of this.#campusCats) {
+          const world = { x: cat.sprite.x, y: cat.sprite.y }
+          blockers.push({ id: cat.name, kind: 'cat', radius: 45, world, screen: screen(world) })
+        }
+        for (const presence of this.#adapter.presence(this.#roomId)) {
+          const seat = presence.seatId ? this.#room.seats.find((candidate) => candidate.id === presence.seatId) : null
+          const anchor = seat?.sit ?? this.#graph.node(presence.nodeId)
+          if (!anchor) continue
+          const world = roomPointToPixel(this.#room, anchor)
+          blockers.push({ id: presence.userId, kind: 'player', radius: 55, world, screen: screen(world) })
+        }
         return {
           nodes: this.#room.nodes.map((node) => {
             const world = roomPointToPixel(this.#room, node)
@@ -1348,6 +1367,7 @@ export class ImageRoomScene extends Phaser.Scene {
               screen: screen(world),
             }
           }),
+          blockers,
         }
       },
       snapshot: () => ({
@@ -1403,6 +1423,13 @@ declare global {
           id: string
           reachable: boolean
           occupied: boolean
+          world: { x: number; y: number }
+          screen: { x: number; y: number }
+        }>
+        blockers: Array<{
+          id: string
+          kind: 'actor' | 'cat' | 'player'
+          radius: number
           world: { x: number; y: number }
           screen: { x: number; y: number }
         }>

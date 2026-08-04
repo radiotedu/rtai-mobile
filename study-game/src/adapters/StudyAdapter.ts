@@ -50,6 +50,32 @@ export interface StudyTimeSummary {
   totalSeconds: number
 }
 
+export type StudyLeaderboardPeriod = 'week' | 'month' | 'all'
+
+export interface StudyLeaderboardEntry {
+  rank: number
+  userId: string
+  displayName: string
+  studySeconds: number
+  streakDays: number
+  isCurrentUser: boolean
+}
+
+export interface StudyRoomOverview {
+  roomId: StudyRoomId
+  occupancy: number
+  capacity: number
+  instanceCount: number
+}
+
+export interface StudyHomeSnapshot {
+  activePlayers: number
+  summary: StudyTimeSummary
+  rooms: readonly StudyRoomOverview[]
+  leaderboard: Readonly<Record<StudyLeaderboardPeriod, readonly StudyLeaderboardEntry[]>>
+  generatedAt: string | null
+}
+
 export interface StudyRoomInstance {
   id: string
   roomId: StudyRoomId
@@ -107,6 +133,7 @@ export interface StudyAdapter {
   heartbeatStudySession?(input: StudyHeartbeatInput): Promise<number>
   finishStudySession?(): Promise<StudyTimeSummary>
   fetchSummary?(): Promise<StudyTimeSummary>
+  fetchHome?(): Promise<StudyHomeSnapshot>
 }
 
 export class StudyAdapterError extends Error {

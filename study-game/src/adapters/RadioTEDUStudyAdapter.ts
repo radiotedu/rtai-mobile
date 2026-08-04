@@ -4,6 +4,9 @@ import {
   type StudyAdapter,
   type StudyChatMessage,
   type StudyHeartbeatInput,
+  type StudyHomeSnapshot,
+  type StudyLeaderboardEntry,
+  type StudyLeaderboardPeriod,
   type StudyPresence,
   type StudyPlayerReportReason,
   type StudyRoomId,
@@ -268,6 +271,11 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
     return this.#summary
   }
 
+  async fetchHome(): Promise<StudyHomeSnapshot> {
+    const data = await this.#request<Record<string, unknown>>('/home')
+    return mapHomeSnapshot(data, this.#account.id)
+  }
+
   async refreshPresence(roomId: StudyRoomId): Promise<readonly StudyPresence[]> {
     const instance = await this.#ensureRoomJoined(roomId)
     const data = await this.#request<{ presence?: unknown }>(
@@ -452,6 +460,72 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
 function nonNegativeInteger(value: unknown, fallback = 0) {
   const parsed = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : fallback
+}
+
+const STUDY_ROOM_IDS: readonly StudyRoomId[] = Object.freeze([
+  'library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab',
+])
+const LEADERBOARD_PERIODS: readonly StudyLeaderboardPeriod[] = Object.freeze(['week', 'month', 'all'])
+
+function mapHomeSnapshot(value: unknown, currentUserId: string): StudyHomeSnapshot {
+  const row = value as Record<string, unknown> | null
+  if (!row || !Array.isArray(row.rooms) || !row.leaderboard || typeof row.leaderboard !== 'object') {
+    throw new StudyAdapterError('INVALID_HOME_RESPONSE')
+  }
+  const rooms = row.rooms.flatMap((candidate) => {
+    const room = candidate as Record<string, unknown> | null
+    if (!room || !STUDY_ROOM_IDS.includes(room.roomId as StudyRoomId)) return []
+    const capacity = nonNegativeInteger(room.capacity)
+    const occupancy = nonNegativeInteger(room.occupancy)
+    const instanceCount = nonNegativeInteger(room.instanceCount)
+    if (capacity < 1 || occupancy > capacity || instanceCount < 1) return []
+    return [{ roomId: room.roomId as StudyRoomId, occupancy, capacity, instanceCount }]
+  })
+  if (rooms.length !== STUDY_ROOM_IDS.length || new Set(rooms.map((room) => room.roomId)).size !== STUDY_ROOM_IDS.length) {
+    throw new StudyAdapterError('INVALID_HOME_RESPONSE')
+  }
+  const leaderboardValue = row.leaderboard as Record<string, unknown>
+  const leaderboard = Object.fromEntries(LEADERBOARD_PERIODS.map((period) => [
+    period,
+    mapLeaderboard(leaderboardValue[period], currentUserId),
+  ])) as Record<StudyLeaderboardPeriod, readonly StudyLeaderboardEntry[]>
+  const summaryValue = row.summary as Partial<StudyTimeSummary> | null
+  const generatedAt = typeof row.generatedAt === 'string' && Number.isFinite(Date.parse(row.generatedAt))
+    ? row.generatedAt
+    : null
+  return Object.freeze({
+    activePlayers: nonNegativeInteger(row.activePlayers),
+    summary: Object.freeze({
+      todaySeconds: nonNegativeInteger(summaryValue?.todaySeconds),
+      monthSeconds: nonNegativeInteger(summaryValue?.monthSeconds),
+      totalSeconds: nonNegativeInteger(summaryValue?.totalSeconds),
+    }),
+    rooms: Object.freeze(rooms),
+    leaderboard: Object.freeze(leaderboard),
+    generatedAt,
+  })
+}
+
+function mapLeaderboard(value: unknown, currentUserId: string): readonly StudyLeaderboardEntry[] {
+  if (!Array.isArray(value)) throw new StudyAdapterError('INVALID_HOME_RESPONSE')
+  const seenUsers = new Set<string>()
+  return Object.freeze(value.slice(0, 100).flatMap((candidate) => {
+    const row = candidate as Record<string, unknown> | null
+    if (!row || typeof row.userId !== 'string' || typeof row.displayName !== 'string') return []
+    const userId = row.userId.trim()
+    const displayName = row.displayName.replace(CHAT_UNSAFE_CONTROLS, ' ').replace(/\s+/g, ' ').trim()
+    const rank = nonNegativeInteger(row.rank)
+    if (!userId || userId.length > 160 || !displayName || displayName.length > 80 || rank < 1 || seenUsers.has(userId)) return []
+    seenUsers.add(userId)
+    return [Object.freeze({
+      rank,
+      userId,
+      displayName,
+      studySeconds: nonNegativeInteger(row.studySeconds),
+      streakDays: Math.min(36_500, nonNegativeInteger(row.streakDays)),
+      isCurrentUser: userId === currentUserId,
+    })]
+  }).sort((left, right) => left.rank - right.rank))
 }
 
 function clientWearableId(id: string) {

@@ -39,6 +39,7 @@ test('real canvas clicks reach their intended node in every room', async ({ page
           .filter((node) => node.screen.y > 90 && node.screen.y < height - 100)
           .filter((node) => document.elementFromPoint(node.screen.x, node.screen.y)?.tagName === 'CANVAS')
           .filter((node) => targets.seats.every((seat) => Math.hypot(node.world.x - seat.world.x, node.world.y - seat.world.y) > 72))
+          .filter((node) => targets.blockers.every((blocker) => Math.hypot(node.world.x - blocker.world.x, node.world.y - blocker.world.y) > blocker.radius + 24))
           .map((node) => ({ node, distance: Math.hypot(node.world.x - current.world.x, node.world.y - current.world.y) }))
           .sort((left, right) => right.distance - left.distance)
 
@@ -71,6 +72,7 @@ test('redirecting mid-walk does not backtrack to an unrelated waypoint', async (
     const to = nodes.find((node) => node.id === segment.toId)
     if (!from || !to) return false
     if (targets.seats.some((seat) => Math.hypot(to.world.x - seat.world.x, to.world.y - seat.world.y) <= 72)) return false
+    if (targets.blockers.some((blocker) => Math.hypot(to.world.x - blocker.world.x, to.world.y - blocker.world.y) <= blocker.radius + 24)) return false
     const fromDistance = Math.hypot(snapshot.position.x - from.world.x, snapshot.position.y - from.world.y)
     const toDistance = Math.hypot(snapshot.position.x - to.world.x, snapshot.position.y - to.world.y)
     return fromDistance >= 12 && fromDistance + 12 < toDistance

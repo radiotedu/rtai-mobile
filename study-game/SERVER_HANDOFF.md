@@ -44,6 +44,7 @@ The hosting environment must provide its existing private configuration for auth
 The authenticated bridge must support these same-origin contracts:
 
 - Study profile and Gold: `GET /study/avatar/me`, `POST /study/avatar/purchase`, `POST /study/avatar/equip`
+- Authenticated home: `GET /study/home` with room population, study summary, and weekly/month/all-time verified leaderboards
 - Study accounting: `GET /study/summary`, session start/heartbeat/finish
 - Rooms: `POST /study/instances/join`, presence read/heartbeat
 - Chat: room message read/send
@@ -51,6 +52,26 @@ The authenticated bridge must support these same-origin contracts:
 - Events: `GET /gamification/events`, event registration
 
 Gold, ownership, event rewards, study time, seats, room assignments, reports, and sanctions are server-authoritative. Purchase responses must include the requested owned item and a non-negative integer `spendable_points` balance. Ignore lists remain private client preferences and must never be interpreted as a server sanction.
+
+`GET /study/home` uses the standard `{ success: true, data: ... }` envelope. It must return all five room IDs exactly once and must derive ranking duration from accepted server-side study heartbeats, never client totals:
+
+```json
+{
+  "activePlayers": 24,
+  "summary": { "todaySeconds": 1800, "monthSeconds": 28800, "totalSeconds": 90000 },
+  "rooms": [
+    { "roomId": "library", "occupancy": 8, "capacity": 51, "instanceCount": 1 }
+  ],
+  "leaderboard": {
+    "week": [{ "rank": 1, "userId": "server-user-id", "displayName": "Student", "studySeconds": 21600, "streakDays": 8 }],
+    "month": [],
+    "all": []
+  },
+  "generatedAt": "2026-08-04T12:00:00.000Z"
+}
+```
+
+Return no email address, student number, IP address, authentication identifier, or private profile field. Apply the same display-name moderation policy as room presence. Cache the aggregate briefly server-side, but calculate `isCurrentUser` in the client from the authenticated public user ID.
 
 ## Security gate
 
@@ -64,6 +85,7 @@ Implement every invariant in `SECURITY.md` before enabling Gold rewards or publi
 4. If changing source, run `npm run build` and re-run the checks.
 5. Publish the **contents** of `dist/` at `/study/`.
 6. Inject the authenticated bridge before `dist/index.html` loads its module script.
-7. Run the 60-player test against a staging API with real test accounts before public launch.
+7. Verify the authenticated home, all three leaderboard periods, and deep-link entry into every room.
+8. Run the 60-player test against a staging API with real test accounts before public launch.
 
 The included local 60-player harness validates the exact client adapter contract with a shared simulated backend. It does not replace a load test against the deployed RadioTEDU infrastructure.

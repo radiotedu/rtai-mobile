@@ -115,7 +115,7 @@ test('server-authoritative Gold purchases are deduplicated and update all paid w
     }
   })
 
-  await page.goto('/')
+  await page.goto('/?room=library')
   await page.locator('html[data-study-ready="true"]').waitFor({ timeout: 30_000 })
   await expect(page.locator('#point-balance')).toHaveText('240')
   await page.getByRole('button', { name: 'Wardrobe' }).click()

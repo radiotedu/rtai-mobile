@@ -348,4 +348,55 @@ describe('RadioTEDUStudyAdapter', () => {
     ])
     expect(fetchImpl.mock.calls[1]![1].headers.Authorization).toBe('Bearer access-token')
   })
+
+  it('loads and validates the authoritative study home and leaderboard', async () => {
+    const leaderboard = [{
+      rank: 1, userId: 'user-1', displayName: 'Ada', studySeconds: 21_600, streakDays: 8,
+    }]
+    const fetchImpl = vi.fn().mockResolvedValueOnce(success({
+      activePlayers: 24,
+      summary: { todaySeconds: 1_800, monthSeconds: 28_800, totalSeconds: 90_000 },
+      rooms: [
+        { roomId: 'library', occupancy: 8, capacity: 51, instanceCount: 1 },
+        { roomId: 'chim-alan', occupancy: 4, capacity: 9, instanceCount: 1 },
+        { roomId: 'sports-center', occupancy: 3, capacity: 18, instanceCount: 1 },
+        { roomId: 'auditorium', occupancy: 6, capacity: 90, instanceCount: 1 },
+        { roomId: 'learning-lab', occupancy: 3, capacity: 24, instanceCount: 1 },
+      ],
+      leaderboard: { week: leaderboard, month: leaderboard, all: leaderboard },
+      generatedAt: '2026-08-04T12:00:00.000Z',
+    }))
+    const adapter = createAdapter(fetchImpl)
+
+    const home = await adapter.fetchHome()
+
+    expect(home.activePlayers).toBe(24)
+    expect(home.rooms).toHaveLength(5)
+    expect(home.leaderboard.week[0]).toMatchObject({ rank: 1, displayName: 'Ada', isCurrentUser: true })
+    expect(fetchImpl.mock.calls[0]![0]).toBe('https://radiotedu.com/jukebox/api/v1/study/home')
+  })
+
+  it('rejects incomplete home authority and sanitizes leaderboard controls', async () => {
+    const incomplete = createAdapter(vi.fn().mockResolvedValueOnce(success({
+      activePlayers: 1,
+      summary: {},
+      rooms: [{ roomId: 'library', occupancy: 1, capacity: 51, instanceCount: 1 }],
+      leaderboard: { week: [], month: [], all: [] },
+    })))
+    await expect(incomplete.fetchHome()).rejects.toThrow(/INVALID_HOME_RESPONSE/)
+
+    const rooms = [
+      { roomId: 'library', occupancy: 1, capacity: 51, instanceCount: 1 },
+      { roomId: 'chim-alan', occupancy: 0, capacity: 9, instanceCount: 1 },
+      { roomId: 'sports-center', occupancy: 0, capacity: 18, instanceCount: 1 },
+      { roomId: 'auditorium', occupancy: 0, capacity: 90, instanceCount: 1 },
+      { roomId: 'learning-lab', occupancy: 0, capacity: 24, instanceCount: 1 },
+    ]
+    const controlled = [{ rank: 1, userId: 'user-1', displayName: 'Ada\u202e Student', studySeconds: 60, streakDays: 2 }]
+    const adapter = createAdapter(vi.fn().mockResolvedValueOnce(success({
+      activePlayers: 1, summary: {}, rooms,
+      leaderboard: { week: controlled, month: controlled, all: controlled },
+    })))
+    expect((await adapter.fetchHome()).leaderboard.week[0]!.displayName).toBe('Ada Student')
+  })
 })

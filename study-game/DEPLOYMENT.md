@@ -70,6 +70,7 @@ npm run release:verify
 
 The evidence run covers desktop Chromium and a Pixel-sized mobile viewport, including:
 
+- authenticated desktop/mobile campus home, room discovery, and verified leaderboard presentation
 - Library and Çim Alan preservation
 - Sports Center, Fatma–Semih Akbil Auditorium, and the official Early Childhood Learning Lab
 - consistent high overhead isometric room cameras and the animated Auditorium event screen

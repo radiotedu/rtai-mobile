@@ -32,7 +32,7 @@ test('presents an immersive game HUD and room-scoped working chat', async ({ pag
 
   await page.getByRole('button', { name: 'Campus' }).click()
   await expect(page.locator('#navigator-panel')).toBeVisible()
-  await expect(page.getByTestId('navigator-room-list').locator('.navigator-room-card')).toHaveCount(4)
+  await expect(page.getByTestId('navigator-room-list').locator('.navigator-room-card')).toHaveCount(5)
   await page.getByLabel('Search places').fill('Çim')
   await expect(page.getByTestId('navigator-room-list').locator('.navigator-room-card')).toHaveCount(1)
   await page.getByRole('button', { name: 'Close campus navigator' }).click()

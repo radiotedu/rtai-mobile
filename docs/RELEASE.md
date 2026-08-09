@@ -19,7 +19,12 @@ Compare the certificate identity with the intended release certificate; a succes
 2. Provision the four secrets in [GITHUB_SECRETS.md](GITHUB_SECRETS.md).
 3. Open **Actions → Android Release → Run workflow**.
 4. Enter the intended tag in the required `tag` input.
-5. The workflow installs locked dependencies, builds Study, packages it into mobile, runs the Android audit, creates a release APK with the provided keystore, verifies the APK signature, uploads the workflow artifact, and creates the GitHub Release.
+5. The workflow installs locked dependencies, builds signed APK/AAB files for phone, TV, and Wear, verifies every signature, uploads checksums, and updates the GitHub Release. Study, voting, and Jukebox controller deploy separately as websites.
+
+Run **iOS Release** with the same tag after Apple approves CarPlay and all iOS
+secrets in `GITHUB_SECRETS.md` are configured. It archives the same iOS app
+target that contains both the phone UI and CarPlay scene, then attaches the IPA
+to the matching GitHub Release.
 
 The workflow does not print signing values and does not commit the decoded keystore or generated `keystore.properties` file.
 

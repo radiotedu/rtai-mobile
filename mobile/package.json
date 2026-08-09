@@ -1,6 +1,6 @@
 {
   "name": "com.radiotedumobile",
-  "version": "0.0.1",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android --mode mobileDebug",
@@ -8,7 +8,6 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "audit:android": "node scripts/android-publish-audit.js",
-    "package:study": "npm --prefix ../study-game run build && node scripts/package-study-game.mjs",
     "start": "react-native start",
     "test": "jest"
   },

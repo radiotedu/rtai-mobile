@@ -15,7 +15,7 @@ describe('Study navigation', () => {
     expect(STUDY_LOCATION_CARDS.map(card => card.id)).toEqual(['library', 'chim-alan']);
   });
 
-  it('routes both room entries to the same packaged game client', () => {
+  it('routes both room entries to the same remote game client', () => {
     const navigatorSource = read('src/navigation/RootNavigator.tsx');
     const homeSource = read('src/screens/study/StudyHomeScreen.tsx');
     expect(navigatorSource).toContain('component={LibraryStudyWebView}');
@@ -24,16 +24,15 @@ describe('Study navigation', () => {
     expect(homeSource).not.toContain("location.id === 'library'");
   });
 
-  it('loads the separate app-only Study website with a packaged fallback', () => {
+  it('loads the separate app-only Study website without bundled content', () => {
     const source = read('src/screens/study/LibraryStudyWebView.tsx');
     expect(source).toContain('buildStudyEntryUrl');
-    expect(source).toContain('STUDY_PACKAGED_ROOT');
-    expect(source).toContain("originWhitelist={['https://radiotedu.com', 'file://*']}");
+    expect(source).toContain("originWhitelist={['https://radiotedu.com']}");
     expect(source).toContain('isAllowedStudyNavigation');
-    expect(source).toContain('shouldUsePackagedStudyFallback');
-    expect(source).toContain('handleStudyNavigationRequest');
-    expect(source).toContain('onShouldStartLoadWithRequest={handleStudyNavigationRequest}');
+    expect(source).toContain('onShouldStartLoadWithRequest');
     expect(source).toContain('onHttpError');
+    expect(source).toContain('cacheEnabled={false}');
+    expect(source).toContain('allowFileAccess={false}');
     expect(source).toContain('allowFileAccessFromFileURLs={false}');
     expect(source).toContain('allowUniversalAccessFromFileURLs={false}');
     expect(source).toContain('mixedContentMode="never"');
@@ -53,15 +52,10 @@ describe('Study navigation', () => {
     expect(source).toContain("navigation.navigate('Auth', {screen: 'Login'})");
   });
 
-  it('packages the complete website and removes the rejected native room implementation', () => {
+  it('does not package Study into the native app', () => {
     const packageJson = JSON.parse(read('package.json')) as {scripts: Record<string, string>};
-    const packageScript = read('scripts/package-study-game.mjs');
-    const packagedRoot = path.join(__dirname, '../android/app/src/main/assets/study-game');
-    expect(packageJson.scripts['package:study']).toContain('package-study-game.mjs');
-    expect(packageScript).toContain("path.join(repositoryRoot, 'study-game', 'dist')");
-    expect(fs.existsSync(path.join(packagedRoot, 'index.html'))).toBe(true);
-    expect(fs.existsSync(path.join(packagedRoot, 'assets/rooms/library.png'))).toBe(true);
-    expect(fs.existsSync(path.join(packagedRoot, 'assets/rooms/chim-alan.png'))).toBe(true);
+    expect(packageJson.scripts['package:study']).toBeUndefined();
+    expect(fs.existsSync(path.join(__dirname, '../android/app/src/main/assets/study-game'))).toBe(false);
     expect(fs.existsSync(path.join(__dirname, '../src/screens/study/StudyRoomScreen.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(__dirname, '../src/screens/study/studyMap.ts'))).toBe(false);
     expect(fs.existsSync(path.join(__dirname, '../src/assets/study/library-habbo.png'))).toBe(false);

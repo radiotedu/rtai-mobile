@@ -11,7 +11,10 @@ A React Native app (Android + iOS) for live radio, podcasts, the cafeteria **Juk
 - **Live Radio** — multiple RadioTEDU channels with background playback and lock-screen controls.
 - **Podcasts** — browse and listen to school podcasts.
 - **Jukebox controller** — scan a cafeteria QR code to join a session and vote on the queue.
-- **Android Auto** — browse channels (and podcasts) and control playback from the car. *(CarPlay planned — requires Apple's CarPlay audio entitlement.)*
+- **Android Auto** — included in the phone APK; browse and control playback from the car.
+- **CarPlay** — included in the iOS target; requires Apple's approved Audio App entitlement at signing.
+- **Android TV / Google TV** — remote-friendly native radio surface under the same Play listing.
+- **Wear OS** — standalone native radio surface under the same Play listing.
 - **Games & Leaderboard** — gamified listening.
 
 ## Tech stack
@@ -36,6 +39,10 @@ npm start          # Metro bundler
 npm run android    # build & run on Android device/emulator
 npm run ios        # build & run on iOS simulator (macOS only)
 ```
+
+The iOS target includes background audio, the `radiotedu://` deep-link scheme,
+App Store icon assets, and HTTPS-only transport policy. Signing still requires
+an Apple Developer team and a unique App Store bundle identifier.
 
 ### Quality checks
 
@@ -98,6 +105,9 @@ src/
   store/          zustand stores
   theme/          colors & styling
 android/          native Android project (incl. Android Auto config)
+  tv/             Android TV targeted application module
+  wear/           Wear OS targeted application module
+  formfactor/     Shared TV/Wear stream and playback service
 ios/              native iOS project
 ```
 

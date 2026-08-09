@@ -5,7 +5,6 @@ import {
   buildStudyEntryUrl,
   createStudyWebViewBridge,
   isAllowedStudyNavigation,
-  shouldUsePackagedStudyFallback,
 } from '../src/services/studyWebViewService';
 
 describe('Study WebView service', () => {
@@ -16,7 +15,7 @@ describe('Study WebView service', () => {
     );
   });
 
-  it('allows only the Study website and packaged fallback origins', () => {
+  it('allows only the remote Study website', () => {
     expect(
       isAllowedStudyNavigation(
         'https://radiotedu.com/study/?embedded=mobile&room=library',
@@ -26,33 +25,12 @@ describe('Study WebView service', () => {
       isAllowedStudyNavigation(
         'file:///android_asset/study-game/index.html?room=library',
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isAllowedStudyNavigation('https://radiotedu.com/juke-local/kiosk/'),
     ).toBe(false);
     expect(
       isAllowedStudyNavigation('https://radiotedu.com.evil.example/study/'),
-    ).toBe(false);
-  });
-
-  it('falls back when production redirects /study/ to unrelated WordPress content', () => {
-    expect(
-      shouldUsePackagedStudyFallback(
-        'https://radiotedu.com/studying-further/',
-        false,
-      ),
-    ).toBe(true);
-    expect(
-      shouldUsePackagedStudyFallback(
-        'https://radiotedu.com/study/?embedded=mobile&room=library',
-        false,
-      ),
-    ).toBe(false);
-    expect(
-      shouldUsePackagedStudyFallback(
-        'https://radiotedu.com/studying-further/',
-        true,
-      ),
     ).toBe(false);
   });
 

@@ -22,7 +22,7 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 - **[you]** Store listing assets: 512×512 icon, feature graphic (1024×500),
   phone + (if Auto) car screenshots, short/full description (localize to the
   6 app languages).
-- **[code/done]** **Target API level**: targetSdk 35 for current phone/tablet
+- **[code/done]** **Target API level**: phone/tablet targetSdk 36; Wear targetSdk 35; TV exceeds its API 34 minimum
   Play publishing. Re-check each year (Play raises the floor ~annually).
 - **[code/done]** **Permissions minimized & justified** (see `SECURITY_REVIEW.md`):
   CAMERA (avatar), media playback foreground service, notifications, scoped

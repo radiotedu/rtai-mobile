@@ -9,12 +9,9 @@ import {WebView as NativeWebView} from 'react-native-webview';
 import {useAuth} from '../../context/AuthContext';
 import {BASE_API} from '../../services/config';
 import {
-  STUDY_PACKAGED_ROOT,
   buildStudyEntryUrl,
-  createStudyPublicAccountBridge,
   createStudyWebViewBridge,
   isAllowedStudyNavigation,
-  shouldUsePackagedStudyFallback,
 } from '../../services/studyWebViewService';
 import {COLORS, SPACING} from '../../theme/theme';
 
@@ -27,8 +24,8 @@ const LibraryStudyWebView = () => {
   const {user} = useAuth();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [credentialsReady, setCredentialsReady] = useState(false);
-  const [usePackagedFallback, setUsePackagedFallback] = useState(false);
   const [hasLoadError, setHasLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const roomId = route.params?.locationId === 'chim-alan' ? 'chim-alan' : 'library';
   const isLocked = !user || user.is_guest;
 
@@ -72,25 +69,17 @@ const LibraryStudyWebView = () => {
       account,
       globalPoints: Number(user?.rank_score ?? 0),
     };
-    if (usePackagedFallback || !accessToken) {
-      return createStudyPublicAccountBridge(publicInput);
+    if (!accessToken) {
+      return 'true;';
     }
     return createStudyWebViewBridge({
       ...publicInput,
       apiBase: BASE_API,
       accessToken,
     });
-  }, [accessToken, account, usePackagedFallback, user?.rank_score]);
+  }, [accessToken, account, user?.rank_score]);
 
-  const gameUrl = buildStudyEntryUrl(roomId, usePackagedFallback);
-  const isPackagedGame = gameUrl.startsWith(STUDY_PACKAGED_ROOT);
-  const handleStudyNavigationRequest = ({url}: {url: string}) => {
-    const allowed = isAllowedStudyNavigation(url);
-    if (shouldUsePackagedStudyFallback(url, isPackagedGame)) {
-      setUsePackagedFallback(true);
-    }
-    return allowed;
-  };
+  const gameUrl = buildStudyEntryUrl(roomId);
 
   if (isLocked) {
     return (
@@ -136,48 +125,41 @@ const LibraryStudyWebView = () => {
             style={styles.primaryButton}
             onPress={() => {
               setHasLoadError(false);
-              setUsePackagedFallback(false);
+              setReloadKey(value => value + 1);
             }}>
             <Text style={styles.primaryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : null}
       <WebView
-        key={isPackagedGame ? 'packaged-study' : 'remote-study'}
+        key={`remote-study-${reloadKey}`}
         ref={webViewRef}
         source={{uri: gameUrl}}
         style={styles.webView}
-        originWhitelist={['https://radiotedu.com', 'file://*']}
+        originWhitelist={['https://radiotedu.com']}
         javaScriptEnabled
+        cacheEnabled={false}
         domStorageEnabled={false}
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
         mixedContentMode="never"
         setSupportMultipleWindows={false}
-        allowFileAccess={isPackagedGame}
+        allowFileAccess={false}
         allowFileAccessFromFileURLs={false}
         allowUniversalAccessFromFileURLs={false}
         injectedJavaScriptBeforeContentLoaded={bridgeScript}
         injectedJavaScript={bridgeScript}
         onLoadEnd={() => webViewRef.current?.injectJavaScript(bridgeScript)}
-        onShouldStartLoadWithRequest={handleStudyNavigationRequest}
+        onShouldStartLoadWithRequest={({url}: {url: string}) =>
+          isAllowedStudyNavigation(url)
+        }
         onHttpError={({nativeEvent}: {nativeEvent: {statusCode: number}}) => {
           if (nativeEvent.statusCode < 400) {
             return;
           }
-          if (!usePackagedFallback) {
-            setUsePackagedFallback(true);
-            return;
-          }
           setHasLoadError(true);
         }}
-        onError={() => {
-          if (!usePackagedFallback) {
-            setUsePackagedFallback(true);
-            return;
-          }
-          setHasLoadError(true);
-        }}
+        onError={() => setHasLoadError(true)}
         renderLoading={() => (
           <View style={styles.loading}>
             <ActivityIndicator color={COLORS.primary} />

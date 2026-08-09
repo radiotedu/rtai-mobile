@@ -6,4 +6,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 
 rootProject.name = 'com.radiotedumobile'
 include ':app'
+include ':formfactor'
+include ':tv'
+include ':wear'
 includeBuild('../node_modules/@react-native/gradle-plugin')

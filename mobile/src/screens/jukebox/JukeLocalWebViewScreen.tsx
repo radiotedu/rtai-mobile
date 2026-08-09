@@ -34,6 +34,7 @@ const JukeLocalWebViewScreen = () => {
           style={styles.webView}
           originWhitelist={['https://radiotedu.com']}
           javaScriptEnabled
+          cacheEnabled={false}
           domStorageEnabled
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}

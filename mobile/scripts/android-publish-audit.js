@@ -31,6 +31,10 @@ function main() {
   const buildGradle = read('android/build.gradle');
   const appGradle = read('android/app/build.gradle');
   const manifest = read('android/app/src/main/AndroidManifest.xml');
+  const tvManifest = read('android/tv/src/main/AndroidManifest.xml');
+  const wearManifest = read('android/wear/src/main/AndroidManifest.xml');
+  const tvGradle = read('android/tv/build.gradle');
+  const wearGradle = read('android/wear/build.gradle');
   const autoDesc = read('android/app/src/main/res/xml/automotive_app_desc.xml');
   const proguard = read('android/app/proguard-rules.pro');
   const releaseChecklist = read('docs/RELEASE_CHECKLIST.md');
@@ -61,8 +65,8 @@ function main() {
   );
 
   const checks = [
-    check(compileSdk >= 35, 'Compile SDK is Play-current', `compileSdkVersion=${compileSdk}`),
-    check(targetSdk >= 35, 'Target SDK is Play-current for phone publishing', `targetSdkVersion=${targetSdk}`),
+    check(compileSdk >= 36, 'Compile SDK is Play-current', `compileSdkVersion=${compileSdk}`),
+    check(targetSdk >= 36, 'Target SDK is Play-current for phone publishing', `targetSdkVersion=${targetSdk}`),
     check(/applicationId\s+"com\.radiotedumobile"/.test(appGradle), 'Application id is stable', 'com.radiotedumobile'),
     check(/versionCode\s+\d+/.test(appGradle) && /versionName\s+"[^"]+"/.test(appGradle), 'Version code/name are declared', 'Gradle defaultConfig'),
     check(/POST_NOTIFICATIONS/.test(manifest), 'Android 13+ notification permission declared', 'POST_NOTIFICATIONS'),
@@ -79,6 +83,9 @@ function main() {
     check(/android\.media\.browse\.MediaBrowserService/.test(manifest), 'Android Auto media browser service declared', 'RadioTeduCarService'),
     check(/MEDIA_PLAY_FROM_SEARCH/.test(manifest), 'Android Auto voice search action declared', 'MEDIA_PLAY_FROM_SEARCH'),
     check(/<uses\s+name="media"\s*\/>/.test(autoDesc), 'Automotive app descriptor opts into media', 'automotive_app_desc.xml'),
+    check(/applicationId\s+"com\.radiotedumobile"/.test(tvGradle) && /LEANBACK_LAUNCHER/.test(tvManifest), 'Android TV uses same Play package with leanback targeting', 'android/tv'),
+    check(/applicationId\s+"com\.radiotedumobile"/.test(wearGradle) && /android\.hardware\.type\.watch/.test(wearManifest) && /wearable\.standalone/.test(wearManifest), 'Wear OS uses same Play package with standalone watch targeting', 'android/wear'),
+    check(exists('android/tv/src/main/res/drawable/tv_banner.png'), 'Android TV banner exists', '320x180 TV banner'),
     check(!/screenOrientation=/.test(manifest), 'Adaptive layouts are not orientation-locked', 'no android:screenOrientation on MainActivity'),
     check(/resizeableActivity="true"/.test(manifest), 'Large screen and foldable resize support is explicit', 'resizeableActivity=true'),
     check(/MediaBrowserServiceCompat|MediaSessionCompat/.test(proguard), 'Release keep rules cover car media services', 'proguard-rules.pro'),

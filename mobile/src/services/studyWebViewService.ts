@@ -1,7 +1,6 @@
 import {parseHttpUrl} from './safeHttpUrlService';
 
 export const STUDY_REMOTE_ROOT = 'https://radiotedu.com/study/';
-export const STUDY_PACKAGED_ROOT = 'file:///android_asset/study-game/';
 
 export type StudyRoomId = 'library' | 'chim-alan';
 
@@ -27,21 +26,13 @@ const asInjectedJson = (value: unknown) =>
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 
-export const buildStudyEntryUrl = (
-  roomId: StudyRoomId,
-  packaged = false,
-) => {
-  const root = packaged ? STUDY_PACKAGED_ROOT : STUDY_REMOTE_ROOT;
-  return `${root}index.html?embedded=mobile&room=${encodeURIComponent(roomId)}`
+export const buildStudyEntryUrl = (roomId: StudyRoomId) => {
+  return `${STUDY_REMOTE_ROOT}index.html?embedded=mobile&room=${encodeURIComponent(roomId)}`
     .replace('/study/index.html?', '/study/?');
 };
 
 export const isAllowedStudyNavigation = (url: string) => {
   if (url === 'about:blank') {
-    return true;
-  }
-
-  if (url.startsWith(STUDY_PACKAGED_ROOT)) {
     return true;
   }
 
@@ -55,11 +46,6 @@ export const isAllowedStudyNavigation = (url: string) => {
       (parsed.pathname === '/study' || parsed.pathname.startsWith('/study/')),
   );
 };
-
-export const shouldUsePackagedStudyFallback = (
-  url: string,
-  usingPackagedGame: boolean,
-) => !usingPackagedGame && !isAllowedStudyNavigation(url);
 
 export const createStudyPublicAccountBridge = (
   input: StudyPublicBridgeInput,

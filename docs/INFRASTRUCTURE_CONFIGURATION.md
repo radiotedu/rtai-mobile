@@ -21,9 +21,10 @@ The v1.0.0 TV/Wear release binaries also contained `/ai` and `/event`, although
 their source was not present in the v1.0.0 tag. A fresh GET probe on 2026-08-09
 returned HTTP 404 for all eight candidates, including `/lofi`. The configured
 Voting WebView also returned 404; Juke-local and Study returned 200. Run
-`node scripts/verify-live-services.mjs` before release. Both signed-release
-workflows enforce this gate. Keep DNS hostnames in all apps so server migration
-does not require an app update.
+`node scripts/verify-live-services.mjs` for diagnostics. Signed-release workflows
+use `--allow-unavailable-streams`: they verify the configured Icecast links but
+do not block while channels are intentionally offline. Keep DNS hostnames in all
+apps so server migration does not require an app update.
 
 ## Secrets
 

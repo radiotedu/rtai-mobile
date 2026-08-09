@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {loadConfiguredServices, probeService} from '../scripts/verify-live-services.mjs';
+import {isBlockingFailure, loadConfiguredServices, probeService} from '../scripts/verify-live-services.mjs';
 
 test('release health check covers every remote WebView and form-factor stream', async () => {
   const services = await loadConfiguredServices();
@@ -24,4 +24,9 @@ test('health probe rejects unavailable pages and non-audio stream responses', as
     probeService({kind: 'stream', url: 'https://example.test'}, {fetchImpl: async () => ({ok: true, status: 200, headers: text})}),
     /unexpected content type/,
   );
+});
+
+test('release policy permits unavailable Icecast streams but still blocks broken WebViews', () => {
+  assert.equal(isBlockingFailure({kind: 'stream', ok: false}, {allowUnavailableStreams: true}), false);
+  assert.equal(isBlockingFailure({kind: 'webview', ok: false}, {allowUnavailableStreams: true}), true);
 });

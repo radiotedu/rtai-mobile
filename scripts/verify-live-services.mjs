@@ -73,10 +73,16 @@ export async function verifyLiveServices(options = {}) {
   return results;
 }
 
+export function isBlockingFailure(result, {allowUnavailableStreams = false} = {}) {
+  return !result.ok && !(allowUnavailableStreams && result.kind === 'stream');
+}
+
 if (path.resolve(process.argv[1] ?? '') === scriptPath) {
+  const allowUnavailableStreams = process.argv.includes('--allow-unavailable-streams');
   const results = await verifyLiveServices();
   for (const result of results) {
-    console.log(`${result.ok ? 'PASS' : 'FAIL'} | ${result.kind} | ${result.name} | ${result.ok ? `HTTP ${result.status}` : result.error}`);
+    const allowed = !result.ok && allowUnavailableStreams && result.kind === 'stream';
+    console.log(`${result.ok ? 'PASS' : allowed ? 'WARN' : 'FAIL'} | ${result.kind} | ${result.name} | ${result.ok ? `HTTP ${result.status}` : result.error}`);
   }
-  if (results.some(result => !result.ok)) process.exitCode = 1;
+  if (results.some(result => isBlockingFailure(result, {allowUnavailableStreams}))) process.exitCode = 1;
 }

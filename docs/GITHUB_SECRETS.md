@@ -11,6 +11,8 @@ Production Android signing is provisioned only through encrypted GitHub Actions 
 
 The source workspace contained no production keystore and no production API credential. No value was fabricated, guessed, copied from the development debug keystore, or migrated into Git history.
 
+The v1.0.0 AAB is signed by `CN=RadioTEDU Android, O=RadioTEDU, L=Ankara, C=TR` with SHA-256 certificate fingerprint `AE:0B:BE:47:4C:CF:16:24:F0:26:49:41:7F:7F:A0:E8:CF:B6:CA:2C:5B:A0:F3:6E:0D:22:FB:41:B2:BD:BC:B4`. The release workflow rejects any keystore that does not match this public fingerprint, preventing an update-incompatible release.
+
 ## Encode the production keystore
 
 Run locally, substituting the path to the real production keystore:
@@ -51,4 +53,6 @@ The iOS release workflow also requires these repository secrets:
 | `IOS_KEYCHAIN_PASSWORD` | Ephemeral CI keychain password |
 
 Apple must approve the Audio App CarPlay capability before the profile is
-created. Stored GitHub secret values cannot be recovered from a release binary.
+created. The workflow verifies the certificate identity, team, bundle ID, and
+CarPlay entitlement before archiving. Stored GitHub secret values cannot be
+recovered from a release binary.

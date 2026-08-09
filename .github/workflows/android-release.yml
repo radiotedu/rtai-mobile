@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ inputs.tag }}
+      # Public SHA-256 fingerprint of the upload/signing certificate used by v1.0.0.
+      EXPECTED_ANDROID_CERT_SHA256: AE0BBE474CCF1624F02649417F7FA0E8CFB6CA2C5BA0F36E0D22FB41B2BDBCB4
 
     steps:
       - name: Check out repository
@@ -51,6 +53,9 @@ jobs:
 
       - name: Make Gradle wrapper executable
         run: chmod +x mobile/android/gradlew
+
+      - name: Verify production WebViews and radio streams
+        run: node scripts/verify-live-services.mjs --allow-unavailable-streams
 
       - name: Validate release inputs and configure signing
         shell: bash
@@ -92,6 +97,19 @@ jobs:
           chmod 600 "$keystore_path"
           if [[ ! -s "$keystore_path" ]]; then
             printf 'Decoded release keystore is empty.\n' >&2
+            exit 1
+          fi
+
+          actual_cert_sha256=$(
+            keytool -exportcert \
+              -keystore "$keystore_path" \
+              -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+              -alias "$ANDROID_KEY_ALIAS" |
+              sha256sum | awk '{ print toupper($1) }'
+          )
+          if [[ "$actual_cert_sha256" != "$EXPECTED_ANDROID_CERT_SHA256" ]]; then
+            printf 'Android signing certificate does not match v1.0.0. Expected %s, got %s.\n' \
+              "$EXPECTED_ANDROID_CERT_SHA256" "$actual_cert_sha256" >&2
             exit 1
           fi
 

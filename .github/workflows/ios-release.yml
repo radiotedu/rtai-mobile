@@ -41,6 +41,9 @@ jobs:
       - working-directory: mobile
         run: bundle exec pod install --project-directory=ios
 
+      - name: Verify production WebViews and radio streams
+        run: node scripts/verify-live-services.mjs --allow-unavailable-streams
+
       - name: Install signing identity and CarPlay profile
         shell: bash
         env:
@@ -66,10 +69,17 @@ jobs:
           security import "$certificate" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
           security list-keychain -d user -s "$keychain" login.keychain-db
           security set-key-partition-list -S apple-tool:,apple: -s -k "$IOS_KEYCHAIN_PASSWORD" "$keychain"
+          security find-identity -v -p codesigning "$keychain" | grep -Eq '[1-9][0-9]* valid identities found'
 
           security cms -D -i "$profile" > "$RUNNER_TEMP/profile.plist"
           profile_uuid=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
           profile_name=$(/usr/libexec/PlistBuddy -c 'Print Name' "$RUNNER_TEMP/profile.plist")
+          profile_team=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.developer.team-identifier' "$RUNNER_TEMP/profile.plist")
+          profile_app_id=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist")
+          profile_carplay=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.developer.carplay-audio' "$RUNNER_TEMP/profile.plist")
+          [[ "$profile_team" == "$APPLE_TEAM_ID" ]] || { echo 'Provisioning profile team does not match APPLE_TEAM_ID.' >&2; exit 1; }
+          [[ "$profile_app_id" == *."$IOS_BUNDLE_ID" ]] || { echo 'Provisioning profile does not match IOS_BUNDLE_ID.' >&2; exit 1; }
+          [[ "$profile_carplay" == 'true' ]] || { echo 'Provisioning profile lacks the CarPlay audio entitlement.' >&2; exit 1; }
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$profile" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
           printf 'PROFILE_NAME=%s\n' "$profile_name" >> "$GITHUB_ENV"

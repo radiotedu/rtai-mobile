@@ -11,7 +11,9 @@ Production signing is provisioned only through encrypted GitHub Actions secrets.
 
 The source workspace contained no production keystore and no production API credential. No value was fabricated, guessed, copied from the development debug keystore, or migrated into Git history.
 
-The v1.0.0 AAB is signed by `CN=RadioTEDU Android, O=RadioTEDU, L=Ankara, C=TR` with SHA-256 certificate fingerprint `AE:0B:BE:47:4C:CF:16:24:F0:26:49:41:7F:7F:A0:E8:CF:B6:CA:2C:5B:A0:F3:6E:0D:22:FB:41:B2:BD:BC:B4`. The release workflow rejects any keystore that does not match this public fingerprint, preventing an update-incompatible release.
+Starting with v1.1.0, production packages use the permanent certificate `CN=RadioTEDU, OU=Mobile, O=RadioTEDU, L=Istanbul, ST=Istanbul, C=TR` with SHA-256 fingerprint `B3:B0:8D:B1:C4:AE:FB:F4:25:1D:53:95:10:61:AD:A7:27:79:64:79:DE:45:D8:17:F9:57:62:32:FF:2D:94:39`. The release workflow rejects any other keystore. Back up this private key permanently; every future update depends on it.
+
+The v1.0.0 private key is unavailable. Therefore v1.1.0 is a fresh-install signing lineage and cannot update an installed v1.0.0 APK in place. Users must uninstall v1.0.0 before installing v1.1.0. This limitation does not affect future updates signed with the v1.1.0 key.
 
 ## Encode the production keystore
 

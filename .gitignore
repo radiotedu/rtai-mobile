@@ -21,6 +21,7 @@ mobile/android/keystore.properties
 *.key
 *.keystore
 !mobile/android/app/debug.keystore
+artifacts/private-signing/
 .idea/
 .vscode/
 .DS_Store

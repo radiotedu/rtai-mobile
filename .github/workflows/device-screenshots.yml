@@ -5,6 +5,13 @@ on:
   pull_request:
     paths:
       - .github/workflows/device-screenshots.yml
+      - mobile/android/**
+      - mobile/ios/**
+      - mobile/src/**
+      - mobile/index.js
+      - mobile/package.json
+      - mobile/package-lock.json
+      - scripts/capture-*-screenshot*.sh
 
 permissions:
   contents: read

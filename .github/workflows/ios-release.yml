@@ -59,7 +59,7 @@ jobs:
         run: bundle exec pod install --project-directory=ios
 
       - name: Verify production WebViews and radio streams
-        run: node scripts/verify-live-services.mjs --allow-unavailable-streams
+        run: node scripts/verify-live-services.mjs --allow-unavailable-streams --allow-unavailable-voting
 
       - name: Install signing identity and CarPlay profile
         shell: bash

@@ -34,3 +34,14 @@ test('production releases are main-only and cannot reuse a tag for another commi
     assert.match(workflow, /existing_commit.*GITHUB_SHA/s);
   }
 });
+
+test('Android QA release is unmistakably debug-signed and includes Android Auto, TV, and Wear', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/android-qa-release.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /:app:assembleDebug/);
+  assert.match(workflow, /:tv:assembleDebug/);
+  assert.match(workflow, /:wear:assembleDebug/);
+  assert.match(workflow, /Mobile-with-Android-Auto/);
+  assert.match(workflow, /debug-signed/);
+  assert.match(workflow, /prerelease: true/);
+  assert.doesNotMatch(workflow, /bundleRelease|assembleRelease/);
+});

@@ -72,7 +72,7 @@ jobs:
         run: chmod +x mobile/android/gradlew
 
       - name: Verify production WebViews and radio streams
-        run: node scripts/verify-live-services.mjs --allow-unavailable-streams
+        run: node scripts/verify-live-services.mjs --allow-unavailable-streams --allow-unavailable-voting
 
       - name: Validate release inputs and configure signing
         shell: bash

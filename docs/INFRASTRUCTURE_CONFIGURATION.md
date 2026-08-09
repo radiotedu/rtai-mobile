@@ -19,12 +19,15 @@ The tracked source uses these HTTPS stream mounts:
 
 The v1.0.0 TV/Wear release binaries also contained `/ai` and `/event`, although
 their source was not present in the v1.0.0 tag. A fresh GET probe on 2026-08-09
-returned HTTP 404 for all eight candidates, including `/lofi`. The configured
-Voting WebView also returned 404; Juke-local and Study returned 200. Run
+returned audio HTTP 200 for `/lofi`; the other five configured mounts returned
+404. The configured Voting WebView also returned 404 because it is intentionally
+disabled; Juke-local and Study returned 200. Run
 `node scripts/verify-live-services.mjs` for diagnostics. Signed-release workflows
 use `--allow-unavailable-streams`: they verify the configured Icecast links but
-do not block while channels are intentionally offline. Keep DNS hostnames in all
-apps so server migration does not require an app update.
+do not block while channels are intentionally offline. They also use
+`--allow-unavailable-voting` while Voting is intentionally disabled; Juke-local
+and Study remain blocking WebView checks. Keep DNS hostnames in all apps so
+server migration does not require an app update.
 
 ## Secrets
 

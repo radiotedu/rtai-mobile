@@ -16,7 +16,7 @@ Compare the certificate identity with the intended release certificate; a succes
 ## Manual GitHub release
 
 1. Run the CI workflow successfully on `main`.
-2. Provision the four secrets in [GITHUB_SECRETS.md](GITHUB_SECRETS.md).
+2. Provision the secrets in the `production` environment as described in [GITHUB_SECRETS.md](GITHUB_SECRETS.md).
 3. Open **Actions → Android Release → Run workflow**.
 4. Enter the intended tag in the required `tag` input.
 5. The workflow installs locked dependencies, builds signed APK/AAB files for phone, TV, and Wear, verifies every signature, uploads checksums, and updates the GitHub Release. Study, voting, and Jukebox controller deploy separately as websites.
@@ -30,6 +30,8 @@ processing it.
 
 Both release workflows reject a tag that differs from the version embedded in
 the mobile, TV, Wear, or iOS targets. For the current sources, use `v1.1.0`.
+They run only from `main` and reject an existing tag that points to a different
+commit, so Android and iOS assets cannot silently represent different sources.
 
 The workflow does not print signing values and does not commit the decoded keystore or generated `keystore.properties` file.
 

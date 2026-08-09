@@ -19,6 +19,7 @@ jobs:
   release:
     name: Build and publish signed Android packages
     runs-on: ubuntu-latest
+    environment: production
     env:
       RELEASE_TAG: ${{ inputs.tag }}
       # Public SHA-256 fingerprint of the upload/signing certificate used by v1.0.0.
@@ -27,6 +28,19 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify main release commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/main' ]] || { echo 'Production releases must run from main.' >&2; exit 1; }
+          existing_commit="$(git rev-list -n 1 "$RELEASE_TAG" 2>/dev/null || true)"
+          [[ -z "$existing_commit" || "$existing_commit" == "$GITHUB_SHA" ]] || {
+            echo "Release tag $RELEASE_TAG already points to another commit." >&2
+            exit 1
+          }
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

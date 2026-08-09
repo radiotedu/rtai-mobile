@@ -1,6 +1,6 @@
 # GitHub Actions Signing Secrets
 
-Production Android signing is provisioned only through encrypted GitHub Actions secrets. Configure these four exact repository secret names:
+Production signing is provisioned only through encrypted GitHub Actions secrets. Configure these exact secret names in the `production` environment (preferred) or as repository secrets:
 
 | Secret | Purpose |
 |---|---|

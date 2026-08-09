@@ -24,3 +24,13 @@ test('iOS release validates and uploads the signed IPA to TestFlight', async () 
   assert.match(workflow, /--apiKey/);
   assert.match(workflow, /--apiIssuer/);
 });
+
+test('production releases are main-only and cannot reuse a tag for another commit', async () => {
+  for (const name of ['android-release.yml', 'ios-release.yml']) {
+    const workflow = await readFile(new URL(`../.github/workflows/${name}`, import.meta.url), 'utf8');
+    assert.match(workflow, /environment: production/);
+    assert.match(workflow, /fetch-depth: 0/);
+    assert.match(workflow, /GITHUB_REF.*refs\/heads\/main/);
+    assert.match(workflow, /existing_commit.*GITHUB_SHA/s);
+  }
+});

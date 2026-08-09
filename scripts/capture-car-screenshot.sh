@@ -7,7 +7,7 @@ output="$2"
 mkdir -p "$(dirname "$output")"
 adb install -r "$apk"
 adb shell am force-stop com.android.car.media || true
-adb shell monkey -p com.android.car.media -c android.intent.category.LAUNCHER 1
-sleep 12
+adb shell am start -W -a android.car.intent.action.MEDIA_TEMPLATE --es media_package com.radiotedumobile
+sleep 25
 adb exec-out screencap -p > "$output"
 test -s "$output"

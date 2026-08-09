@@ -60,4 +60,7 @@ test('device screenshots use native phone, tablet, TV, Wear, car, iPhone, and iP
     'utf8',
   );
   assert.match(project, /TARGETED_DEVICE_FAMILY = "1,2";/);
+  const info = await readFile(new URL('../mobile/ios/RadioTEDUMobile/Info.plist', import.meta.url), 'utf8');
+  assert.match(info, /UIWindowSceneSessionRoleApplication/);
+  assert.match(info, /RadioTEDUSceneDelegate/);
 });

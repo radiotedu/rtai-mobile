@@ -26,7 +26,27 @@ test('health probe rejects unavailable pages and non-audio stream responses', as
   );
 });
 
-test('release policy permits unavailable Icecast streams but still blocks broken WebViews', () => {
+test('release policy permits intentionally disabled streams and Voting only', () => {
   assert.equal(isBlockingFailure({kind: 'stream', ok: false}, {allowUnavailableStreams: true}), false);
-  assert.equal(isBlockingFailure({kind: 'webview', ok: false}, {allowUnavailableStreams: true}), true);
+  assert.equal(
+    isBlockingFailure(
+      {kind: 'webview', name: 'voting', ok: false},
+      {allowUnavailableVoting: true},
+    ),
+    false,
+  );
+  assert.equal(
+    isBlockingFailure(
+      {kind: 'webview', name: 'study', ok: false},
+      {allowUnavailableStreams: true, allowUnavailableVoting: true},
+    ),
+    true,
+  );
+  assert.equal(
+    isBlockingFailure(
+      {kind: 'webview', name: 'juke-local', ok: false},
+      {allowUnavailableStreams: true, allowUnavailableVoting: true},
+    ),
+    true,
+  );
 });

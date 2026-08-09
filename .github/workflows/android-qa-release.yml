@@ -1,0 +1,108 @@
+name: Android QA Prerelease
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: QA tag matching vMAJOR.MINOR.PATCH-qa.NUMBER
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-qa-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify QA release ref and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/main' ]] || { echo 'QA releases must run from main.' >&2; exit 1; }
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-qa\.[0-9]+$ ]] || {
+            echo 'QA tag must match vMAJOR.MINOR.PATCH-qa.NUMBER.' >&2
+            exit 1
+          }
+          node scripts/verify-release-version.mjs "${RELEASE_TAG%%-qa.*}"
+          existing_commit="$(git rev-list -n 1 "$RELEASE_TAG" 2>/dev/null || true)"
+          [[ -z "$existing_commit" || "$existing_commit" == "$GITHUB_SHA" ]] || {
+            echo "QA tag $RELEASE_TAG already points to another commit." >&2
+            exit 1
+          }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - working-directory: mobile
+        run: npm ci
+
+      - run: node scripts/verify-live-services.mjs --allow-unavailable-streams --allow-unavailable-voting
+
+      - run: chmod +x mobile/android/gradlew
+
+      - name: Build phone with Android Auto, TV, and Wear QA APKs
+        working-directory: mobile/android
+        run: >-
+          ./gradlew
+          :app:assembleDebug
+          :tv:assembleDebug
+          :wear:assembleDebug
+          --no-daemon
+
+      - name: Verify and name debug-signed QA packages
+        id: packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          apksigner="$(find "$sdk_root/build-tools" -type f -name apksigner -print | sort -V | tail -n 1)"
+          [[ -x "$apksigner" ]] || { echo 'Android SDK apksigner was not found.' >&2; exit 1; }
+          asset_dir="$RUNNER_TEMP/android-qa"
+          mkdir -p "$asset_dir"
+          declare -A labels=( [app]=Mobile-with-Android-Auto [tv]=TV [wear]=Wear )
+          for module in app tv wear; do
+            apk="mobile/android/$module/build/outputs/apk/debug/$module-debug.apk"
+            [[ -f "$apk" ]] || { echo "Missing $module debug APK." >&2; exit 1; }
+            "$apksigner" verify --verbose --print-certs "$apk"
+            cp "$apk" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}-debug-signed.apk"
+          done
+          (cd "$asset_dir" && sha256sum -- *.apk > SHA256SUMS.txt)
+          printf 'asset_dir=%s\n' "$asset_dir" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RadioTEDU-Android-${{ inputs.tag }}-debug-signed
+          path: ${{ steps.packages.outputs.asset_dir }}/*
+          if-no-files-found: error
+
+      - name: Publish clearly labeled QA prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: RadioTEDU Android ${{ inputs.tag }} (debug-signed QA)
+          prerelease: true
+          body: |
+            Debug-signed QA packages for private device testing only. Not Play Store or production artifacts.
+
+            Mobile APK includes Android Auto. TV and Wear APKs target their respective devices. Icecast streams and Voting may be intentionally unavailable.
+          files: ${{ steps.packages.outputs.asset_dir }}/*
+          fail_on_unmatched_files: true

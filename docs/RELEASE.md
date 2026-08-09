@@ -37,6 +37,12 @@ The workflow does not print signing values and does not commit the decoded keyst
 
 ## Initial QA artifact
 
+For current private Android device testing, run **Android QA Prerelease** from
+`main` with a tag such as `v1.1.0-qa.1`. It publishes three unmistakably
+debug-signed APKs: mobile with Android Auto, TV, and Wear. These APKs are not
+production or Play Store artifacts and cannot replace v1.0.0 for existing
+production-signed installations.
+
 The only approved initial QA artifact is:
 
 - File: `RadioTEDU-Mobile-f2624e15-release.apk`

@@ -2,6 +2,30 @@
 
 #import <React/RCTBundleURLProvider.h>
 
+@interface RadioTEDUSceneDelegate : UIResponder <UIWindowSceneDelegate>
+@property (strong, nonatomic) UIWindow *window;
+@end
+
+@implementation RadioTEDUSceneDelegate
+
+- (void)scene:(UIScene *)scene
+    willConnectToSession:(UISceneSession *)session
+    options:(UISceneConnectionOptions *)connectionOptions
+{
+  if (![scene isKindOfClass:UIWindowScene.class]) {
+    return;
+  }
+
+  AppDelegate *appDelegate = (AppDelegate *)UIApplication.sharedApplication.delegate;
+  UIViewController *rootViewController = appDelegate.window.rootViewController;
+  self.window = [[UIWindow alloc] initWithWindowScene:(UIWindowScene *)scene];
+  self.window.rootViewController = rootViewController;
+  appDelegate.window = self.window;
+  [self.window makeKeyAndVisible];
+}
+
+@end
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions

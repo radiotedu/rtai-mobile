@@ -1,0 +1,197 @@
+name: Device Screenshots
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/device-screenshots.yml
+      - mobile/android/**
+      - mobile/ios/**
+      - mobile/src/**
+      - mobile/index.js
+      - mobile/package.json
+      - mobile/package-lock.json
+      - scripts/capture-*-screenshot*.sh
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - working-directory: mobile
+        run: npm ci
+      - run: chmod +x mobile/android/gradlew
+      - working-directory: mobile/android
+        run: ./gradlew :app:assembleRelease :tv:assembleDebug :wear:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-apks
+          path: |
+            mobile/android/app/build/outputs/apk/release/app-release.apk
+            mobile/android/tv/build/outputs/apk/debug/tv-debug.apk
+            mobile/android/wear/build/outputs/apk/debug/wear-debug.apk
+          retention-days: 7
+
+  android-mobile:
+    needs: build-android
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - form-factor: phone
+            profile: pixel_7
+          - form-factor: tablet
+            profile: pixel_c
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshot-apks
+          path: apks
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          script: bash scripts/capture-android-screenshot.sh apks/app/build/outputs/apk/release/app-release.apk com.radiotedumobile/.MainActivity screenshots/android-${{ matrix.form-factor }}.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-android-${{ matrix.form-factor }}
+          path: screenshots/android-${{ matrix.form-factor }}.png
+          retention-days: 7
+
+  android-tv:
+    needs: build-android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshot-apks
+          path: apks
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          script: bash scripts/capture-android-screenshot.sh apks/tv/build/outputs/apk/debug/tv-debug.apk com.radiotedumobile/.tv.TvMainActivity screenshots/android-tv.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-android-tv
+          path: screenshots/android-tv.png
+          retention-days: 7
+
+  android-wear:
+    needs: build-android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshot-apks
+          path: apks
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: android-wear
+          arch: x86_64
+          profile: wearos_large_round
+          script: bash scripts/capture-android-screenshot.sh apks/wear/build/outputs/apk/debug/wear-debug.apk com.radiotedumobile/.wear.WearMainActivity screenshots/android-wear.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-android-wear
+          path: screenshots/android-wear.png
+          retention-days: 7
+
+  android-car-host:
+    needs: build-android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: screenshot-apks
+          path: apks
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          system-image-api-level: 34-ext9
+          target: android-automotive
+          arch: x86_64
+          script: bash scripts/capture-car-screenshot.sh apks/app/build/outputs/apk/release/app-release.apk screenshots/android-car-host.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-android-car-host
+          path: screenshots/android-car-host.png
+          retention-days: 7
+
+  ios:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - working-directory: mobile
+        run: npm ci
+      - working-directory: mobile
+        run: bundle install
+      - working-directory: mobile
+        run: bundle exec pod install --project-directory=ios
+      - working-directory: mobile
+        run: >-
+          xcodebuild
+          -workspace ios/RadioTEDUMobile.xcworkspace
+          -scheme RadioTEDUMobile
+          -configuration Release
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/DerivedData"
+          CODE_SIGNING_ALLOWED=NO
+          build
+      - run: >-
+          bash scripts/capture-ios-screenshots.sh
+          "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphonesimulator/RadioTEDUMobile.app"
+          screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-ios
+          path: screenshots/*.png
+          retention-days: 7

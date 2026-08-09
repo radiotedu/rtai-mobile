@@ -1,0 +1,35 @@
+name: Production account smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      mutate:
+        description: Use only with the disposable E2E account; awards/spends Gold
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-account-smoke
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify authenticated production account
+        env:
+          RADIOTEDU_E2E_ACCESS_TOKEN: ${{ secrets.RADIOTEDU_E2E_ACCESS_TOKEN }}
+          RADIOTEDU_E2E_ACCOUNT_ID: ${{ secrets.RADIOTEDU_E2E_ACCOUNT_ID }}
+          RADIOTEDU_E2E_AVATAR_ITEM_ID: ${{ secrets.RADIOTEDU_E2E_AVATAR_ITEM_ID }}
+          RADIOTEDU_E2E_MARKET_ITEM_ID: ${{ secrets.RADIOTEDU_E2E_MARKET_ITEM_ID }}
+          RADIOTEDU_E2E_MUTATE: ${{ inputs.mutate }}
+        run: node scripts/verify-production-account.mjs

@@ -33,7 +33,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - run: node --test tests/repository-contract.test.mjs tests/live-services.test.mjs
+      - run: node --test tests/repository-contract.test.mjs tests/live-services.test.mjs tests/production-account.test.mjs
 
       - run: node scripts/verify-repository.mjs
 
@@ -63,8 +63,17 @@ jobs:
 
       - run: chmod +x mobile/android/gradlew
 
-      - working-directory: mobile/android
-        run: ./gradlew :tv:testDebugUnitTest :wear:testDebugUnitTest assembleDebug --no-daemon
+      - name: Build phone and Android Auto; test TV and Wear
+        working-directory: mobile/android
+        run: >-
+          ./gradlew
+          :app:testDebugUnitTest
+          :app:assembleDebug
+          :tv:testDebugUnitTest
+          :tv:assembleDebug
+          :wear:testDebugUnitTest
+          :wear:assembleDebug
+          --no-daemon
 
   ios:
     runs-on: macos-14

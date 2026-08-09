@@ -33,7 +33,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - run: node --test tests/repository-contract.test.mjs tests/live-services.test.mjs
+      - run: node --test tests/repository-contract.test.mjs tests/live-services.test.mjs tests/production-account.test.mjs
 
       - run: node scripts/verify-repository.mjs
 

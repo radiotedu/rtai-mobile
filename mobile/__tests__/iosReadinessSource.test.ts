@@ -25,9 +25,18 @@ describe('iOS release readiness', () => {
     );
     const manifest = JSON.parse(
       fs.readFileSync(path.join(iconRoot, 'Contents.json'), 'utf8'),
-    ) as {images: Array<{filename?: string}>};
+    ) as {images: Array<{filename?: string; idiom?: string}>};
 
-    expect(manifest.images).toHaveLength(9);
+    expect(manifest.images).toHaveLength(18);
+    expect(
+      manifest.images.filter(image => image.idiom === 'iphone'),
+    ).toHaveLength(8);
+    expect(
+      manifest.images.filter(image => image.idiom === 'ipad'),
+    ).toHaveLength(9);
+    expect(
+      manifest.images.filter(image => image.idiom === 'ios-marketing'),
+    ).toHaveLength(1);
     for (const image of manifest.images) {
       expect(image.filename).toBeTruthy();
       expect(fs.existsSync(path.join(iconRoot, image.filename!))).toBe(true);

@@ -45,3 +45,19 @@ test('Android QA release is unmistakably debug-signed and includes Android Auto,
   assert.match(workflow, /prerelease: true/);
   assert.doesNotMatch(workflow, /bundleRelease|assembleRelease/);
 });
+
+test('device screenshots use native phone, tablet, TV, Wear, car, iPhone, and iPad hosts', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/device-screenshots.yml', import.meta.url), 'utf8');
+  for (const expected of ['pixel_7', 'pixel_c', 'android-tv', 'android-wear', 'android-automotive']) {
+    assert.match(workflow, new RegExp(expected));
+  }
+  const iosCapture = await readFile(new URL('../scripts/capture-ios-screenshots.sh', import.meta.url), 'utf8');
+  assert.match(iosCapture, /ios-iphone\.png/);
+  assert.match(iosCapture, /ios-ipad\.png/);
+
+  const project = await readFile(
+    new URL('../mobile/ios/RadioTEDUMobile.xcodeproj/project.pbxproj', import.meta.url),
+    'utf8',
+  );
+  assert.match(project, /TARGETED_DEVICE_FAMILY = "1,2";/);
+});

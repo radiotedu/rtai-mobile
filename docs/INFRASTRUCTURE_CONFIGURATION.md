@@ -18,9 +18,12 @@ The tracked source uses these HTTPS stream mounts:
 - `/rock`
 
 The v1.0.0 TV/Wear release binaries also contained `/ai` and `/event`, although
-their source was not present in the v1.0.0 tag. During the 2026-08-09 probe,
-`/lofi` returned HTTP 200; the other listed candidates returned HTTP 404. Keep
-DNS hostnames in all apps so server migration does not require an app update.
+their source was not present in the v1.0.0 tag. A fresh GET probe on 2026-08-09
+returned HTTP 404 for all eight candidates, including `/lofi`. The configured
+Voting WebView also returned 404; Juke-local and Study returned 200. Run
+`node scripts/verify-live-services.mjs` before release. Both signed-release
+workflows enforce this gate. Keep DNS hostnames in all apps so server migration
+does not require an app update.
 
 ## Secrets
 

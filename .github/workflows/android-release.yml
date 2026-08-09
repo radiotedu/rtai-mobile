@@ -43,6 +43,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Verify release tag matches every app target
+        run: node scripts/verify-release-version.mjs "$RELEASE_TAG"
+
       - name: Install Study dependencies
         working-directory: study-game
         run: npm ci

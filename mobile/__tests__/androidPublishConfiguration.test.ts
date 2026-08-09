@@ -6,18 +6,18 @@ describe('Android publishing configuration', () => {
   const mobileRoot = path.join(__dirname, '..');
   const androidRoot = path.join(mobileRoot, 'android');
 
-  it('uses the API 35-compatible Android build toolchain', () => {
+  it('uses the API 36-compatible Android build toolchain', () => {
     const buildGradle = fs.readFileSync(
       path.join(androidRoot, 'build.gradle'),
       'utf8',
     );
 
     expect(buildGradle).toContain(
-      'classpath("com.android.tools.build:gradle:8.6.1")',
+      'classpath("com.android.tools.build:gradle:8.9.1")',
     );
-    expect(buildGradle).toContain('compileSdkVersion = 35');
-    expect(buildGradle).toContain('targetSdkVersion = 35');
-    expect(buildGradle).toContain('buildToolsVersion = "34.0.0"');
+    expect(buildGradle).toContain('compileSdkVersion = 36');
+    expect(buildGradle).toContain('targetSdkVersion = 36');
+    expect(buildGradle).toContain('buildToolsVersion = "35.0.0"');
 
     const snapshotsRestriction = buildGradle.match(
       /repositories\.configureEach\s*\{ repository ->([\s\S]*?)\n    \}/,

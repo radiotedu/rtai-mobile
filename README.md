@@ -23,7 +23,7 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 | Component | Responsibility |
 | --- | --- |
-| `mobile/` | React Native application, native Android project, Android Auto integration, and bundled Study assets |
+| `mobile/` | React Native application, native Android/iOS projects, and Android Auto integration |
 | `study-game/` | Vite and Phaser Study experience, avatar tooling, tests, and production build |
 | `scripts/` | Repository-level source and boundary verification |
 | `tests/` | Contracts that keep this repository standalone and reproducible |
@@ -45,9 +45,14 @@ RTAI Mobile
 └── Jukebox controller ── radiotedu.com/juke-local/controller
 ```
 
-Study has two delivery paths: it is developed and tested in `study-game/`, then
-`mobile/scripts/package-study-game.mjs` prepares the Android-bundled copy used by
-the app. Run the packaging command whenever Study changes.
+Study is developed and tested in `study-game/`, deployed to
+`radiotedu.com/study`, and loaded remotely by the app. Study, voting, and
+Jukebox controller website deployments therefore do not require an app release.
+
+The phone package contains Android Auto. The iOS package contains the CarPlay
+scene. Android TV and Wear OS use small native modules with the same
+`com.radiotedumobile` Play listing/package and separate device-targeted bundles,
+as required by Google Play.
 
 ## Requirements
 
@@ -97,7 +102,6 @@ npm ci
 npm test -- --runInBand
 npx tsc --noEmit
 npx eslint . --quiet
-npm run package:study
 npm run audit:android
 ```
 
@@ -141,6 +145,7 @@ is stored in this repository.
 ## Configuration and operations
 
 - [API and WebView configuration](docs/API_CONFIGURATION.md)
+- [Infrastructure hosts, mounts, and secret status](docs/INFRASTRUCTURE_CONFIGURATION.md)
 - [GitHub signing secrets](docs/GITHUB_SECRETS.md)
 - [Android release procedure](docs/RELEASE.md)
 - [Source provenance and export scope](docs/SOURCE_PROVENANCE.md)

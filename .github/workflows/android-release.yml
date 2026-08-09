@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build and publish signed APK
+    name: Build and publish signed Android packages
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ inputs.tag }}
@@ -48,10 +48,6 @@ jobs:
       - name: Install mobile dependencies
         working-directory: mobile
         run: npm ci
-
-      - name: Package Study game for mobile
-        working-directory: mobile
-        run: npm run package:study
 
       - name: Make Gradle wrapper executable
         run: chmod +x mobile/android/gradlew
@@ -107,9 +103,14 @@ jobs:
           } > mobile/android/keystore.properties
           chmod 600 mobile/android/keystore.properties
 
-      - name: Build signed release APK
+      - name: Build signed phone, TV, and Wear packages
         working-directory: mobile/android
-        run: ./gradlew assembleRelease --no-daemon
+        run: >-
+          ./gradlew
+          :app:assembleRelease :app:bundleRelease
+          :tv:assembleRelease :tv:bundleRelease
+          :wear:assembleRelease :wear:bundleRelease
+          --no-daemon
 
       - name: Remove release signing files
         if: always()
@@ -118,20 +119,11 @@ jobs:
           rm -f "$RUNNER_TEMP/radiotedu-release.jks"
           rm -f mobile/android/keystore.properties
 
-      - name: Verify signature and prepare APK
-        id: verify_apk
+      - name: Verify signatures and prepare release assets
+        id: verify_packages
         shell: bash
         run: |
           set -euo pipefail
-
-          mapfile -d '' apks < <(
-            find mobile/android/app/build/outputs/apk/release \
-              -maxdepth 1 -type f -name '*-release.apk' -print0
-          )
-          if (( ${#apks[@]} != 1 )); then
-            printf 'Expected exactly one release APK, found %d.\n' "${#apks[@]}" >&2
-            exit 1
-          fi
 
           sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
           if [[ -z "$sdk_root" ]]; then
@@ -144,17 +136,31 @@ jobs:
             exit 1
           fi
 
-          "$apksigner" verify --verbose --print-certs "${apks[0]}"
+          asset_dir="$RUNNER_TEMP/release-assets"
+          mkdir -p "$asset_dir"
+          declare -A labels=( [app]=Mobile [tv]=TV [wear]=Wear )
 
-          release_apk="$RUNNER_TEMP/RadioTEDU-Mobile-${RELEASE_TAG}.apk"
-          mv "${apks[0]}" "$release_apk"
-          printf 'apk_path=%s\n' "$release_apk" >> "$GITHUB_OUTPUT"
+          for module in app tv wear; do
+            apk="mobile/android/$module/build/outputs/apk/release/$module-release.apk"
+            aab="mobile/android/$module/build/outputs/bundle/release/$module-release.aab"
+            [[ -f "$apk" && -f "$aab" ]] || {
+              printf 'Missing %s release package.\n' "$module" >&2
+              exit 1
+            }
+            "$apksigner" verify --verbose --print-certs "$apk"
+            jarsigner -verify -strict "$aab"
+            cp "$apk" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.apk"
+            cp "$aab" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.aab"
+          done
 
-      - name: Upload verified APK artifact
+          (cd "$asset_dir" && sha256sum -- * > SHA256SUMS.txt)
+          printf 'asset_dir=%s\n' "$asset_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: RadioTEDU-Mobile-${{ inputs.tag }}
-          path: ${{ steps.verify_apk.outputs.apk_path }}
+          name: RadioTEDU-Android-${{ inputs.tag }}
+          path: ${{ steps.verify_packages.outputs.asset_dir }}/*
           if-no-files-found: error
 
       - name: Publish GitHub Release
@@ -162,5 +168,5 @@ jobs:
         with:
           tag_name: ${{ inputs.tag }}
           name: RadioTEDU Mobile ${{ inputs.tag }}
-          files: ${{ steps.verify_apk.outputs.apk_path }}
+          files: ${{ steps.verify_packages.outputs.asset_dir }}/*
           fail_on_unmatched_files: true

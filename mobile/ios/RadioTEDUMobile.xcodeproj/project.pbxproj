@@ -10,6 +10,8 @@
 		00E356F31AD99517003FC87E /* RadioTEDUMobileTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* RadioTEDUMobileTests.m */; };
 		0C80B921A6F3F58F76C31292 /* libPods-RadioTEDUMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-RadioTEDUMobile.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
+		A10000000000000000000001 /* CarPlaySceneDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* CarPlaySceneDelegate.mm */; };
+		A10000000000000000000003 /* CarPlay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* CarPlay.framework */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		7699B88040F8A987B510C191 /* libPods-RadioTEDUMobile-RadioTEDUMobileTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-RadioTEDUMobile-RadioTEDUMobileTests.a */; };
@@ -36,6 +38,10 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = RadioTEDUMobile/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = RadioTEDUMobile/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = RadioTEDUMobile/main.m; sourceTree = "<group>"; };
+		A10000000000000000000002 /* CarPlaySceneDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = CarPlaySceneDelegate.mm; path = RadioTEDUMobile/CarPlaySceneDelegate.mm; sourceTree = "<group>"; };
+		A10000000000000000000005 /* CarPlaySceneDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CarPlaySceneDelegate.h; path = RadioTEDUMobile/CarPlaySceneDelegate.h; sourceTree = "<group>"; };
+		A10000000000000000000006 /* RadioTEDUMobile.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; name = RadioTEDUMobile.entitlements; path = RadioTEDUMobile/RadioTEDUMobile.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000004 /* CarPlay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CarPlay.framework; path = System/Library/Frameworks/CarPlay.framework; sourceTree = SDKROOT; };
 		19F6CBCC0A4E27FBF8BF4A61 /* libPods-RadioTEDUMobile-RadioTEDUMobileTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RadioTEDUMobile-RadioTEDUMobileTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B4392A12AC88292D35C810B /* Pods-RadioTEDUMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RadioTEDUMobile.debug.xcconfig"; path = "Target Support Files/Pods-RadioTEDUMobile/Pods-RadioTEDUMobile.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-RadioTEDUMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RadioTEDUMobile.release.xcconfig"; path = "Target Support Files/Pods-RadioTEDUMobile/Pods-RadioTEDUMobile.release.xcconfig"; sourceTree = "<group>"; };
@@ -59,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000003 /* CarPlay.framework in Frameworks */,
 				0C80B921A6F3F58F76C31292 /* libPods-RadioTEDUMobile.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -88,6 +95,9 @@
 			children = (
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
+				A10000000000000000000005 /* CarPlaySceneDelegate.h */,
+				A10000000000000000000002 /* CarPlaySceneDelegate.mm */,
+				A10000000000000000000006 /* RadioTEDUMobile.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
@@ -99,6 +109,7 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000004 /* CarPlay.framework */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-RadioTEDUMobile.a */,
 				19F6CBCC0A4E27FBF8BF4A61 /* libPods-RadioTEDUMobile-RadioTEDUMobileTests.a */,
@@ -393,6 +404,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
+				A10000000000000000000001 /* CarPlaySceneDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -465,14 +477,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = RadioTEDUMobile/RadioTEDUMobile.entitlements;
+				CURRENT_PROJECT_VERSION = 11000;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = RadioTEDUMobile/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -492,13 +505,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = RadioTEDUMobile/RadioTEDUMobile.entitlements;
+				CURRENT_PROJECT_VERSION = 11000;
 				INFOPLIST_FILE = RadioTEDUMobile/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

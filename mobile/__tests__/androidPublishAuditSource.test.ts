@@ -16,6 +16,8 @@ describe('android publish audit source', () => {
     expect(source).toContain('Backend connectivity contract tests are present');
     expect(source).toContain('Single APK distribution has no separate automotive flavor');
     expect(source).toContain('Automotive hardware feature is optional in the single APK');
+    expect(source).toContain('Android TV uses same Play package with leanback targeting');
+    expect(source).toContain('Wear OS uses same Play package with standalone watch targeting');
     expect(source).toContain('Six-language localization bundle is present');
     expect(source).toContain('FLAC mobile-data warning policy is tested');
   });

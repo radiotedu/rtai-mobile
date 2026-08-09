@@ -205,6 +205,7 @@ export default function NextSongVoteScreen() {
               style={styles.webView}
               originWhitelist={['https://*']}
               javaScriptEnabled
+              cacheEnabled={false}
               domStorageEnabled={false}
               mixedContentMode="never"
               thirdPartyCookiesEnabled={false}

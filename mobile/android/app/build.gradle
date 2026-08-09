@@ -99,8 +99,8 @@ android {
         applicationId "com.radiotedumobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 11000
+        versionName "1.1.0"
     }
     // Single APK distribution: the same package installs on phones/tablets and
     // exposes optional Android Auto / Automotive media surfaces through the

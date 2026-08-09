@@ -1,0 +1,71 @@
+import {describe, expect, it} from '@jest/globals';
+import fs from 'fs';
+import path from 'path';
+
+const root = path.join(__dirname, '..');
+const read = (relative: string) =>
+  fs.readFileSync(path.join(root, relative), 'utf8');
+
+describe('iOS release readiness', () => {
+  it('uses secure transport, required permissions, audio, and deep links', () => {
+    const plist = read('ios/RadioTEDUMobile/Info.plist');
+    expect(plist).toContain('<key>NSAllowsArbitraryLoads</key>\n\t\t<false/>');
+    expect(plist).toContain('<key>NSPhotoLibraryUsageDescription</key>');
+    expect(plist).toContain('<key>UIBackgroundModes</key>');
+    expect(plist).toContain('<string>audio</string>');
+    expect(plist).toContain('<string>radiotedu</string>');
+    expect(plist).not.toContain('NSLocationWhenInUseUsageDescription');
+    expect(plist).not.toContain('<string>armv7</string>');
+  });
+
+  it('has every required App Store icon file', () => {
+    const iconRoot = path.join(
+      root,
+      'ios/RadioTEDUMobile/Images.xcassets/AppIcon.appiconset',
+    );
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(iconRoot, 'Contents.json'), 'utf8'),
+    ) as {images: Array<{filename?: string}>};
+
+    expect(manifest.images).toHaveLength(9);
+    for (const image of manifest.images) {
+      expect(image.filename).toBeTruthy();
+      expect(fs.existsSync(path.join(iconRoot, image.filename!))).toBe(true);
+    }
+  });
+
+  it('ships CarPlay in the same iOS target', () => {
+    const plist = read('ios/RadioTEDUMobile/Info.plist');
+    const entitlements = read(
+      'ios/RadioTEDUMobile/RadioTEDUMobile.entitlements',
+    );
+    const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
+    const delegate = read('ios/RadioTEDUMobile/CarPlaySceneDelegate.mm');
+
+    expect(plist).toContain('CPTemplateApplicationScene');
+    expect(plist).toContain('CarPlaySceneDelegate');
+    expect(entitlements).toContain('com.apple.developer.carplay-audio');
+    expect(project).toContain(
+      'CODE_SIGN_ENTITLEMENTS = RadioTEDUMobile/RadioTEDUMobile.entitlements',
+    );
+    expect(delegate).toContain('CPListTemplate');
+    expect(delegate).toContain('CPNowPlayingTemplate');
+    expect(delegate).toContain('@"remote-play-id"');
+  });
+
+  it('loads all website-owned experiences remotely without native caching', () => {
+    for (const screen of [
+      'src/screens/study/LibraryStudyWebView.tsx',
+      'src/screens/next-song-vote/NextSongVoteScreen.tsx',
+      'src/screens/jukebox/JukeLocalWebViewScreen.tsx',
+    ]) {
+      const source = read(screen);
+      expect(source).toContain('source={{uri:');
+      expect(source).toContain('cacheEnabled={false}');
+    }
+
+    expect(read('src/services/studyWebViewService.ts')).not.toContain(
+      'file:///android_asset',
+    );
+  });
+});

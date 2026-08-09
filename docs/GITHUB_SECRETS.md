@@ -51,8 +51,16 @@ The iOS release workflow also requires these repository secrets:
 | `IOS_CERTIFICATE_PASSWORD` | Password for the `.p12` |
 | `IOS_PROVISIONING_PROFILE_BASE64` | App Store profile containing the CarPlay audio entitlement |
 | `IOS_KEYCHAIN_PASSWORD` | Ephemeral CI keychain password |
+| `APP_STORE_CONNECT_API_KEY_ID` | Team App Store Connect API key ID |
+| `APP_STORE_CONNECT_API_ISSUER_ID` | Team API issuer UUID |
+| `APP_STORE_CONNECT_API_PRIVATE_KEY_BASE64` | Base64-encoded team `AuthKey_*.p8` used for TestFlight upload |
 
 Apple must approve the Audio App CarPlay capability before the profile is
 created. The workflow verifies the certificate identity, team, bundle ID, and
 CarPlay entitlement before archiving. Stored GitHub secret values cannot be
 recovered from a release binary.
+
+Use a team API key with the Developer role or higher; individual API keys are
+not supported by this `altool` upload path. The workflow validates the IPA,
+uploads it to App Store Connect for TestFlight processing, and removes the
+private key from the ephemeral runner.

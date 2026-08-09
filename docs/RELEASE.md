@@ -24,7 +24,12 @@ Compare the certificate identity with the intended release certificate; a succes
 Run **iOS Release** with the same tag after Apple approves CarPlay and all iOS
 secrets in `GITHUB_SECRETS.md` are configured. It archives the same iOS app
 target that contains both the phone UI and CarPlay scene, then attaches the IPA
-to the matching GitHub Release.
+to the matching GitHub Release. It also validates and uploads that IPA to App
+Store Connect, where it becomes available in TestFlight after Apple finishes
+processing it.
+
+Both release workflows reject a tag that differs from the version embedded in
+the mobile, TV, Wear, or iOS targets. For the current sources, use `v1.1.0`.
 
 The workflow does not print signing values and does not commit the decoded keystore or generated `keystore.properties` file.
 

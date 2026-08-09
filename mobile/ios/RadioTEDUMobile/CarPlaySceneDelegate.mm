@@ -24,7 +24,7 @@
 {
   _interfaceController = interfaceController;
   NSMutableArray<CPListItem *> *items = [NSMutableArray array];
-  __weak typeof(self) weakSelf = self;
+  __weak CarPlaySceneDelegate *weakSelf = self;
 
   for (NSDictionary<NSString *, NSString *> *channel in [self radioChannels]) {
     CPListItem *item = [[CPListItem alloc] initWithText:channel[@"title"] detailText:@"Live radio"];

@@ -14,6 +14,8 @@ export interface ProfileCustomization {
   profile_headline?: string | null;
   featured_badge_id?: string | null;
   theme_key?: string | null;
+  department?: string | null;
+  profile_completed_at?: string | null;
 }
 
 export interface UserBadge {

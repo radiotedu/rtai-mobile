@@ -157,7 +157,10 @@ const ProfileScreen = () => {
       const nextProfile = result?.profile || favoritesForm;
       setProfileCustomization(nextProfile);
       setFavoritesForm(nextProfile);
-      Alert.alert('Saved', 'Your profile favorites have been updated.');
+      const reward = result?.profile_completion_reward;
+      Alert.alert('Saved', reward?.applied
+        ? `Profile completed. +${reward.awarded} Gold was added to your shared balance.`
+        : 'Your RadioTEDU profile has been updated.');
     } catch (error) {
       console.error('Failed to update profile favorites:', error);
       Alert.alert('Error', 'Profile favorites could not be saved.');
@@ -476,9 +479,18 @@ const ProfileScreen = () => {
           </View>
 
           <View style={styles.editCard}>
-            <Text style={styles.adminTitle}>Customize favorites</Text>
+            <Text style={styles.adminTitle}>Complete your profile</Text>
             <TextInput
               style={styles.input}
+              placeholder="Department / unit"
+              placeholderTextColor={COLORS.textMuted}
+              value={favoritesForm.department || ''}
+              onChangeText={(value) => updateFavoriteField('department', value)}
+              maxLength={160}
+            />
+            <Text style={styles.favoriteLabel}>{profileCustomization.profile_completed_at ? 'Profile reward already granted' : 'First completion earns +40 shared Gold'}</Text>
+            <TextInput
+              style={[styles.input, styles.inputSpacing]}
               placeholder="Profile headline"
               placeholderTextColor={COLORS.textMuted}
               value={favoritesForm.profile_headline || ''}

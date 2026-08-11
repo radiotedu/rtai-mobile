@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  DeviceEventEmitter,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -24,6 +25,7 @@ import {
   MarketItem,
   fetchGamificationHome,
 } from '../services/gamificationService';
+import {GOLD_BALANCE_EVENT} from '../services/listeningTracker';
 
 const emptyHome: GamificationHome = {
   points: {
@@ -65,6 +67,16 @@ const HomeScreen = () => {
   useEffect(() => {
     loadHome();
   }, [loadHome]);
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(GOLD_BALANCE_EVENT, (balance: number) => {
+      setHome((current) => ({
+        ...current,
+        points: {...current.points, spendable_points: Math.max(0, Math.floor(Number(balance) || 0))},
+      }));
+    });
+    return () => subscription.remove();
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);

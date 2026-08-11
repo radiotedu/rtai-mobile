@@ -49,11 +49,19 @@ export interface GamificationHome {
   market: MarketItem[];
 }
 
-export interface ListeningHeartbeatPayload {
-  content_type: 'radio' | 'podcast' | string;
-  content_id?: string;
-  content_title?: string;
-  listened_seconds: number;
+export interface VerifiedListeningStart {
+  session: {id: string; channel_id: string};
+  nonce: string;
+  heartbeat_after_seconds: number;
+}
+
+export interface VerifiedListeningHeartbeat {
+  session_id: string;
+  nonce: string;
+  session_eligible_seconds: number;
+  total_eligible_seconds: number;
+  seconds_until_reward: number;
+  reward?: {applied?: boolean; awarded?: number; spendablePoints?: number} | null;
 }
 
 export interface GameScoreSubmissionPayload {
@@ -119,7 +127,19 @@ export async function redeemMarketItem(itemId: string, idempotencyKey: string) {
   return unwrapData<{spendable_points: number; replayed?: boolean}>(response);
 }
 
-export async function sendListeningHeartbeat(payload: ListeningHeartbeatPayload) {
-  const response = await api.post('/gamification/listening/heartbeat', payload);
-  return unwrapData(response);
+export async function startVerifiedListening(channelId: string, clientSessionId: string) {
+  const response = await api.post('/economy/listening/start', {
+    channel_id: channelId,
+    client_session_id: clientSessionId,
+  });
+  return unwrapData<VerifiedListeningStart>(response);
+}
+
+export async function heartbeatVerifiedListening(sessionId: string, nonce: string) {
+  const response = await api.post('/economy/listening/heartbeat', {
+    session_id: sessionId,
+    nonce,
+    is_playing: true,
+  });
+  return unwrapData<VerifiedListeningHeartbeat>(response);
 }

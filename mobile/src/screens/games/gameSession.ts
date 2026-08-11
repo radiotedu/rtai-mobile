@@ -5,12 +5,16 @@ import {
   VerifiedGameSession,
 } from '../../services/gamificationService';
 
-const verifiedRounds = new Map<string, Promise<VerifiedGameSession>>();
+const verifiedRounds = new Map<string, Promise<VerifiedGameSession | null>>();
 
 export function createClientRoundId(game: ArcadeGame) {
-  const roundId = `${game.slug || game.id}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  verifiedRounds.set(roundId, startGameSession(game.id, roundId));
-  return roundId;
+  return `${game.slug || game.id}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function prepareVerifiedGameRound(game: ArcadeGame, clientRoundId: string) {
+  if (!verifiedRounds.has(clientRoundId)) {
+    verifiedRounds.set(clientRoundId, startGameSession(game.id, clientRoundId).catch(() => null));
+  }
 }
 
 export function buildGameScorePayload(params: {
@@ -41,8 +45,10 @@ export async function submitMobileGameScore(params: {
   clientRoundId: string;
   startedAt: number;
 }) {
-  const proof = await (verifiedRounds.get(params.clientRoundId)
-    ?? startGameSession(params.game.id, params.clientRoundId));
+  const proof = await verifiedRounds.get(params.clientRoundId);
+  if (!proof) {
+    throw new Error('Verified game session is unavailable');
+  }
   const payload = buildGameScorePayload({
     ...params,
     sessionId: proof.session.id,

@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
-import {createClientRoundId, submitMobileGameScore} from './gameSession';
+import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 
 type Point = {x: number; y: number};
@@ -35,6 +35,10 @@ const SnakeScreen = () => {
   const submittedRef = useRef(false);
   const roundIdRef = useRef(createClientRoundId(game));
   const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    prepareVerifiedGameRound(game, roundIdRef.current);
+  }, [game]);
 
   useEffect(() => {
     directionRef.current = direction;
@@ -119,6 +123,7 @@ const SnakeScreen = () => {
   const resetGame = () => {
     const nextSnake = START_SNAKE;
     roundIdRef.current = createClientRoundId(game);
+    prepareVerifiedGameRound(game, roundIdRef.current);
     startedAtRef.current = Date.now();
     submittedRef.current = false;
     scoreRef.current = 0;

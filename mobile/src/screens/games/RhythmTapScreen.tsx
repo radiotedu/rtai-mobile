@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
-import {createClientRoundId, submitMobileGameScore} from './gameSession';
+import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 
 const LANES = ['Sol', 'Orta', 'Sağ'];
@@ -31,6 +31,10 @@ const RhythmTapScreen = () => {
   const submittedRef = useRef(false);
   const roundIdRef = useRef(createClientRoundId(game));
   const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    prepareVerifiedGameRound(game, roundIdRef.current);
+  }, [game]);
   const beatStartedAtRef = useRef(Date.now());
 
   useEffect(() => {
@@ -120,6 +124,7 @@ const RhythmTapScreen = () => {
 
   const resetGame = () => {
     roundIdRef.current = createClientRoundId(game);
+    prepareVerifiedGameRound(game, roundIdRef.current);
     startedAtRef.current = Date.now();
     beatStartedAtRef.current = Date.now();
     submittedRef.current = false;

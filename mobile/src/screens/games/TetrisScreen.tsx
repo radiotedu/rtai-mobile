@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
-import {createClientRoundId, submitMobileGameScore} from './gameSession';
+import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 
 type Cell = {x: number; y: number};
@@ -39,6 +39,10 @@ const TetrisScreen = () => {
   const submittedRef = useRef(false);
   const roundIdRef = useRef(createClientRoundId(game));
   const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    prepareVerifiedGameRound(game, roundIdRef.current);
+  }, [game]);
 
   const activeCells = useMemo(() => getPieceCells(piece), [piece]);
 
@@ -153,6 +157,7 @@ const TetrisScreen = () => {
 
   const resetGame = () => {
     roundIdRef.current = createClientRoundId(game);
+    prepareVerifiedGameRound(game, roundIdRef.current);
     startedAtRef.current = Date.now();
     submittedRef.current = false;
     scoreRef.current = 0;

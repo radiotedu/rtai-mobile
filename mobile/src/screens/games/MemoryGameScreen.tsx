@@ -4,7 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
-import {createClientRoundId, submitMobileGameScore} from './gameSession';
+import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 
 type MemoryCard = {
@@ -32,6 +32,10 @@ const MemoryGameScreen = () => {
   const submittedRef = useRef(false);
   const roundIdRef = useRef(createClientRoundId(game));
   const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    prepareVerifiedGameRound(game, roundIdRef.current);
+  }, [game]);
 
   const matchedCount = useMemo(() => cards.filter((card) => card.matched).length, [cards]);
   const score = Math.max(0, matchedCount * 80 - moves * 3 + combo * 12);
@@ -99,6 +103,7 @@ const MemoryGameScreen = () => {
   const resetGame = () => {
     submittedRef.current = false;
     roundIdRef.current = createClientRoundId(game);
+    prepareVerifiedGameRound(game, roundIdRef.current);
     startedAtRef.current = Date.now();
     setCards(createDeck());
     setFlippedIds([]);

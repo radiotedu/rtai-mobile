@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
-import {createClientRoundId, submitMobileGameScore} from './gameSession';
+import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 import {createAnswerGate} from './answerGate';
 
@@ -45,6 +45,10 @@ const WordGuessScreen = () => {
   const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const roundIdRef = useRef(createClientRoundId(game));
   const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    prepareVerifiedGameRound(game, roundIdRef.current);
+  }, [game]);
 
   const currentQuestion = questions[index];
   const score = useMemo(() => correct * 120 + Math.max(0, streak - 1) * 25, [correct, streak]);
@@ -126,6 +130,7 @@ const WordGuessScreen = () => {
     }
     answerGateRef.current.release();
     roundIdRef.current = createClientRoundId(game);
+    prepareVerifiedGameRound(game, roundIdRef.current);
     startedAtRef.current = Date.now();
     submittedRef.current = false;
     setQuestions(shuffle(QUESTIONS).slice(0, 6));

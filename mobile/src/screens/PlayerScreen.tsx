@@ -18,8 +18,11 @@ import TrackPlayer, {
   usePlaybackState,
 } from 'react-native-track-player';
 import {COLORS, SPACING} from '../theme/theme';
-import {RADIO_CHANNELS, RadioChannel} from '../data/radioChannels';
-import {DEFAULT_STREAM_QUALITY} from '../services/config';
+import {
+  RADIO_CHANNELS,
+  RadioChannel,
+  StreamQuality,
+} from '../data/radioChannels';
 import {isPodcastId, playChannelById} from '../services/playbackQueue';
 import {
   loadFavoriteChannelIds,
@@ -83,6 +86,15 @@ const PlayerScreen = () => {
     'RadioTEDU';
 
   const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
+  const currentQuality = currentChannel
+    ? ((activeTrack?.streamQuality as StreamQuality | undefined) || 'normal')
+    : null;
+  const isLegacyStream = Boolean(activeTrack?.streamIsLegacy);
+  const qualityLabel = currentQuality
+    ? isLegacyStream
+      ? 'LEGACY · NORMAL'
+      : currentQuality.toUpperCase()
+    : '';
 
   // The heart reflects the CURRENT station's favorite state, so it updates
   // automatically when the station/song changes (no stuck "liked" state).
@@ -106,7 +118,7 @@ const PlayerScreen = () => {
       const next =
         channelList[(base + delta + channelList.length) % channelList.length];
       if (next) {
-        await playChannelById(next.id, DEFAULT_STREAM_QUALITY).catch(() => {});
+        await playChannelById(next.id).catch(() => {});
       }
       return;
     }
@@ -152,7 +164,12 @@ const PlayerScreen = () => {
           <Text style={styles.topLabel} numberOfLines={1}>
             {isLive ? 'CANLI YAYIN' : 'ÇALIYOR'}
           </Text>
-          <View style={styles.topButton} />
+          <TouchableOpacity
+            onPress={() => navigation.navigate('StreamSettings')}
+            style={styles.topButton}
+            accessibilityLabel="Streaming quality settings">
+            <Icon name="tune-variant" size={23} color={COLORS.text} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.artWrap}>
@@ -191,6 +208,19 @@ const PlayerScreen = () => {
               <View style={styles.liveDot} />
               <Text style={styles.liveText}>LIVE</Text>
             </View>
+            {currentQuality ? (
+              <TouchableOpacity
+                style={styles.qualityBadge}
+                onPress={() => navigation.navigate('StreamSettings')}
+                accessibilityLabel={`Current streaming quality: ${qualityLabel}`}>
+                <Icon
+                  name={currentQuality === 'flac' ? 'waveform' : 'signal'}
+                  size={14}
+                  color={COLORS.text}
+                />
+                <Text style={styles.qualityText}>{qualityLabel}</Text>
+              </TouchableOpacity>
+            ) : null}
             <View style={styles.liveBar}>
               <View style={styles.liveBarFill} />
             </View>
@@ -218,7 +248,7 @@ const PlayerScreen = () => {
                 name={isPlaying ? 'pause' : 'play'}
                 size={40}
                 color="#fff"
-                style={!isPlaying && {marginLeft: 3}}
+                style={!isPlaying ? styles.playIcon : undefined}
               />
             )}
           </TouchableOpacity>
@@ -297,6 +327,23 @@ const styles = StyleSheet.create({
   },
   liveDot: {width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary},
   liveText: {color: COLORS.primary, fontSize: 11, fontWeight: '900', letterSpacing: 1},
+  qualityBadge: {
+    minHeight: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  qualityText: {
+    color: COLORS.text,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.7,
+  },
   liveBar: {flex: 1, height: 4, borderRadius: 2, backgroundColor: COLORS.border, overflow: 'hidden'},
   liveBarFill: {width: '100%', height: '100%', backgroundColor: COLORS.primary, opacity: 0.5},
   spacer: {height: SPACING.xl},
@@ -316,6 +363,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  playIcon: {marginLeft: 3},
 });
 
 export default PlayerScreen;

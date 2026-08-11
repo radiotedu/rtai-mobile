@@ -114,6 +114,16 @@ jest.mock('../src/services/playbackQueue', () => ({
 jest.mock('../src/services/listeningTracker', () => ({
   startListeningTracker: jest.fn(),
 }));
+jest.mock('../src/services/streamQualityController', () => ({
+  startStreamQualityController: jest.fn(() => jest.fn()),
+}));
+jest.mock('../src/services/streamPreferences', () => ({
+  resolveCurrentStreamPreferences: jest.fn(async () => ({
+    preferences: {quality: 'normal'},
+    quality: 'normal',
+    network: {type: 'wifi', isConnected: true},
+  })),
+}));
 jest.mock('../src/services/carBridge', () => ({
   initCarBridge: jest.fn(),
   pushCarCatalog: jest.fn(),

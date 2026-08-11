@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  LayoutAnimation,
   Modal,
   ScrollView,
   StyleSheet,
@@ -21,12 +20,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
 import {COLORS, SPACING} from '../theme/theme';
 import api from '../services/api';
-import {RADIO_CHANNELS, RadioChannel} from '../data/radioChannels';
 import {
-  ensureBrowsableQueue,
-  playTrackById,
-  replaceChannelTrack,
-} from '../services/playbackQueue';
+  RADIO_CHANNELS,
+  RadioChannel,
+  StreamQuality,
+} from '../data/radioChannels';
+import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 import GlobalHeader from '../components/GlobalHeader';
@@ -37,6 +36,7 @@ import {
   saveFavoriteChannelIds,
   toggleFavoriteChannelId,
 } from '../services/radioFavorites';
+import {useStreamPreferences} from '../hooks/useStreamPreferences';
 
 const RadioScreen = () => {
   const navigation = useNavigation<any>();
@@ -44,13 +44,13 @@ const RadioScreen = () => {
   const activeTrack = useActiveTrack();
   const {metadata, clearMetadata} = useMetadata();
   const {activeChannels, isChecking} = useChannels();
+  const {preferences: streamPreferences} = useStreamPreferences();
   const [selectedChannel, setSelectedChannel] = useState<RadioChannel>(RADIO_CHANNELS[0]);
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [streamQuality, setStreamQuality] = useState<'low' | 'medium' | 'high'>('high');
   const [currentVote, setCurrentVote] = useState<'up' | 'down' | null>(null);
 
   const state = playbackState?.state;
@@ -58,6 +58,11 @@ const RadioScreen = () => {
   const isBuffering =
     (state === State.Buffering || state === State.Loading) &&
     currentPlayingId === selectedChannel.id;
+  const activeStreamQuality =
+    (activeTrack?.streamQuality as StreamQuality | undefined) ||
+    (streamPreferences.quality === 'automatic'
+      ? 'normal'
+      : streamPreferences.quality);
 
   const orderedChannels = useMemo(
     () => buildFavoriteChannelOrder(activeChannels, favoriteIds),
@@ -114,27 +119,13 @@ const RadioScreen = () => {
     }
   };
 
-  const playChannel = async (
-    channel: RadioChannel,
-    qualityOverride?: 'low' | 'medium' | 'high',
-  ) => {
-    const isQualitySwitch =
-      channel.id === selectedChannel.id &&
-      qualityOverride &&
-      qualityOverride !== streamQuality;
-
+  const playChannel = async (channel: RadioChannel) => {
     setSelectedChannel(channel);
-    if (!isQualitySwitch) {
-      clearMetadata();
+    clearMetadata();
+    const result = await playChannelById(channel.id);
+    if (result.played) {
+      setCurrentPlayingId(channel.id);
     }
-
-    const quality = qualityOverride || streamQuality;
-    // Keep the full browsable queue intact (channels + podcasts for the car),
-    // refresh just this channel's track to the requested quality, then play it.
-    await ensureBrowsableQueue(quality);
-    await replaceChannelTrack(channel, quality);
-    await playTrackById(channel.id);
-    setCurrentPlayingId(channel.id);
   };
 
   // Tapping a station plays it AND opens the full-screen player.
@@ -169,15 +160,6 @@ const RadioScreen = () => {
     }
   };
 
-  const cycleQuality = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const nextQuality = streamQuality === 'high' ? 'low' : streamQuality === 'low' ? 'medium' : 'high';
-    setStreamQuality(nextQuality);
-    if (isPlaying || state === State.Buffering) {
-      playChannel(selectedChannel, nextQuality);
-    }
-  };
-
   const toggleFavorite = async (channelId: string) => {
     const nextFavorites = toggleFavoriteChannelId(favoriteIds, channelId);
     setFavoriteIds(nextFavorites);
@@ -196,7 +178,10 @@ const RadioScreen = () => {
   const displayTitle = metadata?.title || activeTrack?.title || selectedChannel.name;
   const displayArtist = metadata?.artist || activeTrack?.artist || selectedChannel.description;
   const displayArtwork = metadata?.artwork || activeTrack?.artwork || selectedChannel.logo || 'https://radiotedu.com/logo.png';
-  const qProps = getQualityProps(streamQuality);
+  const qProps = getQualityProps(
+    activeStreamQuality,
+    streamPreferences.quality === 'automatic',
+  );
 
   const renderHistoryItem = ({item}: {item: any}) => (
     <View style={styles.historyItem}>
@@ -233,7 +218,10 @@ const RadioScreen = () => {
                   <View style={styles.liveDot} />
                   <Text style={styles.liveText}>LIVE</Text>
                 </View>
-                <TouchableOpacity style={[styles.qualityBadge, {borderColor: qProps.borderColor}]} onPress={cycleQuality}>
+                <TouchableOpacity
+                  style={[styles.qualityBadge, {borderColor: qProps.borderColor}]}
+                  onPress={() => navigation.navigate('StreamSettings')}
+                  accessibilityLabel="Streaming quality settings">
                   <Icon name={qProps.icon} size={13} color={qProps.color} />
                   <Text style={[styles.qualityText, {color: qProps.color}]}>{qProps.text}</Text>
                 </TouchableOpacity>
@@ -461,14 +449,23 @@ function HistoryModal({
   );
 }
 
-function getQualityProps(streamQuality: 'low' | 'medium' | 'high') {
+function getQualityProps(streamQuality: StreamQuality, automatic: boolean) {
+  const prefix = automatic ? 'AUTO · ' : '';
+  if (streamQuality === 'flac') {
+    return {
+      text: `${prefix}FLAC`,
+      color: '#FF9F43',
+      borderColor: 'rgba(255, 159, 67, 0.55)',
+      icon: 'waveform',
+    };
+  }
   if (streamQuality === 'high') {
-    return {text: 'HQ', color: '#FFD700', borderColor: 'rgba(255, 215, 0, 0.5)', icon: 'signal-cellular-3'};
+    return {text: `${prefix}HIGH`, color: '#FFD700', borderColor: 'rgba(255, 215, 0, 0.5)', icon: 'signal-cellular-3'};
   }
-  if (streamQuality === 'medium') {
-    return {text: 'MQ', color: '#00BCD4', borderColor: 'rgba(0, 188, 212, 0.5)', icon: 'signal-cellular-2'};
+  if (streamQuality === 'normal') {
+    return {text: `${prefix}NORMAL`, color: '#00BCD4', borderColor: 'rgba(0, 188, 212, 0.5)', icon: 'signal-cellular-2'};
   }
-  return {text: 'LQ', color: '#B0BEC5', borderColor: 'rgba(176, 190, 197, 0.5)', icon: 'signal-cellular-1'};
+  return {text: `${prefix}LOW`, color: '#B0BEC5', borderColor: 'rgba(176, 190, 197, 0.5)', icon: 'signal-cellular-1'};
 }
 
 const styles = StyleSheet.create({

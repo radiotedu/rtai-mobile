@@ -21,7 +21,12 @@ describe('verified Gold listening service', () => {
   it('maps only RadioTEDU live streams to server-approved channel ids', () => {
     expect(radioChannelForTrack({id: 'radiotedu-main'})).toBe('radio');
     expect(radioChannelForTrack({id: 'radiotedu-jazz'})).toBe('jazz');
-    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/cazz'})).toBe('jazz');
+    expect(radioChannelForTrack({id: 'radiotedu-energize'})).toBe('energize');
+    expect(radioChannelForTrack({id: 'radiotedu-rock'})).toBe('rock');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/cazz-flac'})).toBe('jazz');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/radio-high'})).toBe('radio');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/en-high'})).toBe('en');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/fr-flac'})).toBe('fr');
     expect(radioChannelForTrack({url: 'https://example.com/radio'})).toBeNull();
     expect(radioChannelForTrack({id: 'podcast-1'})).toBeNull();
   });

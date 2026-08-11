@@ -717,11 +717,13 @@ const ProfileScreen = () => {
             <Icon name="chevron-right" size={24} color={COLORS.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('StreamSettings')}>
             <View style={[styles.menuIconContainer, styles.settingsIconContainer]}>
-              <Icon name="cog-outline" size={24} color={COLORS.text} />
+              <Icon name="tune-variant" size={24} color={COLORS.text} />
             </View>
-            <Text style={styles.menuText}>{t('common.settings')}</Text>
+            <Text style={styles.menuText}>Streaming quality</Text>
             <Icon name="chevron-right" size={24} color={COLORS.textMuted} />
           </TouchableOpacity>
 

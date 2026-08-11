@@ -2,7 +2,7 @@ import type {StreamQuality} from '../data/radioChannels';
 
 // Default stream quality used by remote/car/voice playback (where the user
 // hasn't picked a quality in the app UI).
-export const DEFAULT_STREAM_QUALITY: StreamQuality = 'medium';
+export const DEFAULT_STREAM_QUALITY: StreamQuality = 'normal';
 
 // Google Analytics 4 (Measurement Protocol) credentials. Create a GA4 property,
 // then Admin ? Data Streams ? Measurement Protocol API secrets.

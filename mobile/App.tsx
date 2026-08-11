@@ -20,7 +20,6 @@ import {
   ensureBrowsableQueue,
   setCachedPodcasts,
 } from './src/services/playbackQueue';
-import { DEFAULT_STREAM_QUALITY } from './src/services/config';
 import { fetchPodcasts } from './src/services/podcastService';
 import {createRunOnceWhenActive} from './src/services/playerForegroundBootstrap';
 import { initI18n } from './src/i18n';
@@ -30,6 +29,8 @@ import { Analytics, setAnalyticsConsent } from './src/services/analyticsService'
 import { startListeningTracker } from './src/services/listeningTracker';
 import { initCarBridge, pushCarCatalog } from './src/services/carBridge';
 import {normalizeJukeLocalAppPath} from './src/services/jukeLocalWebViewService';
+import {startStreamQualityController} from './src/services/streamQualityController';
+import {resolveCurrentStreamPreferences} from './src/services/streamPreferences';
 
 const linking: any = {
   prefixes: ['radiotedu://', 'https://radiotedu.com', 'https://radiotedu.com/jukebox'],
@@ -46,6 +47,7 @@ const linking: any = {
       Profile: 'profile',
       Focus: 'focus',
       Language: 'language',
+      StreamSettings: 'streaming',
       Auth: 'auth',
     },
   },
@@ -64,6 +66,7 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     let playerReady = false;
+    let stopStreamQualityController: (() => void) | null = null;
     const setupPlayer = async () => {
       if (!playerReady) {
         await TrackPlayer.setupPlayer();
@@ -87,7 +90,7 @@ function App(): React.JSX.Element {
             Capability.Play,
             Capability.Pause,
             Capability.SkipToNext,
-            Capability.SkipToPrevious
+            Capability.SkipToPrevious,
           ],
           // @ts-ignore
           notificationCapabilities: [
@@ -119,7 +122,9 @@ function App(): React.JSX.Element {
 
         // Build the browsable queue (channels + podcasts) for the car. Uses the
         // shared helper so the in-app player and the car stay in sync.
-        await ensureBrowsableQueue(DEFAULT_STREAM_QUALITY);
+        const streamSelection = await resolveCurrentStreamPreferences();
+        await ensureBrowsableQueue(streamSelection.quality);
+        stopStreamQualityController = startStreamQualityController();
 
         // Measure listening minutes (only emitted if the user consented).
         startListeningTracker();
@@ -157,9 +162,10 @@ function App(): React.JSX.Element {
       runner.cancel();
       appStateSubscription.remove();
       initialSetupTask.cancel();
+      stopStreamQualityController?.();
       if (playerReady) {
         // reset() clears the queue, which should remove the notification.
-        void TrackPlayer.reset();
+        TrackPlayer.reset().catch(() => {});
       }
     };
   }, []);

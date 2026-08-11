@@ -20,7 +20,6 @@ import {useNavigation, useNavigationState} from '@react-navigation/native';
 import {fetchAlbumArtwork} from '../utils/api';
 import {RADIO_CHANNELS} from '../data/radioChannels';
 import {playChannelById} from '../services/playbackQueue';
-import {DEFAULT_STREAM_QUALITY} from '../services/config';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 
@@ -185,7 +184,7 @@ const MiniPlayer = () => {
       setIsChangingChannel(true);
       // Play within the existing browsable queue so the car browse list and
       // notification controls stay intact (no full reset).
-      await playChannelById(prevChannel.id, DEFAULT_STREAM_QUALITY);
+      await playChannelById(prevChannel.id);
     } catch (error) {
       console.log('Skip error:', error);
     } finally {
@@ -222,7 +221,7 @@ const MiniPlayer = () => {
       setIsChangingChannel(true);
       // Play within the existing browsable queue so the car browse list and
       // notification controls stay intact (no full reset).
-      await playChannelById(nextChannel.id, DEFAULT_STREAM_QUALITY);
+      await playChannelById(nextChannel.id);
     } catch (error) {
       console.log('Skip error:', error);
     } finally {

@@ -92,6 +92,19 @@ Run the focused startup-branding contracts from this `mobile` directory:
 npm test -- --runInBand __tests__/dualLogoSplashSource.test.ts __tests__/androidThemeSource.test.ts __tests__/App.test.tsx
 ```
 
+## Streaming quality
+
+The shared radio player supports `Automatic`, `Low`, `Normal`, `High`, and
+`FLAC`. `Normal` is the default/recommended setting; Automatic adapts between
+Low, Normal, and High and never selects FLAC. The selected quality is persisted,
+shown in the full player, and applied to in-app, Focus, notification, and car
+playback paths. FLAC requires listener confirmation on cellular data.
+
+The quality-aware mounts cover `radio`, `classic`, `lofi`, `cazz`, `energize`,
+`rock`, `en`, and `fr`. Each uses `-{low|normal|high|flac}`, with the unchanged
+unsuffixed mount retained as the final compatibility fallback. Spark keeps its
+existing mount contract because no replacement Spark mount set was supplied.
+
 ## Project structure
 
 ```text

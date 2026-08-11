@@ -30,7 +30,7 @@ import {
   playTrackById,
   setCachedPodcasts,
 } from '../services/playbackQueue';
-import { DEFAULT_STREAM_QUALITY } from '../services/config';
+import {resolveCurrentStreamPreferences} from '../services/streamPreferences';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
 
@@ -138,7 +138,8 @@ const PodcastScreen = () => {
       // Play the episode in-app. ExoPlayer follows the anchor.fm / RSS enclosure
       // redirect to the actual audio file, so these links play instead of
       // throwing the "this link can't be opened" dialog.
-      await ensureBrowsableQueue(DEFAULT_STREAM_QUALITY);
+      const streamSelection = await resolveCurrentStreamPreferences();
+      await ensureBrowsableQueue(streamSelection.quality);
       const played = await playTrackById(trackId);
       if (!played) {
         await TrackPlayer.add(track);

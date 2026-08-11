@@ -16,8 +16,8 @@ import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event, State} from 'react-native-track-player';
 import i18n from '../i18n';
 import api from './api';
-import {RADIO_CHANNELS} from '../data/radioChannels';
-import {DEFAULT_STREAM_QUALITY, JUKEBOX_STREAM_URL} from './config';
+import {RADIO_CHANNELS, StreamQuality} from '../data/radioChannels';
+import {JUKEBOX_STREAM_URL} from './config';
 import type {Podcast} from './podcastService';
 import {
   buildChannelTrack,
@@ -25,10 +25,12 @@ import {
   ensureBrowsableQueue,
   findChannelByQuery,
   getRecentItems,
+  playAdjacentQueueItem,
   playChannelById,
   playTrackById,
   PODCAST_ID_PREFIX,
 } from './playbackQueue';
+import {resolveCurrentStreamPreferences} from './streamPreferences';
 
 const CarBridge = NativeModules.RadioTeduCarBridge as
   | {
@@ -48,6 +50,7 @@ const MAIN_CHANNEL = 'radiotedu-main';
 const TILE = 'android.resource://com.radiotedumobile/drawable/';
 
 let cachedPodcasts: Podcast[] = [];
+let catalogQuality: StreamQuality = 'normal';
 
 type CarItem = {
   id: string;
@@ -65,13 +68,13 @@ type CarItem = {
 
 const t = () => i18n.t.bind(i18n);
 
-/** Stream URL for a channel id at the default quality, via the exported helper. */
+/** Stream URL for a channel id at the user's resolved quality. */
 function channelUrlById(channelId: string): string {
   const channel = RADIO_CHANNELS.find(c => c.id === channelId);
   if (!channel) {
     return '';
   }
-  return buildChannelTrack(channel, DEFAULT_STREAM_QUALITY).url;
+  return buildChannelTrack(channel, catalogQuality).url;
 }
 
 /** Stream URL of the main RadioTEDU channel (fallback for derived items). */
@@ -88,7 +91,7 @@ function radioItems(): CarItem[] {
     subtitle: c.description,
     artwork: channelArtwork(c),
     playable: true,
-    url: buildChannelTrack(c, DEFAULT_STREAM_QUALITY).url,
+    url: buildChannelTrack(c, catalogQuality).url,
   }));
 }
 
@@ -189,7 +192,7 @@ async function recentItems(): Promise<CarItem[]> {
         title: c.name,
         artist: c.description,
         artwork: channelArtwork(c),
-        url: buildChannelTrack(c, DEFAULT_STREAM_QUALITY).url,
+        url: buildChannelTrack(c, catalogQuality).url,
       }));
   return source.map(r => ({
     id: r.id,
@@ -211,6 +214,7 @@ export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
   if (podcasts) {
     cachedPodcasts = podcasts;
   }
+  catalogQuality = (await resolveCurrentStreamPreferences()).quality;
   const tr = t();
 
   const pods = podcastItems();
@@ -290,7 +294,7 @@ async function playJukeboxStream() {
     await TrackPlayer.skip(idx);
     await TrackPlayer.play();
   } else {
-    await playChannelById(MAIN_CHANNEL, DEFAULT_STREAM_QUALITY);
+    await playChannelById(MAIN_CHANNEL);
   }
 }
 
@@ -300,13 +304,19 @@ async function handlePlayId(mediaId: string) {
     return;
   }
   if (mediaId.startsWith('rank:')) {
-    await playChannelById(MAIN_CHANNEL, DEFAULT_STREAM_QUALITY);
+    await playChannelById(MAIN_CHANNEL);
     return;
   }
-  await ensureBrowsableQueue(DEFAULT_STREAM_QUALITY);
+  const radioChannel = RADIO_CHANNELS.find(channel => channel.id === mediaId);
+  if (radioChannel) {
+    await playChannelById(radioChannel.id);
+    return;
+  }
+  const streamSelection = await resolveCurrentStreamPreferences();
+  await ensureBrowsableQueue(streamSelection.quality);
   const played = await playTrackById(mediaId);
   if (!played) {
-    await playChannelById(mediaId, DEFAULT_STREAM_QUALITY);
+    await playChannelById(mediaId);
   }
 }
 
@@ -323,10 +333,10 @@ async function handleCommand(action: string, mediaId: string | null) {
         await TrackPlayer.stop();
         break;
       case 'next':
-        await TrackPlayer.skipToNext();
+        await playAdjacentQueueItem(1);
         break;
       case 'previous':
-        await TrackPlayer.skipToPrevious();
+        await playAdjacentQueueItem(-1);
         break;
       case 'playId':
         if (mediaId) {
@@ -335,7 +345,7 @@ async function handleCommand(action: string, mediaId: string | null) {
         break;
       case 'search': {
         const channel = findChannelByQuery(mediaId ?? '');
-        await playChannelById(channel.id, DEFAULT_STREAM_QUALITY);
+        await playChannelById(channel.id);
         break;
       }
     }

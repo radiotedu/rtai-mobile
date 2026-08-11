@@ -11,13 +11,21 @@
  */
 import TrackPlayer, {Track} from 'react-native-track-player';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Alert} from 'react-native';
 import {
+  buildStreamFallbacks,
+  HIGH_QUALITY_MOBILE_DATA_WARNING,
   RADIO_CHANNELS,
   RadioChannel,
   resolveStreamQuality,
+  StreamFallback,
   StreamQuality,
 } from '../data/radioChannels';
 import type {Podcast} from './podcastService';
+import {
+  isCellularNetwork,
+  resolveCurrentStreamPreferences,
+} from './streamPreferences';
 
 export const PODCAST_ID_PREFIX = 'podcast:';
 
@@ -69,6 +77,13 @@ const PODCAST_ARTIST_FALLBACK = 'RadioTEDU Podcast';
 
 // Cache of podcasts to expose in the car, set once at startup by App.tsx.
 let cachedPodcasts: Podcast[] = [];
+const channelFallbacks = new Map<string, StreamFallback[]>();
+
+export type PlaybackSelectionResult = {
+  played: boolean;
+  cancelled: boolean;
+  quality: StreamQuality;
+};
 
 export function isPodcastId(id: string | undefined | null): boolean {
   return !!id && id.startsWith(PODCAST_ID_PREFIX);
@@ -78,11 +93,20 @@ export function channelArtwork(channel: RadioChannel): string {
   return channel.artwork || channel.logo || FALLBACK_ARTWORK;
 }
 
-function channelStreamUrl(
+function channelTrackFromStream(
   channel: RadioChannel,
-  quality: StreamQuality,
-): string {
-  return channel.streams?.[quality] || channel.streamUrl;
+  stream: StreamFallback,
+): Track {
+  return {
+    id: channel.id,
+    url: stream.url,
+    title: channel.name,
+    artist: channel.description,
+    artwork: channelArtwork(channel),
+    isLiveStream: true,
+    streamQuality: stream.quality,
+    streamIsLegacy: stream.isLegacy,
+  };
 }
 
 export function buildChannelTrack(
@@ -90,14 +114,9 @@ export function buildChannelTrack(
   quality: StreamQuality,
 ): Track {
   const resolvedQuality = resolveStreamQuality(channel, quality);
-  return {
-    id: channel.id,
-    url: channelStreamUrl(channel, resolvedQuality),
-    title: channel.name,
-    artist: channel.description,
-    artwork: channelArtwork(channel),
-    isLiveStream: true,
-  };
+  const fallbacks = buildStreamFallbacks(channel, resolvedQuality);
+  channelFallbacks.set(channel.id, fallbacks);
+  return channelTrackFromStream(channel, fallbacks[0]);
 }
 
 export function buildPodcastTrack(podcast: Podcast): Track | null {
@@ -167,22 +186,97 @@ export async function playTrackById(id: string): Promise<boolean> {
   }
   await TrackPlayer.skip(index);
   await TrackPlayer.play();
-  void recordRecent(queue[index]);
+  recordRecent(queue[index]).catch(() => {});
   return true;
 }
 
-/** Ensure the channel queue exists, then play the requested channel. */
+/**
+ * Play the next/previous queue item while keeping radio playback on the same
+ * quality-selection and cellular-FLAC safety path as an explicit station tap.
+ */
+export async function playAdjacentQueueItem(offset: -1 | 1): Promise<boolean> {
+  const queue = await TrackPlayer.getQueue();
+  if (queue.length === 0) {
+    return false;
+  }
+
+  const activeIndex = await TrackPlayer.getActiveTrackIndex();
+  const startIndex =
+    typeof activeIndex === 'number'
+      ? activeIndex
+      : offset > 0
+        ? -1
+        : 0;
+  const targetIndex = (startIndex + offset + queue.length) % queue.length;
+  const target = queue[targetIndex];
+  const channel = RADIO_CHANNELS.find(item => item.id === String(target?.id ?? ''));
+
+  if (channel) {
+    const result = await playChannelById(channel.id);
+    return result.played;
+  }
+
+  await TrackPlayer.skip(targetIndex);
+  await TrackPlayer.play();
+  recordRecent(target).catch(() => {});
+  return true;
+}
+
+function confirmFlacOnCellular(channel: RadioChannel): Promise<boolean> {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = (answer: boolean) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(answer);
+    };
+
+    Alert.alert(
+      'FLAC over mobile data',
+      channel.mobileDataWarning || HIGH_QUALITY_MOBILE_DATA_WARNING,
+      [
+        {text: 'Cancel', style: 'cancel', onPress: () => finish(false)},
+        {text: 'Play FLAC', onPress: () => finish(true)},
+      ],
+      {cancelable: true, onDismiss: () => finish(false)},
+    );
+  });
+}
+
+/** Resolve the saved quality, update the queue item, then play it. */
 export async function playChannelById(
   channelId: string,
-  quality: StreamQuality,
-): Promise<void> {
+  qualityOverride?: StreamQuality,
+): Promise<PlaybackSelectionResult> {
+  const channel = RADIO_CHANNELS.find(item => item.id === channelId);
+  if (!channel) {
+    throw new Error(`Unknown RadioTEDU channel: ${channelId}`);
+  }
+
+  const selection = await resolveCurrentStreamPreferences({
+    ...(qualityOverride ? {quality: qualityOverride} : {}),
+  });
+  const quality = resolveStreamQuality(channel, selection.quality);
+
+  if (
+    quality === 'flac' &&
+    isCellularNetwork(selection.network) &&
+    !(await confirmFlacOnCellular(channel))
+  ) {
+    return {played: false, cancelled: true, quality};
+  }
+
   await ensureBrowsableQueue(quality);
-  const played = await playTrackById(channelId);
+  await replaceChannelTrack(channel, quality);
+  let played = await playTrackById(channelId);
   if (!played) {
     // Channel wasn't in the queue (stale queue) - rebuild and retry once.
     await rebuildBrowsableQueue(quality);
-    await playTrackById(channelId);
+    played = await playTrackById(channelId);
   }
+  return {played, cancelled: false, quality};
 }
 
 /**
@@ -201,6 +295,39 @@ export async function replaceChannelTrack(
   }
   await TrackPlayer.remove(index);
   await TrackPlayer.add(buildChannelTrack(channel, quality), index);
+}
+
+/**
+ * Move a failed quality stream to the next safe candidate:
+ * selected quality -> normal -> legacy mount.
+ */
+export async function fallbackActiveChannelStream(): Promise<boolean> {
+  const track = await TrackPlayer.getActiveTrack();
+  const channelId = String(track?.id ?? '');
+  const channel = RADIO_CHANNELS.find(item => item.id === channelId);
+  const fallbacks = channelFallbacks.get(channelId);
+  if (!channel || !fallbacks?.length) {
+    return false;
+  }
+
+  const currentUrl = String(track?.url ?? '');
+  const currentIndex = fallbacks.findIndex(item => item.url === currentUrl);
+  const next = fallbacks[currentIndex + 1];
+  if (!next) {
+    return false;
+  }
+
+  const queue = await TrackPlayer.getQueue();
+  const queueIndex = queue.findIndex(item => item.id === channelId);
+  if (queueIndex === -1) {
+    return false;
+  }
+
+  await TrackPlayer.remove(queueIndex);
+  await TrackPlayer.add(channelTrackFromStream(channel, next), queueIndex);
+  await TrackPlayer.skip(queueIndex);
+  await TrackPlayer.play();
+  return true;
 }
 
 /**

@@ -15,7 +15,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
 import {playChannelById} from '../services/playbackQueue';
-import {DEFAULT_STREAM_QUALITY} from '../services/config';
 
 type Phase = 'work' | 'shortBreak' | 'longBreak';
 
@@ -143,7 +142,7 @@ const FocusScreen = ({navigation}: any) => {
 
   // --- Ambient ---
   const playAmbient = (id: string) =>
-    playChannelById(id, DEFAULT_STREAM_QUALITY).catch(() => {});
+    playChannelById(id).catch(() => {});
 
   const phaseColor = phase === 'work' ? COLORS.primary : '#1DB954';
   const totalRounds = SESSIONS_BEFORE_LONG_BREAK;

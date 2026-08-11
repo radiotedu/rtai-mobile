@@ -54,6 +54,20 @@ export interface GameScoreSubmissionPayload {
   client_round_id: string;
   play_duration_ms: number;
   submission_source: 'mobile_game';
+  session_id: string;
+  nonce: string;
+}
+
+export interface VerifiedGameSession {
+  session: {
+    id: string;
+    game_id: string;
+    client_round_id: string;
+    started_at: string;
+  };
+  nonce: string;
+  minimum_play_seconds: number;
+  expires_after_seconds: number;
 }
 
 function unwrapData<T>(response: {data?: {data?: T}}): T {
@@ -93,6 +107,14 @@ export async function claimQrReward(code: string) {
 export async function fetchGames(): Promise<ArcadeGame[]> {
   const response = await api.get('/gamification/games');
   return unwrapData<{games?: ArcadeGame[]}>(response).games ?? [];
+}
+
+export async function startGameSession(gameId: string, clientRoundId: string): Promise<VerifiedGameSession> {
+  const response = await api.post(`/gamification/games/${gameId}/start`, {
+    client_round_id: clientRoundId,
+    submission_source: 'mobile_game',
+  });
+  return unwrapData<VerifiedGameSession>(response);
 }
 
 export async function submitGameScore(gameId: string, payload: GameScoreSubmissionPayload) {

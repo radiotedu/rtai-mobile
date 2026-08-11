@@ -8,6 +8,7 @@ import {
   fetchGamificationHome,
   fetchMarketItems,
   redeemMarketItem,
+  startGameSession,
   submitGameScore,
 } from '../src/services/gamificationService';
 
@@ -55,6 +56,7 @@ describe('gamificationService', () => {
       .mockResolvedValueOnce({data: {data: {items: [{id: 'item-1'}]}}});
     postMock
       .mockResolvedValueOnce({data: {data: {redemption: {id: 'redeem-1'}}}})
+      .mockResolvedValueOnce({data: {data: {session: {id: 'session-1'}, nonce: 'nonce-1'}}})
       .mockResolvedValueOnce({data: {data: {points_awarded: 10}}})
       .mockResolvedValueOnce({data: {data: {points_awarded: 5}}});
 
@@ -62,23 +64,32 @@ describe('gamificationService', () => {
     await expect(fetchGames()).resolves.toEqual([{id: 'game-1'}]);
     await expect(fetchMarketItems()).resolves.toEqual([{id: 'item-1'}]);
     await redeemMarketItem('item-1', 'market-mobile-1');
+    await startGameSession('game-1', 'round-1');
     await submitGameScore('game-1', {
       score: 250,
       client_round_id: 'round-1',
       play_duration_ms: 42000,
       submission_source: 'mobile_game',
+      session_id: 'session-1',
+      nonce: 'nonce-1',
     });
     await claimQrReward('QR-1');
 
     expect(postMock).toHaveBeenNthCalledWith(1, '/gamification/market/item-1/redeem', {
       idempotency_key: 'market-mobile-1',
     });
-    expect(postMock).toHaveBeenNthCalledWith(2, '/gamification/games/game-1/score', {
+    expect(postMock).toHaveBeenNthCalledWith(2, '/gamification/games/game-1/start', {
+      client_round_id: 'round-1',
+      submission_source: 'mobile_game',
+    });
+    expect(postMock).toHaveBeenNthCalledWith(3, '/gamification/games/game-1/score', {
       score: 250,
       client_round_id: 'round-1',
       play_duration_ms: 42000,
       submission_source: 'mobile_game',
+      session_id: 'session-1',
+      nonce: 'nonce-1',
     });
-    expect(postMock).toHaveBeenNthCalledWith(3, '/gamification/events/qr/claim', {code: 'QR-1'});
+    expect(postMock).toHaveBeenNthCalledWith(4, '/gamification/events/qr/claim', {code: 'QR-1'});
   });
 });

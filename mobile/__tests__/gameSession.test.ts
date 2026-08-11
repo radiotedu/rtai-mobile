@@ -1,6 +1,7 @@
 import {describe, expect, it, jest} from '@jest/globals';
 
 jest.mock('../src/services/gamificationService', () => ({
+  startGameSession: jest.fn(),
   submitGameScore: jest.fn(),
 }));
 
@@ -16,6 +17,8 @@ describe('gameSession helpers', () => {
         score: 42.9,
         clientRoundId: 'round-1',
         startedAt: 1000,
+        sessionId: 'session-1',
+        nonce: 'nonce-1',
         now: 5600,
       }),
     ).toEqual({
@@ -23,6 +26,8 @@ describe('gameSession helpers', () => {
       client_round_id: 'round-1',
       play_duration_ms: 4600,
       submission_source: 'mobile_game',
+      session_id: 'session-1',
+      nonce: 'nonce-1',
     });
   });
 

@@ -49,13 +49,6 @@ export interface GamificationHome {
   market: MarketItem[];
 }
 
-export interface ListeningHeartbeatPayload {
-  content_type: 'radio' | 'podcast' | string;
-  content_id?: string;
-  content_title?: string;
-  listened_seconds: number;
-}
-
 export interface GameScoreSubmissionPayload {
   score: number;
   client_round_id: string;
@@ -117,9 +110,4 @@ export async function redeemMarketItem(itemId: string, idempotencyKey: string) {
     idempotency_key: idempotencyKey,
   });
   return unwrapData<{spendable_points: number; replayed?: boolean}>(response);
-}
-
-export async function sendListeningHeartbeat(payload: ListeningHeartbeatPayload) {
-  const response = await api.post('/gamification/listening/heartbeat', payload);
-  return unwrapData(response);
 }

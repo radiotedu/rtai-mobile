@@ -23,7 +23,12 @@ const LoginScreen = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const { login } = useAuth();
+    const {
+        login,
+        loginWithTedu,
+        isTeduLoginLoading,
+        teduLoginError,
+    } = useAuth();
     const navigation = useNavigation<any>();
 
     const handleLogin = async () => {
@@ -40,6 +45,14 @@ const LoginScreen = () => {
             Alert.alert('Hata', error.message);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleTeduLogin = async () => {
+        try {
+            await loginWithTedu();
+        } catch (error: any) {
+            Alert.alert('TEDÜ girişi', error.message);
         }
     };
 
@@ -63,6 +76,32 @@ const LoginScreen = () => {
 
                     {/* Form Section */}
                     <View style={styles.form}>
+                        <TouchableOpacity
+                            style={styles.teduButton}
+                            onPress={handleTeduLogin}
+                            disabled={isTeduLoginLoading || isLoading}
+                            accessibilityRole="button"
+                            accessibilityLabel="TEDÜ ile giriş yap"
+                        >
+                            {isTeduLoginLoading ? (
+                                <ActivityIndicator color={COLORS.text} />
+                            ) : (
+                                <>
+                                    <Icon name="school-outline" size={22} color={COLORS.text} />
+                                    <Text style={styles.teduButtonText}>TEDÜ ile giriş yap</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                        {teduLoginError ? (
+                            <Text style={styles.teduError}>{teduLoginError}</Text>
+                        ) : null}
+
+                        <View style={styles.dividerRow}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>veya RadioTEDU hesabı</Text>
+                            <View style={styles.dividerLine} />
+                        </View>
+
                         <View style={styles.inputContainer}>
                             <Icon name="email-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
@@ -159,6 +198,44 @@ const styles = StyleSheet.create({
     },
     form: {
         width: '100%',
+    },
+    teduButton: {
+        height: 56,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.28)',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: SPACING.sm,
+    },
+    teduButtonText: {
+        color: COLORS.text,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    teduError: {
+        color: '#ff8d8d',
+        fontSize: 13,
+        lineHeight: 18,
+        marginTop: SPACING.sm,
+        textAlign: 'center',
+    },
+    dividerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: SPACING.lg,
+    },
+    dividerLine: {
+        flex: 1,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: COLORS.border,
+    },
+    dividerText: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+        marginHorizontal: SPACING.sm,
     },
     inputContainer: {
         flexDirection: 'row',

@@ -13,6 +13,12 @@ describe('mobile Account and Gold product contract', () => {
   const eventsSource = readScreen('EventsScreen.tsx');
   const gamesSource = readScreen('GamesScreen.tsx');
   const leaderboardSource = readScreen('LeaderboardScreen.tsx');
+  const loginSource = readScreen(path.join('auth', 'LoginScreen.tsx'));
+  const registerSource = readScreen(path.join('auth', 'RegisterScreen.tsx'));
+  const listeningSource = fs.readFileSync(
+    path.join(__dirname, '..', 'src', 'services', 'goldListeningService.ts'),
+    'utf8',
+  );
 
   it('labels spendable and earned currency as Gold without renaming API fields', () => {
     expect(marketSource).toContain('Gold balance');
@@ -24,6 +30,22 @@ describe('mobile Account and Gold product contract', () => {
     expect(leaderboardSource).toContain('Lifetime Gold');
     expect(marketSource).toContain('spendable_points');
     expect(homeSource).toContain('lifetime_points');
+  });
+
+  it('uses the shared TEDÜ login and GDPR-aware registration contract', () => {
+    expect(loginSource).toContain('TEDÜ ile giriş yap');
+    expect(registerSource).toContain('Yaş (18+)');
+    expect(registerSource).toContain('Kullanım Koşulları');
+    expect(registerSource).toContain('Gizlilik Bildirimi');
+  });
+
+  it('uses server-timed rotating nonces for radio Gold instead of trusted duration', () => {
+    expect(listeningSource).toContain("'/economy/listening/start'");
+    expect(listeningSource).toContain("'/economy/listening/heartbeat'");
+    expect(listeningSource).toContain('nonce');
+    expect(listeningSource).toContain('is_playing: true');
+    expect(listeningSource).not.toContain('/gamification/listening/heartbeat');
+    expect(listeningSource).not.toContain('listened_seconds');
   });
 
   it('provides a separate destructive server-backed account deletion flow', () => {

@@ -9,12 +9,19 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
+    Linking,
+    ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SPACING } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import {
+    isTeduInstitutionEmail,
+    PRIVACY_URL,
+    TERMS_URL,
+} from '../../services/registrationPolicy';
 
 const RegisterScreen = () => {
     const [email, setEmail] = useState('');
@@ -22,9 +29,12 @@ const RegisterScreen = () => {
     const [displayName, setDisplayName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [age, setAge] = useState('');
+    const [legalAccepted, setLegalAccepted] = useState(false);
 
     const { register } = useAuth();
     const navigation = useNavigation<any>();
+    const requiresAdultAge = email.includes('@') && !isTeduInstitutionEmail(email);
 
     const handleRegister = async () => {
         if (!email || !password || !displayName) {
@@ -37,14 +47,24 @@ const RegisterScreen = () => {
             return;
         }
 
+        if (!legalAccepted) {
+            Alert.alert('Onay gerekli', 'Kullanım Koşulları ve Gizlilik Bildirimi’ni kabul etmelisiniz.');
+            return;
+        }
+
+        const numericAge = Number(age);
+        if (requiresAdultAge && (!Number.isInteger(numericAge) || numericAge < 18)) {
+            Alert.alert('Yaş sınırı', 'TEDÜ dışı e-posta ile kayıt için 18 yaşında veya daha büyük olmalısınız.');
+            return;
+        }
+
         setIsLoading(true);
         try {
-            await register(email, password, displayName);
-            Alert.alert(
-                'Başarılı',
-                'Hesabınız oluşturuldu! Şimdi giriş yapabilirsiniz.',
-                [{ text: 'Tamam', onPress: () => navigation.navigate('Login') }]
-            );
+            await register(email, password, displayName, {
+                legalAccepted,
+                age: requiresAdultAge ? numericAge : undefined,
+            });
+            Alert.alert('Başarılı', 'RadioTEDU hesabınız oluşturuldu ve oturum açıldı.');
         } catch (error: any) {
             Alert.alert('Hata', error.message);
         } finally {
@@ -65,6 +85,11 @@ const RegisterScreen = () => {
                     <Icon name="chevron-left" size={32} color={COLORS.text} />
                 </TouchableOpacity>
 
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
                 <View style={styles.content}>
                     <View style={styles.header}>
                         <Text style={styles.title}>Kayıt Ol</Text>
@@ -83,6 +108,21 @@ const RegisterScreen = () => {
                             />
                         </View>
 
+                        {requiresAdultAge ? (
+                            <View style={styles.inputContainer}>
+                                <Icon name="calendar-account-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Yaş (18+)"
+                                    placeholderTextColor={COLORS.textMuted}
+                                    value={age}
+                                    onChangeText={(value) => setAge(value.replace(/\D/g, '').slice(0, 3))}
+                                    keyboardType="number-pad"
+                                    maxLength={3}
+                                />
+                            </View>
+                        ) : null}
+
                         <View style={styles.inputContainer}>
                             <Icon name="email-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
@@ -94,6 +134,31 @@ const RegisterScreen = () => {
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.legalRow}
+                            onPress={() => setLegalAccepted((accepted) => !accepted)}
+                            accessibilityRole="checkbox"
+                            accessibilityState={{checked: legalAccepted}}
+                        >
+                            <Icon
+                                name={legalAccepted ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                                size={24}
+                                color={legalAccepted ? COLORS.primary : COLORS.textMuted}
+                            />
+                            <Text style={styles.legalText}>
+                                Kayıt olarak Kullanım Koşulları’nı kabul eder ve Gizlilik Bildirimi’ni okuduğunuzu onaylarsınız.
+                            </Text>
+                        </TouchableOpacity>
+                        <View style={styles.legalLinks}>
+                            <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+                                <Text style={styles.legalLink}>Kullanım Koşulları</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.legalSeparator}>·</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
+                                <Text style={styles.legalLink}>Gizlilik Bildirimi</Text>
+                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.inputContainer}>
@@ -135,6 +200,7 @@ const RegisterScreen = () => {
                         </TouchableOpacity>
                     </View>
                 </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -159,8 +225,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
     },
     content: {
-        flex: 1,
         paddingHorizontal: SPACING.xl,
+        paddingBottom: SPACING.xl,
+    },
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
     },
     header: {
@@ -197,6 +266,33 @@ const styles = StyleSheet.create({
         flex: 1,
         color: COLORS.text,
         fontSize: 16,
+    },
+    legalRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: SPACING.sm,
+        paddingVertical: SPACING.sm,
+    },
+    legalText: {
+        flex: 1,
+        color: COLORS.textMuted,
+        fontSize: 13,
+        lineHeight: 19,
+    },
+    legalLinks: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 32,
+        marginBottom: SPACING.sm,
+    },
+    legalLink: {
+        color: COLORS.primary,
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    legalSeparator: {
+        color: COLORS.textMuted,
+        marginHorizontal: SPACING.sm,
     },
     registerButton: {
         backgroundColor: COLORS.primary,

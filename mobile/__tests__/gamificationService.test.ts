@@ -8,7 +8,6 @@ import {
   fetchGamificationHome,
   fetchMarketItems,
   redeemMarketItem,
-  sendListeningHeartbeat,
   submitGameScore,
 } from '../src/services/gamificationService';
 
@@ -57,8 +56,7 @@ describe('gamificationService', () => {
     postMock
       .mockResolvedValueOnce({data: {data: {redemption: {id: 'redeem-1'}}}})
       .mockResolvedValueOnce({data: {data: {points_awarded: 10}}})
-      .mockResolvedValueOnce({data: {data: {points_awarded: 5}}})
-      .mockResolvedValueOnce({data: {data: {points_awarded: 1}}});
+      .mockResolvedValueOnce({data: {data: {points_awarded: 5}}});
 
     await expect(fetchEvents()).resolves.toEqual([{id: 'event-1'}]);
     await expect(fetchGames()).resolves.toEqual([{id: 'game-1'}]);
@@ -71,7 +69,6 @@ describe('gamificationService', () => {
       submission_source: 'mobile_game',
     });
     await claimQrReward('QR-1');
-    await sendListeningHeartbeat({content_type: 'radio', listened_seconds: 300});
 
     expect(postMock).toHaveBeenNthCalledWith(1, '/gamification/market/item-1/redeem', {
       idempotency_key: 'market-mobile-1',
@@ -83,9 +80,5 @@ describe('gamificationService', () => {
       submission_source: 'mobile_game',
     });
     expect(postMock).toHaveBeenNthCalledWith(3, '/gamification/events/qr/claim', {code: 'QR-1'});
-    expect(postMock).toHaveBeenNthCalledWith(4, '/gamification/listening/heartbeat', {
-      content_type: 'radio',
-      listened_seconds: 300,
-    });
   });
 });

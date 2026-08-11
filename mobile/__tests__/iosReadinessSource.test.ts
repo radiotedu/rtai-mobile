@@ -8,7 +8,7 @@ const read = (relative: string) =>
 
 describe('iOS release readiness', () => {
   it('uses secure transport, required permissions, audio, and deep links', () => {
-    const plist = read('ios/RadioTEDUMobile/Info.plist');
+    const plist = read('ios/RadioTEDUMobile/Info.plist').replace(/\r\n/g, '\n');
     expect(plist).toContain('<key>NSAllowsArbitraryLoads</key>\n\t\t<false/>');
     expect(plist).toContain('<key>NSPhotoLibraryUsageDescription</key>');
     expect(plist).toContain('<key>UIBackgroundModes</key>');

@@ -51,7 +51,9 @@ describe('Social WebView surface', () => {
     expect(authSource).toContain('refreshSession: () => Promise<User | null>');
     expect(authSource).toContain('const clearSessionState = useCallback');
     expect(authSource).toContain("await AsyncStorage.multiRemove(['access_token', 'refresh_token']);");
-    expect(authSource).toContain('value={{ user, isLoading, login, register, guestLogin, logout, deleteAccount, refreshSession }}');
+    expect(authSource).toContain('<AuthContext.Provider value={{');
+    expect(authSource).toContain('refreshSession,');
+    expect(authSource).toContain('loginWithTedu,');
     expect(profileSource).toContain('const { user, logout, deleteAccount, refreshSession } = useAuth();');
     expect(profileSource).toContain('await refreshSession();');
   });

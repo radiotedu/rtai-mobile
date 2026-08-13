@@ -43,7 +43,7 @@ import {
 import {buildVoiceActionMap} from '../src/services/androidSystemCapabilities';
 
 describe('radio channel catalog', () => {
-  it('adds Spark as rtAI with /spark and FLAC metadata', () => {
+  it('keeps Spark on its single provisioned legacy stream', () => {
     const spark = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-spark');
 
     expect(spark).toEqual(
@@ -53,12 +53,12 @@ describe('radio channel catalog', () => {
         mountPath: '/spark',
         role: 'ai-host',
         availability: 'live',
-        mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
       }),
     );
-    expect(spark?.streams.flac).toBe('https://stream.radiotedu.com/spark.flac');
-    expect(spark?.codecLabels?.flac).toBe('FLAC');
-    expect(getAvailableStreamQualities(spark!)).toContain('flac');
+    expect(spark?.streams).toEqual({
+      normal: 'https://stream.radiotedu.com/spark',
+    });
+    expect(getAvailableStreamQualities(spark!)).toEqual(['normal']);
   });
 
   it('adds Energize and Rock with their recommended normal mounts', () => {
@@ -84,11 +84,11 @@ describe('radio channel catalog', () => {
         mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
       }),
     );
-    expect(rock?.streams.flac).toBe('https://stream.radiotedu.com/rock-flac');
+    expect(rock?.streams.flac).toBe('http://stream.radiotedu.com:11154/rock-flac');
     expect(rock?.codecLabels?.flac).toBe('FLAC');
   });
 
-  it('exposes low, normal, high and FLAC for every public RadioTEDU channel', () => {
+  it('exposes low, normal, high and FLAC for every provisioned music channel', () => {
     const publicMounts = {
       'radiotedu-main': 'radio',
       'radiotedu-classic': 'classic',
@@ -96,8 +96,6 @@ describe('radio channel catalog', () => {
       'radiotedu-lofi': 'lofi',
       'radiotedu-energize': 'energize',
       'radiotedu-rock': 'rock',
-      'radiotedu-en': 'en',
-      'radiotedu-fr': 'fr',
     };
 
     for (const [id, mount] of Object.entries(publicMounts)) {
@@ -118,27 +116,44 @@ describe('radio channel catalog', () => {
         `https://stream.radiotedu.com/${mount}-high`,
       );
       expect(resolveStreamUrl(channel, 'flac')).toBe(
-        `https://stream.radiotedu.com/${mount}-flac`,
+        `http://stream.radiotedu.com:11154/${mount}-flac`,
       );
     }
   });
 
-  it('falls back from the selected quality to normal and the unchanged legacy mount', () => {
-    const english = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-en')!;
-    const fallbacks = buildStreamFallbacks(english, 'high');
+  it('keeps English and French AI on their provisioned single mounts', () => {
+    for (const id of ['radiotedu-en', 'radiotedu-fr']) {
+      const channel = RADIO_CHANNELS.find(item => item.id === id)!;
+      const mount = id.endsWith('-en') ? 'en' : 'fr';
+      expect(channel.role).toBe('ai-host');
+      expect(channel.streamUrl).toBe(`https://stream.radiotedu.com/${mount}`);
+      expect(channel.legacyStreamUrl).toBe(channel.streamUrl);
+      expect(getAvailableStreamQualities(channel)).toEqual(['normal']);
+    }
+  });
+
+  it('falls back through safe AAC tiers and then the unchanged legacy mount', () => {
+    const rock = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-rock')!;
+    const fallbacks = buildStreamFallbacks(rock, 'high');
 
     expect(fallbacks.map(item => item.url)).toEqual([
-      'https://stream.radiotedu.com/en-high',
-      'https://stream.radiotedu.com/en-normal',
-      'https://stream.radiotedu.com/en',
+      'https://stream.radiotedu.com/rock-high',
+      'https://stream.radiotedu.com/rock-normal',
+      'https://stream.radiotedu.com/rock-low',
+      'https://stream.radiotedu.com/rock',
     ]);
-    expect(buildChannelTrack(english, 'flac')).toEqual(
+    expect(buildChannelTrack(rock, 'flac')).toEqual(
       expect.objectContaining({
-        id: 'radiotedu-en',
-        url: 'https://stream.radiotedu.com/en-flac',
+        id: 'radiotedu-rock',
+        url: 'http://stream.radiotedu.com:11154/rock-flac',
         streamQuality: 'flac',
       }),
     );
+
+    const english = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-en')!;
+    expect(buildStreamFallbacks(english, 'high').map(item => item.url)).toEqual([
+      'https://stream.radiotedu.com/en',
+    ]);
   });
 
   it('warns only for FLAC over mobile data', () => {

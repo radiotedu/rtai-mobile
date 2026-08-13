@@ -16,7 +16,11 @@ import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event, State} from 'react-native-track-player';
 import i18n from '../i18n';
 import api from './api';
-import {RADIO_CHANNELS, StreamQuality} from '../data/radioChannels';
+import {
+  buildStreamFallbacks,
+  RADIO_CHANNELS,
+  StreamQuality,
+} from '../data/radioChannels';
 import {JUKEBOX_STREAM_URL} from './config';
 import type {Podcast} from './podcastService';
 import {
@@ -64,6 +68,7 @@ type CarItem = {
   // playbackQueue, so we derive radio URLs via buildChannelTrack(...).url,
   // which is exactly channel.streams?.[quality] || channel.streamUrl.
   url: string;
+  fallbackUrls?: string[];
 };
 
 const t = () => i18n.t.bind(i18n);
@@ -92,6 +97,9 @@ function radioItems(): CarItem[] {
     artwork: channelArtwork(c),
     playable: true,
     url: buildChannelTrack(c, catalogQuality).url,
+    fallbackUrls: buildStreamFallbacks(c, catalogQuality)
+      .map(stream => stream.url)
+      .slice(1),
   }));
 }
 
@@ -193,17 +201,28 @@ async function recentItems(): Promise<CarItem[]> {
         artist: c.description,
         artwork: channelArtwork(c),
         url: buildChannelTrack(c, catalogQuality).url,
+        fallbackUrls: buildStreamFallbacks(c, catalogQuality)
+          .map(stream => stream.url)
+          .slice(1),
       }));
-  return source.map(r => ({
-    id: r.id,
-    title: r.title,
-    subtitle: r.artist,
-    artwork: r.artwork,
-    playable: true,
-    // Carry the recent item's own url; if it has none (older recents predate
-    // the url field), resolve by channel id, falling back to the main channel.
-    url: r.url || channelUrlById(r.id) || mainChannelUrl(),
-  }));
+  return source.map(r => {
+    const channel = RADIO_CHANNELS.find(item => item.id === r.id);
+    return {
+      id: r.id,
+      title: r.title,
+      subtitle: r.artist,
+      artwork: r.artwork,
+      playable: true,
+      // Carry the recent item's own url; if it has none (older recents predate
+      // the url field), resolve by channel id, falling back to the main channel.
+      url: r.url || channelUrlById(r.id) || mainChannelUrl(),
+      fallbackUrls: channel
+        ? buildStreamFallbacks(channel, catalogQuality)
+            .map(stream => stream.url)
+            .slice(1)
+        : [],
+    };
+  });
 }
 
 /** Build and push the full car browse tree (4 destinations + recently played). */

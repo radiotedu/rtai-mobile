@@ -13,6 +13,9 @@ const LOFI_LOGO =
   'https://radiotedu.com/wp-content/uploads/2025/07/tedu_lofi-scaled.png';
 
 const STREAM_ORIGIN = 'https://stream.radiotedu.com';
+// TinyIce exposes the six lossless mounts directly. The HTTPS proxy currently
+// serves only legacy mounts, so FLAC must use the listener-only origin port.
+const LOSSLESS_STREAM_ORIGIN = 'http://stream.radiotedu.com:11154';
 
 export type StreamQuality = 'low' | 'normal' | 'high' | 'flac';
 
@@ -59,7 +62,8 @@ export function buildStreamUrl(
   quality: StreamQuality,
 ): string {
   const mount = mountName(mountPath);
-  return `${STREAM_ORIGIN}/${mount}-${quality}`;
+  const origin = quality === 'flac' ? LOSSLESS_STREAM_ORIGIN : STREAM_ORIGIN;
+  return `${origin}/${mount}-${quality}`;
 }
 
 function buildQualityStreams(mountPath: string): Record<StreamQuality, string> {
@@ -172,25 +176,14 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     streamUrl: 'https://stream.radiotedu.com/spark',
     legacyStreamUrl: 'https://stream.radiotedu.com/spark',
     mountPath: '/spark',
-    streams: {
-      low: 'https://stream.radiotedu.com/spark?q=low',
-      normal: 'https://stream.radiotedu.com/spark',
-      high: 'https://stream.radiotedu.com/spark?q=high',
-      flac: 'https://stream.radiotedu.com/spark.flac',
-    },
-    codecLabels: {
-      low: 'AAC',
-      normal: 'AAC',
-      high: 'AAC',
-      flac: 'FLAC',
-    },
+    streams: {normal: 'https://stream.radiotedu.com/spark'},
+    codecLabels: {normal: 'Legacy stream'},
     icon: 'creation',
     color: '#20D6C7',
     logo: MAIN_LOGO,
     artwork: MAIN_LOGO,
     role: 'ai-host',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
   {
     id: 'radiotedu-rock',
@@ -213,35 +206,33 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-en',
     name: 'RadioTEDU English',
     description: 'English Broadcast',
-    streamUrl: 'https://stream.radiotedu.com/en-normal',
+    streamUrl: 'https://stream.radiotedu.com/en',
     legacyStreamUrl: 'https://stream.radiotedu.com/en',
     mountPath: '/en',
-    streams: buildQualityStreams('/en'),
-    codecLabels: STANDARD_CODEC_LABELS,
+    streams: {normal: 'https://stream.radiotedu.com/en'},
+    codecLabels: {normal: 'Legacy stream'},
     icon: 'translate',
     color: '#3578E5',
     logo: MAIN_LOGO,
     artwork: MAIN_LOGO,
-    role: 'music',
+    role: 'ai-host',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
   {
     id: 'radiotedu-fr',
     name: 'RadioTEDU Français',
     description: 'Diffusion française',
-    streamUrl: 'https://stream.radiotedu.com/fr-normal',
+    streamUrl: 'https://stream.radiotedu.com/fr',
     legacyStreamUrl: 'https://stream.radiotedu.com/fr',
     mountPath: '/fr',
-    streams: buildQualityStreams('/fr'),
-    codecLabels: STANDARD_CODEC_LABELS,
+    streams: {normal: 'https://stream.radiotedu.com/fr'},
+    codecLabels: {normal: 'Legacy stream'},
     icon: 'translate',
     color: '#6C63D9',
     logo: MAIN_LOGO,
     artwork: MAIN_LOGO,
-    role: 'music',
+    role: 'ai-host',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
 ];
 
@@ -290,18 +281,21 @@ export function buildStreamFallbacks(
     },
   ];
 
-  candidates.push(
-    {
-      url: resolveStreamUrl(channel, 'normal'),
-      quality: 'normal',
-      isLegacy: false,
-    },
-    {
-      url: channel.legacyStreamUrl,
-      quality: 'normal',
-      isLegacy: true,
-    },
-  );
+  // FLAC is never selected automatically: it can be expensive on mobile data
+  // and is supported by fewer embedded/car players. Every AAC tier is tried
+  // before the unchanged legacy mount.
+  const safeFallbackOrder: StreamQuality[] = ['normal', 'low', 'high'];
+  for (const fallbackQuality of safeFallbackOrder) {
+    const url = channel.streams[fallbackQuality];
+    if (url) {
+      candidates.push({url, quality: fallbackQuality, isLegacy: false});
+    }
+  }
+  candidates.push({
+    url: channel.legacyStreamUrl,
+    quality: 'normal',
+    isLegacy: true,
+  });
 
   return candidates.filter(
     (candidate, index, all) =>

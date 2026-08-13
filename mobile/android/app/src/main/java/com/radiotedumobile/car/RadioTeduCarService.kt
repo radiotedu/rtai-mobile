@@ -105,6 +105,10 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
     /** Pending buffering watchdog; cancelled once playback resolves or stops. */
     private var bufferingWatchdog: Runnable? = null
 
+    /** Current station and candidate index for headless quality fallback. */
+    private var activeCatalogItem: CatalogItem? = null
+    private var activeStreamIndex = 0
+
     private val playbackActions =
         PlaybackStateCompat.ACTION_PLAY or
             PlaybackStateCompat.ACTION_PAUSE or
@@ -226,10 +230,12 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
 
         override fun onPlayerError(error: PlaybackException) {
             cancelBufferingWatchdog()
-            // Surface a real error so the car shows an error state instead of
-            // an infinite loading spinner.
-            setErrorState(error.localizedMessage ?: "Playback error")
-            updateForeground(false)
+            if (!tryNextStreamFallback()) {
+                // Show an error only after every configured AAC quality and
+                // the unchanged legacy mount have failed.
+                setErrorState(error.localizedMessage ?: "Playback error")
+                updateForeground(false)
+            }
         }
     }
 
@@ -268,8 +274,10 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
             val p = player
             if (p != null && p.playbackState == Player.STATE_BUFFERING) {
                 p.stop()
-                setErrorState("Yayına bağlanılamadı")
-                updateForeground(false)
+                if (!tryNextStreamFallback()) {
+                    setErrorState("Yayına bağlanılamadı")
+                    updateForeground(false)
+                }
             }
         }
         bufferingWatchdog = runnable
@@ -551,6 +559,7 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
     private data class CatalogItem(
         val id: String,
         val url: String,
+        val fallbackUrls: List<String>,
         val title: String,
         val artist: String,
         val artwork: String,
@@ -560,10 +569,21 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         CatalogItem(
             id = json.optString("id", ""),
             url = json.optString("url", ""),
+            fallbackUrls = jsonStringList(json.optJSONArray("fallbackUrls")),
             title = json.optString("title", "RadioTEDU"),
             artist = json.optString("subtitle", ""),
             artwork = json.optString("artwork", ""),
         )
+
+    private fun jsonStringList(values: JSONArray?): List<String> {
+        if (values == null) return emptyList()
+        val result = mutableListOf<String>()
+        for (index in 0 until values.length()) {
+            val value = values.optString(index, "")
+            if (value.isNotEmpty() && !result.contains(value)) result.add(value)
+        }
+        return result
+    }
 
     /** Every playable item across all categories + the recent row, in order. */
     private fun allPlayableItems(): List<CatalogItem> {
@@ -599,6 +619,7 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         CatalogItem(
             id = FALLBACK_RADIO_ID,
             url = FALLBACK_RADIO_URL,
+            fallbackUrls = emptyList(),
             title = FALLBACK_RADIO_TITLE,
             artist = FALLBACK_RADIO_SUBTITLE,
             artwork = FALLBACK_RADIO_ARTWORK,
@@ -669,6 +690,8 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
 
     /** Set metadata + buffering state, then prepare and play the stream. */
     private fun playItem(item: CatalogItem) {
+        activeCatalogItem = item
+        activeStreamIndex = 0
         session.setMetadata(
             MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.title)
@@ -682,10 +705,35 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         // Arm the watchdog so a stream that connects but never delivers data
         // resolves to STATE_ERROR rather than buffering forever.
         armBufferingWatchdog()
+        playActiveStreamCandidate()
+    }
+
+    private fun streamCandidates(item: CatalogItem): List<String> =
+        (listOf(item.url) + item.fallbackUrls).filter { it.isNotEmpty() }.distinct()
+
+    private fun playActiveStreamCandidate() {
+        val item = activeCatalogItem ?: return
+        val url = streamCandidates(item).getOrNull(activeStreamIndex) ?: return
         val p = player()
-        p.setMediaItem(MediaItem.fromUri(item.url))
+        p.setMediaItem(
+            MediaItem.Builder()
+                .setMediaId(item.id)
+                .setUri(url)
+                .build(),
+        )
         p.prepare()
         p.play()
+    }
+
+    /** Advance selected quality -> normal -> low -> high -> legacy without JS. */
+    private fun tryNextStreamFallback(): Boolean {
+        val item = activeCatalogItem ?: return false
+        if (activeStreamIndex + 1 >= streamCandidates(item).size) return false
+        activeStreamIndex += 1
+        session.setPlaybackState(buildState(PlaybackStateCompat.STATE_BUFFERING))
+        armBufferingWatchdog()
+        playActiveStreamCandidate()
+        return true
     }
 
     /**

@@ -43,8 +43,13 @@ describe('Android form-factor delivery', () => {
     const service = read(
       'formfactor/src/main/java/com/radiotedumobile/formfactor/RadioPlaybackService.kt',
     );
-    expect(channels).toContain('https://stream.radiotedu.com/radio');
-    expect(channels).toContain('https://stream.radiotedu.com/rock');
+    expect(channels).toContain('qualityChannel("radiotedu-main", "RadioTEDU", "radio")');
+    expect(channels).toContain('qualityChannel("radiotedu-rock", "Rock", "rock")');
+    expect(channels).toContain('$origin/$mount-normal');
+    expect(channels).toContain('$origin/$mount-low');
+    expect(channels).toContain('$losslessOrigin/$mount-flac');
+    expect(service).toContain('onPlayerError');
+    expect(service).toContain('currentUrlIndex += 1');
     expect(service).toContain('MediaSessionService');
     expect(service).toContain('setAudioAttributes');
   });

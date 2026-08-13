@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Production default: HTTPS only. Block all cleartext (HTTP) traffic to
-         prevent man-in-the-middle interception. All radiotedu.com API and
-         stream endpoints are HTTPS. -->
+    <!-- Production default: HTTPS only. -->
     <base-config cleartextTrafficPermitted="false" />
+
+    <!-- Listener-only TinyIce port for the six Ogg/FLAC mounts. No account,
+         API, voting, WebView, or credential traffic is sent over this rule. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">stream.radiotedu.com</domain>
+    </domain-config>
 
     <!-- Allow cleartext ONLY for local development servers / emulator loopback
          (the dev API at http://127.0.0.1:3000). Never reaches production. -->

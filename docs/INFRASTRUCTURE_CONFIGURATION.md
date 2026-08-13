@@ -22,8 +22,10 @@ AAC tiers and then the legacy mount:
 - `/en` (single AI stream; no quality mounts provisioned)
 - `/fr` (single AI stream; no quality mounts provisioned)
 
-Provisioned music suffixes are `-low` (AAC-LC 96), `-normal` (AAC-LC 128),
-`-high` (AAC-LC 320), and `-flac` (Ogg/FLAC). The app must not invent `/en-*`,
+Provisioned music suffix profiles are `-low` (Opus 96), `-normal` (AAC-LC 128),
+`-high` (Opus 196), and `-flac` (Ogg/FLAC). All four quality families are
+currently disabled at the origin; the six unchanged legacy mounts remain the
+production path. The app must not invent `/en-*`,
 `/fr-*`, `/radiotedu-en`, or `/radiotedu-fr` URLs. The six FLAC listener URLs
 use `http://stream.radiotedu.com:11154/<mount>-flac` because TinyIce exposes
 them directly and the HTTPS proxy does not route quality suffixes. Android

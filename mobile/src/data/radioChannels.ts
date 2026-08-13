@@ -76,9 +76,9 @@ function buildQualityStreams(mountPath: string): Record<StreamQuality, string> {
 }
 
 const STANDARD_CODEC_LABELS: Record<StreamQuality, string> = {
-  low: 'AAC',
-  normal: 'AAC',
-  high: 'AAC',
+  low: 'Opus',
+  normal: 'AAC-LC',
+  high: 'Opus',
   flac: 'FLAC',
 };
 

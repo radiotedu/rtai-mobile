@@ -85,6 +85,9 @@ describe('radio channel catalog', () => {
       }),
     );
     expect(rock?.streams.flac).toBe('http://stream.radiotedu.com:11154/rock-flac');
+    expect(rock?.codecLabels?.low).toBe('Opus');
+    expect(rock?.codecLabels?.normal).toBe('AAC-LC');
+    expect(rock?.codecLabels?.high).toBe('Opus');
     expect(rock?.codecLabels?.flac).toBe('FLAC');
   });
 

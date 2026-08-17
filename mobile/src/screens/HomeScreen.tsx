@@ -232,7 +232,7 @@ function EmptyCard({text}: {text: string}) {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
-  content: {padding: SPACING.lg, paddingBottom: SPACING.xl},
+  content: {padding: SPACING.lg, paddingBottom: 170},
   hero: {
     overflow: 'hidden',
     borderRadius: 28,

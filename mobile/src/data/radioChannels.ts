@@ -5,12 +5,23 @@
 //             square export (>=512x512) looks best. The URLs below are the real
 //             RadioTEDU brand images (landscape ~2560x1551) and will be
 //             center-cropped in the car until square versions are provided.
+// Official RadioTEDU station square logos from https://radiotedu.com/radyolar/
 const MAIN_LOGO =
-  'https://radiotedu.com/wp-content/uploads/2025/07/logo-02-scaled.png';
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
+const CLASSIC_LOGO =
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-classic.png';
 const JAZZ_LOGO =
-  'https://radiotedu.com/wp-content/uploads/2025/07/tedu_jazz-scaled.png';
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-jazz.png';
 const LOFI_LOGO =
-  'https://radiotedu.com/wp-content/uploads/2025/07/tedu_lofi-scaled.png';
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-lo-fi.png';
+const ENERGIZE_LOGO =
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-energize.png';
+const ROCK_LOGO =
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-rock.png';
+const AI_EN_LOGO =
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-ai-english.png';
+const AI_FR_LOGO =
+  'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-ai-francais.png';
 
 const STREAM_ORIGIN = 'https://stream.radiotedu.com';
 
@@ -59,22 +70,29 @@ export function buildStreamUrl(
   quality: StreamQuality,
 ): string {
   const mount = mountName(mountPath);
-  return `${STREAM_ORIGIN}/${mount}-${quality}`;
+  if (quality === 'low') {
+    return `${STREAM_ORIGIN}/${mount}-low`;
+  }
+  if (quality === 'flac') {
+    return `${STREAM_ORIGIN}/${mount}-flac`;
+  }
+  // Normal stream (192 kbps) has NO suffix (e.g. /radio, /lofi, /cazz, etc.)
+  return `${STREAM_ORIGIN}/${mount}`;
 }
 
 function buildQualityStreams(mountPath: string): Record<StreamQuality, string> {
   return {
     low: buildStreamUrl(mountPath, 'low'),
     normal: buildStreamUrl(mountPath, 'normal'),
-    high: buildStreamUrl(mountPath, 'high'),
+    high: buildStreamUrl(mountPath, 'normal'),
     flac: buildStreamUrl(mountPath, 'flac'),
   };
 }
 
 const STANDARD_CODEC_LABELS: Record<StreamQuality, string> = {
-  low: 'AAC',
-  normal: 'AAC',
-  high: 'AAC',
+  low: 'AAC 32k',
+  normal: 'AAC 192k',
+  high: 'AAC 192k',
   flac: 'FLAC',
 };
 
@@ -83,7 +101,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-main',
     name: 'RadioTEDU',
     description: 'Ana Kanal',
-    streamUrl: 'https://stream.radiotedu.com/radio-normal',
+    streamUrl: 'https://stream.radiotedu.com/radio',
     legacyStreamUrl: 'https://stream.radiotedu.com/radio',
     mountPath: '/radio',
     streams: buildQualityStreams('/radio'),
@@ -100,16 +118,15 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-classic',
     name: 'Classic',
     description: 'Klasik Muzik',
-    streamUrl: 'https://stream.radiotedu.com/classic-normal',
+    streamUrl: 'https://stream.radiotedu.com/classic',
     legacyStreamUrl: 'https://stream.radiotedu.com/classic',
     mountPath: '/classic',
     streams: buildQualityStreams('/classic'),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'music-clef-treble',
     color: '#E5A000',
-    // TODO: no Classic-specific asset provided yet - falls back to main logo.
-    logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    logo: CLASSIC_LOGO,
+    artwork: CLASSIC_LOGO,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -118,7 +135,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-jazz',
     name: 'Jazz',
     description: 'Caz Muzik',
-    streamUrl: 'https://stream.radiotedu.com/cazz-normal',
+    streamUrl: 'https://stream.radiotedu.com/cazz',
     legacyStreamUrl: 'https://stream.radiotedu.com/cazz',
     mountPath: '/cazz',
     streams: buildQualityStreams('/cazz'),
@@ -135,7 +152,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-lofi',
     name: 'Lo-Fi',
     description: 'Lo-Fi Beats',
-    streamUrl: 'https://stream.radiotedu.com/lofi-normal',
+    streamUrl: 'https://stream.radiotedu.com/lofi',
     legacyStreamUrl: 'https://stream.radiotedu.com/lofi',
     mountPath: '/lofi',
     streams: buildQualityStreams('/lofi'),
@@ -152,15 +169,15 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-energize',
     name: 'Energize',
     description: 'High Energy',
-    streamUrl: 'https://stream.radiotedu.com/energize-normal',
+    streamUrl: 'https://stream.radiotedu.com/energize',
     legacyStreamUrl: 'https://stream.radiotedu.com/energize',
     mountPath: '/energize',
     streams: buildQualityStreams('/energize'),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'lightning-bolt',
     color: '#F36F21',
-    logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    logo: ENERGIZE_LOGO,
+    artwork: ENERGIZE_LOGO,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -173,21 +190,16 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     legacyStreamUrl: 'https://stream.radiotedu.com/spark',
     mountPath: '/spark',
     streams: {
-      low: 'https://stream.radiotedu.com/spark?q=low',
+      low: 'https://stream.radiotedu.com/spark-low',
       normal: 'https://stream.radiotedu.com/spark',
-      high: 'https://stream.radiotedu.com/spark?q=high',
-      flac: 'https://stream.radiotedu.com/spark.flac',
+      high: 'https://stream.radiotedu.com/spark',
+      flac: 'https://stream.radiotedu.com/spark-flac',
     },
-    codecLabels: {
-      low: 'AAC',
-      normal: 'AAC',
-      high: 'AAC',
-      flac: 'FLAC',
-    },
+    codecLabels: STANDARD_CODEC_LABELS,
     icon: 'creation',
     color: '#20D6C7',
-    logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    logo: ENERGIZE_LOGO,
+    artwork: ENERGIZE_LOGO,
     role: 'ai-host',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -196,15 +208,15 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-rock',
     name: 'Rock',
     description: 'Rock',
-    streamUrl: 'https://stream.radiotedu.com/rock-normal',
+    streamUrl: 'https://stream.radiotedu.com/rock',
     legacyStreamUrl: 'https://stream.radiotedu.com/rock',
     mountPath: '/rock',
     streams: buildQualityStreams('/rock'),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'guitar-electric',
     color: '#FF6B2C',
-    logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    logo: ROCK_LOGO,
+    artwork: ROCK_LOGO,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -213,15 +225,15 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-en',
     name: 'RadioTEDU English',
     description: 'English Broadcast',
-    streamUrl: 'https://stream.radiotedu.com/en-normal',
+    streamUrl: 'https://stream.radiotedu.com/en',
     legacyStreamUrl: 'https://stream.radiotedu.com/en',
     mountPath: '/en',
     streams: buildQualityStreams('/en'),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'translate',
     color: '#3578E5',
-    logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    logo: AI_EN_LOGO,
+    artwork: AI_EN_LOGO,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -230,15 +242,15 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     id: 'radiotedu-fr',
     name: 'RadioTEDU Français',
     description: 'Diffusion française',
-    streamUrl: 'https://stream.radiotedu.com/fr-normal',
+    streamUrl: 'https://stream.radiotedu.com/fr',
     legacyStreamUrl: 'https://stream.radiotedu.com/fr',
     mountPath: '/fr',
     streams: buildQualityStreams('/fr'),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'translate',
     color: '#6C63D9',
-    logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    logo: AI_FR_LOGO,
+    artwork: AI_FR_LOGO,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -290,18 +302,25 @@ export function buildStreamFallbacks(
     },
   ];
 
-  candidates.push(
-    {
+  if (resolvedQuality !== 'normal') {
+    candidates.push({
       url: resolveStreamUrl(channel, 'normal'),
       quality: 'normal',
       isLegacy: false,
-    },
-    {
-      url: channel.legacyStreamUrl,
-      quality: 'normal',
-      isLegacy: true,
-    },
-  );
+    });
+  }
+
+  candidates.push({
+    url: resolveStreamUrl(channel, 'low'),
+    quality: 'low',
+    isLegacy: false,
+  });
+
+  candidates.push({
+    url: channel.legacyStreamUrl,
+    quality: 'normal',
+    isLegacy: true,
+  });
 
   return candidates.filter(
     (candidate, index, all) =>

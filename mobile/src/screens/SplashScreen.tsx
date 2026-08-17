@@ -109,8 +109,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ready, onFinish}) => {
     stackScale,
   ]);
 
-  const brandStackWidth = Math.min(width * 0.78, 520);
-  const compactHeight = height < 640;
+  const isLandscape = width > height;
+  const brandStackWidth = Math.min(width * 0.75, isLandscape ? 380 : 460);
+  const compactHeight = height < 640 || isLandscape;
 
   return (
     <Animated.View
@@ -131,6 +132,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ready, onFinish}) => {
             opacity: stackOpacity,
             transform: [{scale: stackScale}],
             width: brandStackWidth,
+            maxWidth: '85%',
           },
         ]}>
         <Image
@@ -170,6 +172,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 28,
     justifyContent: 'center',
+    alignSelf: 'center',
   },
   brandStackCompact: {
     gap: 16,
@@ -177,6 +180,8 @@ const styles = StyleSheet.create({
   radioTeduLogo: {
     aspectRatio: 2560 / 463,
     width: '100%',
+    maxWidth: 420,
+    maxHeight: 72,
   },
   rtaiCard: {
     alignItems: 'center',
@@ -193,6 +198,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 20,
     width: '68%',
+    maxWidth: 280,
   },
   rtaiCardCompact: {
     borderRadius: 14,
@@ -202,6 +208,7 @@ const styles = StyleSheet.create({
   rtaiLogo: {
     aspectRatio: 858 / 291,
     width: '100%',
+    maxHeight: 48,
   },
 });
 

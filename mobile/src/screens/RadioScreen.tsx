@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingBottom: 170,
   },
   sectionHeader: {
     flexDirection: 'row',

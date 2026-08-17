@@ -56,19 +56,19 @@ describe('radio channel catalog', () => {
         mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
       }),
     );
-    expect(spark?.streams.flac).toBe('https://stream.radiotedu.com/spark.flac');
+    expect(spark?.streams.flac).toBe('https://stream.radiotedu.com/spark-flac');
     expect(spark?.codecLabels?.flac).toBe('FLAC');
     expect(getAvailableStreamQualities(spark!)).toContain('flac');
   });
 
-  it('adds Energize and Rock with their recommended normal mounts', () => {
+  it('adds Energize and Rock with their recommended normal mounts (no suffix)', () => {
     const energize = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-energize');
     const rock = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-rock');
 
     expect(energize).toEqual(
       expect.objectContaining({
         name: 'Energize',
-        streamUrl: 'https://stream.radiotedu.com/energize-normal',
+        streamUrl: 'https://stream.radiotedu.com/energize',
         legacyStreamUrl: 'https://stream.radiotedu.com/energize',
         mountPath: '/energize',
         availability: 'live',
@@ -77,7 +77,7 @@ describe('radio channel catalog', () => {
     expect(rock).toEqual(
       expect.objectContaining({
         name: 'Rock',
-        streamUrl: 'https://stream.radiotedu.com/rock-normal',
+        streamUrl: 'https://stream.radiotedu.com/rock',
         legacyStreamUrl: 'https://stream.radiotedu.com/rock',
         mountPath: '/rock',
         availability: 'live',
@@ -88,7 +88,7 @@ describe('radio channel catalog', () => {
     expect(rock?.codecLabels?.flac).toBe('FLAC');
   });
 
-  it('exposes low, normal, high and FLAC for every public RadioTEDU channel', () => {
+  it('exposes low, normal, and FLAC mounts correctly for every public RadioTEDU channel', () => {
     const publicMounts = {
       'radiotedu-main': 'radio',
       'radiotedu-classic': 'classic',
@@ -103,10 +103,11 @@ describe('radio channel catalog', () => {
     for (const [id, mount] of Object.entries(publicMounts)) {
       const channel = RADIO_CHANNELS.find(item => item.id === id)!;
       expect(getAvailableStreamQualities(channel)).toEqual(
-        expect.arrayContaining(['low', 'normal', 'high', 'flac']),
+        expect.arrayContaining(['low', 'normal', 'flac']),
       );
+      // Normal stream has NO suffix
       expect(channel.streamUrl).toBe(
-        `https://stream.radiotedu.com/${mount}-normal`,
+        `https://stream.radiotedu.com/${mount}`,
       );
       expect(channel.legacyStreamUrl).toBe(
         `https://stream.radiotedu.com/${mount}`,
@@ -114,8 +115,8 @@ describe('radio channel catalog', () => {
       expect(resolveStreamUrl(channel, 'low')).toBe(
         `https://stream.radiotedu.com/${mount}-low`,
       );
-      expect(resolveStreamUrl(channel, 'high')).toBe(
-        `https://stream.radiotedu.com/${mount}-high`,
+      expect(resolveStreamUrl(channel, 'normal')).toBe(
+        `https://stream.radiotedu.com/${mount}`,
       );
       expect(resolveStreamUrl(channel, 'flac')).toBe(
         `https://stream.radiotedu.com/${mount}-flac`,
@@ -123,14 +124,30 @@ describe('radio channel catalog', () => {
     }
   });
 
-  it('falls back from the selected quality to normal and the unchanged legacy mount', () => {
+  it('uses official square station logos from radiotedu.com/radyolar', () => {
+    const main = RADIO_CHANNELS.find(c => c.id === 'radiotedu-main')!;
+    const jazz = RADIO_CHANNELS.find(c => c.id === 'radiotedu-jazz')!;
+    const lofi = RADIO_CHANNELS.find(c => c.id === 'radiotedu-lofi')!;
+
+    expect(main.logo).toBe(
+      'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png',
+    );
+    expect(jazz.logo).toBe(
+      'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-jazz.png',
+    );
+    expect(lofi.logo).toBe(
+      'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-lo-fi.png',
+    );
+  });
+
+  it('falls back from the selected quality to normal, low, and the legacy mount', () => {
     const english = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-en')!;
-    const fallbacks = buildStreamFallbacks(english, 'high');
+    const fallbacks = buildStreamFallbacks(english, 'flac');
 
     expect(fallbacks.map(item => item.url)).toEqual([
-      'https://stream.radiotedu.com/en-high',
-      'https://stream.radiotedu.com/en-normal',
+      'https://stream.radiotedu.com/en-flac',
       'https://stream.radiotedu.com/en',
+      'https://stream.radiotedu.com/en-low',
     ]);
     expect(buildChannelTrack(english, 'flac')).toEqual(
       expect.objectContaining({

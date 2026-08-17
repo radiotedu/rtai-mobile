@@ -32,31 +32,25 @@ const QUALITY_OPTIONS: Array<{
   {
     value: 'automatic',
     title: 'Automatic',
-    description: 'Adapts between Low, Normal and High. Automatic never selects FLAC.',
+    description: 'Adapts between Low (32 kbit) and Normal (192 kbit). Fallback automatically on slow connection.',
     icon: 'auto-fix',
   },
   {
     value: 'low',
-    title: 'Low',
-    description: 'Uses the least data and starts fastest on weak connections.',
+    title: 'Low (32 kbit)',
+    description: 'Uses the least data and starts fastest on weak connections (/radio-low).',
     icon: 'signal-cellular-1',
   },
   {
     value: 'normal',
-    title: 'Normal',
-    description: 'Recommended balance for everyday listening.',
+    title: 'Normal (192 kbit)',
+    description: 'Standard crystal-clear RadioTEDU stream (/radio).',
     icon: 'signal-cellular-2',
   },
   {
-    value: 'high',
-    title: 'High',
-    description: 'Higher fidelity with increased data use.',
-    icon: 'signal-cellular-3',
-  },
-  {
     value: 'flac',
-    title: 'FLAC',
-    description: 'Lossless audio. Uses considerably more mobile data.',
+    title: 'FLAC (Lossless)',
+    description: 'Uncompressed studio master audio (/radio-flac). Uses considerably more data.',
     icon: 'waveform',
   },
 ];

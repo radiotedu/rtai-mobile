@@ -9,7 +9,7 @@
  * react-native-track-player v4 exposes the queue to the car as a single flat
  * list (no nested folders from JS), so channels and podcasts share one queue.
  */
-import TrackPlayer, {Track} from 'react-native-track-player';
+import TrackPlayer, {State, Track} from 'react-native-track-player';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
 import {
@@ -245,11 +245,53 @@ function confirmFlacOnCellular(channel: RadioChannel): Promise<boolean> {
   });
 }
 
+export const NORMAL_CONNECT_TIMEOUT_MS = 5000;
+let connectionWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function clearConnectionWatchdog(): void {
+  if (connectionWatchdogTimer) {
+    clearTimeout(connectionWatchdogTimer);
+    connectionWatchdogTimer = null;
+  }
+}
+
+export function startConnectionWatchdog(
+  channel: RadioChannel,
+  quality: StreamQuality,
+  timeoutMs: number = NORMAL_CONNECT_TIMEOUT_MS,
+): void {
+  clearConnectionWatchdog();
+  if (quality !== 'normal') {
+    return;
+  }
+
+  connectionWatchdogTimer = setTimeout(async () => {
+    try {
+      const {state} = await TrackPlayer.getPlaybackState();
+      const activeTrack = await TrackPlayer.getActiveTrack();
+
+      if (
+        activeTrack?.id === channel.id &&
+        state !== State.Playing
+      ) {
+        console.log(
+          `[playbackQueue] Connection to normal stream timed out after ${timeoutMs}ms. Falling back to low quality.`,
+        );
+        await replaceChannelTrack(channel, 'low');
+        await playTrackById(channel.id);
+      }
+    } catch (error) {
+      console.log('[playbackQueue] Connection watchdog error:', error);
+    }
+  }, timeoutMs);
+}
+
 /** Resolve the saved quality, update the queue item, then play it. */
 export async function playChannelById(
   channelId: string,
   qualityOverride?: StreamQuality,
 ): Promise<PlaybackSelectionResult> {
+  clearConnectionWatchdog();
   const channel = RADIO_CHANNELS.find(item => item.id === channelId);
   if (!channel) {
     throw new Error(`Unknown RadioTEDU channel: ${channelId}`);
@@ -276,6 +318,11 @@ export async function playChannelById(
     await rebuildBrowsableQueue(quality);
     played = await playTrackById(channelId);
   }
+
+  if (played && quality === 'normal') {
+    startConnectionWatchdog(channel, quality);
+  }
+
   return {played, cancelled: false, quality};
 }
 

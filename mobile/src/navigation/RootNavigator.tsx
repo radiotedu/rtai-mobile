@@ -52,6 +52,7 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
+        tabBarLabelPosition: 'below-icon',
         tabBarIcon: ({focused, color, size}) => {
           let iconName = 'help-circle';
           if (route.name === 'Home') {
@@ -70,13 +71,14 @@ function MainTabs() {
             <View
               style={{
                 minWidth: 42,
-                height: 30,
+                height: 28,
                 borderRadius: 999,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: focused ? 'rgba(227,30,36,0.16)' : 'transparent',
+                marginBottom: 2,
               }}>
-              <Icon name={iconName} size={size} color={color} />
+              <Icon name={iconName} size={22} color={color} />
             </View>
           );
         },
@@ -84,6 +86,8 @@ function MainTabs() {
         tabBarInactiveTintColor: '#8F8F94',
         tabBarLabelStyle: {
           fontSize: 11,
+          marginTop: 0,
+          paddingBottom: 2,
         },
         tabBarLabel: ({focused, color}) => (
           <Text
@@ -101,11 +105,14 @@ function MainTabs() {
         tabBarStyle: {
           backgroundColor: COLORS.background,
           borderTopColor: COLORS.border,
-          height: 76,
-          paddingTop: 8,
-          paddingBottom: 14,
+          height: 72,
+          paddingTop: 6,
+          paddingBottom: 10,
         },
         tabBarItemStyle: {
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           paddingHorizontal: 2,
         },
         headerStyle: {

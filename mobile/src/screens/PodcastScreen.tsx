@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   headerTitle: { color: COLORS.text, fontSize: 24, fontWeight: 'bold' },
-  listContent: { padding: SPACING.md },
+  listContent: { padding: SPACING.md, paddingBottom: 170 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: COLORS.textMuted, marginTop: SPACING.sm },
   podcastItem: {

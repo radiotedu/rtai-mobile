@@ -1,17 +1,21 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
+import NetInfo from '@react-native-community/netinfo';
 import TrackPlayer, {
   State,
   useActiveTrack,
@@ -19,6 +23,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {COLORS, SPACING} from '../theme/theme';
 import {
+  HIGH_QUALITY_MOBILE_DATA_WARNING,
   RADIO_CHANNELS,
   RadioChannel,
   StreamQuality,
@@ -31,17 +36,25 @@ import {
 } from '../services/radioFavorites';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
+import {useStreamPreferences} from '../hooks/useStreamPreferences';
+import {isCellularNetwork, StreamNetworkSnapshot} from '../services/streamPreferences';
 
-const FALLBACK_ARTWORK = 'https://radiotedu.com/logo.png';
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const ART_SIZE = Math.min(SCREEN_WIDTH - SPACING.lg * 4, 340);
+const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
+
+const QUALITY_OPTIONS: Array<{
+  quality: StreamQuality;
+  label: string;
+  bitrate: string;
+}> = [
+  {quality: 'low', label: 'Low', bitrate: '32k'},
+  {quality: 'normal', label: 'Normal', bitrate: '192k'},
+  {quality: 'flac', label: 'FLAC', bitrate: 'Lossless'},
+];
 
 /**
  * Full-screen, Spotify-style "now playing" view: a large album-art hero with
- * the song + artist beneath it and the transport controls. Opened from the
- * radio list / mini player. Reads live state from react-native-track-player and
- * the ICY metadata context, so it follows whatever is actually playing
- * (a station or a podcast episode).
+ * the song + artist beneath it, quality switcher, golden FLAC indicator,
+ * and transport controls.
  */
 const PlayerScreen = () => {
   const navigation = useNavigation<any>();
@@ -49,8 +62,11 @@ const PlayerScreen = () => {
   const playbackState = usePlaybackState();
   const {metadata} = useMetadata();
   const {activeChannels} = useChannels();
+  const {preferences, setPreferences} = useStreamPreferences();
+  const {width, height} = useWindowDimensions();
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [isSwitchingQuality, setIsSwitchingQuality] = useState(false);
 
   useEffect(() => {
     loadFavoriteChannelIds()
@@ -86,18 +102,10 @@ const PlayerScreen = () => {
     'RadioTEDU';
 
   const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
-  const currentQuality = currentChannel
-    ? ((activeTrack?.streamQuality as StreamQuality | undefined) || 'normal')
-    : null;
-  const isLegacyStream = Boolean(activeTrack?.streamIsLegacy);
-  const qualityLabel = currentQuality
-    ? isLegacyStream
-      ? 'LEGACY · NORMAL'
-      : currentQuality.toUpperCase()
-    : '';
+  const currentQuality: StreamQuality = (activeTrack?.streamQuality as StreamQuality) || (preferences.quality === 'automatic' ? 'normal' : preferences.quality) || 'normal';
+  const isFlacActive = currentQuality === 'flac';
 
-  // The heart reflects the CURRENT station's favorite state, so it updates
-  // automatically when the station/song changes (no stuck "liked" state).
+  // The heart reflects the CURRENT station's favorite state
   const isFavorite = currentChannel
     ? favoriteIds.includes(currentChannel.id)
     : false;
@@ -143,10 +151,52 @@ const PlayerScreen = () => {
     saveFavoriteChannelIds(next).catch(() => {});
   };
 
+  const handleSelectQuality = async (quality: StreamQuality) => {
+    if (quality === currentQuality && !isSwitchingQuality) {
+      return;
+    }
+
+    if (quality === 'flac') {
+      const net = (await NetInfo.fetch()) as StreamNetworkSnapshot;
+      if (isCellularNetwork(net)) {
+        Alert.alert(
+          'FLAC over mobile data',
+          currentChannel?.mobileDataWarning || HIGH_QUALITY_MOBILE_DATA_WARNING,
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {
+              text: 'Play FLAC',
+              onPress: () => applyQualityChange(quality),
+            },
+          ],
+        );
+        return;
+      }
+    }
+
+    await applyQualityChange(quality);
+  };
+
+  const applyQualityChange = async (quality: StreamQuality) => {
+    setIsSwitchingQuality(true);
+    try {
+      await setPreferences({quality});
+      if (currentChannel) {
+        await playChannelById(currentChannel.id, quality);
+      }
+    } catch (err) {
+      console.log('Quality change error:', err);
+    } finally {
+      setIsSwitchingQuality(false);
+    }
+  };
+
+  const artSize = Math.min(width - SPACING.lg * 4, height * 0.38, 320);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
-      {/* Soft brand tint behind the art, like Spotify's gradient header. */}
+      {/* Soft brand tint behind the art */}
       <View
         style={[
           styles.tint,
@@ -172,94 +222,134 @@ const PlayerScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.artWrap}>
-          <Image
-            source={{uri: displayArtwork}}
-            style={styles.art}
-            resizeMode="cover"
-          />
-        </View>
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaText}>
-            <Text style={styles.title} numberOfLines={2}>
-              {displayTitle}
-            </Text>
-            <Text style={styles.artist} numberOfLines={1}>
-              {displayArtist}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={toggleFavorite}
-            disabled={!currentChannel}
-            style={styles.heartButton}
-            accessibilityLabel={isFavorite ? 'Favoriden çıkar' : 'Favoriye ekle'}>
-            <Icon
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={28}
-              color={isFavorite ? COLORS.primary : COLORS.textMuted}
+        <ScrollView
+          contentContainerStyle={styles.scrollBody}
+          showsVerticalScrollIndicator={false}
+          bounces={false}>
+          <View style={styles.artWrap}>
+            <Image
+              source={{uri: displayArtwork}}
+              style={[styles.art, {width: artSize, height: artSize}]}
+              resizeMode="cover"
             />
-          </TouchableOpacity>
-        </View>
-
-        {isLive ? (
-          <View style={styles.liveRow}>
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>LIVE</Text>
-            </View>
-            {currentQuality ? (
-              <TouchableOpacity
-                style={styles.qualityBadge}
-                onPress={() => navigation.navigate('StreamSettings')}
-                accessibilityLabel={`Current streaming quality: ${qualityLabel}`}>
-                <Icon
-                  name={currentQuality === 'flac' ? 'waveform' : 'signal'}
-                  size={14}
-                  color={COLORS.text}
-                />
-                <Text style={styles.qualityText}>{qualityLabel}</Text>
-              </TouchableOpacity>
-            ) : null}
-            <View style={styles.liveBar}>
-              <View style={styles.liveBarFill} />
-            </View>
           </View>
-        ) : (
-          <View style={styles.spacer} />
-        )}
 
-        <View style={styles.controls}>
-          <TouchableOpacity
-            onPress={() => goToOffset(-1)}
-            style={styles.sideButton}
-            accessibilityLabel="Önceki">
-            <Icon name="skip-previous" size={40} color={COLORS.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={togglePlayback}
-            style={styles.playButton}
-            accessibilityLabel={isPlaying ? 'Duraklat' : 'Oynat'}>
-            {isBuffering ? (
-              <ActivityIndicator size="large" color="#fff" />
-            ) : (
+          <View style={styles.metaRow}>
+            <View style={styles.metaText}>
+              <Text style={styles.title} numberOfLines={2}>
+                {displayTitle}
+              </Text>
+              <Text style={styles.artist} numberOfLines={1}>
+                {displayArtist}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={toggleFavorite}
+              disabled={!currentChannel}
+              style={styles.heartButton}
+              accessibilityLabel={isFavorite ? 'Favoriden çıkar' : 'Favoriye ekle'}>
               <Icon
-                name={isPlaying ? 'pause' : 'play'}
-                size={40}
-                color="#fff"
-                style={!isPlaying ? styles.playIcon : undefined}
+                name={isFavorite ? 'heart' : 'heart-outline'}
+                size={28}
+                color={isFavorite ? COLORS.primary : COLORS.textMuted}
               />
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            onPress={() => goToOffset(1)}
-            style={styles.sideButton}
-            accessibilityLabel="Sonraki">
-            <Icon name="skip-next" size={40} color={COLORS.text} />
-          </TouchableOpacity>
-        </View>
+          {isLive ? (
+            <View style={styles.liveRow}>
+              <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>LIVE</Text>
+              </View>
+
+              {/* Golden FLAC Symbol / Badge when FLAC is chosen */}
+              {isFlacActive ? (
+                <View style={styles.goldFlacBadge}>
+                  <Icon name="star-four-points" size={14} color="#FFD700" />
+                  <Text style={styles.goldFlacText}>FLAC</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.liveBar}>
+                <View style={styles.liveBarFill} />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.spacer} />
+          )}
+
+          {/* Quick Audio Quality Selector on Now Playing Page */}
+          {isLive && currentChannel ? (
+            <View style={styles.qualitySelectorRow}>
+              <Text style={styles.qualitySelectorLabel}>Kalite:</Text>
+              <View style={styles.qualityPills}>
+                {QUALITY_OPTIONS.map(opt => {
+                  const isSelected = currentQuality === opt.quality;
+                  const isGold = opt.quality === 'flac' && isSelected;
+                  return (
+                    <TouchableOpacity
+                      key={opt.quality}
+                      style={[
+                        styles.qualityPill,
+                        isSelected && styles.qualityPillActive,
+                        isGold && styles.qualityPillGold,
+                      ]}
+                      onPress={() => handleSelectQuality(opt.quality)}
+                      disabled={isSwitchingQuality}>
+                      {isGold ? (
+                        <Icon name="star-four-points" size={12} color="#FFD700" style={{marginRight: 3}} />
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.qualityPillText,
+                          isSelected && styles.qualityPillTextActive,
+                          isGold && styles.qualityPillTextGold,
+                        ]}>
+                        {opt.label} ({opt.bitrate})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {isSwitchingQuality ? (
+                <ActivityIndicator size="small" color={COLORS.primary} style={{marginLeft: 8}} />
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={styles.controls}>
+            <TouchableOpacity
+              onPress={() => goToOffset(-1)}
+              style={styles.sideButton}
+              accessibilityLabel="Önceki">
+              <Icon name="skip-previous" size={40} color={COLORS.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={togglePlayback}
+              style={styles.playButton}
+              accessibilityLabel={isPlaying ? 'Duraklat' : 'Oynat'}>
+              {isBuffering ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <Icon
+                  name={isPlaying ? 'pause' : 'play'}
+                  size={40}
+                  color="#fff"
+                  style={!isPlaying ? styles.playIcon : undefined}
+                />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => goToOffset(1)}
+              style={styles.sideButton}
+              accessibilityLabel="Sonraki">
+              <Icon name="skip-next" size={40} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -289,33 +379,40 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.2,
   },
+  scrollBody: {
+    flexGrow: 1,
+    justifyContent: 'space-around',
+    paddingBottom: SPACING.lg,
+  },
   artWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.xl,
+    marginVertical: SPACING.md,
   },
   art: {
-    width: ART_SIZE,
-    height: ART_SIZE,
     borderRadius: 16,
     backgroundColor: COLORS.surface,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
   },
   metaText: {flex: 1, paddingRight: SPACING.md},
-  title: {color: COLORS.text, fontSize: 24, fontWeight: '900', lineHeight: 30},
-  artist: {color: COLORS.textMuted, fontSize: 16, marginTop: 6},
+  title: {color: COLORS.text, fontSize: 22, fontWeight: '900', lineHeight: 28},
+  artist: {color: COLORS.textMuted, fontSize: 15, marginTop: 4},
   heartButton: {
     width: 46,
     height: 46,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  liveRow: {flexDirection: 'row', alignItems: 'center', marginTop: SPACING.xl, gap: SPACING.sm},
+  liveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    gap: SPACING.sm,
+  },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -327,31 +424,87 @@ const styles = StyleSheet.create({
   },
   liveDot: {width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary},
   liveText: {color: COLORS.primary, fontSize: 11, fontWeight: '900', letterSpacing: 1},
-  qualityBadge: {
-    minHeight: 28,
+  goldFlacBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    backgroundColor: 'rgba(255, 215, 0, 0.16)',
+    borderColor: '#FFD700',
+    borderWidth: 1.2,
     paddingHorizontal: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingVertical: 4,
+    borderRadius: 12,
+    shadowColor: '#FFD700',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  qualityText: {
-    color: COLORS.text,
-    fontSize: 10,
+  goldFlacText: {
+    color: '#FFD700',
+    fontSize: 11,
     fontWeight: '900',
-    letterSpacing: 0.7,
+    letterSpacing: 1,
   },
   liveBar: {flex: 1, height: 4, borderRadius: 2, backgroundColor: COLORS.border, overflow: 'hidden'},
   liveBarFill: {width: '100%', height: '100%', backgroundColor: COLORS.primary, opacity: 0.5},
-  spacer: {height: SPACING.xl},
+  spacer: {height: SPACING.md},
+  qualitySelectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    paddingHorizontal: 4,
+  },
+  qualitySelectorLabel: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  qualityPills: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  qualityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  qualityPillActive: {
+    backgroundColor: 'rgba(227, 30, 36, 0.2)',
+    borderColor: COLORS.primary,
+  },
+  qualityPillGold: {
+    backgroundColor: 'rgba(255, 215, 0, 0.16)',
+    borderColor: '#FFD700',
+  },
+  qualityPillText: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  qualityPillTextActive: {
+    color: '#fff',
+    fontWeight: '900',
+  },
+  qualityPillTextGold: {
+    color: '#FFD700',
+    fontWeight: '900',
+  },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.xl,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
     gap: SPACING.xl,
   },
   sideButton: {width: 56, height: 56, alignItems: 'center', justifyContent: 'center'},
@@ -367,3 +520,4 @@ const styles = StyleSheet.create({
 });
 
 export default PlayerScreen;
+

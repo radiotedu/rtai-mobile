@@ -157,3 +157,36 @@ is stored in this repository.
 - Treat `.env` files, API credentials, and service tokens as local secrets.
 - Keep remote WebView origins restricted to the documented RadioTEDU endpoints.
 - Use the repository audit and contract checks before preparing a release.
+
+## Technical architecture
+
+RTAI Mobile is split into two independently buildable clients. `mobile/` is the
+React Native application and owns navigation, device integration, localization,
+and the radio/Jukebox/VoterTAI experiences. `study-game/` is a TypeScript web
+application that can be developed and deployed without rebuilding the native
+shell. Neither client is an authoritative playout system: commands and shared
+state are validated by the corresponding RadioTEDU backend.
+
+```mermaid
+flowchart LR
+    Listener["Listener"] --> Native["React Native app\nmobile/"]
+    Listener --> Study["Study web app\nstudy-game/"]
+    Native --> Adapters["Platform adapters\nAndroid · Auto · TV · Wear · iOS"]
+    Native --> Client["Typed client services\nauth · radio · voting · jukebox"]
+    Study --> StudyClient["Study state and content services"]
+    Client -->|"HTTPS / WebSocket"| APIs["RadioTEDU public APIs"]
+    StudyClient -->|"HTTPS"| APIs
+    APIs --> Radio["OnAir metadata and streams"]
+    APIs --> Vote["VoterTAI authority"]
+    APIs --> Jukebox["Jukebox authority"]
+```
+
+| Area | Responsibility | Important paths |
+| --- | --- | --- |
+| Native shell | Navigation, lifecycle, permissions, form-factor behavior | `mobile/App.tsx`, `mobile/src/`, `mobile/android/`, `mobile/ios/` |
+| Study experience | Browser-based study game, content, and presentation | `study-game/src/`, `study-game/public/` |
+| Contracts | Keeps client requests aligned with server-owned state | `mobile/src/`, `tests/` |
+| Release checks | Linting, native audits, unit and end-to-end verification | `.github/`, `scripts/`, `tests/` |
+
+The security boundary is deliberate: credentials belong in local environment
+configuration, while playback, votes, and queue mutations remain server-owned.

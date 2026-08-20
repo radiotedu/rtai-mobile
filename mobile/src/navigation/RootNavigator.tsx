@@ -53,7 +53,7 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({route}) => ({
         tabBarLabelPosition: 'below-icon',
-        tabBarIcon: ({focused, color, size}) => {
+        tabBarIcon: ({focused, color}) => {
           let iconName = 'help-circle';
           if (route.name === 'Home') {
             iconName = focused ? 'home-variant' : 'home-variant-outline';

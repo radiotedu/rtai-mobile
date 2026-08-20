@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 2,
+  "id": "library-central-study-desk",
+  "camera": { "x": 420, "y": 120, "width": 850, "height": 520 },
+  "navigation": "./assets/library/navigation.png",
+  "walkingOcclusion": {
+    "url": "./assets/library/desk-01/walking-occlusion.png",
+    "x": 180,
+    "y": 120,
+    "depthBoundaryY": 235,
+    "sourceRect": { "x": 600, "y": 240, "width": 420, "height": 290 }
+  },
+  "seats": [
+    {
+      "id": "far-01", "side": "far", "facing": "sw",
+      "hitArea": [[322,138],[356,138],[356,181],[322,181]],
+      "approach": { "x": 339, "y": 120 }, "socket": { "x": 339, "y": 185 },
+      "avatarPivot": { "x": 34, "y": 66 },
+      "studyDevice": { "x": 358, "y": 207, "width": 34, "layer": "front" },
+      "frontLayer": { "url": "./assets/library/desk-01/far-01-front.png", "x": 295, "y": 177 },
+      "sourceRect": { "x": 715, "y": 297, "width": 88, "height": 50, "mask": "desk" }
+    },
+    {
+      "id": "far-02", "side": "far", "facing": "sw",
+      "hitArea": [[361,161],[396,161],[396,194],[361,194]],
+      "approach": { "x": 378.5, "y": 143 }, "socket": { "x": 378.5, "y": 198 },
+      "avatarPivot": { "x": 34, "y": 66 },
+      "studyDevice": { "x": 397.5, "y": 220, "width": 34, "layer": "front" },
+      "frontLayer": { "url": "./assets/library/desk-01/far-02-front.png", "x": 334.5, "y": 190 },
+      "sourceRect": { "x": 754.5, "y": 310, "width": 88, "height": 50, "mask": "desk" }
+    },
+    {
+      "id": "far-03", "side": "far", "facing": "sw",
+      "hitArea": [[444,209],[480,209],[480,253],[444,253]],
+      "approach": { "x": 462, "y": 191 }, "socket": { "x": 462, "y": 257 },
+      "avatarPivot": { "x": 34, "y": 66 },
+      "studyDevice": { "x": 481, "y": 279, "width": 34, "layer": "front" },
+      "frontLayer": { "url": "./assets/library/desk-01/far-03-front.png", "x": 418, "y": 249 },
+      "sourceRect": { "x": 838, "y": 369, "width": 88, "height": 50, "mask": "desk" }
+    },
+    {
+      "id": "far-04", "side": "far", "facing": "sw",
+      "hitArea": [[486,232],[520,232],[520,276],[486,276]],
+      "approach": { "x": 503, "y": 214 }, "socket": { "x": 503, "y": 280 },
+      "avatarPivot": { "x": 34, "y": 66 },
+      "studyDevice": { "x": 522, "y": 302, "width": 34, "layer": "front" },
+      "frontLayer": { "url": "./assets/library/desk-01/far-04-front.png", "x": 459, "y": 272 },
+      "sourceRect": { "x": 879, "y": 392, "width": 88, "height": 50, "mask": "desk" }
+    },
+    {
+      "id": "near-01", "side": "near", "facing": "n",
+      "hitArea": [[248,186],[287,186],[287,229],[248,229]],
+      "approach": { "x": 267.5, "y": 312 }, "socket": { "x": 267.5, "y": 233 },
+      "avatarPivot": { "x": 32, "y": 82 }, "actorClipHeight": 72,
+      "studyDevice": { "x": 293.5, "y": 183, "width": 34, "layer": "rear" },
+      "frontLayer": { "url": "./assets/library/desk-01/near-01-front.png", "x": 240, "y": 180 },
+      "sourceRect": { "x": 660, "y": 300, "width": 55, "height": 67, "mask": "near-seat-front" }
+    },
+    {
+      "id": "near-02", "side": "near", "facing": "n",
+      "hitArea": [[292,212],[331,212],[331,256],[292,256]],
+      "approach": { "x": 311.5, "y": 326 }, "socket": { "x": 311.5, "y": 260 },
+      "avatarPivot": { "x": 32, "y": 82 }, "actorClipHeight": 72,
+      "studyDevice": { "x": 337.5, "y": 210, "width": 34, "layer": "rear" },
+      "frontLayer": { "url": "./assets/library/desk-01/near-02-front.png", "x": 284, "y": 206 },
+      "sourceRect": { "x": 704, "y": 326, "width": 55, "height": 68, "mask": "near-seat-front" }
+    },
+    {
+      "id": "near-03", "side": "near", "facing": "n",
+      "hitArea": [[337,240],[383,240],[383,285],[337,285]],
+      "approach": { "x": 360, "y": 342 }, "socket": { "x": 360, "y": 289 },
+      "avatarPivot": { "x": 32, "y": 82 }, "actorClipHeight": 72,
+      "studyDevice": { "x": 386, "y": 239, "width": 34, "layer": "rear" },
+      "frontLayer": { "url": "./assets/library/desk-01/near-03-front.png", "x": 329, "y": 234 },
+      "sourceRect": { "x": 749, "y": 354, "width": 62, "height": 69, "mask": "near-seat-front" }
+    },
+    {
+      "id": "near-04", "side": "near", "facing": "n",
+      "hitArea": [[383,268],[430,268],[430,312],[383,312]],
+      "approach": { "x": 406.5, "y": 357 }, "socket": { "x": 406.5, "y": 316 },
+      "avatarPivot": { "x": 32, "y": 82 }, "actorClipHeight": 72,
+      "studyDevice": { "x": 432.5, "y": 266, "width": 34, "layer": "rear" },
+      "frontLayer": { "url": "./assets/library/desk-01/near-04-front.png", "x": 375, "y": 262 },
+      "sourceRect": { "x": 795, "y": 382, "width": 63, "height": 68, "mask": "near-seat-front" }
+    },
+    {
+      "id": "near-05", "side": "near", "facing": "n",
+      "hitArea": [[429,294],[469,294],[469,338],[429,338]],
+      "approach": { "x": 449, "y": 372 }, "socket": { "x": 449, "y": 342 },
+      "avatarPivot": { "x": 32, "y": 82 }, "actorClipHeight": 72,
+      "studyDevice": { "x": 475, "y": 292, "width": 34, "layer": "rear" },
+      "frontLayer": { "url": "./assets/library/desk-01/near-05-front.png", "x": 421, "y": 288 },
+      "sourceRect": { "x": 841, "y": 408, "width": 56, "height": 68, "mask": "near-seat-front" }
+    }
+  ]
+}

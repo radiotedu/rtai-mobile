@@ -1,4 +1,4 @@
-export type StudyRoomId = 'library' | 'chim-alan'
+export type StudyRoomId = 'library' | 'chim-alan' | 'sports-center' | 'auditorium' | 'learning-lab'
 
 export interface StudyAccount {
   id: string
@@ -18,6 +18,7 @@ export interface StudyPresence {
   displayName: string
   roomId: StudyRoomId
   nodeId: string
+  position?: { x: number; y: number }
   seatId: string | null
   color: number
   equippedWearableIds?: readonly string[]
@@ -50,6 +51,32 @@ export interface StudyTimeSummary {
   totalSeconds: number
 }
 
+export type StudyLeaderboardPeriod = 'week' | 'month' | 'all'
+
+export interface StudyLeaderboardEntry {
+  rank: number
+  userId: string
+  displayName: string
+  studySeconds: number
+  streakDays: number
+  isCurrentUser: boolean
+}
+
+export interface StudyRoomOverview {
+  roomId: StudyRoomId
+  occupancy: number
+  capacity: number
+  instanceCount: number
+}
+
+export interface StudyHomeSnapshot {
+  activePlayers: number
+  summary: StudyTimeSummary
+  rooms: readonly StudyRoomOverview[]
+  leaderboard: Readonly<Record<StudyLeaderboardPeriod, readonly StudyLeaderboardEntry[]>>
+  generatedAt: string | null
+}
+
 export interface StudyRoomInstance {
   id: string
   roomId: StudyRoomId
@@ -58,6 +85,20 @@ export interface StudyRoomInstance {
   capacity: number
   preferredInstanceFull: boolean
 }
+
+export interface StudyWorldEvent {
+  id: string
+  title: string
+  description: string
+  location: string
+  startsAt: string | null
+  endsAt: string | null
+  rewardGold: number
+  registered: boolean
+  status: 'upcoming' | 'active' | 'completed'
+}
+
+export type StudyPlayerReportReason = 'harassment' | 'spam' | 'unsafe-profile' | 'other'
 
 export interface StudyHeartbeatInput {
   roomId: StudyRoomId
@@ -81,7 +122,11 @@ export interface StudyAdapter {
   releaseSeat(): Awaitable<void>
   equipWearable(id: string, slot?: string): Awaitable<StudySession>
   purchaseWearable(id: string, idempotencyKey: string): Awaitable<StudySession>
+  syncGoldBalance?(points: number): void
   sendChat(text: string, roomId?: StudyRoomId): Awaitable<StudyChatMessage>
+  reportPlayer?(targetUserId: string, roomId: StudyRoomId, reason: StudyPlayerReportReason): Promise<void>
+  listEvents?(): Promise<readonly StudyWorldEvent[]>
+  registerEvent?(eventId: string): Promise<StudyWorldEvent>
   initialize?(): Promise<void>
   refreshPresence?(roomId: StudyRoomId): Promise<readonly StudyPresence[]>
   refreshChat?(roomId: StudyRoomId): Promise<readonly StudyChatMessage[]>
@@ -90,6 +135,7 @@ export interface StudyAdapter {
   heartbeatStudySession?(input: StudyHeartbeatInput): Promise<number>
   finishStudySession?(): Promise<StudyTimeSummary>
   fetchSummary?(): Promise<StudyTimeSummary>
+  fetchHome?(): Promise<StudyHomeSnapshot>
 }
 
 export class StudyAdapterError extends Error {

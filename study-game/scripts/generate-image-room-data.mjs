@@ -132,7 +132,7 @@ async function compileRoomCutouts(room, image, assetOutputRoot) {
   return { ...room, image: publicImage, occluders, seats }
 }
 
-function libraryRoomData(appSource, mapMask) {
+function libraryRoomData(appSource, mapMask, roomImage) {
   const walkableTiles = evaluateLiteral(appSource, 'WALKABLE_TILES')
   const chairTargets = evaluateLiteral(appSource, 'CHAIR_SEAT_TARGETS')
   const nodes = Object.entries(walkableTiles).map(([id, node]) => ({ id, x: node.x, y: node.y, z: 0 }))
@@ -151,8 +151,8 @@ function libraryRoomData(appSource, mapMask) {
   const baseNodes = [...nodes]
   const seats = chairTargets.map((seat) => {
     const approachNodeId = `approach:${seat.seatId}`
-    const deltaX = ((seat.standX - seat.sitX) / 100) * mapMask.imageWidth
-    const deltaY = ((seat.standY - seat.sitY) / 100) * mapMask.imageHeight
+    const deltaX = ((seat.standX - seat.sitX) / 100) * roomImage.width
+    const deltaY = ((seat.standY - seat.sitY) / 100) * roomImage.height
     const distance = Math.hypot(deltaX, deltaY)
     const scale = distance > 56 ? 56 / distance : 1
     const approach = {
@@ -166,8 +166,8 @@ function libraryRoomData(appSource, mapMask) {
       .map((node) => ({
         id: node.id,
         distance: Math.hypot(
-          ((node.x - approach.x) / 100) * mapMask.imageWidth,
-          ((node.y - approach.y) / 100) * mapMask.imageHeight,
+          ((node.x - approach.x) / 100) * roomImage.width,
+          ((node.y - approach.y) / 100) * roomImage.height,
         ),
       }))
       .sort((left, right) => left.distance - right.distance)[0]?.id ?? 'bottom-center-aisle'
@@ -206,56 +206,91 @@ function libraryRoomData(appSource, mapMask) {
 }
 
 function chimNodeElevation(id) {
-  if (/row-1|stair-1/.test(id)) return 1
-  if (/row-2|stair-2/.test(id)) return 2
-  if (/row-3|stair-[34]|courtyard|spark/.test(id)) return 3
+  if (/row-1|(?:^|-)stair-1/.test(id)) return 1
+  if (/row-2|(?:^|-)stair-2/.test(id)) return 2
+  if (/row-3|(?:^|-)stair-[34]|courtyard|spark/.test(id)) return 3
   return 0
 }
 
-function chimRoomData(chimSource) {
+function layoutPoint(point, roomImage, fallbackZ = 0) {
+  return {
+    x: (point[0] / roomImage.width) * 100,
+    y: (point[1] / roomImage.height) * 100,
+    z: point[2] ?? fallbackZ,
+  }
+}
+
+function layoutPolygon(points, roomImage) {
+  return points.map((point) => ({
+    x: (point[0] / roomImage.width) * 100,
+    y: (point[1] / roomImage.height) * 100,
+  }))
+}
+
+function chimRoomData(chimSource, roomImage, layout) {
   const walkNodes = evaluateLiteral(chimSource, 'WALK_NODES')
   const walkEdges = evaluateLiteral(chimSource, 'WALK_EDGES')
-  const nodes = Object.entries(walkNodes).map(([id, node]) => ({ id, x: node.x, y: node.y, z: chimNodeElevation(id) }))
+  if (layout.image.width !== roomImage.width
+    || layout.image.height !== roomImage.height
+    || layout.image.sha256 !== roomImage.sha256) {
+    throw new Error('Chim Alan calibration does not match the byte-locked room image')
+  }
+  const calibratedNodes = new Map()
+  for (const [id, point] of Object.entries(layout.groundNodes)) {
+    calibratedNodes.set(id, layoutPoint(point, roomImage))
+  }
+  for (const stair of [...layout.stairs.left, ...layout.stairs.right]) {
+    calibratedNodes.set(stair.id, layoutPoint(stair.point, roomImage))
+  }
+  for (const row of layout.rows) {
+    for (const seat of row.seats) {
+      calibratedNodes.set(seat.nodeId, layoutPoint([...seat.approach, row.z], roomImage))
+    }
+  }
+  const nodes = Object.entries(walkNodes).map(([id, node]) => ({
+    id,
+    ...(calibratedNodes.get(id) ?? { x: node.x, y: node.y, z: chimNodeElevation(id) }),
+  }))
   const nodeById = new Map(nodes.map((node) => [node.id, node]))
   const edges = walkEdges.map(([from, to]) => ({
     from,
     to,
     kind: nodeById.get(from).z === nodeById.get(to).z ? 'walk' : 'stair',
   }))
-  const seats = []
-  for (let row = 1; row <= 3; row += 1) {
-    for (let column = 0; column < 3; column += 1) {
-      const approachNodeId = `row-${row}-${['left', 'mid', 'right'][column]}`
-      const node = nodeById.get(approachNodeId)
-      seats.push({
-        id: `amfi-${['a', 'b', 'c'][row - 1]}${column + 1}`,
-        label: `Amphitheatre row ${row}`,
-        approachNodeId,
-        sit: { x: node.x, y: node.y - 0.7, z: node.z },
-        facing: 's',
-        foregroundMask: [
-          { x: node.x - 5, y: node.y - 0.2 },
-          { x: node.x + 5, y: node.y - 0.2 },
-          { x: node.x + 5, y: node.y + 2.2 },
-          { x: node.x - 5, y: node.y + 2.2 },
-        ],
-        occlusion: null,
-      })
+  const seats = layout.rows.flatMap((row) => row.seats.map((seat) => {
+    const approach = layoutPoint([...seat.approach, row.z], roomImage)
+    const actorAnchor = layoutPoint([...seat.actorAnchor, row.z], roomImage)
+    const hitArea = layoutPolygon(seat.frontMask, roomImage)
+    return {
+      id: seat.id,
+      label: row.label,
+      approachNodeId: seat.nodeId,
+      sit: actorAnchor,
+      approach,
+      actorAnchor,
+      hitArea,
+      facing: 'sw',
+      foregroundMask: hitArea,
+      occlusion: null,
     }
-  }
+  }))
 
   return {
     id: 'chim-alan',
     title: 'Cim Alan',
     spawnNodeId: 'entrance',
     nodes,
-    edges,
+    edges: dedupeEdges(edges),
     seats,
-    occluders: [
-      { id: 'amphi-row-front-1', type: 'amphitheatre-front', points: [{ x: 34, y: 48 }, { x: 85, y: 44.5 }, { x: 85, y: 48 }, { x: 34, y: 52 }], depthY: 52 },
-      { id: 'amphi-row-front-2', type: 'amphitheatre-front', points: [{ x: 34, y: 41 }, { x: 85, y: 37.5 }, { x: 85, y: 41 }, { x: 34, y: 45 }], depthY: 45 },
-      { id: 'amphi-row-front-3', type: 'amphitheatre-front', points: [{ x: 34, y: 34 }, { x: 85, y: 30.5 }, { x: 85, y: 34 }, { x: 34, y: 38 }], depthY: 38 },
-    ],
+    occluders: layout.rows.map((row) => {
+      const points = layoutPolygon(row.frontMask, roomImage)
+      return {
+        id: `amphi-row-front-${row.number}`,
+        type: 'amphitheatre-front',
+        points,
+        depthY: Math.max(...points.map((point) => point.y)),
+      }
+    }),
     actors: {
       spark: { nodeId: 'spark', name: 'Spark', label: 'rtAI - AI Host' },
       rock: { nodeId: 'rock', name: 'Rock', label: 'Rock' },
@@ -267,15 +302,16 @@ export async function generateImageRoomData(
   outputPath = path.join(studyRoot, 'src', 'rooms', 'data', 'image-rooms.generated.json'),
   assetOutputRoot = path.join(studyRoot, 'public', 'assets', 'rooms', 'occlusion'),
 ) {
-  const [appSource, chimSource, libraryMapMask, libraryImage, chimImage] = await Promise.all([
+  const [appSource, chimSource, chimLayout, libraryMapMask, libraryImage, chimImage] = await Promise.all([
     readFile(path.join(prototypeRoot, 'app.js'), 'utf8'),
     readFile(path.join(prototypeRoot, 'chim.js'), 'utf8'),
+    readFile(path.join(studyRoot, 'src', 'rooms', 'data', 'chim-alan-amphitheatre-layout.json'), 'utf8').then(JSON.parse),
     readFile(path.join(prototypeRoot, 'data', 'library-habbo-map-mask.json'), 'utf8').then(JSON.parse),
-    imageRecord('library.png'),
-    imageRecord('chim-alan.png'),
+    imageRecord('library-wide.png'),
+    imageRecord('chim-alan-wide.png'),
   ])
-  const library = await compileRoomCutouts(libraryRoomData(appSource, libraryMapMask), libraryImage, assetOutputRoot)
-  const chim = await compileRoomCutouts(chimRoomData(chimSource), chimImage, assetOutputRoot)
+  const library = await compileRoomCutouts(libraryRoomData(appSource, libraryMapMask, libraryImage), libraryImage, assetOutputRoot)
+  const chim = await compileRoomCutouts(chimRoomData(chimSource, chimImage, chimLayout), chimImage, assetOutputRoot)
   const output = {
     schemaVersion: 1,
     provenance: {

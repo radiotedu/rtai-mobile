@@ -45,6 +45,13 @@ export class NavigationGraph {
     return this.#nodes.get(id)
   }
 
+  neighbors(id: string): readonly NavigationNode[] {
+    return (this.#neighbors.get(id) ?? []).flatMap((neighborId) => {
+      const neighbor = this.#nodes.get(neighborId)
+      return neighbor ? [neighbor] : []
+    })
+  }
+
   findPath(startId: string, goalId: string, blocked = new Set<string>()): string[] {
     const start = this.#nodes.get(startId)
     const goal = this.#nodes.get(goalId)

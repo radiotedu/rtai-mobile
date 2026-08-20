@@ -19,6 +19,14 @@ describe('HudPanelState', () => {
     panels.open('wardrobe')
     expect(panels.isOpen('people')).toBe(false)
     expect(panels.isOpen('wardrobe')).toBe(true)
+
+    panels.open('events')
+    expect(panels.isOpen('wardrobe')).toBe(false)
+    expect(panels.isOpen('events')).toBe(true)
+
+    panels.open('navigator')
+    expect(panels.isOpen('events')).toBe(false)
+    expect(panels.isOpen('navigator')).toBe(true)
   })
 
   it('toggles the active sheet closed without requiring a keyboard action', () => {
@@ -48,5 +56,16 @@ describe('HudPanelState', () => {
     expect(panels.expanded('people')).toBe('false')
     expect(panels.expanded('wardrobe')).toBe('true')
     expect(panels.expanded('chat')).toBe('false')
+    expect(panels.expanded('events')).toBe('false')
+    expect(panels.expanded('navigator')).toBe('false')
+  })
+
+  it('treats the signed-in account as a first-class HUD panel', () => {
+    const panels = new HudPanelState()
+    panels.open('account')
+    expect(panels.snapshot().current).toBe('account')
+    expect(panels.expanded('account')).toBe('true')
+    panels.toggle('account')
+    expect(panels.snapshot().current).toBe('closed')
   })
 })

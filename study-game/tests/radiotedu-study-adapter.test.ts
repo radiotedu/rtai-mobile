@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { RadioTEDUStudyAdapter } from '../src/adapters/RadioTEDUStudyAdapter'
+import {
+  RadioTEDUStudyAdapter,
+  type RadioTEDUStudyAdapterConfig,
+} from '../src/adapters/RadioTEDUStudyAdapter'
 
 function success<T>(data: T, status = 200) {
   return {
@@ -18,7 +21,11 @@ function failure(status: number, message: string) {
   }
 }
 
-function createAdapter(fetchImpl: ReturnType<typeof vi.fn>, globalPoints = 120) {
+function createAdapter(
+  fetchImpl: ReturnType<typeof vi.fn>,
+  globalPoints = 120,
+  overrides: Partial<RadioTEDUStudyAdapterConfig> = {},
+) {
   return new RadioTEDUStudyAdapter({
     apiBase: 'https://radiotedu.com/jukebox/api/v1/study',
     accessToken: 'access-token',
@@ -26,7 +33,18 @@ function createAdapter(fetchImpl: ReturnType<typeof vi.fn>, globalPoints = 120) 
     globalPoints,
     clientSessionId: 'webview-session-1',
     fetchImpl: fetchImpl as unknown as typeof fetch,
+    ...overrides,
   })
+}
+
+function memoryStorage() {
+  const values = new Map<string, string>()
+  return {
+    values,
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value) },
+    removeItem: (key: string) => { values.delete(key) },
+  }
 }
 
 describe('RadioTEDUStudyAdapter', () => {
@@ -105,6 +123,37 @@ describe('RadioTEDUStudyAdapter', () => {
     })
   })
 
+  it('rejects purchase responses that do not prove ownership and a valid authoritative Gold balance', async () => {
+    const missingOwnership = createAdapter(vi.fn().mockResolvedValueOnce(success({
+      ownedItemIds: [], points: { spendable_points: 65 },
+    }, 201)), 100)
+    await expect(missingOwnership.purchaseWearable('varsity-jacket', 'missing-item')).rejects.toThrow(/INVALID_PURCHASE_RESPONSE/)
+    expect(missingOwnership.session().points.global).toBe(100)
+
+    const invalidBalance = createAdapter(vi.fn().mockResolvedValueOnce(success({
+      ownedItemIds: ['varsity-jacket'], points: { spendable_points: 'not-a-number' },
+    }, 201)), 100)
+    await expect(invalidBalance.purchaseWearable('varsity-jacket', 'invalid-balance')).rejects.toThrow(/INVALID_PURCHASE_RESPONSE/)
+    expect(invalidBalance.session().points.global).toBe(100)
+  })
+
+  it('keeps exactly one server-equipped item per wardrobe slot', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({
+        ownedItemIds: ['radio-hoodie', 'varsity-jacket'],
+        equipped: { top: 'radio-hoodie' },
+        points: { spendable_points: 100 },
+      }))
+      .mockResolvedValueOnce(success({ todaySeconds: 0, monthSeconds: 0, totalSeconds: 0 }))
+      .mockResolvedValueOnce(success({}))
+    const adapter = createAdapter(fetchImpl, 100)
+    await adapter.initialize()
+
+    await adapter.equipWearable('varsity-jacket', 'top')
+
+    expect(adapter.session().equippedWearableIds).toEqual(['varsity-jacket'])
+  })
+
   it('uses Bearer auth and rotates the server heartbeat nonce', async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(success({ session: { id: 'session-1' }, nonce: 'nonce-1' }, 201))
@@ -142,6 +191,102 @@ describe('RadioTEDUStudyAdapter', () => {
     expect(finishCall?.[1]).toMatchObject({ keepalive: true })
   })
 
+  it('keeps a committed finish and Gold update when the follow-up summary is unavailable', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({ session: { id: 'session-1' }, nonce: 'nonce-1' }, 201))
+      .mockResolvedValueOnce(success({ session: { id: 'session-1' }, awarded_points: 3, spendable_points: 123 }))
+      .mockResolvedValueOnce(failure(503, 'SUMMARY_UNAVAILABLE'))
+    const adapter = createAdapter(fetchImpl)
+
+    await adapter.startStudySession('learning-lab', 'client-session-summary-fallback')
+    const summary = await adapter.finishStudySession()
+    const secondFinish = await adapter.finishStudySession()
+
+    expect(summary).toEqual({ todaySeconds: 0, monthSeconds: 0, totalSeconds: 0 })
+    expect(secondFinish).toEqual(summary)
+    expect(adapter.session().points.global).toBe(123)
+    expect(fetchImpl.mock.calls.filter(call => String(call[0]).includes('/finish'))).toHaveLength(1)
+  })
+
+  it('retries transient reads but never replays a non-idempotent session start', async () => {
+    const rooms = [
+      { roomId: 'library', occupancy: 1, capacity: 51, instanceCount: 1 },
+      { roomId: 'chim-alan', occupancy: 0, capacity: 9, instanceCount: 1 },
+      { roomId: 'sports-center', occupancy: 0, capacity: 18, instanceCount: 1 },
+      { roomId: 'auditorium', occupancy: 0, capacity: 90, instanceCount: 1 },
+      { roomId: 'learning-lab', occupancy: 0, capacity: 24, instanceCount: 1 },
+    ]
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(failure(503, 'TEMPORARY'))
+      .mockRejectedValueOnce(new TypeError('network unavailable'))
+      .mockResolvedValueOnce(success({
+        activePlayers: 1,
+        summary: {},
+        rooms,
+        leaderboard: { week: [], month: [], all: [] },
+      }))
+      .mockResolvedValueOnce(failure(503, 'START_UNAVAILABLE'))
+    const adapter = createAdapter(fetchImpl, 120, {
+      retryDelaysMs: [0, 0],
+      sleep: async () => undefined,
+    })
+
+    await expect(adapter.fetchHome()).resolves.toMatchObject({ activePlayers: 1 })
+    expect(fetchImpl).toHaveBeenCalledTimes(3)
+
+    await expect(adapter.startStudySession('library', 'non-idempotent-start')).rejects.toThrow(/REMOTE_REQUEST_FAILED/)
+    expect(fetchImpl).toHaveBeenCalledTimes(4)
+  })
+
+  it('times out a hung request instead of leaving the game operation pending forever', async () => {
+    const fetchImpl = vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+    }))
+    const adapter = createAdapter(fetchImpl, 120, {
+      requestTimeoutMs: 5,
+      retryDelaysMs: [],
+    })
+
+    await expect(adapter.fetchSummary()).rejects.toThrow(/REMOTE_TIMEOUT/)
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('recovers a persisted verified session before starting a replacement after reload', async () => {
+    const storage = memoryStorage()
+    const now = vi.fn(() => 1_800_000_000_000)
+    const firstFetch = vi.fn()
+      .mockResolvedValueOnce(success({ session: { id: 'session-before-reload' }, nonce: 'nonce-1' }, 201))
+      .mockResolvedValueOnce(success({ nonce: 'nonce-2', accepted_seconds: 10 }))
+    const first = createAdapter(firstFetch, 120, { storage, now })
+
+    await first.startStudySession('library', 'reload-session')
+    await first.heartbeatStudySession({
+      roomId: 'library', nodeId: 'seat:front-left', seatId: 'front-left', position: { x: 4, y: 8 },
+      interaction: 'seated', focused: true, foreground: true,
+    })
+    expect([...storage.values.values()].join(' ')).toContain('nonce-2')
+
+    const recoveredFetch = vi.fn()
+      .mockResolvedValueOnce(failure(503, 'FINISH_RETRY'))
+      .mockResolvedValueOnce(success({ spendable_points: 130 }))
+      .mockResolvedValueOnce(success({ todaySeconds: 600, monthSeconds: 600, totalSeconds: 600 }))
+      .mockResolvedValueOnce(success({ session: { id: 'session-after-reload' }, nonce: 'nonce-3' }, 201))
+    const recovered = createAdapter(recoveredFetch, 120, {
+      storage,
+      now,
+      retryDelaysMs: [0],
+      sleep: async () => undefined,
+    })
+
+    await recovered.startStudySession('chim-alan', 'replacement-session')
+
+    expect(recoveredFetch.mock.calls[0]![0]).toContain('/session-before-reload/finish')
+    expect(JSON.parse(recoveredFetch.mock.calls[0]![1].body)).toEqual({ nonce: 'nonce-2' })
+    expect(recoveredFetch.mock.calls[1]![0]).toContain('/session-before-reload/finish')
+    expect(recoveredFetch.mock.calls[3]![0]).toContain('/sessions/start')
+    expect([...storage.values.values()].join(' ')).toContain('session-after-reload')
+  })
+
   it('maps room presence and server chat without accepting anonymous fallback', async () => {
     const fetchImpl = vi.fn()
       .mockResolvedValueOnce(success({
@@ -157,7 +302,7 @@ describe('RadioTEDUStudyAdapter', () => {
         }],
       }))
       .mockResolvedValueOnce(success({
-        message: { id: 'message-1', userId: 'user-1', displayName: 'Ada', roomId: 'library', instanceId: 'library-2', text: 'Hello', createdAt: 'now' },
+        message: { id: 'message-1', userId: 'user-1', displayName: 'Ada', roomId: 'library', instanceId: 'library-2', text: 'Hello', createdAt: '2026-08-03T18:00:00.000Z' },
       }, 201))
     const adapter = createAdapter(fetchImpl)
 
@@ -175,6 +320,23 @@ describe('RadioTEDUStudyAdapter', () => {
     expect(fetchImpl.mock.calls[1]![0]).toContain('/presence?roomId=library&instanceId=library-2')
     expect(JSON.parse(fetchImpl.mock.calls[2]![1].body)).toMatchObject({ instanceId: 'library-2' })
     expect(fetchImpl.mock.calls[2]![1].headers.Authorization).toBe('Bearer access-token')
+  })
+
+  it('submits moderation reports through the authenticated room instance', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({
+        instance: { id: 'library-4', roomId: 'library', number: 4, occupancy: 2, capacity: 51, preferredInstanceFull: false },
+      }))
+      .mockResolvedValueOnce(success({ accepted: true }, 201))
+    const adapter = createAdapter(fetchImpl)
+
+    await adapter.enterRoom('library', 'spawn')
+    await adapter.reportPlayer('user-2', 'library', 'spam')
+
+    expect(fetchImpl.mock.calls[1]![0]).toContain('/moderation/reports')
+    const body = JSON.parse(fetchImpl.mock.calls[1]![1].body)
+    expect(body).toMatchObject({ targetUserId: 'user-2', roomId: 'library', instanceId: 'library-4', reason: 'spam' })
+    expect(body.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/)
   })
 
   it('waits for one in-flight room join before sending presence heartbeat', async () => {
@@ -226,5 +388,129 @@ describe('RadioTEDUStudyAdapter', () => {
 
     expect(fetchImpl.mock.calls.filter((call) => String(call[0]).includes('/instances/join'))).toHaveLength(2)
     expect(fetchImpl).toHaveBeenCalledTimes(4)
+  })
+
+  it('rejects spoofed chat authors, unsafe text, and replayed heartbeat authority', async () => {
+    const spoofedChat = vi.fn()
+      .mockResolvedValueOnce(success({
+        instance: { id: 'library-1', roomId: 'library', number: 1, occupancy: 1, capacity: 51 },
+      }))
+      .mockResolvedValueOnce(success({
+        message: { id: 'spoofed', userId: 'attacker', displayName: 'Ada', text: 'Hello', createdAt: '2026-08-03T18:00:00.000Z' },
+      }, 201))
+    const chatAdapter = createAdapter(spoofedChat)
+    await expect(chatAdapter.sendChat('Hello', 'library')).rejects.toThrow(/INVALID_CHAT_RESPONSE/)
+    expect(JSON.parse(spoofedChat.mock.calls[1]![1].body).text).toBe('Hello')
+
+    const heartbeatFetch = vi.fn()
+      .mockResolvedValueOnce(success({ session: { id: 'session-1' }, nonce: 'nonce-1' }, 201))
+      .mockResolvedValueOnce(success({ nonce: 'nonce-1', accepted_seconds: 10 }))
+    const heartbeatAdapter = createAdapter(heartbeatFetch)
+    await heartbeatAdapter.startStudySession('library', 'client-session-secure')
+    await expect(heartbeatAdapter.heartbeatStudySession({
+      roomId: 'library', nodeId: 'seat:front-left', seatId: 'front-left', position: { x: 4, y: 8 },
+      interaction: 'seated', focused: true, foreground: true,
+    })).rejects.toThrow(/INVALID_HEARTBEAT_RESPONSE/)
+
+    const emptyAdapter = createAdapter(vi.fn())
+    await expect(emptyAdapter.sendChat('\u202e\u200b', 'library')).rejects.toThrow(/CHAT_EMPTY/)
+  })
+
+  it('supports an authenticated bridge transport without exposing a bearer token to the game', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({ ownedItemIds: [], equipped: {}, points: { spendable_points: 75 } }))
+      .mockResolvedValueOnce(success({ todaySeconds: 120, monthSeconds: 360, totalSeconds: 720 }))
+    const adapter = new RadioTEDUStudyAdapter({
+      apiBase: 'https://radiotedu.com/jukebox/api/v1/study',
+      account: { id: 'user-1', displayName: 'Ada', authenticated: true },
+      clientSessionId: 'webview-session-1',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    })
+
+    await adapter.initialize()
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+    expect(fetchImpl.mock.calls[0]![1].headers).not.toHaveProperty('Authorization')
+    expect(adapter.session().points.global).toBe(75)
+  })
+
+  it('uses the canonical gamification event service and marks joined events locally', async () => {
+    const event = {
+      id: 'campus-care',
+      title: 'Campus Care Saturday',
+      description: 'Clean shared campus spaces together.',
+      location: 'TEDU Campus',
+      starts_at: '2020-01-01T10:00:00.000Z',
+      ends_at: '2099-01-01T12:00:00.000Z',
+      check_in_points: 40,
+    }
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({ events: [event] }))
+      .mockResolvedValueOnce(success({ registration: { event_id: event.id } }, 201))
+      .mockResolvedValueOnce(success({ events: [event] }))
+    const adapter = createAdapter(fetchImpl)
+
+    const [listed] = await adapter.listEvents()
+    const joined = await adapter.registerEvent(event.id)
+
+    expect(listed).toMatchObject({ id: event.id, rewardGold: 40, status: 'active', registered: false })
+    expect(joined.registered).toBe(true)
+    expect(fetchImpl.mock.calls.map((call) => call[0])).toEqual([
+      'https://radiotedu.com/jukebox/api/v1/gamification/events',
+      'https://radiotedu.com/jukebox/api/v1/gamification/events/campus-care/register',
+      'https://radiotedu.com/jukebox/api/v1/gamification/events',
+    ])
+    expect(fetchImpl.mock.calls[1]![1].headers.Authorization).toBe('Bearer access-token')
+  })
+
+  it('loads and validates the authoritative study home and leaderboard', async () => {
+    const leaderboard = [{
+      rank: 1, userId: 'user-1', displayName: 'Ada', studySeconds: 21_600, streakDays: 8,
+    }]
+    const fetchImpl = vi.fn().mockResolvedValueOnce(success({
+      activePlayers: 24,
+      summary: { todaySeconds: 1_800, monthSeconds: 28_800, totalSeconds: 90_000 },
+      rooms: [
+        { roomId: 'library', occupancy: 8, capacity: 51, instanceCount: 1 },
+        { roomId: 'chim-alan', occupancy: 4, capacity: 9, instanceCount: 1 },
+        { roomId: 'sports-center', occupancy: 3, capacity: 18, instanceCount: 1 },
+        { roomId: 'auditorium', occupancy: 6, capacity: 90, instanceCount: 1 },
+        { roomId: 'learning-lab', occupancy: 3, capacity: 24, instanceCount: 1 },
+      ],
+      leaderboard: { week: leaderboard, month: leaderboard, all: leaderboard },
+      generatedAt: '2026-08-04T12:00:00.000Z',
+    }))
+    const adapter = createAdapter(fetchImpl)
+
+    const home = await adapter.fetchHome()
+
+    expect(home.activePlayers).toBe(24)
+    expect(home.rooms).toHaveLength(5)
+    expect(home.leaderboard.week[0]).toMatchObject({ rank: 1, displayName: 'Ada', isCurrentUser: true })
+    expect(fetchImpl.mock.calls[0]![0]).toBe('https://radiotedu.com/jukebox/api/v1/study/home')
+  })
+
+  it('rejects incomplete home authority and sanitizes leaderboard controls', async () => {
+    const incomplete = createAdapter(vi.fn().mockResolvedValueOnce(success({
+      activePlayers: 1,
+      summary: {},
+      rooms: [{ roomId: 'library', occupancy: 1, capacity: 51, instanceCount: 1 }],
+      leaderboard: { week: [], month: [], all: [] },
+    })))
+    await expect(incomplete.fetchHome()).rejects.toThrow(/INVALID_HOME_RESPONSE/)
+
+    const rooms = [
+      { roomId: 'library', occupancy: 1, capacity: 51, instanceCount: 1 },
+      { roomId: 'chim-alan', occupancy: 0, capacity: 9, instanceCount: 1 },
+      { roomId: 'sports-center', occupancy: 0, capacity: 18, instanceCount: 1 },
+      { roomId: 'auditorium', occupancy: 0, capacity: 90, instanceCount: 1 },
+      { roomId: 'learning-lab', occupancy: 0, capacity: 24, instanceCount: 1 },
+    ]
+    const controlled = [{ rank: 1, userId: 'user-1', displayName: 'Ada\u202e Student', studySeconds: 60, streakDays: 2 }]
+    const adapter = createAdapter(vi.fn().mockResolvedValueOnce(success({
+      activePlayers: 1, summary: {}, rooms,
+      leaderboard: { week: controlled, month: controlled, all: controlled },
+    })))
+    expect((await adapter.fetchHome()).leaderboard.week[0]!.displayName).toBe('Ada Student')
   })
 })

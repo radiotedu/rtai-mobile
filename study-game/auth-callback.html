@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; form-action 'none'" />
+    <title>RadioTEDU Study · TEDÜ Log in</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #081214; }
+      * { box-sizing: border-box; }
+      body { display: grid; min-height: 100dvh; margin: 0; padding: 24px; place-items: center; color: #edf6f2; background: radial-gradient(circle at 50% 18%, #18352f, #081214 58%); }
+      main { width: min(420px, 100%); padding: 28px; border: 1px solid #47685f; border-radius: 8px; background: #111f20; box-shadow: 0 22px 60px rgba(0,0,0,.42); }
+      small { color: #76d0ae; font-size: 10px; font-weight: 900; letter-spacing: 1.6px; }
+      h1 { margin: 12px 0 8px; font-size: 30px; letter-spacing: -1px; }
+      p { margin: 0; color: #9fb3ad; font-size: 14px; line-height: 1.55; }
+      button { width: 100%; min-height: 46px; margin-top: 22px; border: 1px solid #69c4a2; border-radius: 4px; color: #f5faf7; background: #337e67; font: inherit; font-weight: 800; cursor: pointer; }
+      button[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <small>RADIOTEDU · STUDY WORLD</small>
+      <h1>Completing TEDÜ Log in…</h1>
+      <p role="status" aria-live="polite" data-study-auth-callback-status>Verifying your account securely.</p>
+      <button type="button" data-study-auth-callback-close hidden>Close window</button>
+    </main>
+    <script type="module" src="/src/auth-callback.ts"></script>
+  </body>
+</html>

@@ -20,8 +20,13 @@ test('plays the two exact user-supplied rooms with persistent wardrobe and eleva
   await expect(page.locator('html')).toHaveAttribute('data-study-ready', 'true', { timeout: 30_000 })
   await expect(page.locator('html')).toHaveAttribute('data-room-id', 'library')
   const libraryOverview = await page.evaluate(() => window.__STUDY_GAME_APP__.snapshot())
-  expect(libraryOverview.camera.worldViewWidth).toBeGreaterThanOrEqual(libraryOverview.roomSize.width - 1)
-  expect(libraryOverview.camera.worldViewHeight).toBeGreaterThanOrEqual(libraryOverview.roomSize.height - 1)
+  if (testInfo.project.name === 'mobile-chromium') {
+    expect(libraryOverview.camera.worldViewWidth).toBeLessThan(libraryOverview.roomSize.width * 0.5)
+    expect(libraryOverview.camera.worldViewHeight).toBeLessThanOrEqual(libraryOverview.roomSize.height + 1)
+  } else {
+    expect(libraryOverview.camera.worldViewWidth).toBeGreaterThanOrEqual(libraryOverview.roomSize.width - 1)
+    expect(libraryOverview.camera.worldViewHeight).toBeGreaterThanOrEqual(libraryOverview.roomSize.height - 1)
+  }
 
   const canvas = page.locator('#game-canvas canvas')
   await expect(canvas).toBeVisible()
@@ -49,7 +54,7 @@ test('plays the two exact user-supplied rooms with persistent wardrobe and eleva
   await expect(page.locator('html')).toHaveAttribute('data-game-state', 'seated')
   await page.screenshot({ path: path.join(artifactDir, `${testInfo.project.name}-04-library-seated.png`) })
 
-  await page.getByRole('tab', { name: 'Cim Alan' }).click()
+  await page.getByRole('tab', { name: 'Çim Alan' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-room-id', 'chim-alan')
   await expect(page.locator('html')).toHaveAttribute('data-hat-id', 'beanie')
   await page.screenshot({ path: path.join(artifactDir, `${testInfo.project.name}-05-chim.png`) })
@@ -72,7 +77,7 @@ test('opens the requested packaged-app room directly', async ({ page }) => {
   await page.goto('/?embedded=mobile&room=chim-alan')
   await expect(page.locator('html')).toHaveAttribute('data-study-ready', 'true', { timeout: 30_000 })
   await expect(page.locator('html')).toHaveAttribute('data-room-id', 'chim-alan')
-  await expect(page.getByRole('tab', { name: 'Cim Alan' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tab', { name: 'Çim Alan' })).toHaveAttribute('aria-selected', 'true')
 })
 
 test('keeps the seated avatar head and torso readable behind a Library table', async ({ page }, testInfo) => {
@@ -86,12 +91,7 @@ test('keeps the seated avatar head and torso readable behind a Library table', a
   if (!target) throw new Error(`Missing seat target: ${seatId}`)
 
   const viewport = page.viewportSize()!
-  const canvasBounds = await page.locator('#game-canvas canvas').boundingBox()
-  if (!canvasBounds) throw new Error('Missing game canvas bounds')
-  const screen = {
-    x: canvasBounds.x + target.screen.x,
-    y: canvasBounds.y + target.screen.y,
-  }
+  const screen = target.screen
   const clip = {
     x: Math.max(0, Math.min(viewport.width - 84, screen.x - 42)),
     y: Math.max(0, Math.min(viewport.height - 112, screen.y - 96)),
@@ -182,7 +182,7 @@ test('runs a seated Study timer and supports player interactions from the HUD', 
   await page.getByTestId('player-wave').click()
   await expect(page.getByTestId('chat-log')).toContainText('waves to Selin')
   await page.screenshot({ path: path.join(artifactDir, `${testInfo.project.name}-08-player-card.png`) })
-  await page.getByRole('tab', { name: 'Cim Alan' }).click()
+  await page.getByRole('tab', { name: 'Çim Alan' }).click()
   await expect(page.getByTestId('player-card')).toBeHidden()
   await page.getByRole('tab', { name: 'Library' }).click()
   await page.getByTestId('people-toggle').click()

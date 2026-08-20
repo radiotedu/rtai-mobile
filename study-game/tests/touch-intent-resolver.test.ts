@@ -2,86 +2,70 @@ import { describe, expect, it } from 'vitest'
 
 import { resolveTouchIntent, type TouchIntentResolverInput } from '../src/game/TouchIntentResolver'
 
+const seatArea = [
+  { x: 104, y: 94 }, { x: 116, y: 94 }, { x: 116, y: 106 }, { x: 104, y: 106 },
+] as const
+
 const baseInput = (overrides: Partial<TouchIntentResolverInput> = {}): TouchIntentResolverInput => ({
-  world: { x: 100, y: 100 },
+  world: { x: 110, y: 100 },
   uiConsumed: false,
-  seated: false,
+  currentSeatId: null,
   activeSeatIntentId: null,
-  nodes: [
-    { id: 'floor-a', x: 100, y: 100, reachable: true },
-    { id: 'blocked-floor', x: 220, y: 100, reachable: false },
-  ],
-  seats: [
-    { id: 'seat-a', x: 110, y: 100, reachable: true, occupied: false },
-    { id: 'seat-b', x: 300, y: 100, reachable: true, occupied: true },
-  ],
+  walkable: true,
+  seats: [{
+    id: 'seat-a', target: { x: 110, y: 102 }, hitArea: seatArea, reachable: true, occupied: false,
+  }],
   players: [],
   ...overrides,
 })
 
 describe('resolveTouchIntent', () => {
-  it('lets a seat hit area win over a nearby floor node', () => {
+  it('uses the explicit seat polygon rather than a broad nearest-seat radius', () => {
     expect(resolveTouchIntent(baseInput())).toEqual({
-      kind: 'sit',
-      seatId: 'seat-a',
-      target: { x: 110, y: 100 },
+      kind: 'sit', seatId: 'seat-a', target: { x: 110, y: 102 },
+    })
+    expect(resolveTouchIntent(baseInput({ world: { x: 130, y: 100 } }))).toEqual({
+      kind: 'walk', target: { x: 130, y: 100 },
     })
   })
 
-  it('turns any world tap into stand while the local avatar is seated', () => {
-    expect(resolveTouchIntent(baseInput({ seated: true }))).toEqual({ kind: 'stand' })
-  })
-
-  it('does nothing when the UI has already consumed the touch', () => {
-    expect(resolveTouchIntent(baseInput({ uiConsumed: true }))).toEqual({
-      kind: 'ignored',
-      reason: 'ui-consumed',
-    })
-  })
-
-  it('rejects occupied seats and unreachable floor targets', () => {
-    expect(resolveTouchIntent(baseInput({ world: { x: 300, y: 100 } }))).toEqual({
-      kind: 'blocked',
-      reason: 'occupied-seat',
-      target: { x: 300, y: 100 },
-    })
-    expect(resolveTouchIntent(baseInput({ world: { x: 220, y: 100 }, seats: [] }))).toEqual({
-      kind: 'blocked',
-      reason: 'unreachable',
-      target: { x: 220, y: 100 },
-    })
-  })
-
-  it('returns one walk intent for a reachable floor target', () => {
-    expect(resolveTouchIntent(baseInput({ seats: [] }))).toEqual({
-      kind: 'walk',
-      nodeId: 'floor-a',
-      target: { x: 100, y: 100 },
-    })
-  })
-
-  it('returns one player interaction before considering the floor', () => {
+  it('only toggles stand when the current seat itself is clicked', () => {
+    expect(resolveTouchIntent(baseInput({ currentSeatId: 'seat-a' }))).toEqual({ kind: 'stand' })
     expect(resolveTouchIntent(baseInput({
-      seats: [],
-      players: [{ userId: 'user-2', x: 105, y: 102 }],
-    }))).toEqual({
-      kind: 'interact-player',
-      userId: 'user-2',
+      currentSeatId: 'other-seat', world: { x: 130, y: 100 },
+    }))).toEqual({ kind: 'walk', target: { x: 130, y: 100 } })
+  })
+
+  it('does nothing when UI consumed the pointer', () => {
+    expect(resolveTouchIntent(baseInput({ uiConsumed: true }))).toEqual({
+      kind: 'ignored', reason: 'ui-consumed',
     })
   })
 
-  it('does not enqueue the same seat interaction twice', () => {
+  it('rejects occupied and unreachable seats', () => {
+    expect(resolveTouchIntent(baseInput({ seats: [{
+      id: 'seat-a', target: { x: 110, y: 102 }, hitArea: seatArea, reachable: true, occupied: true,
+    }] }))).toMatchObject({ kind: 'blocked', reason: 'occupied-seat' })
+    expect(resolveTouchIntent(baseInput({ seats: [{
+      id: 'seat-a', target: { x: 110, y: 102 }, hitArea: seatArea, reachable: false, occupied: false,
+    }] }))).toMatchObject({ kind: 'blocked', reason: 'unreachable' })
+  })
+
+  it('returns the exact floor click and blocks solid geometry', () => {
+    expect(resolveTouchIntent(baseInput({ seats: [], world: { x: 137, y: 211 } }))).toEqual({
+      kind: 'walk', target: { x: 137, y: 211 },
+    })
+    expect(resolveTouchIntent(baseInput({ seats: [], walkable: false }))).toEqual({
+      kind: 'blocked', reason: 'solid-object', target: { x: 110, y: 100 },
+    })
+  })
+
+  it('prioritizes a nearby player and deduplicates a seat approach', () => {
+    expect(resolveTouchIntent(baseInput({ players: [{ userId: 'user-2', x: 108, y: 101 }] }))).toEqual({
+      kind: 'interact-player', userId: 'user-2',
+    })
     expect(resolveTouchIntent(baseInput({ activeSeatIntentId: 'seat-a' }))).toEqual({
-      kind: 'ignored',
-      reason: 'duplicate-seat',
-    })
-  })
-
-  it('returns a blocked intent when no world target is close enough', () => {
-    expect(resolveTouchIntent(baseInput({ world: { x: 600, y: 500 } }))).toEqual({
-      kind: 'blocked',
-      reason: 'no-target',
-      target: { x: 600, y: 500 },
+      kind: 'ignored', reason: 'duplicate-seat',
     })
   })
 })

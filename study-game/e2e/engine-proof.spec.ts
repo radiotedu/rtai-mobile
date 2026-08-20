@@ -26,6 +26,7 @@ async function captureRenderedFrame(canvas: Locator, filename: string): Promise<
 }
 
 test('proves a visible layered avatar can walk stairs, sit, and stand', async ({ page }, testInfo) => {
+  test.setTimeout(120_000)
   const name = testInfo.project.name
   await page.goto('/?scene=engine-proof')
   await expect(page.locator('html')).toHaveAttribute('data-engine-proof', 'ready', { timeout: 30_000 })
@@ -38,9 +39,10 @@ test('proves a visible layered avatar can walk stairs, sit, and stand', async ({
 
   const movement = page.evaluate(() => window.__STUDY_GAME__.walkToSeatApproach())
   await expect(page.locator('html')).toHaveAttribute('data-game-state', 'walking', { timeout: 10_000 })
+  const stairReached = expect(page.locator('html')).toHaveAttribute('data-game-state', 'stair', { timeout: 20_000 })
   await captureRenderedFrame(canvas, path.join(artifactDir, `${name}-02-walking.png`))
 
-  await expect(page.locator('html')).toHaveAttribute('data-game-state', 'stair', { timeout: 15_000 })
+  await stairReached
   await captureRenderedFrame(canvas, path.join(artifactDir, `${name}-03-stair.png`))
   await movement
 

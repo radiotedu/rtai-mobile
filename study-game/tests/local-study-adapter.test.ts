@@ -26,7 +26,7 @@ describe('LocalStudyAdapter', () => {
   it('owns seat occupancy and rejects conflicting reservations', () => {
     const adapter = new LocalStudyAdapter({ now: () => 1_000 })
 
-    expect(() => adapter.reserveSeat('library', 'quiet-window')).toThrowError(/SEAT_OCCUPIED/)
+    expect(() => adapter.reserveSeat('library', 'upper-back-left')).toThrowError(/SEAT_OCCUPIED/)
     expect(adapter.reserveSeat('library', 'front-left').seatId).toBe('front-left')
     expect(() => adapter.reserveSeat('library', 'front-left')).toThrowError(/SEAT_ALREADY_RESERVED/)
     adapter.releaseSeat()
@@ -38,6 +38,8 @@ describe('LocalStudyAdapter', () => {
 
     expect(() => adapter.equipWearable('premium-cap')).toThrowError(/WEARABLE_NOT_OWNED/)
     expect(adapter.equipWearable('beanie').equippedWearableIds).toContain('beanie')
+    expect(adapter.equipWearable('bucket-hat', 'hat').equippedWearableIds).toEqual(['bucket-hat'])
+    expect(() => adapter.equipWearable('boots', 'top')).toThrowError(/WEARABLE_SLOT_REQUIRED/)
     expect(() => adapter.purchaseWearable('premium-cap', 'fake-key')).toThrowError(/LOCAL_POINTS_READ_ONLY/)
     expect(adapter.session().points.global).toBe(240)
     expect('awardPoints' in adapter).toBe(false)
@@ -53,5 +55,42 @@ describe('LocalStudyAdapter', () => {
     expect(() => adapter.sendChat('third')).toThrowError(/CHAT_RATE_LIMITED/)
     now += 10_001
     expect(adapter.sendChat('allowed again').text).toBe('allowed again')
+  })
+
+  it('keeps local preview chat scoped to its room and strips spoofing controls', async () => {
+    const adapter = new LocalStudyAdapter({ now: () => 1_000 })
+
+    expect(adapter.sendChat('hello\u202e  library', 'library').text).toBe('hello library')
+    adapter.sendChat('hello outside', 'chim-alan')
+
+    expect((await adapter.refreshChat('library')).map((message) => message.text)).toEqual(['hello library'])
+    expect((await adapter.refreshChat('chim-alan')).map((message) => message.text)).toEqual(['hello outside'])
+  })
+
+  it('lists campus events and registers without minting local Gold', async () => {
+    const adapter = new LocalStudyAdapter({ now: () => 1_000 })
+
+    const events = await adapter.listEvents()
+    expect(events.map((event) => event.title)).toContain('Campus Care Saturday')
+    expect(events.map((event) => event.title)).toContain('TEDU Live: Auditorium')
+    const registered = await adapter.registerEvent(events[0]!.id)
+    expect(registered.registered).toBe(true)
+    expect(adapter.session().points.global).toBe(240)
+  })
+
+  it('provides a complete clearly non-authoritative home preview', async () => {
+    const adapter = new LocalStudyAdapter({
+      now: () => Date.parse('2026-08-04T12:00:00.000Z'),
+      account: { id: 'user-42', displayName: 'Ada', authenticated: true },
+    })
+
+    const home = await adapter.fetchHome()
+
+    expect(home.rooms.map((room) => room.roomId)).toEqual([
+      'library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab',
+    ])
+    expect(home.activePlayers).toBe(home.rooms.reduce((sum, room) => sum + room.occupancy, 0))
+    expect(home.leaderboard.week.find((entry) => entry.isCurrentUser)).toMatchObject({ userId: 'user-42', displayName: 'Ada' })
+    expect(home.generatedAt).toBe('2026-08-04T12:00:00.000Z')
   })
 })

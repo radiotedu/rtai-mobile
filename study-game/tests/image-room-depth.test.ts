@@ -9,19 +9,21 @@ describe('imageRoomActorDepth', () => {
     expect(imageRoomActorDepth({ y: 53, z: 0 })).toBeGreaterThan(imageRoomActorDepth({ y: 52, z: 0 }))
   })
 
-  it('sorts every Chim Alan terrace node above its own foreground wall', () => {
+  it('keeps every Chim Alan terrace approach behind its own foreground wall', () => {
     const room = IMAGE_ROOMS['chim-alan']
 
     for (const row of [1, 2, 3]) {
       const wall = room.occluders.find((occluder) => occluder.id === `amphi-row-front-${row}`)!
       for (const side of ['left', 'mid', 'right']) {
         const node = room.nodes.find((candidate) => candidate.id === `row-${row}-${side}`)!
-        expect(imageRoomActorDepth(node), node.id).toBeGreaterThan(wall.depthY * 100)
+        expect(imageRoomActorDepth(node), node.id).toBeLessThan(wall.depthY * 100)
       }
     }
   })
 
-  it('changes continuously while traversing an elevated stair segment', () => {
+  it('uses projected feet Y without applying the navigation height twice', () => {
+    expect(imageRoomActorDepth({ y: 42, z: 0 })).toBe(imageRoomActorDepth({ y: 42, z: 3 }))
+
     const before = imageRoomActorDepth({ y: 48, z: 1 })
     const middle = imageRoomActorDepth({ y: 44.5, z: 1.5 })
     const after = imageRoomActorDepth({ y: 41, z: 2 })

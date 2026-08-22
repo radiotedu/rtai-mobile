@@ -3,9 +3,20 @@ import {
   getSearchParameter,
   parseHttpUrl,
 } from './safeHttpUrlService';
+import {
+  buildWebViewAccountBridge,
+  type WebViewAccountAuthState,
+} from './webViewAccountBridge';
 
 export const JUKE_LOCAL_CONTROLLER_URL =
   'https://radiotedu.com/juke-local/controller/';
+
+export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) {
+  return buildWebViewAccountBridge(authState, [
+    '/jukebox/api/',
+    '/juke-local/api/',
+  ]);
+}
 
 export function buildJukeLocalControllerUrl(deviceCode?: unknown): string {
   const normalizedCode =

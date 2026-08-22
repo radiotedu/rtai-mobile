@@ -18,12 +18,13 @@ describe('NextSongVote production WebView surface', () => {
     expect(screenSource).not.toContain('submitNextSongVote');
   });
 
-  it('waits for the ready bridge message before injecting auth', () => {
+  it('injects account auth before the page bundle starts and refreshes it at runtime', () => {
     expect(screenSource).toContain("message.type !== 'radiotedu.voting.ready'");
     expect(screenSource).toContain('webViewReadyRef.current = true');
     expect(screenSource).toContain('webViewRef.current?.injectJavaScript(');
     expect(screenSource).toContain('buildVotingAuthInjection(authStateRef.current)');
-    expect(screenSource).not.toContain('injectedJavaScriptBeforeContentLoaded');
+    expect(screenSource).toContain('injectedJavaScriptBeforeContentLoaded={authBootstrap}');
+    expect(screenSource).toContain('injectedJavaScript={authBootstrap}');
   });
 
   it('locks down navigation, cookies, mixed content, files, windows, and debugging', () => {

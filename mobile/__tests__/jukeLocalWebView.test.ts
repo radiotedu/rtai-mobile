@@ -1,6 +1,7 @@
 import {describe, expect, it} from '@jest/globals';
 
 import {
+  buildJukeLocalAuthInjection,
   buildJukeLocalControllerUrl,
   isAllowedJukeLocalNavigation,
   normalizeJukeLocalAppPath,
@@ -66,5 +67,21 @@ describe('juke-local app WebView contract', () => {
     expect(manifest).not.toContain(
       'android:pathPrefix="/juke-local/controller"',
     );
+  });
+
+  it('injects the signed-in account only into trusted RadioTEDU API requests', () => {
+    const script = buildJukeLocalAuthInjection({
+      accessToken: 'short-lived-token</script>',
+      user: {id: 'user-1'},
+    });
+
+    expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
+    expect(script).toContain('/juke-local/api/');
+    expect(script).toContain('/jukebox/api/');
+    expect(script).toContain("parsed.hostname === 'radiotedu.com'");
+    expect(script).toContain('short-lived-token\\u003c/script>');
+    expect(script).not.toContain('localStorage');
+    expect(script).not.toContain('document.cookie');
+    expect(script).not.toContain('?access_token=');
   });
 });

@@ -1,11 +1,15 @@
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView} from 'react-native-webview';
 
+import {useAuth} from '../../context/AuthContext';
+import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
+import {getAccessToken} from '../../services/authTokenStorage';
 import {
+  buildJukeLocalAuthInjection,
   buildJukeLocalControllerUrl,
   isAllowedJukeLocalNavigation,
 } from '../../services/jukeLocalWebViewService';
@@ -15,8 +19,14 @@ const WebView = NativeWebView as any;
 
 const JukeLocalWebViewScreen = () => {
   const route = useRoute<any>();
+  const {user} = useAuth();
+  const webViewRef = useRef<any>(null);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [authInjection, setAuthInjection] = useState(
+    buildJukeLocalAuthInjection({accessToken: null, user: null}),
+  );
   const controllerUrl = useMemo(
     () =>
       buildJukeLocalControllerUrl(
@@ -25,15 +35,44 @@ const JukeLocalWebViewScreen = () => {
     [route.params?.code, route.params?.deviceCode],
   );
 
+  const refreshAuthBridge = useCallback(async () => {
+    let accessToken: string | null = null;
+    try {
+      accessToken = await getAccessToken();
+    } catch {
+      accessToken = null;
+    }
+    const state = accessToken && user && !user.is_guest
+      ? {accessToken, user}
+      : {accessToken: null, user: null};
+    const script = buildJukeLocalAuthInjection(state);
+    setAuthInjection(script);
+    setAuthResolved(true);
+    webViewRef.current?.injectJavaScript(script);
+  }, [user]);
+
+  useEffect(() => {
+    void refreshAuthBridge();
+    return subscribeAuthSessionChanges(refreshAuthBridge);
+  }, [refreshAuthBridge]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {!hasLoadError ? (
+      {!authResolved ? (
+        <View style={styles.loadingPanel}>
+          <ActivityIndicator color={COLORS.primary} size="large" />
+          <Text style={styles.loadingText}>Preparing your RadioTEDU session…</Text>
+        </View>
+      ) : !hasLoadError ? (
         <WebView
           key={`${controllerUrl}:${reloadKey}`}
+          ref={webViewRef}
           source={{uri: controllerUrl}}
           style={styles.webView}
           originWhitelist={['https://radiotedu.com']}
           javaScriptEnabled
+          injectedJavaScriptBeforeContentLoaded={authInjection}
+          injectedJavaScript={authInjection}
           cacheEnabled={false}
           domStorageEnabled
           sharedCookiesEnabled={false}
@@ -50,6 +89,7 @@ const JukeLocalWebViewScreen = () => {
           onShouldStartLoadWithRequest={(request: {url: string}) =>
             isAllowedJukeLocalNavigation(request.url)
           }
+          onLoadEnd={() => webViewRef.current?.injectJavaScript(authInjection)}
           onError={() => setHasLoadError(true)}
           onHttpError={(event: {nativeEvent: {statusCode?: number}}) => {
             if ((event.nativeEvent.statusCode ?? 0) >= 500) {

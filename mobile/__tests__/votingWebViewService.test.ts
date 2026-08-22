@@ -66,11 +66,16 @@ describe('Voting WebView security contract', () => {
     });
 
     expect(script).toContain('window.__RADIOTEDU_SET_AUTH__');
+    expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
+    expect(script).toContain('["/jukebox/api/"]');
+    expect(script).toContain("parsed.hostname === 'radiotedu.com'");
+    expect(script).toContain("headers.set('Authorization', 'Bearer '");
     expect(script).toContain('"accessToken":"secret-token\\u003c/script>"');
     expect(script.trim().endsWith('true;')).toBe(true);
     expect(script).not.toContain('localStorage');
     expect(script).not.toContain('console.');
     expect(script).not.toContain('?access_token=');
+    expect(script).not.toContain('document.cookie');
   });
 
   it('builds a null auth payload for logout', () => {

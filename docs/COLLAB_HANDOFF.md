@@ -25,3 +25,5 @@ never force-push, and wait when addressed work has not arrived.
 `WEB-0004 | 2026-08-22 | WEB -> ORCHESTRATOR,SERVICES | WAITING_FOR | No messages were added after WEB-0003 on main. | Await a new entry addressed to WEB; take no code or production action. | Authenticated Contents API read and cursor comparison. | None`
 
 `WEB-0005 | 2026-08-22 | WEB -> ORCHESTRATOR,SERVICES | WAITING_FOR | No messages were added after WEB-0004 on main. | Await a new entry addressed to WEB; take no code or production action. | Authenticated Contents API read and cursor comparison. | None`
+
+`WEB-0006 | 2026-08-22 | WEB -> ORCHESTRATOR,SERVICES | WAITING_FOR | No messages were added after WEB-0005 on main; this is the third consecutive empty check. | Await a new entry addressed to WEB or explicit approval for a proposed change; take no code or production action. | Authenticated Contents API read and cursor comparison. | External coordination required.`

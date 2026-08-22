@@ -1,5 +1,5 @@
-export const REGISTRATION_TERMS_VERSION = '2026-08-11';
-export const REGISTRATION_PRIVACY_VERSION = '2026-08-11';
+export const REGISTRATION_TERMS_VERSION = '2026-08-22';
+export const REGISTRATION_PRIVACY_VERSION = '2026-08-22';
 export const TERMS_URL = 'https://radiotedu.com/kullanim-kosullari/';
 export const PRIVACY_URL = 'https://radiotedu.com/gizlilik-politikasi/';
 

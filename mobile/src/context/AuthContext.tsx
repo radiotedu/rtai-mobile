@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {Linking} from 'react-native';
 
@@ -16,6 +15,11 @@ import {
     type TeduLoginSession,
 } from '../services/erpIdentity';
 import {buildRegistrationPolicy} from '../services/registrationPolicy';
+import {
+    clearAuthTokens,
+    getAccessToken,
+    setAuthTokens,
+} from '../services/authTokenStorage';
 
 const API_URL = BASE_API;
 
@@ -75,17 +79,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [teduLoginError, setTeduLoginError] = useState<string | null>(null);
 
     const clearSessionState = useCallback(async () => {
-        await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+        await clearAuthTokens();
         notifyAuthSessionChanged();
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
     }, []);
 
     const persistSession = useCallback(async (session: TeduLoginSession) => {
-        await AsyncStorage.multiSet([
-            ['access_token', session.access_token],
-            ['refresh_token', session.refresh_token],
-        ]);
+        await setAuthTokens(session.access_token, session.refresh_token);
         notifyAuthSessionChanged();
         axios.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
         setUser(normalizeUser(session.user));
@@ -93,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const refreshSession = useCallback(async (): Promise<User | null> => {
         try {
-            const accessToken = await AsyncStorage.getItem('access_token');
+            const accessToken = await getAccessToken();
             if (!accessToken) {
                 setUser(null);
                 return null;

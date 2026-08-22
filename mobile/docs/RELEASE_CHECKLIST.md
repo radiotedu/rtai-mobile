@@ -97,12 +97,12 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 - **[code/done]** Modern audio practices are documented for high-quality
   streams, MediaSession, Bluetooth/wireless controls, Dolby/spatial-safe output,
   and loudness metadata QA.
-- **[you]** Generate the **real release keystore**; enroll in **Play App
-  Signing**. Keep the upload key safe.
+- **[done/you]** Real RadioTEDU release certificate is used. Enrol it in **Play
+  App Signing** and keep the upload key safe.
 - **[code]** **ProGuard/R8** rules for release (keep RNTP, vector-icons,
   reanimated-free here, socket.io) — verify a release build runs.
-- **[you]** **Move auth tokens to `react-native-keychain`** (recommended in
-  `SECURITY_REVIEW.md`) before public launch.
+- **[done]** Auth tokens use `react-native-keychain` (Android Keystore / iOS
+  Keychain), with one-time removal/migration of legacy AsyncStorage tokens.
 
 ## 5. Quality, accessibility, reliability
 

@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getAccessToken} from '../../services/authTokenStorage';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -31,7 +31,7 @@ const LibraryStudyWebView = () => {
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem('access_token')
+    getAccessToken()
       .then(token => {
         if (active) {
           setAccessToken(token);

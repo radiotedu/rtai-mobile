@@ -32,7 +32,7 @@ describe('consent gate startup fallback', () => {
       'utf8',
     );
 
-    expect(consentSource).toContain('CONSENT_VERSION = 2');
+    expect(consentSource).toContain('CONSENT_VERSION = 3');
     expect(consentSource).toContain('termsAccepted: false');
     expect(consentSource).toContain('decidedAt: null');
     expect(screenSource).toContain('useState(false)');

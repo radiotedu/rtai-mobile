@@ -50,7 +50,7 @@ describe('Social WebView surface', () => {
 
     expect(authSource).toContain('refreshSession: () => Promise<User | null>');
     expect(authSource).toContain('const clearSessionState = useCallback');
-    expect(authSource).toContain("await AsyncStorage.multiRemove(['access_token', 'refresh_token']);");
+    expect(authSource).toContain('await clearAuthTokens();');
     expect(authSource).toContain('<AuthContext.Provider value={{');
     expect(authSource).toContain('refreshSession,');
     expect(authSource).toContain('loginWithTedu,');

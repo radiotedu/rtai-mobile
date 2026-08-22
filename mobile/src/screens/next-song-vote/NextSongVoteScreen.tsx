@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getAccessToken} from '../../services/authTokenStorage';
 import NetInfo from '@react-native-community/netinfo';
 import {useNavigation} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -35,7 +35,6 @@ import {
 import {COLORS, SPACING} from '../../theme/theme';
 
 const WebView = NativeWebView as any;
-const ACCESS_TOKEN_KEY = 'access_token';
 const EMPTY_AUTH_STATE: VotingWebViewAuthState = {
   accessToken: null,
   user: null,
@@ -69,7 +68,7 @@ export default function NextSongVoteScreen() {
     let accessToken: string | null = null;
 
     try {
-      accessToken = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+      accessToken = await getAccessToken();
     } catch {
       accessToken = null;
     }

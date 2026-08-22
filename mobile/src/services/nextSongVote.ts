@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getAccessToken} from './authTokenStorage';
 import api from './api';
 import { STORAGE_API } from './config';
 
@@ -134,7 +135,10 @@ export async function buildNextSongVoteRequestConfig(
   storage: NextSongVoteClientStorage = AsyncStorage,
   random: () => number = Math.random,
 ) {
-  const accessToken = await storage.getItem('access_token');
+  const accessToken =
+    storage === AsyncStorage
+      ? await getAccessToken()
+      : await storage.getItem('access_token');
   if (accessToken) {
     return {};
   }

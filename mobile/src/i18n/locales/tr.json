@@ -70,6 +70,12 @@
     "title": "Veri ve Gizlilik",
     "consentTitle": "Gizliliğiniz",
     "intro": "Hesap, güvenlik ve Gold için gerekli veriler bu özellikleri kullandığınızda işlenir. İsteğe bağlı analiz siz açmadıkça kapalıdır.",
+    "controllerHeading": "Veri sorumlusu ve iletişim",
+    "controllerNotice": "TED Üniversitesi / RadioTEDU (TED Üniversitesi Radyosu), Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara. Gizlilik ve ilgili kişi başvuruları: radio@tedu.edu.tr.",
+    "noticeHeading": "Mobil aydınlatma metni — sürüm 22 Ağustos 2026",
+    "fullNotice": "Hesap ve hizmet verileri: verdiğiniz kimlik ve iletişim bilgileri, kimlik doğrulama/oturum ve güvenlik kayıtları, profil/avatar, favoriler ve dinleme ilerlemesi, Gold hareketleri, hesap/ERP bağlantı kayıtları ve destek iletileri; talep edilen hizmetleri sunmak ve güvenliğini sağlamak, Koşulları uygulamak, kötüye kullanımı önlemek ve hukuki yükümlülükleri yerine getirmek için işlenebilir. Hukuki sebepler sözleşmenin kurulması/ifası, hukuki yükümlülük ve temel haklarınıza zarar vermeyen meşru menfaattir; açık rıza yalnızca ayrıca istendiği alanlarda kullanılır. Veriler yetkili RadioTEDU/TEDÜ personeli, sözleşmeli barındırma, e-posta, kimlik, güvenlik ve analiz sağlayıcıları ile hukuken zorunlu hâllerde yetkili makamlarla paylaşılabilir. Veriler hesap/hizmet için gerekli süre boyunca, sonrasında yalnızca kanuni, uyuşmazlık, güvenlik ve yedekleme sürelerince saklanır. İsteğe bağlı Google Analytics rızaya kadar kapalıdır; Google verileri uygun güvenceler kapsamında Türkiye/AEA dışında işleyebilir. RadioTEDU kişisel verileri satmaz, analizi hedefli reklam için kullanmaz ve yalnız otomatik işleme dayalı hukuki sonuç doğuran karar vermez. KVKK m.11 kapsamındaki bilgi, erişim, düzeltme, silme/yok etme, itiraz ve zararın giderilmesi hakları ile uygulanabildiğinde GDPR erişim, kısıtlama ve taşınabilirlik haklarınızı kullanabilir; rızayı önceki hukuka uygun işlemleri etkilemeden geri çekebilirsiniz. radio@tedu.edu.tr adresine başvurabilir ve KVKK Kuruluna veya yetkili AEA makamına şikâyet edebilirsiniz. Hesap silme Profil bölümündedir; kanuni saklama zorunlulukları silmeyi sınırlayabilir.",
+    "termsHeading": "Uygulama içi Kullanım Koşulları — sürüm 22 Ağustos 2026",
+    "fullTerms": "Kabul kutusunu işaretleyerek RadioTEDU ile bu Koşulları kabul edersiniz. Uygulamayı hukuka uygun ve kişisel amaçlarla kullanın; hesap bilgilerinizi koruyun; hizmetleri bozmayın, güvenliği aşmayın, yayınları kötüye kullanmayın, hukuka veya başkasının haklarına aykırı içerik göndermeyin. RadioTEDU içeriği, markaları ve yazılımı sahiplerine veya lisans verenlere aittir. Yayınlar ve çevrim içi özellikler ağlara ve üçüncü taraflara bağlıdır; değişebilir veya kesilebilir, emredici tüketici hakları saklıdır. Gold nakit değeri ve devredilebilirliği olmayan uygulama içi bir faydadır; parasal değeri garanti edilmez. Kötüye kullanım veya esaslı ihlalde hesap, uygulanabilir haklar saklı kalmak üzere sınırlandırılabilir. Emredici tüketici, veri koruma ve görevli merci hakları saklı kalmak üzere Türk hukuku uygulanır. Esaslı değişikliklerde yeniden kabul istenir. İletişim: radio@tedu.edu.tr.",
     "analyticsLabel": "İsteğe bağlı kullanım analizi",
     "analyticsDesc": "Etkinleştirilirse Google Analytics; uygulama örneği kimliği, dinleme/kanal ve oturum etkinliği, uygulama/cihaz bilgileri, maskelenmiş IP'den türetilen yaklaşık konum ve isteğe bağlı yaş aralığı/cinsiyet bilgisini alır. Hesap adı, e-posta, reklam kimliği veya kesin konum gönderilmez. Google üçüncü taraf alıcıdır.",
     "demographicsLabel": "Demografi (yaş, cinsiyet)",
@@ -94,6 +100,7 @@
     "withdraw": "İsteğe bağlı izni geri çek",
     "withdrawn": "İzin geri çekildi.",
     "save": "Kaydet",
-    "deleteAccount": "Hesabı sil"
+    "deleteAccount": "Hesabı sil",
+    "rightsRequest": "Gizlilik/ilgili kişi başvurusu gönder"
   }
 }

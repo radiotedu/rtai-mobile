@@ -70,6 +70,12 @@
     "title": "Gegevens & Privacy",
     "consentTitle": "Jouw privacy",
     "intro": "Noodzakelijke account-, beveiligings- en Gold-gegevens worden verwerkt wanneer je die functies gebruikt. Optionele analyse staat standaard uit.",
+    "controllerHeading": "Verwerkingsverantwoordelijke en contact",
+    "controllerNotice": "TED University / RadioTEDU (TED University Radio), Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara, Türkiye. Privacyverzoeken: radio@tedu.edu.tr.",
+    "noticeHeading": "Mobiele privacyverklaring — versie 22 augustus 2026",
+    "fullNotice": "Opgegeven identificatie-/contactgegevens, authenticatie-, sessie- en beveiligingsgegevens, profiel/avatar, favorieten en afspeelvoortgang, Gold-activiteit, account-/ERP-koppeling en supportberichten kunnen worden verwerkt om de dienst te leveren en beveiligen, de voorwaarden uit te voeren, misbruik te voorkomen en wettelijke plichten na te komen. Grondslagen zijn overeenkomst, wettelijke plicht en evenredig gerechtvaardigd belang; toestemming geldt alleen waar apart gevraagd. Ontvangers kunnen bevoegd RadioTEDU/TEDU-personeel, hosting-, e-mail-, identiteit-, beveiligings- en analyseverwerkers en bevoegde autoriteiten zijn. Bewaring duurt alleen zolang nodig voor dienst, wet, geschil, beveiliging en back-ups. Google Analytics blijft uit tot toestemming; Google kan gegevens met passende waarborgen buiten Türkiye/EER verwerken. Geen verkoop, gerichte advertenties of uitsluitend geautomatiseerde besluiten met rechtsgevolg. Rechten op inzage, correctie, verwijdering, beperking/bezwaar, waar toepasselijk overdraagbaarheid en intrekking: radio@tedu.edu.tr; klacht bij KVKK of bevoegde EER-toezichthouder. Account verwijderen kan in Profiel; wettelijke bewaring kan dit beperken.",
+    "termsHeading": "Gebruiksvoorwaarden in de app — versie 22 augustus 2026",
+    "fullTerms": "Door het vakje aan te vinken accepteer je deze voorwaarden met RadioTEDU. Gebruik de app rechtmatig en persoonlijk, bescherm inloggegevens en verstoor of omzeil diensten/beveiliging niet. Onrechtmatige of inbreukmakende inhoud is verboden. Inhoud, merken en software blijven van hun eigenaren. Streams kunnen wijzigen of uitvallen; dwingende consumentenrechten blijven gelden. Gold is een niet-overdraagbaar voordeel zonder contante of gegarandeerde geldwaarde. Een account kan bij misbruik of wezenlijke schending binnen toepasselijke rechten worden beperkt. Turks recht geldt zonder dwingende consumenten-, privacy- of forumrechten weg te nemen. Materiële wijzigingen vereisen nieuwe aanvaarding. Contact: radio@tedu.edu.tr.",
     "analyticsLabel": "Optionele gebruiksanalyse",
     "analyticsDesc": "Indien ingeschakeld ontvangt Google Analytics een app-instantie-ID, luister-/zender- en sessieactiviteit, app-/apparaatinformatie, geschatte locatie uit gemaskeerd IP en optionele leeftijdscategorie/gender. Geen accountnaam, e-mail, advertentie-ID of precieze locatie. Google is een derde ontvanger.",
     "demographicsLabel": "Demografie (leeftijd, geslacht)",
@@ -94,6 +100,7 @@
     "withdraw": "Optionele toestemming intrekken",
     "withdrawn": "Toestemming ingetrokken.",
     "save": "Opslaan",
-    "deleteAccount": "Account verwijderen"
+    "deleteAccount": "Account verwijderen",
+    "rightsRequest": "Privacy-/rechtenverzoek sturen"
   }
 }

@@ -3,8 +3,8 @@
  * (which only emits if the user consented). Pure timing — no content captured.
  */
 import TrackPlayer, {Event, State} from 'react-native-track-player';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Analytics} from './analyticsService';
+import {getAccessToken} from './authTokenStorage';
 import {subscribeAuthSessionChanges} from './authSessionEvents';
 import {
   createListeningClientSessionId,
@@ -66,7 +66,7 @@ async function syncGoldListening() {
   if (goldBlockedUntilAuthChange) return;
 
   try {
-    const accessToken = await AsyncStorage.getItem('access_token');
+    const accessToken = await getAccessToken();
     const {state} = await TrackPlayer.getPlaybackState();
     const track = await TrackPlayer.getActiveTrack();
     const channelId = radioChannelForTrack(track);

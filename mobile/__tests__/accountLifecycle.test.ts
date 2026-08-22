@@ -1,5 +1,4 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 import {BASE_API} from '../src/services/config';
@@ -9,13 +8,14 @@ import {
   deleteAccountAndClearSession,
   logoutAccountSession,
 } from '../src/services/accountLifecycleService';
+import {
+  clearAuthTokens,
+  getRefreshToken,
+} from '../src/services/authTokenStorage';
 
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  __esModule: true,
-  default: {
-    getItem: jest.fn(),
-    multiRemove: jest.fn(),
-  },
+jest.mock('../src/services/authTokenStorage', () => ({
+  clearAuthTokens: jest.fn(),
+  getRefreshToken: jest.fn(),
 }));
 
 jest.mock('axios', () => ({
@@ -32,11 +32,11 @@ jest.mock('axios', () => ({
 }));
 
 describe('mobile account lifecycle service', () => {
-  const getItemMock = AsyncStorage.getItem as jest.MockedFunction<
-    typeof AsyncStorage.getItem
+  const getRefreshTokenMock = getRefreshToken as jest.MockedFunction<
+    typeof getRefreshToken
   >;
-  const multiRemoveMock = AsyncStorage.multiRemove as jest.MockedFunction<
-    typeof AsyncStorage.multiRemove
+  const clearAuthTokensMock = clearAuthTokens as jest.MockedFunction<
+    typeof clearAuthTokens
   >;
   const postMock = axios.post as jest.MockedFunction<typeof axios.post>;
   const deleteMock = axios.delete as jest.MockedFunction<typeof axios.delete>;
@@ -58,7 +58,7 @@ describe('mobile account lifecycle service', () => {
   });
 
   it('revokes the current refresh-token session before clearing local auth', async () => {
-    getItemMock.mockResolvedValueOnce('refresh-token');
+    getRefreshTokenMock.mockResolvedValueOnce('refresh-token');
     postMock.mockResolvedValueOnce({data: {data: {revoked: true}}});
     axios.defaults.headers.common.Authorization = 'Bearer access-token';
 
@@ -67,23 +67,17 @@ describe('mobile account lifecycle service', () => {
     expect(postMock).toHaveBeenCalledWith(`${BASE_API}/auth/logout`, {
       refresh_token: 'refresh-token',
     });
-    expect(multiRemoveMock).toHaveBeenCalledWith([
-      'access_token',
-      'refresh_token',
-    ]);
+    expect(clearAuthTokensMock).toHaveBeenCalled();
     expect(axios.defaults.headers.common.Authorization).toBeUndefined();
   });
 
   it('still clears local auth when the server logout request fails', async () => {
-    getItemMock.mockResolvedValueOnce('refresh-token');
+    getRefreshTokenMock.mockResolvedValueOnce('refresh-token');
     postMock.mockRejectedValueOnce(new Error('offline'));
 
     await expect(logoutAccountSession()).rejects.toThrow('offline');
 
-    expect(multiRemoveMock).toHaveBeenCalledWith([
-      'access_token',
-      'refresh_token',
-    ]);
+    expect(clearAuthTokensMock).toHaveBeenCalled();
   });
 
   it('deletes the account through the authenticated endpoint and clears auth on success', async () => {
@@ -97,10 +91,7 @@ describe('mobile account lifecycle service', () => {
         password: 'correct-password',
       },
     });
-    expect(multiRemoveMock).toHaveBeenCalledWith([
-      'access_token',
-      'refresh_token',
-    ]);
+    expect(clearAuthTokensMock).toHaveBeenCalled();
   });
 
   it('keeps local auth when account deletion is rejected by the server', async () => {
@@ -110,6 +101,6 @@ describe('mobile account lifecycle service', () => {
       'wrong password',
     );
 
-    expect(multiRemoveMock).not.toHaveBeenCalled();
+    expect(clearAuthTokensMock).not.toHaveBeenCalled();
   });
 });

@@ -12,6 +12,13 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+jest.mock('react-native-keychain', () => ({
+  ACCESSIBLE: {WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'AccessibleWhenUnlockedThisDeviceOnly'},
+  setGenericPassword: jest.fn().mockResolvedValue({service: 'test', storage: 'AES'}),
+  getGenericPassword: jest.fn().mockResolvedValue(false),
+  resetGenericPassword: jest.fn().mockResolvedValue(true),
+}));
+
 // react-native-safe-area-context has no usable native context under Jest;
 // provide a static-metrics mock so components wrapped in SafeAreaProvider render.
 jest.mock('react-native-safe-area-context', () => {

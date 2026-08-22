@@ -1,8 +1,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { BASE_API } from './config';
 import { notifyAuthSessionChanged } from './authSessionEvents';
+import {
+  clearAuthTokens,
+  getAccessToken,
+  getRefreshToken,
+  updateAccessToken,
+} from './authTokenStorage';
 
 const api = axios.create({
   baseURL: BASE_API,
@@ -14,7 +19,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('access_token');
+    const token = await getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -44,7 +49,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('refresh_token');
+        const refreshToken = await getRefreshToken();
         if (!refreshToken) {
           throw new Error('No refresh token');
         }
@@ -57,17 +62,13 @@ api.interceptors.response.use(
 
         const { access_token, refresh_token } = refreshResponse.data.data;
 
-        await AsyncStorage.setItem('access_token', access_token);
-        if (refresh_token) {
-          await AsyncStorage.setItem('refresh_token', refresh_token);
-        }
+        await updateAccessToken(access_token, refresh_token);
         notifyAuthSessionChanged();
 
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
-        await AsyncStorage.removeItem('access_token');
-        await AsyncStorage.removeItem('refresh_token');
+        await clearAuthTokens();
         notifyAuthSessionChanged();
         return Promise.reject(refreshError);
       }

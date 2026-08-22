@@ -1,9 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 import {BASE_API} from './config';
-
-const AUTH_STORAGE_KEYS = ['access_token', 'refresh_token'];
+import {clearAuthTokens, getRefreshToken} from './authTokenStorage';
 
 export function buildLogoutPayload(refreshToken: string) {
   return {
@@ -18,12 +16,12 @@ export function buildDeleteAccountPayload(password?: string) {
 }
 
 async function clearStoredAuthSession(): Promise<void> {
-  await AsyncStorage.multiRemove(AUTH_STORAGE_KEYS);
+  await clearAuthTokens();
   delete axios.defaults.headers.common.Authorization;
 }
 
 export async function logoutAccountSession(): Promise<void> {
-  const refreshToken = await AsyncStorage.getItem('refresh_token');
+  const refreshToken = await getRefreshToken();
 
   try {
     if (refreshToken) {

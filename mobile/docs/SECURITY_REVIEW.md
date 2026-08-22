@@ -17,8 +17,8 @@ here or is a recommendation requiring your action.
 
 | # | Severity | Finding | Recommended fix |
 | - | -------- | ------- | --------------- |
-| 5 | **Medium/High** | **Auth tokens stored in `AsyncStorage` (plaintext)** (`access_token`/`refresh_token` in `AuthContext`). AsyncStorage is unencrypted; readable on a rooted/compromised device or via backup tooling. Not changed automatically (touches the auth flow + needs a native dep + rebuild + testing). | Migrate token storage to **`react-native-keychain`** (Android Keystore / iOS Keychain). Keep only tokens there; leave non-sensitive prefs in AsyncStorage. |
-| 6 | **Info** | **Provide a real release keystore.** Create one and add `android/keystore.properties` (gitignored) with `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. | `keytool -genkeypair -v -keystore radiotedu-release.jks -alias radiotedu -keyalg RSA -keysize 2048 -validity 10000` |
+| 5 | **Resolved** | Auth tokens previously used plaintext AsyncStorage. | Tokens now use `react-native-keychain` (Android Keystore / iOS Keychain); legacy values are migrated and removed. |
+| 6 | **Resolved locally** | Release signing must not use the public debug key. | v1.2.3 is signed by the RadioTEDU release certificate; keystore credentials remain gitignored. Enrolment in Play App Signing remains a Play Console action. |
 | 7 | **Resolved** | Firebase Analytics uses `google-services.json`; no Measurement Protocol API secret is embedded in the APK. | Keep API secrets server-side. |
 | 8 | **Low** | `usesCleartextTraffic` for dev relies on the loopback exception — ensure no production traffic ever uses HTTP. | Keep all `radiotedu.com` traffic on HTTPS (already the case). |
 
@@ -36,7 +36,6 @@ here or is a recommendation requiring your action.
   which validates it; low risk.
 
 ## Suggested next steps (in priority order)
-1. Implement #5 (Keychain token storage).
-2. Create the release keystore (#6) before any production build.
-3. Keep Firebase/GA4 property access restricted and rotate the disclosed unused
+1. Enrol the upload certificate in Play App Signing and keep the key protected.
+2. Keep Firebase/GA4 property access restricted and rotate the disclosed unused
    Measurement Protocol secret (#7).

@@ -17,9 +17,8 @@ import {useConsent} from '../privacy/ConsentContext';
 import {setAnalyticsConsent} from '../services/analyticsService';
 import {PRIVACY_URL, TERMS_URL} from '../services/registrationPolicy';
 
-// Google Play requires a way to request account/data deletion.
-const DELETE_ACCOUNT_URL = 'https://radiotedu.com/delete-account';
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
+const RIGHTS_REQUEST_URL = 'mailto:radio@tedu.edu.tr?subject=KVKK%20GDPR%20Data%20Request';
 
 const PrivacyScreen = ({navigation}: any) => {
   const {t} = useTranslation();
@@ -58,6 +57,14 @@ const PrivacyScreen = ({navigation}: any) => {
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>{t('privacy.intro')}</Text>
+        <View style={styles.legalCard}>
+          <Text style={styles.legalHeading}>{t('privacy.controllerHeading')}</Text>
+          <Text style={styles.legalText}>{t('privacy.controllerNotice')}</Text>
+          <Text style={styles.legalHeading}>{t('privacy.noticeHeading')}</Text>
+          <Text style={styles.legalText}>{t('privacy.fullNotice')}</Text>
+          <Text style={styles.legalHeading}>{t('privacy.termsHeading')}</Text>
+          <Text style={styles.legalText}>{t('privacy.fullTerms')}</Text>
+        </View>
 
         <View style={styles.row}>
           <View style={styles.rowText}>
@@ -112,10 +119,10 @@ const PrivacyScreen = ({navigation}: any) => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => Linking.openURL(DELETE_ACCOUNT_URL)}
+          onPress={() => Linking.openURL(RIGHTS_REQUEST_URL)}
           accessibilityRole="link"
-          accessibilityLabel={t('privacy.deleteAccount')}>
-          <Text style={styles.policyLink}>{t('privacy.deleteAccount')}</Text>
+          accessibilityLabel={t('privacy.rightsRequest')}>
+          <Text style={styles.policyLink}>{t('privacy.rightsRequest')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -143,6 +150,9 @@ const styles = StyleSheet.create({
   headerTitle: {color: COLORS.text, fontSize: 18, fontWeight: 'bold'},
   content: {padding: SPACING.md},
   intro: {color: COLORS.textMuted, fontSize: 14, lineHeight: 20, marginBottom: SPACING.md},
+  legalCard: {backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.md, marginBottom: SPACING.md},
+  legalHeading: {color: COLORS.text, fontSize: 14, fontWeight: '800', marginBottom: SPACING.xs},
+  legalText: {color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: SPACING.md},
   row: {
     flexDirection: 'row',
     alignItems: 'center',

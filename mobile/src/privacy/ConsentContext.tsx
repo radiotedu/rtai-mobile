@@ -11,7 +11,7 @@ import {rotateInstallId} from './installId';
 import {REGISTRATION_TERMS_VERSION} from '../services/registrationPolicy';
 
 // Bump when the privacy policy / consent terms materially change → re-prompts.
-export const CONSENT_VERSION = 2;
+export const CONSENT_VERSION = 3;
 const STORAGE_KEY = '@radiotedu/consent';
 
 export type AgeRange =

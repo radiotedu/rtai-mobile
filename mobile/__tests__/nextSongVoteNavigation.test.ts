@@ -31,6 +31,6 @@ describe('next-song vote navigation', () => {
     expect(screenSource).not.toContain('AuthGuard');
     expect(screenSource).toContain('accessToken: null');
     expect(screenSource).toContain('user: null');
-    expect(screenSource).toContain('AsyncStorage.getItem(ACCESS_TOKEN_KEY)');
+    expect(screenSource).toContain('getAccessToken()');
   });
 });

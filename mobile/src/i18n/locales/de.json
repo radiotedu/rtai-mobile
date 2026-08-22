@@ -70,6 +70,12 @@
     "title": "Daten & Datenschutz",
     "consentTitle": "Deine Privatsphäre",
     "intro": "Erforderliche Konto-, Sicherheits- und Gold-Daten werden bei Nutzung dieser Funktionen verarbeitet. Optionale Analyse ist standardmäßig aus.",
+    "controllerHeading": "Verantwortlicher und Kontakt",
+    "controllerNotice": "TED University / RadioTEDU (TED University Radio), Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara, Türkiye. Datenschutzanfragen: radio@tedu.edu.tr.",
+    "noticeHeading": "Mobile Datenschutzhinweise — Version 22. August 2026",
+    "fullNotice": "Angegebene Identitäts-/Kontaktdaten, Authentifizierungs-, Sitzungs- und Sicherheitsdaten, Profil/Avatar, Favoriten und Wiedergabefortschritt, Gold-Aktivität, Konto-/ERP-Verknüpfung und Supportnachrichten können zur Bereitstellung und Absicherung des Dienstes, Vertragserfüllung, Missbrauchsprävention und Erfüllung gesetzlicher Pflichten verarbeitet werden. Rechtsgrundlagen sind Vertrag, gesetzliche Pflicht und verhältnismäßige berechtigte Interessen; Einwilligung gilt nur, wenn gesondert erteilt. Empfänger können befugtes RadioTEDU/TEDU-Personal, beauftragte Hosting-, E-Mail-, Identitäts-, Sicherheits- und Analysedienste sowie Behörden sein. Speicherung erfolgt nur solange für Dienst, gesetzliche Pflichten, Streitfälle, Sicherheit und Backups erforderlich. Google Analytics bleibt bis zur Einwilligung aus; Google kann Daten mit geeigneten Garantien außerhalb Türkiye/des EWR verarbeiten. Kein Verkauf, keine gezielte Werbung, keine ausschließlich automatisierten Entscheidungen mit Rechtswirkung. Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung/Widerspruch, gegebenenfalls Übertragbarkeit und Widerruf: radio@tedu.edu.tr; Beschwerde bei KVKK oder zuständiger EWR-Aufsicht. Kontolöschung ist im Profil verfügbar; gesetzliche Aufbewahrung kann sie begrenzen.",
+    "termsHeading": "In-App-Nutzungsbedingungen — Version 22. August 2026",
+    "fullTerms": "Mit dem Häkchen akzeptieren Sie diese Bedingungen gegenüber RadioTEDU. Nutzen Sie die App rechtmäßig und persönlich, schützen Sie Zugangsdaten und stören oder umgehen Sie Dienste/Sicherheit nicht. Rechtswidrige oder rechtsverletzende Inhalte sind verboten. Inhalte, Marken und Software bleiben Eigentum ihrer Inhaber. Streams können sich ändern oder ausfallen; zwingende Verbraucherrechte bleiben bestehen. Gold ist ein nicht übertragbarer, bargeldloser App-Vorteil ohne garantierten Geldwert. Bei Missbrauch oder wesentlichem Verstoß kann ein Konto im Rahmen geltender Rechte eingeschränkt werden. Türkisches Recht gilt unter Wahrung zwingender Verbraucher-, Datenschutz- und Gerichtsstandsrechte. Wesentliche Änderungen erfordern neue Zustimmung. Kontakt: radio@tedu.edu.tr.",
     "analyticsLabel": "Optionale Nutzungsanalyse",
     "analyticsDesc": "Falls aktiviert, erhält Google Analytics eine App-Instanz-ID, Hör-/Sender- und Sitzungsaktivität, App-/Geräteinformationen, einen aus maskierter IP abgeleiteten ungefähren Standort und optionale Altersgruppe/Geschlecht. Kein Kontoname, keine E-Mail, Werbe-ID oder genaue Position. Google ist Drittanbieter-Empfänger.",
     "demographicsLabel": "Demografie (Alter, Geschlecht)",
@@ -94,6 +100,7 @@
     "withdraw": "Optionale Einwilligung widerrufen",
     "withdrawn": "Einwilligung widerrufen.",
     "save": "Speichern",
-    "deleteAccount": "Konto löschen"
+    "deleteAccount": "Konto löschen",
+    "rightsRequest": "Datenschutz-/Rechteanfrage senden"
   }
 }

@@ -52,6 +52,10 @@ export default function NextSongVoteScreen() {
   const webViewReadyRef = useRef(false);
   const authReadVersionRef = useRef(0);
   const authStateRef = useRef<VotingWebViewAuthState>(EMPTY_AUTH_STATE);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [authBootstrap, setAuthBootstrap] = useState(
+    buildVotingAuthInjection(EMPTY_AUTH_STATE),
+  );
   const [reloadKey, setReloadKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -88,6 +92,8 @@ export default function NextSongVoteScreen() {
       accessToken && user && !user.is_guest
         ? {accessToken, user}
         : {accessToken: null, user: null};
+    setAuthBootstrap(buildVotingAuthInjection(authStateRef.current));
+    setAuthResolved(true);
     injectCurrentAuth();
   }, [injectCurrentAuth, user]);
 
@@ -209,7 +215,11 @@ export default function NextSongVoteScreen() {
         edges={['top', 'left', 'right']}>
         <GlobalHeader />
         <View style={styles.webContainer}>
-          {!hasLoadError ? (
+          {!authResolved ? (
+            <View style={styles.loadingPanel}>
+              <ActivityIndicator color={COLORS.primary} size="large" />
+            </View>
+          ) : !hasLoadError ? (
             <WebView
               key={`production-vote-${reloadKey}`}
               ref={webViewRef}
@@ -217,6 +227,8 @@ export default function NextSongVoteScreen() {
               style={styles.webView}
               originWhitelist={['https://*']}
               javaScriptEnabled
+              injectedJavaScriptBeforeContentLoaded={authBootstrap}
+              injectedJavaScript={authBootstrap}
               cacheEnabled={false}
               domStorageEnabled={false}
               mixedContentMode="never"

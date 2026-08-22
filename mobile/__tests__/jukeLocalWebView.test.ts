@@ -8,14 +8,15 @@ import {
 } from '../src/services/jukeLocalWebViewService';
 
 describe('juke-local app WebView contract', () => {
-  it('seeds the authenticated RadioTEDU account before the controller bundle starts', () => {
+  it('seeds the authenticated RadioTEDU account bridge before the controller bundle starts', () => {
     const script = buildJukeLocalAuthInjection({
       accessToken: 'access-token',
       user: {id: 'user-1', display_name: 'Ada', is_guest: false},
     });
-    expect(script).toContain("localStorage.setItem('token'");
-    expect(script).toContain("localStorage.setItem('user'");
-    expect(script).toContain('window.RadioTEDUAccount');
+    expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
+    expect(script).toContain('access-token');
+    expect(script).toContain('display_name');
+    expect(script).not.toContain('localStorage');
   });
 
   it('opens the public phone controller and forwards a scanned device code', () => {
@@ -77,5 +78,21 @@ describe('juke-local app WebView contract', () => {
     expect(manifest).not.toContain(
       'android:pathPrefix="/juke-local/controller"',
     );
+  });
+
+  it('injects the signed-in account only into trusted RadioTEDU API requests', () => {
+    const script = buildJukeLocalAuthInjection({
+      accessToken: 'short-lived-token</script>',
+      user: {id: 'user-1'},
+    });
+
+    expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
+    expect(script).toContain('/juke-local/api/');
+    expect(script).toContain('/jukebox/api/');
+    expect(script).toContain("parsed.hostname === 'radiotedu.com'");
+    expect(script).toContain('short-lived-token\\u003c/script>');
+    expect(script).not.toContain('localStorage');
+    expect(script).not.toContain('document.cookie');
+    expect(script).not.toContain('?access_token=');
   });
 });

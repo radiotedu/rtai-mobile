@@ -1,13 +1,13 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useRoute} from '@react-navigation/native';
-import {getAccessToken} from '../../services/authTokenStorage';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView} from 'react-native-webview';
 import {useTranslation} from 'react-i18next';
 import {useAuth} from '../../context/AuthContext';
-
+import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
+import {getAccessToken} from '../../services/authTokenStorage';
 import {
   buildJukeLocalAuthInjection,
   buildJukeLocalControllerUrl,
@@ -20,14 +20,16 @@ const WebView = NativeWebView as any;
 
 const JukeLocalWebViewScreen = () => {
   const route = useRoute<any>();
-  const webViewRef = useRef<any>(null);
   const {user, isLoading: isAuthLoading} = useAuth();
   const {i18n} = useTranslation();
   const copy = (key: string) => screenCopy(i18n.language, key);
+  const webViewRef = useRef<any>(null);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [authInjection, setAuthInjection] = useState(
+    buildJukeLocalAuthInjection({accessToken: null, user: null}),
+  );
   const controllerUrl = useMemo(
     () =>
       buildJukeLocalControllerUrl(
@@ -35,45 +37,37 @@ const JukeLocalWebViewScreen = () => {
       ),
     [route.params?.code, route.params?.deviceCode],
   );
-  useEffect(() => {
+  const refreshAuthBridge = useCallback(async () => {
     if (isAuthLoading) {
-      setAuthReady(false);
+      setAuthResolved(false);
       return;
     }
-    let active = true;
-    setAuthReady(false);
-    getAccessToken()
-      .then(token => {
-        if (active) setAccessToken(token);
-      })
-      .catch(() => {
-        if (active) setAccessToken(null);
-      })
-      .finally(() => {
-        if (active) setAuthReady(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [isAuthLoading, user?.id]);
+    let accessToken: string | null = null;
+    try {
+      accessToken = await getAccessToken();
+    } catch {
+      accessToken = null;
+    }
+    const state = accessToken && user && !user.is_guest
+      ? {accessToken, user}
+      : {accessToken: null, user: null};
+    const script = buildJukeLocalAuthInjection(state);
+    setAuthInjection(script);
+    setAuthResolved(true);
+    webViewRef.current?.injectJavaScript(script);
+  }, [isAuthLoading, user]);
 
-  const authInjection = useMemo(
-    () =>
-      buildJukeLocalAuthInjection({
-        accessToken: user && !user.is_guest ? accessToken : null,
-        user:
-          user && !user.is_guest
-            ? (user as unknown as Record<string, unknown>)
-            : null,
-      }),
-    [accessToken, user],
-  );
+  useEffect(() => {
+    void refreshAuthBridge();
+    return subscribeAuthSessionChanges(refreshAuthBridge);
+  }, [refreshAuthBridge]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {!authReady ? (
+      {!authResolved ? (
         <View style={styles.loadingPanel}>
           <ActivityIndicator color={COLORS.primary} size="large" />
+          <Text style={styles.loadingText}>{copy('juke.loading')}</Text>
         </View>
       ) : !hasLoadError ? (
         <WebView
@@ -122,7 +116,7 @@ const JukeLocalWebViewScreen = () => {
               setHasLoadError(false);
               setReloadKey(value => value + 1);
             }}>
-          <Text style={styles.retryText}>{copy('juke.retry')}</Text>
+            <Text style={styles.retryText}>{copy('juke.retry')}</Text>
           </TouchableOpacity>
         </View>
       )}

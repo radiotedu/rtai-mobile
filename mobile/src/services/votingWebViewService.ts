@@ -1,11 +1,12 @@
 import {parseHttpUrl} from './safeHttpUrlService';
+import {
+  buildWebViewAccountBridge,
+  type WebViewAccountAuthState,
+} from './webViewAccountBridge';
 
 export const VOTING_WEBVIEW_URL = 'https://radiotedu.com/vote/?embed=1';
 
-export interface VotingWebViewAuthState {
-  accessToken: string | null;
-  user: unknown | null;
-}
+export type VotingWebViewAuthState = WebViewAccountAuthState;
 
 export type VotingWebViewMessage =
   | {type: 'radiotedu.voting.ready'}
@@ -97,7 +98,7 @@ function serializeForInjection(value: unknown) {
 }
 
 export function buildVotingAuthInjection(authState: VotingWebViewAuthState) {
-  return `
+  return `${buildWebViewAccountBridge(authState, ['/jukebox/api/'])}
     (function () {
       var nativeFetch = window.__RADIOTEDU_NATIVE_FETCH__;
       if (!nativeFetch && typeof window.fetch === 'function') {

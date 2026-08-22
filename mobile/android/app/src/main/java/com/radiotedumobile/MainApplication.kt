@@ -13,6 +13,7 @@ import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import com.radiotedumobile.car.CarBridgePackage
 import com.radiotedumobile.analytics.AnalyticsBridgePackage
+import com.radiotedumobile.analytics.AnalyticsBridgeModule
 
 class MainApplication : Application(), ReactApplication {
 
@@ -39,6 +40,9 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    // A policy-version bump must revoke a previously persisted Firebase opt-in
+    // before React renders the new consent gate.
+    AnalyticsBridgeModule.revokeStaleConsent(this)
     SoLoader.init(this, OpenSourceMergedSoMapping)
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
       // If you opted-in for the New Architecture, we load the native entry point for this app.

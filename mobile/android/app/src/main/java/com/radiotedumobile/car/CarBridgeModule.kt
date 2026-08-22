@@ -6,6 +6,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import java.util.Locale
 
 /**
  * JS-facing bridge for the car browser:
@@ -30,6 +31,18 @@ class CarBridgeModule(private val reactContext: ReactApplicationContext) :
             .putString(RadioTeduCarService.KEY_CATALOG, json)
             .apply()
         CarBridge.catalogChanged()
+    }
+
+    @ReactMethod
+    fun setLanguagePreference(preference: String) {
+        val normalized = preference.trim().lowercase(Locale.ROOT)
+        val supported = setOf("system", "en", "tr", "ar", "ru", "de", "fr")
+        val safePreference = normalized.takeIf(supported::contains) ?: "system"
+        reactContext
+            .getSharedPreferences(RadioTeduCarService.PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(RadioTeduCarService.KEY_LANGUAGE_PREFERENCE, safePreference)
+            .apply()
     }
 
     @ReactMethod

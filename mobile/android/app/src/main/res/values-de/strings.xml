@@ -1,0 +1,10 @@
+<resources>
+    <string name="car_live_radio">Live-Radio</string>
+    <string name="car_playback_error">Wiedergabefehler</string>
+    <string name="car_stream_connect_error">Verbindung zum Stream nicht möglich</string>
+    <string name="car_flac_metered_warning">FLAC verbraucht deutlich mehr mobile Daten. Stellen Sie eine WLAN-Verbindung her oder wählen Sie „Normal“.</string>
+    <string name="car_no_media_item_requested">Kein Medium zur Wiedergabe ausgewählt</string>
+    <string name="car_unknown_media_item">Unbekannter RadioTEDU-Inhalt</string>
+    <string name="car_podcasts">RadioTEDU-Podcasts</string>
+    <string name="car_podcast_audio">Podcast-Audio</string>
+</resources>

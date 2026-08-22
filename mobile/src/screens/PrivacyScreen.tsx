@@ -18,6 +18,7 @@ import {setAnalyticsConsent} from '../services/analyticsService';
 import {PRIVACY_URL, TERMS_URL} from '../services/registrationPolicy';
 
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
+const APPLE_PRIVACY_URL = 'https://www.apple.com/legal/privacy/';
 const RIGHTS_REQUEST_URL = 'mailto:radio@tedu.edu.tr?subject=KVKK%20GDPR%20Data%20Request';
 
 const PrivacyScreen = ({navigation}: any) => {
@@ -62,6 +63,8 @@ const PrivacyScreen = ({navigation}: any) => {
           <Text style={styles.legalText}>{t('privacy.controllerNotice')}</Text>
           <Text style={styles.legalHeading}>{t('privacy.noticeHeading')}</Text>
           <Text style={styles.legalText}>{t('privacy.fullNotice')}</Text>
+          <Text style={styles.legalHeading}>{t('privacy.thirdPartyHeading')}</Text>
+          <Text style={styles.legalText}>{t('privacy.thirdPartyNotice')}</Text>
           <Text style={styles.legalHeading}>{t('privacy.termsHeading')}</Text>
           <Text style={styles.legalText}>{t('privacy.fullTerms')}</Text>
         </View>
@@ -116,6 +119,13 @@ const PrivacyScreen = ({navigation}: any) => {
           accessibilityRole="link"
           accessibilityLabel={t('privacy.googlePrivacy')}>
           <Text style={styles.policyLink}>{t('privacy.googlePrivacy')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => Linking.openURL(APPLE_PRIVACY_URL)}
+          accessibilityRole="link"
+          accessibilityLabel={t('privacy.applePrivacy')}>
+          <Text style={styles.policyLink}>{t('privacy.applePrivacy')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

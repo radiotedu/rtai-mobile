@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef, ReactNode } from 'react';
 import axios from 'axios';
 import {Linking} from 'react-native';
 
@@ -9,6 +9,7 @@ import {
 } from '../services/accountLifecycleService';
 import { notifyAuthSessionChanged } from '../services/authSessionEvents';
 import {
+    ErpIdentityError,
     exchangeTeduLoginCode,
     parseTeduLoginCallback,
     startTeduLogin,
@@ -18,11 +19,14 @@ import {buildRegistrationPolicy} from '../services/registrationPolicy';
 import api, {isDefinitiveAuthRejection} from '../services/api';
 import {
     clearAuthTokens,
+    clearAuthTokensIfCurrent,
     getAccessToken,
+    getAuthTokenSnapshot,
     setAuthTokens,
 } from '../services/authTokenStorage';
 
 const API_URL = BASE_API;
+const AUTH_REQUEST_TIMEOUT_MS = 15000;
 
 export interface User {
     id: string;
@@ -60,6 +64,62 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export type ErpAuthAttemptPhase = 'start' | 'waiting' | 'exchange';
+
+export type ErpAuthAttempt = {
+    id: number;
+    controller: AbortController;
+    phase: ErpAuthAttemptPhase;
+};
+
+export const createErpAuthAttemptCoordinator = () => {
+    let revision = 0;
+    let current: ErpAuthAttempt | null = null;
+
+    const isCurrent = (attempt: ErpAuthAttempt) =>
+        current === attempt && !attempt.controller.signal.aborted;
+
+    return {
+        begin(phase: ErpAuthAttemptPhase): ErpAuthAttempt {
+            current?.controller.abort();
+            current = {
+                id: ++revision,
+                controller: new AbortController(),
+                phase,
+            };
+            return current;
+        },
+        transition(attempt: ErpAuthAttempt, phase: ErpAuthAttemptPhase): boolean {
+            if (!isCurrent(attempt)) {
+                return false;
+            }
+            attempt.phase = phase;
+            revision += 1;
+            return true;
+        },
+        invalidate(): void {
+            revision += 1;
+            current?.controller.abort();
+            current = null;
+        },
+        finish(attempt: ErpAuthAttempt): boolean {
+            if (!isCurrent(attempt)) {
+                return false;
+            }
+            revision += 1;
+            current = null;
+            return true;
+        },
+        getCurrent(): ErpAuthAttempt | null {
+            return current && isCurrent(current) ? current : null;
+        },
+        getRevision(): number {
+            return revision;
+        },
+        isCurrent,
+    };
+};
+
 export const normalizeUser = (user: Partial<User> & Record<string, any>): User => ({
     id: String(user.id ?? ''),
     email: String(user.email ?? ''),
@@ -80,6 +140,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isTeduLoginLoading, setIsTeduLoginLoading] = useState(false);
     const [teduLoginError, setTeduLoginError] = useState<string | null>(null);
+    const isMountedRef = useRef(true);
+    const erpAttemptsRef = useRef<ReturnType<typeof createErpAuthAttemptCoordinator> | null>(null);
+    if (!erpAttemptsRef.current) {
+        erpAttemptsRef.current = createErpAuthAttemptCoordinator();
+    }
+    const erpAttempts = erpAttemptsRef.current;
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            erpAttempts.invalidate();
+        };
+    }, [erpAttempts]);
+
+    const beginErpAttempt = useCallback((phase: ErpAuthAttemptPhase) => {
+        const attempt = erpAttempts.begin(phase);
+        if (isMountedRef.current) {
+            setIsTeduLoginLoading(true);
+            setTeduLoginError(null);
+        }
+        return attempt;
+    }, [erpAttempts]);
+
+    const invalidateErpAttempt = useCallback(() => {
+        erpAttempts.invalidate();
+        if (isMountedRef.current) {
+            setIsTeduLoginLoading(false);
+            setTeduLoginError(null);
+        }
+    }, [erpAttempts]);
+
+    const isCurrentErpAttempt = useCallback(
+        (attempt: ErpAuthAttempt) => isMountedRef.current && erpAttempts.isCurrent(attempt),
+        [erpAttempts],
+    );
 
     const clearSessionState = useCallback(async () => {
         await clearAuthTokens();
@@ -87,10 +183,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
     }, []);
 
-    const persistSession = useCallback(async (session: TeduLoginSession) => {
+    const persistSession = useCallback(async (
+        session: TeduLoginSession,
+        isCurrent?: () => boolean,
+    ): Promise<boolean> => {
+        if (isCurrent && !isCurrent()) {
+            return false;
+        }
         await setAuthTokens(session.access_token, session.refresh_token);
+        if (isCurrent && !isCurrent()) {
+            const snapshot = await getAuthTokenSnapshot();
+            if (snapshot?.refreshToken === session.refresh_token) {
+                await clearAuthTokensIfCurrent(snapshot);
+            }
+            return false;
+        }
         notifyAuthSessionChanged();
         setUser(normalizeUser(session.user));
+        return true;
     }, []);
 
     const refreshSession = useCallback(async (): Promise<User | null> => {
@@ -118,45 +228,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const completeTeduLogin = useCallback(async (url: string) => {
+    const completeTeduLogin = useCallback(async (
+        url: string,
+        allowUnsolicited = false,
+    ) => {
         const callback = parseTeduLoginCallback(url);
         if (!callback.matched) {
             return;
         }
 
-        setIsTeduLoginLoading(true);
-        setTeduLoginError(null);
+        const pendingAttempt = erpAttempts.getCurrent();
+        let attempt: ErpAuthAttempt;
+        if (pendingAttempt?.phase === 'waiting') {
+            if (!erpAttempts.transition(pendingAttempt, 'exchange')) {
+                return;
+            }
+            attempt = pendingAttempt;
+            if (isMountedRef.current) {
+                setIsTeduLoginLoading(true);
+                setTeduLoginError(null);
+            }
+        } else if (pendingAttempt || allowUnsolicited) {
+            attempt = beginErpAttempt('exchange');
+        } else {
+            return;
+        }
+
         try {
             if (callback.error || !callback.code) {
-                throw new Error(callback.error ?? 'TEDÜ girişi tamamlanamadı.');
+                throw new ErpIdentityError(callback.error ?? 'erp.callbackFailed');
             }
-            const session = await exchangeTeduLoginCode(callback.code);
-            await persistSession(session);
-        } catch (error) {
-            setTeduLoginError(
-                error instanceof Error
-                    ? error.message
-                    : 'TEDÜ girişi tamamlanamadı.',
+            const session = await exchangeTeduLoginCode(
+                callback.code,
+                attempt.controller.signal,
             );
+            await persistSession(session, () => isCurrentErpAttempt(attempt));
+        } catch (error) {
+            if (!isCurrentErpAttempt(attempt)) {
+                return;
+            }
+            setTeduLoginError(error instanceof ErpIdentityError
+                ? error.code
+                : 'erp.callbackFailed');
         } finally {
-            setIsTeduLoginLoading(false);
+            if (erpAttempts.finish(attempt) && isMountedRef.current) {
+                setIsTeduLoginLoading(false);
+            }
         }
-    }, [persistSession]);
+    }, [beginErpAttempt, erpAttempts, isCurrentErpAttempt, persistSession]);
 
     useEffect(() => {
+        const initialRevision = erpAttempts.getRevision();
         const subscription = Linking.addEventListener('url', ({url}) => {
             completeTeduLogin(url).catch(() => undefined);
         });
         Linking.getInitialURL()
             .then((url) => {
-                if (url) {
-                    return completeTeduLogin(url);
+                if (url && erpAttempts.getRevision() === initialRevision) {
+                    return completeTeduLogin(url, true);
                 }
                 return undefined;
             })
             .catch(() => undefined);
         return () => subscription.remove();
-    }, [completeTeduLogin]);
+    }, [completeTeduLogin, erpAttempts]);
 
     const loadStorageData = async () => {
         try {
@@ -169,8 +304,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const login = async (email: string, password: string) => {
+        invalidateErpAttempt();
         try {
-            const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+            const response = await axios.post(
+                `${API_URL}/auth/login`,
+                {email, password},
+                {timeout: AUTH_REQUEST_TIMEOUT_MS},
+            );
             await persistSession(response.data.data);
         } catch (error: any) {
             throw new Error(error.response?.data?.error || 'Login failed');
@@ -183,13 +323,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         displayName: string,
         options: {legalAccepted: boolean; age?: number},
     ) => {
+        invalidateErpAttempt();
         try {
-            const response = await axios.post(`${API_URL}/auth/register`, {
-                email,
-                password,
-                display_name: displayName,
-                ...buildRegistrationPolicy(email, options.legalAccepted, options.age),
-            });
+            const response = await axios.post(
+                `${API_URL}/auth/register`,
+                {
+                    email,
+                    password,
+                    display_name: displayName,
+                    ...buildRegistrationPolicy(email, options.legalAccepted, options.age),
+                },
+                {timeout: AUTH_REQUEST_TIMEOUT_MS},
+            );
             await persistSession(response.data.data);
         } catch (error: any) {
             throw new Error(error.response?.data?.error || 'Registration failed');
@@ -197,26 +342,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const loginWithTedu = async () => {
-        setIsTeduLoginLoading(true);
-        setTeduLoginError(null);
+        const attempt = beginErpAttempt('start');
         try {
-            await startTeduLogin();
-        } catch (error: any) {
-            const message = error.response?.data?.error
-                || error.message
-                || 'TEDÜ girişi başlatılamadı.';
-            setTeduLoginError(message);
-            throw new Error(message);
-        } finally {
+            await startTeduLogin(attempt.controller.signal);
+            if (!isCurrentErpAttempt(attempt)) {
+                return;
+            }
+            if (!erpAttempts.transition(attempt, 'waiting')) {
+                return;
+            }
+            if (isMountedRef.current) {
+                setIsTeduLoginLoading(false);
+            }
+        } catch (error) {
+            if (!isCurrentErpAttempt(attempt)) {
+                return;
+            }
+            const code =
+                error instanceof ErpIdentityError
+                    ? error.code
+                    : 'erp.startFailed';
+            setTeduLoginError(code);
             setIsTeduLoginLoading(false);
+            erpAttempts.finish(attempt);
+            throw new ErpIdentityError(code);
         }
     };
 
     const guestLogin = async (displayName: string) => {
+        invalidateErpAttempt();
         try {
-            const response = await axios.post(`${API_URL}/auth/guest`, {
-                display_name: displayName,
-            });
+            const response = await axios.post(
+                `${API_URL}/auth/guest`,
+                {display_name: displayName},
+                {timeout: AUTH_REQUEST_TIMEOUT_MS},
+            );
             await persistSession(response.data.data);
         } catch (error: any) {
             throw new Error(error.response?.data?.error || 'Guest login failed');
@@ -224,19 +384,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = useCallback(async () => {
+        invalidateErpAttempt();
         try {
             await logoutAccountSession();
         } finally {
             setUser(null);
             notifyAuthSessionChanged();
         }
-    }, []);
+    }, [invalidateErpAttempt]);
 
     const deleteAccount = useCallback(async (password?: string) => {
+        invalidateErpAttempt();
         await deleteAccountAndClearSession(password);
         setUser(null);
         notifyAuthSessionChanged();
-    }, []);
+    }, [invalidateErpAttempt]);
 
     return (
         <AuthContext.Provider value={{

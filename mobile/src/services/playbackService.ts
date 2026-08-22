@@ -9,6 +9,7 @@ import {
   playTrackById,
 } from './playbackQueue';
 import {resolveCurrentStreamPreferences} from './streamPreferences';
+import {logSafeError} from '../utils/safeLog';
 
 export const PlaybackService = async function () {
   // Transport controls (notification, lock screen, car, headset, Bluetooth).
@@ -34,7 +35,7 @@ export const PlaybackService = async function () {
         await playChannelById(id);
       }
     } catch (error) {
-      console.log('[Playback] RemotePlayId failed:', error);
+      logSafeError('playback.remotePlayId', error);
     }
   });
 
@@ -44,7 +45,7 @@ export const PlaybackService = async function () {
       const channel = findChannelByQuery(query ?? '');
       await playChannelById(channel.id);
     } catch (error) {
-      console.log('[Playback] RemotePlaySearch failed:', error);
+      logSafeError('playback.remoteSearch', error);
     }
   });
 
@@ -52,10 +53,10 @@ export const PlaybackService = async function () {
     try {
       const recovered = await fallbackActiveChannelStream();
       if (!recovered) {
-        console.log('[Playback] No stream fallback remained:', error);
+        logSafeError('playback.noFallback', error);
       }
     } catch (fallbackError) {
-      console.log('[Playback] Stream fallback failed:', fallbackError);
+      logSafeError('playback.fallback', fallbackError);
     }
   });
 };

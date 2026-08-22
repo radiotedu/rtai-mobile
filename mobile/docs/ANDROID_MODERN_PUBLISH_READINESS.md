@@ -7,9 +7,9 @@ RadioTEDU supports all applicable Android beta/preview readiness surfaces throug
 ## Published System Integrations
 
 - **Notification visibility:** `POST_NOTIFICATIONS` is declared and the Profile screen exposes a runtime permission action for Android 13+.
-- **Media surfaces:** React Native Track Player owns the media notification, lock screen, headset/Bluetooth controls, and media session metadata.
-- **Android Auto / Automotive:** `RadioTeduCarService` is the app media browser service; the single APK keeps automotive hardware optional while exposing car media declarations.
-- **Study safety:** Study, Çim alan, avatar clothes, Spark, and Rock are phone-only app surfaces and must not appear in Android Auto browse trees, voice actions, playback queues, or car templates.
+- **Media surfaces:** React Native Track Player owns phone playback. The native Media3 library service owns cold-start car playback plus its dynamic notification, lock-screen, headset/Bluetooth, ICY, and media-session metadata.
+- **Android Auto / Automotive:** `RadioTeduCarService` is a Media3 `MediaLibraryService`/`MediaLibrarySession`; the single APK keeps automotive hardware optional and retains the legacy browse action for older hosts.
+- **Study safety:** Study, Çim alan, avatar clothes, games, rankings, account, voting, and Jukebox are phone-only app surfaces and must not appear in Android Auto browse trees or car templates.
 - **Live Updates readiness:** Android 16+ is detected in the readiness matrix. Live radio, active podcast playback, jukebox queue state, and event countdowns use a media notification fallback below API 36.
 - **Google Analytics:** Firebase Analytics is configured for Android, disabled by
   default, enabled only after opt-in, and built without advertising-ID collection.
@@ -37,11 +37,11 @@ The admin sender is production-facing:
 
 ## Android Auto and Car QA
 
-- Voice actions are mapped for "Play Radio TEDU", "Play latest podcast", and "Open jukebox".
-- The manifest declares `MEDIA_PLAY_FROM_SEARCH`.
-- The native car media browser exposes radio, podcasts, rankings, and a driver-safe listen-only jukebox.
+- Voice playback resolves RadioTEDU, Jazz/Cazz, Classic, Lo-Fi, other currently available stations, and the latest podcast through Media3 request metadata.
+- The manifest declares both `androidx.media3.session.MediaLibraryService` and the legacy `android.media.browse.MediaBrowserService` action; RNTP also retains `MEDIA_PLAY_FROM_SEARCH`.
+- The native car tree exposes only Live Radio and Podcasts. Suggested requests return up to ten available stations and one recent episode per series.
 - The phone APK is also the car-capable APK. RadioTEDU does not ship a separate Automotive APK; car surfaces are optional media declarations in the main manifest.
-- Study, Çim alan, avatar clothes, Spark, and Rock are explicitly excluded from car-facing browse/actions; verify the `study-phone-only` checklist item stays green.
+- Study, Çim alan, avatar clothes, games, rankings, account, voting, and Jukebox are explicitly excluded from car-facing browse/actions.
 - The publish audit checks media browser service, automotive descriptor, voice search, and release keep rules.
 - Real approval still needs Android Auto and Automotive OS review on Google Play and a real head unit or emulator pass.
 
@@ -72,14 +72,28 @@ The readiness layer and audit cover:
 
 - Android 17 beta removes the Android 16 opt-out path for large-screen orientation, resizability and aspect ratio restrictions on large screens. RadioTEDU keeps `MainActivity` resizable and avoids manifest orientation locks.
 - Tablet, foldable, ChromeOS, desktop-windowing, and XR-safe 2D panel behavior are tracked by the adaptive readiness resolver.
-- Background audio hardening is routed through MediaSession, media notification, foreground service media playback, Bluetooth/headset controls, and Android Auto MediaBrowserService.
+- Background audio hardening is routed through Media3 `MediaLibrarySession`, its media notification/foreground-service lifecycle, audio focus, Bluetooth/headset controls, and Android Auto/AAOS library browsing.
 - Image/audio/cache memory pressure remains a QA item; current code favors lightweight metadata, bounded recent lists, and OS-owned media surfaces.
 
 ## Google Maps Media Controls
 
-- Google Maps playback is supported through Android's standard media route: MediaSession + MediaBrowserService + notification controls + Assistant/Gemini voice actions.
+- Google Maps playback is supported through Android's standard media route: Media3 `MediaLibrarySession` + notification controls + Assistant/Gemini voice requests.
 - RadioTEDU does not claim a Google Maps SDK integration. Maps surfacing is ready, requires Google validation / real device validation.
 - Supported commands include "Play Radio TEDU", "Radio TEDU cal", "Play latest podcast", "son podcasti cal", "Spark cal", and "Rock cal" through the same media-session search path used by Android Auto and Assistant.
+
+## Gemini, Assistant, and Discovery Boundaries
+
+- Explicit playback is fulfilled through the standard Media3 session/search contract; a separate App Actions shortcut is not required for these media requests.
+- RadioTEDU cannot force Gemini, Assistant, or Google to recommend it for a generic request such as “play something.” Ranking and recommendation remain Google-controlled.
+- Android AppFunctions is not shipped in production. The current API is still an alpha (`1.0.0-alpha10` as of 2026-08-14), uses a new compile-time service-entry-point architecture, and is not required for standard media playback. RadioTEDU keeps explicit Gemini/Assistant playback on the stable MediaSession search path until AppFunctions is compatible with this React Native/Kotlin toolchain and passes a separate closed-track review.
+- Google Media Actions/catalog onboarding is a separate verified-web-feed task. The Android client must not claim onboarding until Google accepts a public catalog with real deep links, availability, artwork, language, and podcast RSS data.
+- Car App Library templated media beta is restricted to internal/closed Play testing. Production keeps the standard MediaLibraryService UI so every supported host has a safe fallback.
+
+## Media3 Compatibility
+
+- Phone/car Media3 artifacts are aligned on 1.10.1.
+- Media3 1.11.x requires Kotlin 2.2 metadata. A controlled Kotlin 2.2 trial failed in React Native 0.76 third-party Gradle modules that still invoke Kotlin 1.9, so production remains on 1.10.1 without metadata-bypass compiler flags.
+- Upgrade to 1.11+ only together with the React Native/Kotlin toolchain, then repeat phone, Wear, TV, Auto, and release builds.
 
 ## Backend Connectivity Proof
 
@@ -122,7 +136,7 @@ The audit checks SDK level, app id, version declarations, notification/media per
 
 ## Store Notes
 
-- Current phone publishing target is API 35.
+- Current phone publishing target is API 36.
 - Android Auto review still requires Google Play car quality review and real device/head-unit testing.
 - Real FCM delivery requires Firebase project setup and valid service credentials on the backend.
 - `google-services.json`, keystore files, Play Console data safety entries, screenshots, and privacy/KVKK URLs remain release-owner inputs.

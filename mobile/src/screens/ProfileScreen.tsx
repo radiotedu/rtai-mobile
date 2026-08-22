@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import api from '../services/api';
 import { STORAGE_API, isAnalyticsConfigured } from '../services/config';
+import {logSafeError} from '../utils/safeLog';
 import {
   createPodcastFeed,
   deletePodcastFeed,
@@ -45,13 +46,20 @@ import {
   type NotificationPreferences,
 } from '../services/notificationService';
 import {appCopy} from '../i18n/appCopy';
+import {screenCopy} from '../i18n/screenCopy';
 
 const ACCOUNT_DELETE_CONFIRMATION = { confirmation: 'DELETE' } as const;
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
   const { t, i18n } = useTranslation();
-  const copy = (key: string) => appCopy(i18n.language, key);
+  const copy = useCallback(
+    (key: string, values: Record<string, string | number> = {}) => {
+      const screenValue = screenCopy(i18n.language, key, values);
+      return screenValue === key ? appCopy(i18n.language, key, values) : screenValue;
+    },
+    [i18n.language],
+  );
   const { user, logout, deleteAccount, refreshSession } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -64,6 +72,7 @@ const ProfileScreen = () => {
   const [isSyncingFeeds, setIsSyncingFeeds] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [profileCustomization, setProfileCustomization] = useState<ProfileCustomization>({});
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [favoritesForm, setFavoritesForm] = useState<ProfileCustomization>({});
@@ -105,12 +114,12 @@ const ProfileScreen = () => {
       const feeds = await listPodcastFeeds();
       setSavedFeeds(feeds);
     } catch (error) {
-      console.error('Failed to load podcast feeds:', error);
-      Alert.alert('Error', 'Podcast feeds could not be loaded.');
+      logSafeError('profile.podcastFeeds', error);
+      Alert.alert(copy('common.error'), copy('profile.feedLoadError'));
     } finally {
       setIsLoadingFeeds(false);
     }
-  }, [isAdmin]);
+  }, [copy, isAdmin]);
 
   useEffect(() => {
     if (isAdmin && showAdminTab) {
@@ -132,7 +141,7 @@ const ProfileScreen = () => {
       setFavoritesForm(result.profile || {});
       setBadges(result.badges || []);
     } catch (error) {
-      console.error('Failed to load profile customization:', error);
+      logSafeError('profile.customization', error);
     }
   }, [user]);
 
@@ -161,7 +170,7 @@ const ProfileScreen = () => {
       setFavoritesForm(nextProfile);
       Alert.alert(copy('common.success'), copy('common.save'));
     } catch (error) {
-      console.error('Failed to update profile favorites:', error);
+      logSafeError('profile.favorites', error);
       Alert.alert(copy('common.error'), copy('common.error'));
     } finally {
       setIsSavingProfile(false);
@@ -173,14 +182,16 @@ const ProfileScreen = () => {
       const status = await requestAndroidNotificationPermission();
       setNotificationPermission(status);
       Alert.alert(
-        status === 'granted' ? 'Notifications ready' : 'Notifications disabled',
         status === 'granted'
-          ? 'RadioTEDU can show playback and announcement notifications.'
-          : 'You can enable notifications later from Android system settings.',
+          ? copy('profile.notificationsReady')
+          : copy('profile.notificationsDisabled'),
+        status === 'granted'
+          ? copy('profile.notificationsReadyText')
+          : copy('profile.notificationsDisabledText'),
       );
     } catch (error) {
-      console.error('Notification permission error:', error);
-      Alert.alert('Error', 'Notification permission could not be requested.');
+      logSafeError('profile.notificationPermission', error);
+      Alert.alert(copy('common.error'), copy('profile.notificationPermissionError'));
     }
   };
 
@@ -201,7 +212,7 @@ const ProfileScreen = () => {
       await updateNotificationPreferences(nextPreferences);
     } catch (error) {
       setNotificationPreferences(notificationPreferences);
-      console.error('Notification preferences error:', error);
+      logSafeError('profile.notificationPreferences', error);
       Alert.alert(copy('common.error'), copy('common.error'));
     } finally {
       setIsSavingNotifications(false);
@@ -213,29 +224,29 @@ const ProfileScreen = () => {
     const url = feedUrl.trim();
 
     if (!title || !url) {
-      Alert.alert('Error', 'Enter both a title and a feed URL.');
+      Alert.alert(copy('common.error'), copy('profile.feedFieldsRequired'));
       return;
     }
 
     if (!/^https?:\/\//i.test(url)) {
-      Alert.alert('Error', 'Enter a valid feed URL.');
+      Alert.alert(copy('common.error'), copy('profile.feedInvalidUrl'));
       return;
     }
 
     if (isLoadingFeeds) {
-      Alert.alert('Error', 'Wait for the podcast feed list to finish loading.');
+      Alert.alert(copy('common.error'), copy('profile.feedWaitForLoad'));
       return;
     }
 
     if (hasDuplicatePodcastFeedUrl(savedFeeds, url)) {
-      Alert.alert('Error', 'This feed URL is already in the list.');
+      Alert.alert(copy('common.error'), copy('profile.feedDuplicate'));
       return;
     }
 
     setIsSavingFeed(true);
     try {
       if (await hasDuplicatePodcastFeedUrlOnServer(url)) {
-        Alert.alert('Error', 'This feed URL is already in the list.');
+        Alert.alert(copy('common.error'), copy('profile.feedDuplicate'));
         await loadFeeds();
         return;
       }
@@ -248,33 +259,36 @@ const ProfileScreen = () => {
       setFeedUrl('');
       await loadFeeds();
       if (created.sync && 'status' in created.sync && created.sync.status === 'failed') {
-        Alert.alert('Success', 'Feed created, but the initial sync failed.');
+        Alert.alert(copy('common.success'), copy('profile.feedCreatedSyncFailed'));
       } else if (created.sync && 'upserted' in created.sync) {
-        Alert.alert('Success', `Feed created and synced (${created.sync.upserted} items updated).`);
+        Alert.alert(
+          copy('common.success'),
+          copy('profile.feedCreatedSynced', {count: created.sync.upserted}),
+        );
       } else {
-        Alert.alert('Success', 'Feed created.');
+        Alert.alert(copy('common.success'), copy('profile.feedCreated'));
       }
     } catch (error) {
-      console.error('Failed to create podcast feed:', error);
-      Alert.alert('Error', 'Podcast feed could not be created.');
+      logSafeError('profile.podcastFeedCreate', error);
+      Alert.alert(copy('common.error'), copy('profile.feedCreateError'));
     } finally {
       setIsSavingFeed(false);
     }
   };
 
   const handleDeleteFeed = async (feed: PodcastFeedRow) => {
-    Alert.alert('Delete feed', `Delete "${feed.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(copy('profile.feedDeleteTitle'), copy('profile.feedDeleteQuestion', {title: feed.title}), [
+      { text: copy('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: copy('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deletePodcastFeed(feed.id);
             await loadFeeds();
           } catch (error) {
-            console.error('Failed to delete podcast feed:', error);
-            Alert.alert('Error', 'Podcast feed could not be deleted.');
+            logSafeError('profile.podcastFeedDelete', error);
+            Alert.alert(copy('common.error'), copy('profile.feedDeleteError'));
           }
         },
       },
@@ -286,10 +300,10 @@ const ProfileScreen = () => {
     try {
       const results = await syncPodcastFeeds();
       await loadFeeds();
-      Alert.alert('Success', `Synced ${results.length} feed(s).`);
+      Alert.alert(copy('common.success'), copy('profile.feedsSynced', {count: results.length}));
     } catch (error) {
-      console.error('Failed to sync podcast feeds:', error);
-      Alert.alert('Error', 'Podcast feeds could not be synced.');
+      logSafeError('profile.podcastFeedSync', error);
+      Alert.alert(copy('common.error'), copy('profile.feedSyncError'));
     } finally {
       setIsSyncingFeeds(false);
     }
@@ -297,7 +311,7 @@ const ProfileScreen = () => {
 
   const handleAvatarChange = async () => {
     if (!user || user.is_guest) {
-      Alert.alert('Membership required', 'Sign in to change your profile photo.');
+      Alert.alert(copy('common.accountRequired'), copy('profile.avatarSignIn'));
       return;
     }
 
@@ -325,42 +339,42 @@ const ProfileScreen = () => {
         });
 
         if (response.data.data?.avatar_url) {
-      await refreshSession();
-      Alert.alert('Success', 'Your profile photo has been updated.');
+          await refreshSession();
+          Alert.alert(copy('common.success'), copy('profile.avatarUpdated'));
           setLocalAvatar(`${STORAGE_API_LOCAL}${response.data.data.avatar_url}`);
         }
       } catch (error) {
-        console.error('Upload error:', error);
-        Alert.alert('Error', 'There was a problem while uploading the photo.');
+        logSafeError('profile.avatarUpload', error);
+        Alert.alert(copy('common.error'), copy('profile.avatarUploadError'));
       } finally {
         setIsUploading(false);
       }
     }
   };
 
-  const currentAvatar =
-    localAvatar ||
-    (user?.avatar_url
-      ? `${STORAGE_API_LOCAL}${user.avatar_url}`
-      : 'https://ui-avatars.com/api/?name=User&background=E31E24&color=fff&size=200');
+  const currentAvatar = resolveAvatarUrl(localAvatar || user?.avatar_url, STORAGE_API_LOCAL);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [currentAvatar]);
 
   const handleDeleteAccount = () => {
     if (deleteConfirmation.trim().toUpperCase() !== ACCOUNT_DELETE_CONFIRMATION.confirmation) {
-      Alert.alert('Confirmation required', 'Type DELETE to confirm account deletion.');
+      Alert.alert(copy('profile.confirmationRequired'), copy('profile.confirmDeleteText'));
       return;
     }
     if (!user?.is_guest && !deletePassword) {
-      Alert.alert('Password required', 'Enter your current password to delete your account.');
+      Alert.alert(copy('profile.passwordRequired'), copy('profile.passwordDeleteText'));
       return;
     }
 
     Alert.alert(
-      'Delete account permanently?',
-      'Account-owned Gold, Study inventory, and personal profile data will be deleted according to server policy.',
+      copy('profile.deleteQuestion'),
+      copy('profile.deleteDataText'),
       [
-        {text: 'Cancel', style: 'cancel'},
+        {text: copy('common.cancel'), style: 'cancel'},
         {
-          text: 'Delete account',
+          text: copy('profile.deleteAccount'),
           style: 'destructive',
           onPress: async () => {
             setIsDeletingAccount(true);
@@ -369,11 +383,11 @@ const ProfileScreen = () => {
               setShowDeleteAccount(false);
               setDeleteConfirmation('');
               setDeletePassword('');
-              Alert.alert('Account deleted', 'Your account has been deleted.');
+              Alert.alert(copy('profile.accountDeleted'), copy('profile.accountDeletedText'));
             } catch {
               Alert.alert(
-                'Account not deleted',
-                'Check your password and connection, then try again. Your account is still signed in.',
+                copy('profile.accountNotDeleted'),
+                copy('profile.accountNotDeletedText'),
               );
             } finally {
               setIsDeletingAccount(false);
@@ -401,7 +415,19 @@ const ProfileScreen = () => {
             onPress={handleAvatarChange}
             disabled={isUploading}
           >
-            <Image source={{ uri: currentAvatar }} style={styles.avatar} />
+            {currentAvatar && !avatarLoadFailed ? (
+              <Image
+                source={{uri: currentAvatar}}
+                style={styles.avatar}
+                onError={() => setAvatarLoadFailed(true)}
+              />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarInitials}>
+                  {getInitials(user?.display_name || copy('profile.guest'))}
+                </Text>
+              </View>
+            )}
             {isUploading ? (
               <View style={[styles.badge, styles.badgeLoading]}>
                 <ActivityIndicator size="small" color="#fff" />
@@ -415,7 +441,11 @@ const ProfileScreen = () => {
           <View style={styles.userInfo}>
             <Text style={styles.name}>{user?.display_name || copy('profile.guest')}</Text>
             <Text style={styles.role}>
-              {user?.role === 'admin' ? 'ADMIN' : user?.is_guest ? 'GUEST' : 'MEMBER'}
+              {user?.role === 'admin'
+                ? copy('profile.admin')
+                : user?.is_guest
+                  ? copy('profile.guest')
+                  : copy('profile.roleMember')}
             </Text>
           </View>
         </View>
@@ -439,7 +469,7 @@ const ProfileScreen = () => {
           <Text style={styles.sectionLabel}>{copy('profile.showcase')}</Text>
           <View style={styles.showcaseCard}>
             <Text style={styles.showcaseTitle}>
-              {profileCustomization.profile_headline || 'Add a headline for your RadioTEDU profile.'}
+              {profileCustomization.profile_headline || copy('profile.headlineEmpty')}
             </Text>
             <View style={styles.favoriteGrid}>
               <FavoriteDisplay
@@ -448,17 +478,17 @@ const ProfileScreen = () => {
                 value={[
                   profileCustomization.favorite_song_title,
                   profileCustomization.favorite_song_artist,
-                ].filter(Boolean).join(' · ') || 'Not selected'}
+                ].filter(Boolean).join(' · ') || copy('profile.notSelected')}
               />
               <FavoriteDisplay
                 icon="account-music"
                 label={copy('profile.favoriteArtist')}
-                value={profileCustomization.favorite_artist_name || 'Not selected'}
+                value={profileCustomization.favorite_artist_name || copy('profile.notSelected')}
               />
               <FavoriteDisplay
                 icon="podcast"
                 label={copy('profile.favoritePodcast')}
-                value={profileCustomization.favorite_podcast_title || 'Not selected'}
+                value={profileCustomization.favorite_podcast_title || copy('profile.notSelected')}
               />
             </View>
 
@@ -532,35 +562,37 @@ const ProfileScreen = () => {
             <View style={styles.readinessHeader}>
               <Icon name="cellphone-cog" size={22} color={COLORS.primary} />
               <View style={styles.readinessHeaderText}>
-                <Text style={styles.readinessTitle}>Published Android readiness</Text>
-                <Text style={styles.readinessSubtitle}>Notifications, media surfaces, Auto, Live Updates, adaptive screens and audio.</Text>
+                <Text style={styles.readinessTitle}>{copy('profile.readinessTitle')}</Text>
+                <Text style={styles.readinessSubtitle}>{copy('profile.readinessSubtitle')}</Text>
               </View>
             </View>
 
             <View style={styles.readinessGrid}>
-              {Object.entries({
-                Notifications: androidReadiness.notificationVisibility,
-                Media: androidReadiness.mediaSession,
-                Auto: androidReadiness.androidAuto,
-                'Live Updates': androidReadiness.liveUpdates,
-                Adaptive: androidReadiness.adaptiveLayout,
-                'Android 16': androidReadiness.android16,
-                'Android 16 QPR': androidReadiness.android16Qpr,
-                'Android 17': androidReadiness.android17,
-                'Google Maps': androidReadiness.googleMapsMediaControls,
-                XR: androidReadiness.xrSafe,
-                Audio: androidReadiness.audioQuality,
-                Analytics: androidReadiness.analytics,
-              }).map(([label, value]) => (
-                <View style={styles.readinessPill} key={label}>
-                  <Text style={styles.readinessPillLabel}>{label}</Text>
-                  <Text style={styles.readinessPillValue}>{value}</Text>
+              {[
+                ['profile.readiness.notifications', androidReadiness.notificationVisibility],
+                ['profile.readiness.media', androidReadiness.mediaSession],
+                ['profile.readiness.auto', androidReadiness.androidAuto],
+                ['profile.readiness.liveUpdates', androidReadiness.liveUpdates],
+                ['profile.readiness.adaptive', androidReadiness.adaptiveLayout],
+                ['profile.readiness.android16', androidReadiness.android16],
+                ['profile.readiness.android16Qpr', androidReadiness.android16Qpr],
+                ['profile.readiness.android17', androidReadiness.android17],
+                ['profile.readiness.googleMaps', androidReadiness.googleMapsMediaControls],
+                ['profile.readiness.xr', androidReadiness.xrSafe],
+                ['profile.readiness.audio', androidReadiness.audioQuality],
+                ['profile.readiness.analytics', androidReadiness.analytics],
+              ].map(([labelKey, value]) => (
+                <View style={styles.readinessPill} key={labelKey}>
+                  <Text style={styles.readinessPillLabel}>{copy(labelKey)}</Text>
+                  <Text style={styles.readinessPillValue}>
+                    {copy(readinessStatusCopyKey(value))}
+                  </Text>
                 </View>
               ))}
             </View>
 
             <TouchableOpacity style={styles.saveProfileButton} onPress={handleEnableNotifications}>
-              <Text style={styles.saveProfileButtonText}>Enable notification visibility</Text>
+              <Text style={styles.saveProfileButtonText}>{copy('profile.enableNotifications')}</Text>
             </TouchableOpacity>
 
             <Text style={styles.badgesTitle}>{copy('profile.androidSystem')}</Text>
@@ -581,7 +613,7 @@ const ProfileScreen = () => {
                     size={14}
                     color={notificationPreferences[key] ? COLORS.primary : COLORS.textMuted}
                   />
-                  <Text style={styles.profileBadgeText}>{key}</Text>
+                  <Text style={styles.profileBadgeText}>{copy(`profile.notification.${key}`)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -605,10 +637,10 @@ const ProfileScreen = () => {
 
             {showAdminTab && (
               <View style={styles.adminPanel}>
-                <Text style={styles.adminTitle}>Podcast Feeds</Text>
+                <Text style={styles.adminTitle}>{copy('profile.podcastFeeds')}</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Feed title"
+                  placeholder={copy('profile.feedTitle')}
                   placeholderTextColor={COLORS.textMuted}
                   value={feedTitle}
                   onChangeText={setFeedTitle}
@@ -635,17 +667,21 @@ const ProfileScreen = () => {
                     disabled={isSyncingFeeds}
                   >
                     <Icon name="sync" size={18} color="#fff" />
-                    <Text style={styles.syncBtnText}>{isSyncingFeeds ? 'Syncing...' : 'Sync All'}</Text>
+                    <Text style={styles.syncBtnText}>
+                      {isSyncingFeeds ? copy('profile.syncing') : copy('profile.syncAll')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
-                <Text style={[styles.adminTitle, { marginTop: SPACING.lg }]}>Active Feeds</Text>
+                <Text style={[styles.adminTitle, { marginTop: SPACING.lg }]}>
+                  {copy('profile.activeFeeds')}
+                </Text>
                 {isLoadingFeeds ? (
                   <View style={styles.loadingRow}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
                   </View>
                 ) : savedFeeds.length === 0 ? (
-                  <Text style={styles.emptyText}>No podcast feeds yet.</Text>
+                  <Text style={styles.emptyText}>{copy('profile.noFeeds')}</Text>
                 ) : (
                   savedFeeds.map((feed) => (
                     <View key={feed.id} style={styles.feedRow}>
@@ -659,12 +695,14 @@ const ProfileScreen = () => {
                         </Text>
                         {feed.lastSyncedAt ? (
                           <Text style={styles.feedMeta} numberOfLines={1}>
-                            Last synced: {formatFeedTimestamp(feed.lastSyncedAt)}
+                            {copy('profile.lastSynced', {
+                              date: formatFeedTimestamp(feed.lastSyncedAt, i18n.language),
+                            })}
                           </Text>
                         ) : null}
                         {feed.lastSyncError ? (
                           <Text style={styles.feedError} numberOfLines={2}>
-                            Last sync error: {feed.lastSyncError}
+                            {copy('profile.lastSyncFailed')}
                           </Text>
                         ) : null}
                       </View>
@@ -680,7 +718,7 @@ const ProfileScreen = () => {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>App</Text>
+          <Text style={styles.sectionLabel}>{copy('profile.appSection')}</Text>
 
           {!user || user.is_guest ? (
             <TouchableOpacity
@@ -738,7 +776,7 @@ const ProfileScreen = () => {
             <View style={styles.deleteAccountPanel}>
               <Text style={styles.deleteAccountTitle}>{copy('profile.permanentDelete')}</Text>
               <Text style={styles.deleteAccountText}>
-                Account-owned Gold, Study inventory, and personal profile data will be deleted according to server policy.
+                {copy('profile.deleteDataText')}
               </Text>
               <TextInput
                 style={styles.deleteAccountInput}
@@ -849,6 +887,16 @@ const styles = StyleSheet.create({
     borderRadius: 55,
     borderWidth: 3,
     borderColor: COLORS.primary,
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(227,30,36,0.18)',
+  },
+  avatarInitials: {
+    color: COLORS.text,
+    fontSize: 32,
+    fontWeight: '900',
   },
   badge: {
     position: 'absolute',
@@ -1263,13 +1311,49 @@ const styles = StyleSheet.create({
   },
 });
 
-function formatFeedTimestamp(value: string): string {
+function resolveAvatarUrl(value: string | null | undefined, storageRoot: string): string | null {
+  const avatar = value?.trim();
+  if (!avatar) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(avatar)) {
+    return avatar;
+  }
+  return `${storageRoot.replace(/\/$/, '')}/${avatar.replace(/^\//, '')}`;
+}
+
+export function getInitials(value: string): string {
+  const initials = value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => Array.from(part)[0] ?? '')
+    .join('');
+  return (initials || 'R').toLocaleUpperCase();
+}
+
+function readinessStatusCopyKey(value: string): string {
+  const suffix = value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  return `profile.status.${suffix}`;
+}
+
+function formatFeedTimestamp(value: string, language: string): string {
   const parsedDate = new Date(value);
   if (Number.isNaN(parsedDate.getTime())) {
     return value;
   }
 
-  return parsedDate.toLocaleString('en-US', {
+  const locale = {
+    en: 'en-US',
+    tr: 'tr-TR',
+    ru: 'ru-RU',
+    ar: 'ar',
+    de: 'de-DE',
+    fr: 'fr-FR',
+  }[language.split(/[-_]/)[0]];
+
+  return parsedDate.toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {logSafeError} from './safeLog';
 
 const RSS_FEEDS_KEY = '@rss_feeds';
 
@@ -7,7 +8,7 @@ export const getStoredRssFeeds = async (): Promise<string[]> => {
     const jsonValue = await AsyncStorage.getItem(RSS_FEEDS_KEY);
     return jsonValue != null ? JSON.parse(jsonValue) : [];
   } catch (e) {
-    console.error('Failed to load RSS feeds', e);
+    logSafeError('storage.rss.load', e);
     return [];
   }
 };
@@ -23,7 +24,7 @@ export const addRssFeed = async (url: string): Promise<boolean> => {
     await AsyncStorage.setItem(RSS_FEEDS_KEY, JSON.stringify(newFeeds));
     return true;
   } catch (e) {
-    console.error('Failed to add RSS feed', e);
+    logSafeError('storage.rss.add', e);
     return false;
   }
 };
@@ -34,6 +35,6 @@ export const removeRssFeed = async (url: string): Promise<void> => {
     const newFeeds = feeds.filter(feed => feed !== url);
     await AsyncStorage.setItem(RSS_FEEDS_KEY, JSON.stringify(newFeeds));
   } catch (e) {
-    console.error('Failed to remove RSS feed', e);
+    logSafeError('storage.rss.remove', e);
   }
 };

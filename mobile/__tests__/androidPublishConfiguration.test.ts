@@ -45,6 +45,17 @@ describe('Android publishing configuration', () => {
     expect(manifest).not.toContain('android:screenOrientation');
   });
 
+  it('uses the system image picker without unused camera or storage permissions', () => {
+    const manifest = fs.readFileSync(
+      path.join(androidRoot, 'app/src/main/AndroidManifest.xml'),
+      'utf8',
+    );
+
+    expect(manifest).not.toContain('android.permission.CAMERA');
+    expect(manifest).not.toContain('android.permission.READ_EXTERNAL_STORAGE');
+    expect(manifest).not.toContain('android.permission.WRITE_EXTERNAL_STORAGE');
+  });
+
   it('provides byte-identical night launcher overrides for every density', () => {
     for (const density of ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
       for (const fileName of ['ic_launcher.png', 'ic_launcher_round.png']) {

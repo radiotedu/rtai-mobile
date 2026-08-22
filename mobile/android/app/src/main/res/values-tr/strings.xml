@@ -1,0 +1,10 @@
+<resources>
+    <string name="car_live_radio">Canlı Radyo</string>
+    <string name="car_playback_error">Oynatma hatası</string>
+    <string name="car_stream_connect_error">Yayına bağlanılamadı</string>
+    <string name="car_flac_metered_warning">FLAC çok daha fazla mobil veri kullanır. Wi-Fi ağına bağlanın veya Normal kaliteyi seçin.</string>
+    <string name="car_no_media_item_requested">Çalınacak medya seçilmedi</string>
+    <string name="car_unknown_media_item">Bilinmeyen RadioTEDU içeriği</string>
+    <string name="car_podcasts">RadioTEDU Podcastleri</string>
+    <string name="car_podcast_audio">Podcast sesi</string>
+</resources>

@@ -11,6 +11,8 @@ import {createAnswerGate} from './answerGate';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {getWordGuessQuestions, WordGuessQuestion} from '../../i18n/gameQuestions';
+import {isPracticeGame} from './gameRoutes';
+import {logSafeError} from '../../utils/safeLog';
 
 const WordGuessScreen = () => {
   const navigation = useNavigation<any>();
@@ -59,7 +61,7 @@ const WordGuessScreen = () => {
       });
       setAwardedXp(Number(result?.points_awarded ?? 0));
     } catch (error) {
-      console.error('Word guess score submit failed:', error);
+      logSafeError('games.wordGuess.submit', error);
       setSubmitFailed(true);
     } finally {
       setIsSubmitting(false);
@@ -183,6 +185,7 @@ const WordGuessScreen = () => {
         awardedXp={awardedXp}
         isSubmitting={isSubmitting}
         submitFailed={submitFailed}
+        practice={isPracticeGame(game)}
         onRetrySubmit={() => submitFinalScore(score)}
         onRestart={resetGame}
         onExit={() => navigation.goBack()}

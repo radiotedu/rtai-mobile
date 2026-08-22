@@ -2,7 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import {describe, expect, it} from '@jest/globals';
 
-import {normalizeUser} from '../src/context/AuthContext';
+import {
+  createErpAuthAttemptCoordinator,
+  normalizeUser,
+} from '../src/context/AuthContext';
 
 describe('mobile auth context session contract', () => {
   it('normalizes the authoritative Gold balance independently from rank score', () => {
@@ -32,5 +35,50 @@ describe('mobile auth context session contract', () => {
     expect(source).toContain('isDefinitiveAuthRejection(error)');
     expect(source).not.toContain('await axios.get(`${API_URL}/auth/me`)');
     expect(source).not.toContain('await logout();');
+  });
+
+  it('bounds direct authentication requests instead of hanging indefinitely', () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '../src/context/AuthContext.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('AUTH_REQUEST_TIMEOUT_MS = 15000');
+    expect(source.match(/timeout: AUTH_REQUEST_TIMEOUT_MS/g)?.length).toBe(3);
+  });
+
+  it('aborts and invalidates superseded ERP authentication attempts', () => {
+    const attempts = createErpAuthAttemptCoordinator();
+    const first = attempts.begin('start');
+
+    expect(attempts.transition(first, 'waiting')).toBe(true);
+    expect(first.phase).toBe('waiting');
+
+    const second = attempts.begin('exchange');
+    expect(first.controller.signal.aborted).toBe(true);
+    expect(attempts.isCurrent(first)).toBe(false);
+    expect(attempts.isCurrent(second)).toBe(true);
+
+    attempts.invalidate();
+    expect(second.controller.signal.aborted).toBe(true);
+    expect(attempts.getCurrent()).toBeNull();
+    expect(attempts.finish(second)).toBe(false);
+  });
+
+  it('guards ERP persistence and invalidates it from every newer auth action', () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '../src/context/AuthContext.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('startTeduLogin(attempt.controller.signal)');
+    expect(source).toContain('attempt.controller.signal,');
+    expect(source).toContain(
+      'persistSession(session, () => isCurrentErpAttempt(attempt))',
+    );
+    expect(source).toContain('erpAttempts.getRevision() === initialRevision');
+    expect(source.match(/invalidateErpAttempt\(\);/g)?.length).toBeGreaterThanOrEqual(5);
+    expect(source).toContain('isMountedRef.current = false;');
+    expect(source).toContain('erpAttempts.invalidate();');
   });
 });

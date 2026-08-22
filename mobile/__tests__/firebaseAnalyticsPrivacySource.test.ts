@@ -22,9 +22,19 @@ describe('Firebase Analytics privacy configuration', () => {
     const bridge = read(
       'android/app/src/main/java/com/radiotedumobile/analytics/AnalyticsBridgeModule.kt',
     );
+    const app = read('App.tsx');
+    const application = read(
+      'android/app/src/main/java/com/radiotedumobile/MainApplication.kt',
+    );
     const config = read('src/services/config.ts');
     expect(service).toContain('RadioTeduAnalyticsBridge');
-    expect(bridge).toContain('setAnalyticsCollectionEnabled(enabled)');
+    expect(service).toContain('setCollectionEnabled(analyticsAllowed, CONSENT_VERSION)');
+    expect(bridge).toContain('CURRENT_CONSENT_VERSION = 4');
+    expect(bridge).toContain('setAnalyticsCollectionEnabled(versionedEnabled)');
+    expect(bridge).toContain('fun revokeStaleConsent(context: Context)');
+    expect(application).toContain('AnalyticsBridgeModule.revokeStaleConsent(this)');
+    expect(app).toContain('if (!consent.decided)');
+    expect(app).toContain('setAnalyticsConsent(false)');
     expect(bridge).toContain('ConsentType.AD_PERSONALIZATION');
     expect(bridge).toContain('resetAnalyticsData()');
     expect(config).not.toContain('GA4_API_SECRET');
@@ -35,11 +45,14 @@ describe('Firebase Analytics privacy configuration', () => {
     const tokenStorage = read('src/services/authTokenStorage.ts');
     const locales = ['en', 'tr', 'de', 'fr', 'ru', 'ar'];
     expect(consent).toContain("t('privacy.fullNotice')");
+    expect(consent).toContain("t('privacy.thirdPartyNotice')");
     expect(consent).toContain("t('privacy.fullTerms')");
     for (const locale of locales) {
       const messages = JSON.parse(read(`src/i18n/locales/${locale}.json`));
       expect(messages.privacy.controllerNotice).toContain('radio@tedu.edu.tr');
       expect(messages.privacy.fullNotice.length).toBeGreaterThan(500);
+      expect(messages.privacy.thirdPartyNotice).toContain('Apple');
+      expect(messages.privacy.thirdPartyNotice).not.toContain('ui-avatars.com');
       expect(messages.privacy.fullTerms.length).toBeGreaterThan(300);
     }
     expect(tokenStorage).toContain("from 'react-native-keychain'");

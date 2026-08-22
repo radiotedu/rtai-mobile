@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import GlobalHeader from '../../components/GlobalHeader';
@@ -16,19 +17,27 @@ import {
   purchaseAvatarItem,
 } from '../../services/studyService';
 import {COLORS, SPACING} from '../../theme/theme';
+import {appCopy} from '../../i18n/appCopy';
+import {logSafeError} from '../../utils/safeLog';
 
-export const AVATAR_CLOSET_SLOTS: Array<{id: AvatarSlot; title: string; icon: string}> = [
-  {id: 'hair', title: 'Hair', icon: 'hair-dryer-outline'},
-  {id: 'top', title: 'Top', icon: 'tshirt-crew-outline'},
-  {id: 'bottom', title: 'Bottom', icon: 'human-male-height'},
-  {id: 'shoes', title: 'Shoes', icon: 'shoe-sneaker'},
-  {id: 'accessory', title: 'Accessory', icon: 'glasses'},
+export const AVATAR_CLOSET_SLOTS: Array<{id: AvatarSlot; titleKey: string; icon: string}> = [
+  {id: 'hair', titleKey: 'avatar.slot.hair', icon: 'hair-dryer-outline'},
+  {id: 'top', titleKey: 'avatar.slot.top', icon: 'tshirt-crew-outline'},
+  {id: 'bottom', titleKey: 'avatar.slot.bottom', icon: 'human-male-height'},
+  {id: 'shoes', titleKey: 'avatar.slot.shoes', icon: 'shoe-sneaker'},
+  {id: 'accessory', titleKey: 'avatar.slot.accessory', icon: 'glasses'},
 ];
 
 const emptyProfile: AvatarProfile = {ownedItemIds: [], equipped: {}};
 
 const AvatarClosetScreen = () => {
   const navigation = useNavigation<any>();
+  const {i18n} = useTranslation();
+  const copy = useCallback(
+    (key: string, values: Record<string, string | number> = {}) =>
+      appCopy(i18n.language, key, values),
+    [i18n.language],
+  );
   const [catalog, setCatalog] = useState<AvatarCatalogItem[]>([]);
   const [profile, setProfile] = useState<AvatarProfile>(emptyProfile);
   const [walletPoints, setWalletPoints] = useState<AvatarProfile['points']>(undefined);
@@ -44,11 +53,12 @@ const AvatarClosetScreen = () => {
       setProfile(nextProfile);
       setWalletPoints(nextProfile.points);
     } catch (error) {
-      Alert.alert('Connection error', 'Avatar clothes could not be loaded.');
+      logSafeError('study.avatar.load', error);
+      Alert.alert(copy('avatar.connectionTitle'), copy('avatar.loadError'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [copy]);
 
   useEffect(() => {
     loadCloset();
@@ -72,7 +82,8 @@ const AvatarClosetScreen = () => {
       const equipment = await equipAvatarItem({slot: item.slot, itemId: item.itemId});
       setProfile(current => ({...current, equipped: {...current.equipped, ...equipment.equipped}}));
     } catch (error) {
-      Alert.alert('Closet error', 'This item could not be applied.');
+      logSafeError('study.avatar.apply', error);
+      Alert.alert(copy('avatar.applyTitle'), copy('avatar.applyError'));
     } finally {
       setBusyItemId(null);
     }
@@ -83,12 +94,15 @@ const AvatarClosetScreen = () => {
       <SafeAreaView style={styles.container}>
         <GlobalHeader />
         <View style={styles.topRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            accessibilityLabel={copy('common.back')}>
             <Icon name="chevron-left" size={28} color={COLORS.text} />
           </TouchableOpacity>
           <View>
-            <Text style={styles.title}>Avatar Closet</Text>
-            <Text style={styles.subtitle}>Clothes use global points from the backend.</Text>
+            <Text style={styles.title}>{copy('avatar.title')}</Text>
+            <Text style={styles.subtitle}>{copy('avatar.subtitle')}</Text>
           </View>
         </View>
 
@@ -100,8 +114,8 @@ const AvatarClosetScreen = () => {
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
               <View style={styles.walletCard}>
                 <View>
-                  <Text style={styles.walletLabel}>Global points</Text>
-                  <Text style={styles.walletMeta}>spendable_points</Text>
+                  <Text style={styles.walletLabel}>{copy('avatar.points')}</Text>
+                  <Text style={styles.walletMeta}>{copy('avatar.spendable')}</Text>
                 </View>
                 <Text style={styles.walletAmount}>{walletPoints?.spendable_points ?? 0}</Text>
               </View>
@@ -112,7 +126,7 @@ const AvatarClosetScreen = () => {
                 return (
                   <TouchableOpacity key={slot.id} style={[styles.slotButton, active && styles.slotButtonActive]} onPress={() => setActiveSlot(slot.id)}>
                     <Icon name={slot.icon} size={20} color={active ? '#fff' : COLORS.primary} />
-                    <Text style={[styles.slotText, active && styles.slotTextActive]}>{slot.title}</Text>
+                    <Text style={[styles.slotText, active && styles.slotTextActive]}>{copy(slot.titleKey)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -120,7 +134,7 @@ const AvatarClosetScreen = () => {
 
             {visibleItems.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No clothes in this slot yet.</Text>
+                <Text style={styles.emptyText}>{copy('avatar.empty')}</Text>
               </View>
             ) : (
               visibleItems.map(item => {
@@ -133,9 +147,13 @@ const AvatarClosetScreen = () => {
                     </View>
                     <View style={styles.itemBody}>
                       <Text style={styles.itemTitle}>{item.title}</Text>
-                      <Text style={styles.itemMeta}>{isOwned ? 'Owned' : `${item.costPoints} XP`}</Text>
+                      <Text style={styles.itemMeta}>
+                        {isOwned ? copy('avatar.owned') : copy('avatar.pointsCost', {points: item.costPoints})}
+                      </Text>
                     </View>
-                    <Text style={styles.itemAction}>{equipped ? 'Equipped' : isOwned ? 'Equip' : 'Buy'}</Text>
+                    <Text style={styles.itemAction}>
+                      {equipped ? copy('avatar.equipped') : isOwned ? copy('avatar.equip') : copy('avatar.buy')}
+                    </Text>
                   </TouchableOpacity>
                 );
               })

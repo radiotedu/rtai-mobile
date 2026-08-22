@@ -22,6 +22,7 @@ import TrackPlayer, {
   usePlaybackState,
 } from 'react-native-track-player';
 import {COLORS, SPACING} from '../theme/theme';
+import {logSafeError} from '../utils/safeLog';
 import {
   RADIO_CHANNELS,
   RadioChannel,
@@ -230,7 +231,7 @@ const PlayerScreen = () => {
       await setPreferences({quality});
       setQualityMenuVisible(false);
     } catch (err) {
-      console.log('Quality change error:', err);
+      logSafeError('player.qualityChange', err);
     } finally {
       setIsSwitchingQuality(false);
     }
@@ -336,14 +337,14 @@ const PlayerScreen = () => {
             <TouchableOpacity
               onPress={() => goToOffset(-1)}
               style={styles.sideButton}
-              accessibilityLabel="Önceki">
+              accessibilityLabel={copy('player.previous')}>
               <Icon name="skip-previous" size={40} color={COLORS.text} />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={togglePlayback}
               style={styles.playButton}
-              accessibilityLabel={isPlaying ? 'Duraklat' : 'Oynat'}>
+              accessibilityLabel={isPlaying ? copy('player.pause') : copy('player.play')}>
               {isBuffering ? (
                 <ActivityIndicator size="large" color="#fff" />
               ) : (
@@ -359,7 +360,7 @@ const PlayerScreen = () => {
             <TouchableOpacity
               onPress={() => goToOffset(1)}
               style={styles.sideButton}
-              accessibilityLabel="Sonraki">
+              accessibilityLabel={copy('player.next')}>
               <Icon name="skip-next" size={40} color={COLORS.text} />
             </TouchableOpacity>
           </View>

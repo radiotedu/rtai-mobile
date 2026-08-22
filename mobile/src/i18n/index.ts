@@ -60,7 +60,9 @@ function getDeviceLanguage(): AppLanguage {
   }
   for (const candidate of candidates) {
     const code = String(candidate ?? '').toLowerCase().split(/[-_]/)[0];
-    if (isSupported(code)) return code;
+    if (isSupported(code)) {
+      return code;
+    }
   }
   return 'en';
 }

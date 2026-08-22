@@ -1,22 +1,36 @@
+import {logSafeError} from './safeLog';
+
 export const fetchAlbumArtwork = async (
   term: string,
+  timeoutMs = 2500,
 ): Promise<string | null> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(
       `https://itunes.apple.com/search?term=${encodeURIComponent(
         term,
       )}&media=music&entity=song&limit=1`,
+      {signal: controller.signal},
     );
+    if (!response.ok) {
+      return null;
+    }
     const data = await response.json();
 
-    if (data.resultCount > 0 && data.results[0].artworkUrl100) {
+    if (
+      data?.resultCount > 0 &&
+      Array.isArray(data.results) &&
+      typeof data.results[0]?.artworkUrl100 === 'string'
+    ) {
       // Get higher resolution image (600x600)
       return data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
     }
     return null;
-  } catch (error) {
-    console.warn('Error fetching artwork:', error);
+  } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
@@ -75,7 +89,7 @@ export const checkStreamAvailability = async (
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
-    console.log(`Stream Check Error for ${streamUrl}:`, error);
+    logSafeError('stream.availability', error);
     return false;
   }
 };

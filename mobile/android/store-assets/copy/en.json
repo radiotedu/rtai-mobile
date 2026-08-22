@@ -1,0 +1,58 @@
+{
+  "en-home-account": {
+    "locale": "en",
+    "eyebrow": "RADIO, STUDY AND GOLD",
+    "headline": "One account. Every feature.",
+    "altText": "RadioTEDU home screen showing signed-in Gold and feature navigation.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-radio-live": {
+    "locale": "en",
+    "eyebrow": "LIVE RADIO",
+    "headline": "Live metadata. Your quality.",
+    "altText": "RadioTEDU live radio screen showing a real station, song metadata and quality controls.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-radio-flac-warning": {
+    "locale": "en",
+    "eyebrow": "LOSSLESS AUDIO",
+    "headline": "FLAC, with mobile-data safety.",
+    "altText": "RadioTEDU FLAC selection with the real mobile-data consumption warning visible.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-podcast-series": {
+    "locale": "en",
+    "eyebrow": "PODCASTS",
+    "headline": "Continue within every series.",
+    "altText": "RadioTEDU podcast series screen showing real grouped episodes and playback.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-study-timer": {
+    "locale": "en",
+    "eyebrow": "STUDY",
+    "headline": "See every focused minute.",
+    "altText": "Authenticated RadioTEDU Study screen showing a real active focus timer and elapsed minutes.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-voting": {
+    "locale": "en",
+    "eyebrow": "VOTING",
+    "headline": "Vote with your RadioTEDU account.",
+    "altText": "Authenticated RadioTEDU Voting screen showing real candidates and vote controls.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-jukebox": {
+    "locale": "en",
+    "eyebrow": "JUKEBOX",
+    "headline": "Control the room from your phone.",
+    "altText": "Connected RadioTEDU Jukebox controller showing real now-playing, queue and search controls.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  },
+  "en-games-gold": {
+    "locale": "en",
+    "eyebrow": "GAMES AND GOLD",
+    "headline": "Play. Score. Track verified rewards.",
+    "altText": "RadioTEDU game result showing a real completed score and verified Gold change.",
+    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+  }
+}

@@ -23,6 +23,7 @@ import {
   fetchMarketItems,
   redeemMarketItem,
 } from '../services/gamificationService';
+import {logSafeError} from '../utils/safeLog';
 
 const MarketScreen = () => {
   const navigation = useNavigation<any>();
@@ -47,7 +48,7 @@ const MarketScreen = () => {
       setItems(marketItems);
       setPoints((profile as any)?.points ?? null);
     } catch (error) {
-      console.error('Failed to load market:', error);
+      logSafeError('market.load', error);
       Alert.alert(copy('common.error'), copy('market.error'));
     } finally {
       setLoading(false);
@@ -78,8 +79,8 @@ const MarketScreen = () => {
       }));
       Alert.alert(copy('market.requested'), copy('market.requestedText'));
     } catch (error: any) {
-      console.error('Failed to redeem item:', error);
-      Alert.alert(copy('common.error'), error?.response?.data?.error || copy('market.error'));
+      logSafeError('market.redeem', error);
+      Alert.alert(copy('common.error'), copy('market.error'));
     } finally {
       setRedeemingId(null);
     }

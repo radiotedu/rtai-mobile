@@ -1,5 +1,6 @@
 package com.radiotedumobile.analytics
 
+import android.content.Context
 import android.os.Bundle
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
@@ -11,13 +12,52 @@ import com.google.firebase.analytics.FirebaseAnalytics
 class AnalyticsBridgeModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
+    companion object {
+        const val CURRENT_CONSENT_VERSION = 4
+        private const val PREFS = "radiotedu_analytics_consent"
+        private const val KEY_VERSION = "version"
+
+        fun revokeStaleConsent(context: Context) {
+            val storedVersion = context
+                .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(KEY_VERSION, 0)
+            if (storedVersion == CURRENT_CONSENT_VERSION) return
+            val analytics = FirebaseAnalytics.getInstance(context)
+            analytics.setConsent(deniedConsent())
+            analytics.setAnalyticsCollectionEnabled(false)
+            analytics.resetAnalyticsData()
+        }
+
+        private fun deniedConsent() = mapOf(
+            FirebaseAnalytics.ConsentType.ANALYTICS_STORAGE to
+                FirebaseAnalytics.ConsentStatus.DENIED,
+            FirebaseAnalytics.ConsentType.AD_STORAGE to
+                FirebaseAnalytics.ConsentStatus.DENIED,
+            FirebaseAnalytics.ConsentType.AD_USER_DATA to
+                FirebaseAnalytics.ConsentStatus.DENIED,
+            FirebaseAnalytics.ConsentType.AD_PERSONALIZATION to
+                FirebaseAnalytics.ConsentStatus.DENIED,
+        )
+    }
+
     private val analytics = FirebaseAnalytics.getInstance(reactContext)
 
     override fun getName(): String = "RadioTeduAnalyticsBridge"
 
     @ReactMethod
-    fun setCollectionEnabled(enabled: Boolean) {
-        val status = if (enabled) {
+    fun setCollectionEnabled(enabled: Boolean, consentVersion: Int) {
+        val acceptedVersion = if (consentVersion == CURRENT_CONSENT_VERSION) {
+            consentVersion
+        } else {
+            0
+        }
+        reactApplicationContext
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_VERSION, acceptedVersion)
+            .apply()
+        val versionedEnabled = enabled && acceptedVersion == CURRENT_CONSENT_VERSION
+        val status = if (versionedEnabled) {
             FirebaseAnalytics.ConsentStatus.GRANTED
         } else {
             FirebaseAnalytics.ConsentStatus.DENIED
@@ -30,8 +70,8 @@ class AnalyticsBridgeModule(reactContext: ReactApplicationContext) :
                 FirebaseAnalytics.ConsentType.AD_PERSONALIZATION to FirebaseAnalytics.ConsentStatus.DENIED,
             ),
         )
-        analytics.setAnalyticsCollectionEnabled(enabled)
-        if (!enabled) analytics.resetAnalyticsData()
+        analytics.setAnalyticsCollectionEnabled(versionedEnabled)
+        if (!versionedEnabled) analytics.resetAnalyticsData()
     }
 
     @ReactMethod

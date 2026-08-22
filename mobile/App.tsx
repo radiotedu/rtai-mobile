@@ -210,13 +210,18 @@ function ConsentGate({
   const { consent, ready } = useConsent();
 
   useEffect(() => {
-    if (ready && consent.decided) {
-      setAnalyticsConsent(consent.analytics, {
-        ageRange: consent.ageRange,
-        gender: consent.gender,
-      });
-      Analytics.appOpen();
+    if (!ready) {
+      return;
     }
+    if (!consent.decided) {
+      setAnalyticsConsent(false);
+      return;
+    }
+    setAnalyticsConsent(consent.analytics, {
+      ageRange: consent.ageRange,
+      gender: consent.gender,
+    });
+    Analytics.appOpen();
   }, [
     ready,
     consent.decided,

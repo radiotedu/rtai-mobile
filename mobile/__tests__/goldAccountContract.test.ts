@@ -13,6 +13,10 @@ describe('mobile Account and Gold product contract', () => {
   const eventsSource = readScreen('EventsScreen.tsx');
   const gamesSource = readScreen('GamesScreen.tsx');
   const leaderboardSource = readScreen('LeaderboardScreen.tsx');
+  const screenCopySource = fs.readFileSync(
+    path.join(__dirname, '..', 'src', 'i18n', 'screenCopy.ts'),
+    'utf8',
+  );
   const loginSource = readScreen(path.join('auth', 'LoginScreen.tsx'));
   const registerSource = readScreen(path.join('auth', 'RegisterScreen.tsx'));
   const listeningSource = fs.readFileSync(
@@ -26,17 +30,18 @@ describe('mobile Account and Gold product contract', () => {
     expect(marketSource).not.toContain('Harcanabilir XP');
     expect(eventsSource).toContain('events.goldEarned');
     expect(gamesSource).toContain('Gold');
-    expect(homeSource).toContain('Gold balance');
+    expect(homeSource).toContain("copy('home.goldBalance')");
+    expect(screenCopySource).toContain("'home.goldBalance': 'Gold balance'");
     expect(leaderboardSource).toContain('leaderboard.lifetime');
     expect(homeSource).toContain('lifetime_points');
   });
 
   it('uses the shared TEDÜ login and GDPR-aware registration contract', () => {
-    expect(loginSource).toContain("authCopy(i18n.language, key)");
-    expect(loginSource).toContain("copy('login.tedu')");
-    expect(registerSource).toContain("copy('register.age')");
-    expect(registerSource).toContain("copy('register.terms')");
-    expect(registerSource).toContain("copy('register.privacy')");
+    expect(loginSource).toContain('authCopy(i18n.language, key)');
+    expect(loginSource).toContain('copy(\'login.tedu\')');
+    expect(registerSource).toContain('copy(\'register.age\')');
+    expect(registerSource).toContain('copy(\'register.terms\')');
+    expect(registerSource).toContain('copy(\'register.privacy\')');
   });
 
   it('uses server-timed rotating nonces for radio Gold instead of trusted duration', () => {
@@ -53,8 +58,9 @@ describe('mobile Account and Gold product contract', () => {
     expect(profileSource).toContain("confirmation: 'DELETE'");
     expect(profileSource).toContain('secureTextEntry');
     expect(profileSource).toContain("style: 'destructive'");
-    expect(profileSource).toContain('Account-owned Gold');
-    expect(profileSource).toContain('Study inventory');
+    expect(profileSource).toContain('copy(\'profile.deleteDataText\')');
+    expect(screenCopySource).toContain('Account-owned Gold');
+    expect(screenCopySource).toContain('Study inventory');
 
     const deletionHandler = profileSource.match(
       /const handleDeleteAccount[\s\S]*?(?=\n\s*const handle|\n\s*return \()/,

@@ -41,8 +41,8 @@ currently means leaving the app and using the OS camera.
 ## 3. What's needed for "scan QR inside the app"
 
 1. **A camera QR scanner** (native module + rebuild).
-2. **Camera permission** runtime flow (the `CAMERA` permission is *already* in
-   AndroidManifest; iOS needs `NSCameraUsageDescription`).
+2. **Camera permission** runtime flow. The permission is intentionally absent
+   until this capture feature exists; iOS would also need `NSCameraUsageDescription`.
 3. **QR payload parsing** — the kiosk QR may encode `radiotedu://jukebox/<code>`,
    `https://radiotedu.com/jukebox/<code>`, or a raw code; extract `<code>` and
    call the existing `connectToDevice`.

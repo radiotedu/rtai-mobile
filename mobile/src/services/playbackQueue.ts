@@ -26,6 +26,7 @@ import {
   StreamQuality,
 } from '../data/radioChannels';
 import {getChannelCopy} from '../i18n/channelCopy';
+import {logSafeError} from '../utils/safeLog';
 import type {Podcast} from './podcastService';
 import {
   isCellularNetwork,
@@ -309,7 +310,7 @@ export function startConnectionWatchdog(
         await playTrackById(channel.id);
       }
     } catch (error) {
-      console.log('[playbackQueue] Connection watchdog error:', error);
+      logSafeError('playback.connectionWatchdog', error);
     }
   }, timeoutMs);
 }

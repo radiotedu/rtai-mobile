@@ -66,21 +66,38 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       }
       lastMetadataKey.current = key;
 
+      const fallbackArtwork = String(
+        track.artwork || channel?.artwork || 'https://radiotedu.com/logo.png',
+      );
+      const immediate = {
+        title: parsed.title,
+        artist,
+        artwork: parsed.artwork || fallbackArtwork,
+      };
+      // Update the app, lock screen and notification immediately. Artwork is
+      // optional enrichment and must never delay streamed title/artist data.
+      updateMetadata(immediate);
+      const index = await TrackPlayer.getActiveTrackIndex();
+      if (index !== undefined) {
+        await TrackPlayer.updateMetadataForTrack(index, immediate);
+      }
+
+      if (parsed.artwork) {
+        return;
+      }
       const fetchedArtwork = await fetchAlbumArtwork(`${artist} ${parsed.title}`);
+      if (!fetchedArtwork || key !== lastMetadataKey.current) {
+        return;
+      }
       const activeAfterFetch = await TrackPlayer.getActiveTrack();
       if (String(activeAfterFetch?.id ?? '') !== String(track.id)) {
         return;
       }
-      const artwork =
-        parsed.artwork ||
-        fetchedArtwork ||
-        String(track.artwork || channel?.artwork || 'https://radiotedu.com/logo.png');
-      const next = {title: parsed.title, artist, artwork};
-      updateMetadata(next);
-
-      const index = await TrackPlayer.getActiveTrackIndex();
-      if (index !== undefined) {
-        await TrackPlayer.updateMetadataForTrack(index, next);
+      const enriched = {...immediate, artwork: fetchedArtwork};
+      updateMetadata(enriched);
+      const activeIndex = await TrackPlayer.getActiveTrackIndex();
+      if (activeIndex !== undefined) {
+        await TrackPlayer.updateMetadataForTrack(activeIndex, enriched);
       }
     },
   );

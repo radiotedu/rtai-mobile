@@ -1,8 +1,10 @@
 package com.radiotedumobile.car
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
@@ -11,479 +13,739 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaDescriptionCompat
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
-import androidx.core.app.NotificationCompat
-import androidx.media.MediaBrowserServiceCompat
+import androidx.annotation.OptIn
+import androidx.annotation.StringRes
+import androidx.core.content.ContextCompat
+import androidx.media.utils.MediaConstants
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionError
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.radiotedumobile.MainActivity
 import com.radiotedumobile.R
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.text.Normalizer
+import java.util.Locale
 
 /**
- * Custom Android Auto / Automotive media browser for RadioTEDU.
+ * RadioTEDU's single Android media library and native playback service.
  *
- * RNTP v4 ships no MediaBrowserService, so this provides the browse tree the car
- * shows (categories → channels / podcasts / etc.) and a MediaSession the car
- * controls.
- *
- * Audio is played NATIVELY and HEADLESSLY here via media3 ExoPlayer, with NO
- * dependency on the React Native JS runtime. This fixes the cold-start "stuck on
- * loading" bug: previously the car's transport was relayed to JS over CarBridge,
- * but the JS listener is only registered once the app UI has been opened, so a
- * cold start from the car (app not running) never started playback. Every
- * PLAYABLE catalog item now carries a stream `url` (embedded by carBridge.ts),
- * so this service can play it directly with zero JS. The JS bridge only supplies
- * the browse catalog (SharedPreferences); the native ExoPlayer is the single
- * source of truth for the car's PlaybackState + metadata.
+ * Media3 exposes one driver-safe Live Radio + Podcasts tree to Android Auto,
+ * Automotive OS, Assistant/Gemini, system media controls, and Wear controllers.
+ * ExoPlayer remains fully native and headless: a cold car launch never depends
+ * on the React Native runtime. The JS bridge only refreshes the cached catalog.
  */
-class RadioTeduCarService : MediaBrowserServiceCompat() {
+@OptIn(UnstableApi::class)
+class RadioTeduCarService : MediaLibraryService() {
 
     companion object {
         const val PREFS = "radiotedu_car"
         const val KEY_CATALOG = "catalog"
-        private const val ROOT_ID = "__ROOT__"
+        const val KEY_LANGUAGE_PREFERENCE = "language_preference"
 
-        // android.media.browse content style hints (grid for categories, list for items)
-        private const val CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTED"
-        private const val CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT"
-        private const val CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT"
+        private const val ROOT_ID = "__ROOT__"
+        private const val CAT_RADIO = "cat_radio"
+        private const val CAT_PODCASTS = "cat_podcasts"
+        private const val SESSION_ID = "RadioTeduMediaLibrary"
+        private const val TAG = "RadioTeduCarService"
+        private const val SYSTEM_LANGUAGE_PREFERENCE = "system"
+        private val SUPPORTED_LANGUAGE_CODES = setOf("en", "tr", "ar", "ru", "de", "fr")
+
+        private const val CONTENT_STYLE_SUPPORTED =
+            "android.media.browse.CONTENT_STYLE_SUPPORTED"
+        private const val CONTENT_STYLE_BROWSABLE_HINT =
+            "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT"
+        private const val CONTENT_STYLE_PLAYABLE_HINT =
+            "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT"
         private const val CONTENT_STYLE_GRID = 2
         private const val CONTENT_STYLE_LIST = 1
 
-        private const val CHANNEL_ID = "radiotedu_car"
-        private const val FGS_ID = 7
-        private const val TAG = "RadioTeduCarService"
+        private const val EXTRA_AUDIO_FORMAT = "com.radiotedu.media.AUDIO_FORMAT"
+        private const val KEY_LAST_MEDIA_ID = "last_media_id"
+        private const val KEY_PROGRESS_PREFIX = "podcast_progress:"
+        private const val KEY_POSITION_PREFIX = "podcast_position_ms:"
+        private const val KEY_DURATION_PREFIX = "podcast_duration_ms:"
+        private const val KEY_PROGRESS_SCHEMA_PREFIX = "podcast_progress_schema:"
+        private const val PODCAST_PROGRESS_SCHEMA = 2
+        private const val PODCAST_COMPLETION_THRESHOLD = 0.95
 
-        // Network timeouts for the car player's HTTP data source. A live radio
-        // stream that opens the socket but never delivers data would otherwise
-        // sit in STATE_BUFFERING forever (infinite spinner); a finite read
-        // timeout makes ExoPlayer surface onPlayerError instead.
         private const val HTTP_CONNECT_TIMEOUT_MS = 15_000
         private const val HTTP_READ_TIMEOUT_MS = 15_000
-
-        // Belt-and-braces watchdog: if the player is still BUFFERING this long
-        // after a play request (e.g. a half-open stream the data-source timeout
-        // didn't catch), force STATE_ERROR so the car never spins forever.
         private const val BUFFERING_WATCHDOG_MS = 20_000L
+        private const val PROGRESS_SAVE_INTERVAL_MS = 15_000L
+        private const val CAR_TILE_SIZE_PX = 128
+        private const val CAR_TILE_MAX_BYTES = 64 * 1024
 
-        // Static fallback so the car is never empty before the app's first
-        // launch (the JS catalog lives in SharedPreferences, which is empty
-        // until pushCarCatalog() has run at least once). Mirrors the
-        // 'radiotedu-main' channel in mobile/src/data/radioChannels.ts.
+        // A deliberately small cold-start fallback. Availability-filtered JS
+        // catalog data replaces it after the first app launch. Shipping extra
+        // unverified stations here would make offline mounts visible in cars.
         private const val FALLBACK_RADIO_ID = "radiotedu-main"
         private const val FALLBACK_RADIO_URL = "https://stream.radiotedu.com/radio"
-        private const val FALLBACK_RADIO_TITLE = "RadioTEDU"
-        private const val FALLBACK_RADIO_SUBTITLE = "Ana Kanal"
         private const val FALLBACK_RADIO_ARTWORK =
-            "https://radiotedu.com/wp-content/uploads/2025/07/logo-02-scaled.png"
+            "android.resource://com.radiotedumobile/drawable/car_station_radiotedu"
     }
 
-    private lateinit var session: MediaSessionCompat
-
-    /**
-     * Native headless player for the car. Created lazily on the service main
-     * thread (see player()). All access MUST be on the main thread — the
-     * MediaSession callbacks and Player.Listener callbacks already run there.
-     */
-    private var player: ExoPlayer? = null
-
-    /** Catalog fallback used when a live stream omits artist/title fields. */
-    private var activeCatalogItem: CatalogItem? = null
-
-    /** Tracks whether we currently hold the mediaPlayback foreground service. */
-    private var isForeground = false
-
-    /** Main-thread handler used to post the buffering watchdog. */
+    private lateinit var player: ExoPlayer
+    private lateinit var librarySession: MediaLibrarySession
     private val mainHandler = Handler(Looper.getMainLooper())
-
-    /** Pending buffering watchdog; cancelled once playback resolves or stops. */
     private var bufferingWatchdog: Runnable? = null
-
-    private val playbackActions =
-        PlaybackStateCompat.ACTION_PLAY or
-            PlaybackStateCompat.ACTION_PAUSE or
-            PlaybackStateCompat.ACTION_PLAY_PAUSE or
-            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-            PlaybackStateCompat.ACTION_STOP or
-            PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
-            PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
+    private var progressTicker: Runnable? = null
+    private var activeCatalogItem: CatalogItem? = null
+    private var publishingNormalizedMetadata = false
+    private val tileArtworkCache = mutableMapOf<Int, ByteArray>()
 
     override fun onCreate() {
         super.onCreate()
 
-        // Set up the notification channel up front, but do NOT start a
-        // foreground service here. On Android 14 (targetSdk 34) a
-        // mediaPlayback FGS started from the background with no active
-        // playback throws ForegroundServiceStartNotAllowedException, which
-        // previously left the process unprotected ("car stuck on loading").
-        // The FGS is started only once playback is actually active — see
-        // updateForeground(), now driven by the native ExoPlayer's
-        // Player.Listener callbacks.
-        createNotificationChannel()
+        val httpFactory = DefaultHttpDataSource.Factory()
+            .setConnectTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
+            .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
+            .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
+            .setAllowCrossProtocolRedirects(true)
 
-        session = MediaSessionCompat(this, "RadioTeduCarSession").apply {
-            setCallback(SessionCallback())
-            setPlaybackState(buildState(PlaybackStateCompat.STATE_PAUSED))
-            isActive = true
+        player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
+            .build()
+            .apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(C.USAGE_MEDIA)
+                        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                        .build(),
+                    /* handleAudioFocus = */ true,
+                )
+                repeatMode = Player.REPEAT_MODE_ALL
+                addListener(playerListener)
+            }
+
+        librarySession = MediaLibrarySession.Builder(this, player, LibraryCallback())
+            .setId(SESSION_ID)
+            .setSessionActivity(appPendingIntent())
+            .setLibraryErrorReplicationMode(
+                MediaLibrarySession.LIBRARY_ERROR_REPLICATION_MODE_NON_FATAL,
+            )
+            .build()
+
+        // MediaSessionService owns the compliant media foreground notification.
+        // It reads current Media3 metadata, so ICY title/artist changes are also
+        // reflected on notification, lock screen, Auto, AAOS, and Wear surfaces.
+        setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR)
+
+        CarBridge.onCatalogChanged = {
+            mainHandler.post { notifyCatalogChanged() }
         }
-        sessionToken = session.sessionToken
-
-        // JS pushed a new browse catalog -> tell the car to reload the tree.
-        // This is the ONLY remaining dependency on JS: it just refreshes the
-        // browse tree. Playback no longer goes through JS at all.
-        CarBridge.onCatalogChanged = { notifyChildrenChanged(ROOT_ID) }
-
-        // The native ExoPlayer is now the single source of truth for the car's
-        // PlaybackState + metadata. JS no longer drives playback state, so keep
-        // onNowPlaying as a harmless no-op: if some older JS still calls
-        // updateNowPlaying, we must NOT let it clobber the real native state.
-        CarBridge.onNowPlaying = { _, _, _, _ -> /* no-op: native player owns state */ }
+        CarBridge.onNowPlaying = { _, _, _, _ ->
+            // Native Media3 player/session are the only playback state source.
+        }
     }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession =
+        librarySession
 
     override fun onDestroy() {
         CarBridge.onCatalogChanged = null
         CarBridge.onNowPlaying = null
         cancelBufferingWatchdog()
-        player?.let {
-            it.removeListener(playerListener)
-            it.release()
-        }
-        player = null
-        @Suppress("DEPRECATION")
-        stopForeground(true)
-        isForeground = false
-        session.release()
+        cancelProgressTicker(save = true)
+        player.removeListener(playerListener)
+        librarySession.release()
+        player.release()
         super.onDestroy()
     }
 
-    // --- Native ExoPlayer (headless car playback) ---
-
-    /**
-     * Lazily create the ExoPlayer on the service main thread. Audio attributes
-     * mark this as MEDIA/MUSIC with handleAudioFocus = true, so the system
-     * ducks/pauses other audio (including the in-app RNTP) while the car plays.
-     */
-    private fun player(): ExoPlayer {
-        val existing = player
-        if (existing != null) return existing
-        // Give the HTTP data source a finite connect/read timeout so a stream
-        // that connects but stalls surfaces as onPlayerError (-> STATE_ERROR)
-        // instead of buffering forever. allowCrossProtocolRedirects handles the
-        // common http<->https redirects radio CDNs use.
-        val httpFactory = DefaultHttpDataSource.Factory()
-            .setConnectTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
-            .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
-            // Ask Icecast/Shoutcast servers to include ICY metadata blocks.
-            .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
-            .setAllowCrossProtocolRedirects(true)
-        val created = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
-            .build()
-            .apply {
-                val attrs = AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                    .build()
-                setAudioAttributes(attrs, /* handleAudioFocus = */ true)
-                addListener(playerListener)
-            }
-        player = created
-        return created
+    private fun appPendingIntent(): PendingIntent {
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+        return PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            },
+            flags,
+        )
     }
 
-    /**
-     * Maps ExoPlayer state to the car MediaSession PlaybackState and drives the
-     * mediaPlayback foreground service. This is what guarantees the car shows
-     * buffering / playing / error instead of an infinite spinner.
-     */
     private val playerListener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            // Playback actually started -> we resolved to PLAYING, so the
-            // buffering watchdog is no longer needed.
-            if (isPlaying) cancelBufferingWatchdog()
-            syncPlaybackState()
-            updateForeground(isPlaying)
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_BUFFERING -> armBufferingWatchdog()
+                Player.STATE_READY, Player.STATE_IDLE -> cancelBufferingWatchdog()
+                Player.STATE_ENDED -> {
+                    cancelBufferingWatchdog()
+                    savePodcastProgress(completed = true)
+                }
+            }
         }
 
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            // Any terminal/ready state means buffering is over; stop the
-            // watchdog so it can't later stomp a good state with an error.
-            if (playbackState == Player.STATE_READY ||
-                playbackState == Player.STATE_ENDED ||
-                playbackState == Player.STATE_IDLE
-            ) {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (isPlaying) {
                 cancelBufferingWatchdog()
+                startProgressTicker()
+            } else {
+                cancelProgressTicker(save = true)
             }
-            syncPlaybackState()
-            // Keep the FGS in step with playback ending.
-            updateForeground(player?.isPlaying == true)
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            val previous = activeCatalogItem
+            if (previous?.seriesId != null && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                markPodcastCompleted(previous.id)
+            }
+            activeCatalogItem = mediaItem?.mediaId?.let(::findItem)
+            activeCatalogItem?.id?.let {
+                prefs().edit().putString(KEY_LAST_MEDIA_ID, it).apply()
+            }
         }
 
         override fun onPlayerError(error: PlaybackException) {
             cancelBufferingWatchdog()
-            // Surface a real error so the car shows an error state instead of
-            // an infinite loading spinner.
-            setErrorState(error.localizedMessage ?: "Playback error")
-            updateForeground(false)
+            cancelProgressTicker(save = true)
+            Log.w(TAG, "Playback failed", error)
+            sendSessionError(
+                SessionError.ERROR_IO,
+                localizedString(R.string.car_playback_error),
+            )
         }
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-            val rawTitle = mediaMetadata.title?.toString()?.trim().orEmpty()
-            if (rawTitle.isEmpty()) return
-
-            var title = rawTitle
-            var artist = mediaMetadata.artist?.toString()?.trim().orEmpty()
-            if (artist.isEmpty()) {
-                val separator = rawTitle.indexOf(" - ")
-                if (separator > 0 && separator < rawTitle.length - 3) {
-                    artist = rawTitle.substring(0, separator).trim()
-                    title = rawTitle.substring(separator + 3).trim()
-                }
-            }
-            setSessionMetadata(title, artist)
+            normalizeIcyMetadata(mediaMetadata)
         }
     }
 
-    /** Publish Icecast/ICY metadata to Android Auto and system media surfaces. */
-    private fun setSessionMetadata(title: String, artist: String) {
-        val fallback = activeCatalogItem
-        session.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
-                .putString(
-                    MediaMetadataCompat.METADATA_KEY_ARTIST,
-                    artist.ifEmpty { fallback?.artist.orEmpty() },
-                )
-                .putString(
-                    MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
-                    fallback?.artwork.orEmpty(),
-                )
-                .putString(
-                    MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI,
-                    fallback?.artwork.orEmpty(),
-                )
-                .build(),
-        )
+    /** Split common ICY "Artist - Title" blocks into structured fields. */
+    private fun normalizeIcyMetadata(mediaMetadata: MediaMetadata) {
+        if (publishingNormalizedMetadata) return
+        val fallback = activeCatalogItem ?: return
+
+        // Lo-Fi intentionally presents only its station identity on low/normal.
+        if (fallback.id == "radiotedu-lofi" && fallback.quality != "flac") return
+
+        val rawTitle = mediaMetadata.title?.toString()?.trim().orEmpty()
+        if (rawTitle.isEmpty()) return
+
+        var title = rawTitle
+        var artist = mediaMetadata.artist?.toString()?.trim().orEmpty()
+        if (artist.isEmpty()) {
+            val separator = rawTitle.indexOf(" - ")
+            if (separator > 0 && separator < rawTitle.length - 3) {
+                artist = rawTitle.substring(0, separator).trim()
+                title = rawTitle.substring(separator + 3).trim()
+            }
+        }
+        if (artist.isEmpty()) artist = fallback.artist
+
+        if (mediaMetadata.title?.toString() == title &&
+            mediaMetadata.artist?.toString().orEmpty() == artist
+        ) {
+            return
+        }
+
+        val index = player.currentMediaItemIndex
+        val current = player.currentMediaItem ?: return
+        if (index == C.INDEX_UNSET) return
+
+        val normalized = current.mediaMetadata.buildUpon()
+            .setTitle(title)
+            .setDisplayTitle(title)
+            .setArtist(artist)
+            .setStation(if (fallback.seriesId == null) fallback.title else null)
+            .build()
+
+        publishingNormalizedMetadata = true
+        try {
+            // Same local configuration: ExoPlayer keeps the live socket and only
+            // updates timeline metadata, avoiding a stream restart.
+            player.replaceMediaItem(
+                index,
+                current.buildUpon().setMediaMetadata(normalized).build(),
+            )
+            triggerNotificationUpdate()
+        } finally {
+            publishingNormalizedMetadata = false
+        }
     }
 
-    /** Set the car session into STATE_ERROR with a user-facing message. */
-    private fun setErrorState(message: String) {
-        session.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setActions(playbackActions)
-                .setState(
-                    PlaybackStateCompat.STATE_ERROR,
-                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
-                    1f,
-                )
-                .setErrorMessage(
-                    PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR,
-                    message,
-                )
-                .build(),
-        )
-    }
-
-    private fun cancelBufferingWatchdog() {
-        bufferingWatchdog?.let { mainHandler.removeCallbacks(it) }
-        bufferingWatchdog = null
-    }
-
-    /**
-     * Arm a watchdog that flips the session to STATE_ERROR if the player is
-     * still buffering after BUFFERING_WATCHDOG_MS. Guarantees the car's
-     * "loading" state always resolves to either PLAYING or ERROR.
-     */
     private fun armBufferingWatchdog() {
         cancelBufferingWatchdog()
         val runnable = Runnable {
             bufferingWatchdog = null
-            val p = player
-            if (p != null && p.playbackState == Player.STATE_BUFFERING) {
-                p.stop()
-                setErrorState("Yayına bağlanılamadı")
-                updateForeground(false)
+            if (player.playbackState == Player.STATE_BUFFERING) {
+                player.stop()
+                sendSessionError(
+                    SessionError.ERROR_IO,
+                    localizedString(R.string.car_stream_connect_error),
+                )
             }
         }
         bufferingWatchdog = runnable
         mainHandler.postDelayed(runnable, BUFFERING_WATCHDOG_MS)
     }
 
-    /** Reflect the current ExoPlayer state into the car MediaSession. */
-    private fun syncPlaybackState() {
-        val p = player ?: return
-        val state = when {
-            p.playbackState == Player.STATE_BUFFERING -> PlaybackStateCompat.STATE_BUFFERING
-            p.isPlaying -> PlaybackStateCompat.STATE_PLAYING
-            p.playbackState == Player.STATE_ENDED -> PlaybackStateCompat.STATE_STOPPED
-            // An IDLE player (after stop()/clear, or before the first prepare)
-            // is stopped, not paused. Mapping it explicitly avoids reporting a
-            // misleading PAUSED for a player that has nothing loaded.
-            p.playbackState == Player.STATE_IDLE -> PlaybackStateCompat.STATE_STOPPED
-            p.playbackState == Player.STATE_READY && !p.isPlaying ->
-                PlaybackStateCompat.STATE_PAUSED
-            else -> PlaybackStateCompat.STATE_PAUSED
-        }
-        session.setPlaybackState(buildState(state))
+    private fun cancelBufferingWatchdog() {
+        bufferingWatchdog?.let(mainHandler::removeCallbacks)
+        bufferingWatchdog = null
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "RadioTEDU",
-                NotificationManager.IMPORTANCE_LOW,
-            )
-            getSystemService(NotificationManager::class.java)
-                ?.createNotificationChannel(channel)
-        }
-    }
-
-    /**
-     * Start/stop the mediaPlayback foreground service to match actual playback.
-     *
-     * Starting the FGS only while playback is active keeps it within the
-     * Android 14 background-start exemption for media playback, and stopping it
-     * when playback pauses/stops avoids holding a foreground service (and its
-     * ongoing notification) when nothing is playing.
-     */
-    private fun updateForeground(isPlaying: Boolean) {
-        if (isPlaying) {
-            if (isForeground) return
-            try {
-                val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle("RadioTEDU")
-                    .setContentText("Araçta çalıyor")
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setOngoing(true)
-                    .build()
-                startForeground(FGS_ID, notification)
-                isForeground = true
-            } catch (e: Exception) {
-                // Foreground start can still be restricted in edge cases; log it
-                // so the failure is visible instead of silently swallowed.
-                Log.e(TAG, "Failed to start mediaPlayback foreground service", e)
+    private fun startProgressTicker() {
+        cancelProgressTicker(save = false)
+        if (activeCatalogItem?.seriesId == null) return
+        val runnable = object : Runnable {
+            override fun run() {
+                savePodcastProgress(completed = false)
+                if (player.isPlaying && activeCatalogItem?.seriesId != null) {
+                    mainHandler.postDelayed(this, PROGRESS_SAVE_INTERVAL_MS)
+                }
             }
-        } else {
-            if (!isForeground) return
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-            isForeground = false
+        }
+        progressTicker = runnable
+        mainHandler.postDelayed(runnable, PROGRESS_SAVE_INTERVAL_MS)
+    }
+
+    private fun cancelProgressTicker(save: Boolean) {
+        progressTicker?.let(mainHandler::removeCallbacks)
+        progressTicker = null
+        if (save) savePodcastProgress(completed = false)
+    }
+
+    private fun savePodcastProgress(completed: Boolean) {
+        val item = activeCatalogItem ?: return
+        if (item.seriesId == null) return
+        val duration = player.duration
+        if (completed) {
+            markPodcastCompleted(item.id)
+            return
+        }
+        if (duration <= 0 || duration == C.TIME_UNSET) return
+
+        val position = player.currentPosition.coerceIn(0L, duration)
+        val percent = (position.toDouble() / duration.toDouble()).coerceIn(0.0, 1.0)
+        if (percent >= PODCAST_COMPLETION_THRESHOLD) {
+            markPodcastCompleted(item.id)
+            return
+        }
+        prefs().edit()
+            .putInt(KEY_PROGRESS_SCHEMA_PREFIX + item.id, PODCAST_PROGRESS_SCHEMA)
+            .putLong(KEY_POSITION_PREFIX + item.id, position)
+            .putLong(KEY_DURATION_PREFIX + item.id, duration)
+            .putFloat(KEY_PROGRESS_PREFIX + item.id, percent.toFloat())
+            .apply()
+    }
+
+    private fun markPodcastCompleted(mediaId: String) {
+        prefs().edit()
+            .putInt(KEY_PROGRESS_SCHEMA_PREFIX + mediaId, PODCAST_PROGRESS_SCHEMA)
+            .remove(KEY_POSITION_PREFIX + mediaId)
+            .remove(KEY_DURATION_PREFIX + mediaId)
+            .putFloat(KEY_PROGRESS_PREFIX + mediaId, 1f)
+            .apply()
+    }
+
+    private fun podcastProgress(mediaId: String): Double =
+        runCatching { prefs().getFloat(KEY_PROGRESS_PREFIX + mediaId, 0f) }
+            .getOrDefault(0f)
+            .toDouble()
+            .coerceIn(0.0, 1.0)
+
+    private fun savedPodcastPositionMs(mediaId: String): Long {
+        val preferences = prefs()
+        if (
+            preferences.getInt(KEY_PROGRESS_SCHEMA_PREFIX + mediaId, 0) !=
+            PODCAST_PROGRESS_SCHEMA
+        ) {
+            return C.TIME_UNSET
+        }
+        val position = preferences.getLong(KEY_POSITION_PREFIX + mediaId, C.TIME_UNSET)
+        val duration = preferences.getLong(KEY_DURATION_PREFIX + mediaId, C.TIME_UNSET)
+        if (position < 0 || duration <= 0 || duration == C.TIME_UNSET) return C.TIME_UNSET
+
+        val clamped = position.coerceAtMost(duration)
+        if (clamped.toDouble() / duration.toDouble() >= PODCAST_COMPLETION_THRESHOLD) {
+            markPodcastCompleted(mediaId)
+            return C.TIME_UNSET
+        }
+        return clamped
+    }
+
+    private fun sendSessionError(code: Int, message: String) {
+        Log.w(TAG, message)
+        librarySession.sendError(SessionError(code, message))
+    }
+
+    private fun notifyCatalogChanged() {
+        if (!::librarySession.isInitialized) return
+        val catalog = readCatalog()
+        val categories = catalog.optJSONArray("categories")
+        val rootCount = if (categories == null) 1 else topLevelCategories(categories).size
+        librarySession.notifyChildrenChanged(ROOT_ID, rootCount, null)
+        categories ?: return
+        for (i in 0 until categories.length()) {
+            val category = categories.optJSONObject(i) ?: continue
+            val id = category.optString("id")
+            val count = category.optJSONArray("items")?.length() ?: 0
+            if (id.isNotEmpty()) librarySession.notifyChildrenChanged(id, count, null)
         }
     }
 
-    private fun buildState(state: Int): PlaybackStateCompat =
-        PlaybackStateCompat.Builder()
-            .setActions(playbackActions)
-            .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
+    // --- Media3 library/session callbacks ---
+
+    private inner class LibraryCallback : MediaLibrarySession.Callback {
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<MediaItem>> =
+            Futures.immediateFuture(
+                LibraryResult.ofItem(rootMediaItem(), responseLibraryParams(params)),
+            )
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val children = when {
+                params?.isOffline == true -> emptyList()
+                parentId == ROOT_ID && params?.isSuggested == true -> suggestedItems()
+                else -> childrenFor(parentId)
+            }
+            val pageItems = paginate(children, page, pageSize)
+                ?: return Futures.immediateFuture(
+                    LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE),
+                )
+            return Futures.immediateFuture(
+                LibraryResult.ofItemList(pageItems, responseLibraryParams(params)),
+            )
+        }
+
+        override fun onGetItem(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String,
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val item = when {
+                mediaId == ROOT_ID -> rootMediaItem()
+                else -> findCategory(mediaId)?.let(::browsableFromJson)
+                    ?: findItem(mediaId)?.toMediaItem(playable = false)
+            }
+            return if (item != null) {
+                Futures.immediateFuture(LibraryResult.ofItem(item, null))
+            } else {
+                Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+            }
+        }
+
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<Void>> {
+            val count = searchItems(query).size
+            val responseParams = responseLibraryParams(params)
+            session.notifySearchResultChanged(browser, query, count, responseParams)
+            return Futures.immediateFuture(LibraryResult.ofVoid(responseParams))
+        }
+
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val results = searchItems(query).map { it.toMediaItem(playable = false) }
+            val pageItems = paginate(results, page, pageSize)
+                ?: return Futures.immediateFuture(
+                    LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE),
+                )
+            return Futures.immediateFuture(
+                LibraryResult.ofItemList(pageItems, responseLibraryParams(params)),
+            )
+        }
+
+        /** Resolve taps plus legacy prepare/playFromMediaId/search requests. */
+        override fun onSetMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>,
+            startIndex: Int,
+            startPositionMs: Long,
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            val requested = mediaItems.getOrNull(startIndex.coerceAtLeast(0))
+                ?: mediaItems.firstOrNull()
+                ?: return Futures.immediateFailedFuture(
+                    IllegalArgumentException(localizedString(R.string.car_no_media_item_requested)),
+                )
+            val resolved = resolveRequestedItem(requested)
+                ?: return Futures.immediateFailedFuture(
+                    IllegalArgumentException(localizedString(R.string.car_unknown_media_item)),
+                )
+
+            if (resolved.quality == "flac" && isMeteredNetwork()) {
+                val warning = localizedString(R.string.car_flac_metered_warning)
+                librarySession.sendError(
+                    controller,
+                    SessionError(SessionError.ERROR_NOT_SUPPORTED, warning),
+                )
+                return Futures.immediateFailedFuture(IllegalStateException(warning))
+            }
+
+            // A later Next command must not enter a FLAC item that was merely
+            // adjacent to the allowed request while the network is metered.
+            val queue = meteredSafeQueueFor(resolved)
+            val queueIndex = queue.indexOfFirst { it.id == resolved.id }.coerceAtLeast(0)
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(
+                    queue.map { it.toMediaItem(playable = true) },
+                    queueIndex,
+                    startPositionMs,
+                ),
+            )
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: List<MediaItem>,
+        ): ListenableFuture<List<MediaItem>> {
+            val resolved = mediaItems.mapNotNull(::resolveRequestedItem)
+            if (resolved.any { it.quality == "flac" } && isMeteredNetwork()) {
+                val warning = localizedString(R.string.car_flac_metered_warning)
+                librarySession.sendError(
+                    controller,
+                    SessionError(SessionError.ERROR_NOT_SUPPORTED, warning),
+                )
+                return Futures.immediateFailedFuture(IllegalStateException(warning))
+            }
+            return Futures.immediateFuture(resolved.map { it.toMediaItem(playable = true) })
+        }
+
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            val lastId = prefs().getString(KEY_LAST_MEDIA_ID, null)
+            val remembered = lastId?.let(::findItem) ?: fallbackRadioItem()
+            val resolved = if (isMeteredNetwork() && remembered.quality == "flac") {
+                radioItems().firstOrNull { it.quality != "flac" } ?: fallbackRadioItem()
+            } else {
+                remembered
+            }
+            val queue = meteredSafeQueueFor(resolved)
+            val index = queue.indexOfFirst { it.id == resolved.id }.coerceAtLeast(0)
+            val startPositionMs = if (resolved.seriesId != null) {
+                savedPodcastPositionMs(resolved.id)
+            } else {
+                C.TIME_UNSET
+            }
+            return Futures.immediateFuture(
+                MediaSession.MediaItemsWithStartPosition(
+                    queue.map { it.toMediaItem(playable = true) },
+                    index,
+                    startPositionMs,
+                ),
+            )
+        }
+    }
+
+    // --- Browse tree and catalog ---
+
+    private fun responseLibraryParams(params: LibraryParams?): LibraryParams {
+        val extras = Bundle(params?.extras ?: Bundle.EMPTY).apply {
+            putBoolean(CONTENT_STYLE_SUPPORTED, true)
+            putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_GRID)
+            putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST)
+            putBoolean(MediaConstants.BROWSER_SERVICE_EXTRAS_KEY_SEARCH_SUPPORTED, true)
+        }
+        return LibraryParams.Builder()
+            .setRecent(params?.isRecent == true)
+            .setOffline(params?.isOffline == true)
+            .setSuggested(params?.isSuggested == true)
+            .setExtras(extras)
             .build()
+    }
 
-    // --- Browsing ---
+    private fun <T> paginate(items: List<T>, page: Int, pageSize: Int): List<T>? {
+        if (page < 0 || pageSize <= 0) return null
+        val fromIndex = page.toLong() * pageSize.toLong()
+        if (fromIndex >= items.size) return emptyList()
+        val toIndex = minOf(fromIndex + pageSize.toLong(), items.size.toLong())
+        return items.subList(fromIndex.toInt(), toIndex.toInt())
+    }
 
-    override fun onGetRoot(
-        clientPackageName: String,
-        clientUid: Int,
-        rootHints: Bundle?,
-    ): BrowserRoot {
+    private fun rootMediaItem(): MediaItem {
         val extras = Bundle().apply {
             putBoolean(CONTENT_STYLE_SUPPORTED, true)
             putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_GRID)
             putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST)
+            putBoolean(MediaConstants.BROWSER_SERVICE_EXTRAS_KEY_SEARCH_SUPPORTED, true)
         }
-        return BrowserRoot(ROOT_ID, extras)
+        return MediaItem.Builder()
+            .setMediaId(ROOT_ID)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                    .setTitle(localizedString(R.string.app_name))
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                    .setExtras(extras)
+                    .build(),
+            )
+            .build()
     }
 
-    override fun onLoadChildren(
-        parentId: String,
-        result: Result<MutableList<MediaBrowserCompat.MediaItem>>,
-    ) {
-        val items = mutableListOf<MediaBrowserCompat.MediaItem>()
-        val catalog = readCatalog()
-        val categories = catalog.optJSONArray("categories")
-
-        if (categories != null) {
-            if (parentId == ROOT_ID) {
-                // Only top-level destinations (Live Radio + Podcasts). Podcast
-                // series categories are nested beneath cat_podcasts.
-                for (i in 0 until categories.length()) {
-                    val cat = categories.getJSONObject(i)
-                    if (cat.has("parentId")) continue
-                    items.add(
-                        browsable(
-                            cat.getString("id"),
-                            cat.getString("title"),
-                            cat.optString("subtitle", ""),
-                            cat.optString("artwork", ""),
-                        ),
-                    )
-                }
-            } else {
-                for (i in 0 until categories.length()) {
-                    val cat = categories.getJSONObject(i)
-                    if (cat.getString("id") == parentId) {
-                        val children = cat.optJSONArray("items")
-                        if (children != null) {
-                            for (j in 0 until children.length()) {
-                                val it = children.getJSONObject(j)
-                                items.add(itemFor(it))
-                            }
-                        }
-                        break
-                    }
-                }
-            }
-        } else {
-            // Empty catalog (app never opened): show a minimal Live Radio tree
-            // built from the static fallback so the car is never blank and the
-            // main RadioTEDU stream is tappable on a true cold start.
-            val fallback = fallbackRadioItem()
-            if (parentId == ROOT_ID) {
-                items.add(browsable("cat_radio", FALLBACK_RADIO_TITLE, "", ""))
-            } else if (parentId == "cat_radio") {
-                items.add(
-                    playable(
-                        fallback.id,
-                        fallback.title,
-                        fallback.artist,
-                        fallback.artwork,
+    private fun childrenFor(parentId: String): List<MediaItem> {
+        val categories = readCatalog().optJSONArray("categories")
+        if (categories == null) {
+            return when (parentId) {
+                ROOT_ID -> listOf(
+                    browsable(
+                        CAT_RADIO,
+                        localizedString(R.string.car_live_radio),
+                        localizedString(R.string.app_name),
+                        "",
+                        MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS,
                     ),
+                )
+                CAT_RADIO -> listOf(fallbackRadioItem().toMediaItem(playable = false))
+                else -> emptyList()
+            }
+        }
+
+        if (parentId == ROOT_ID) {
+            return topLevelCategories(categories).map(::browsableFromJson)
+        }
+
+        val category = categoryById(categories, parentId) ?: return emptyList()
+        val items = category.optJSONArray("items") ?: return emptyList()
+        return buildList {
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                add(
+                    if (item.optBoolean("playable", true)) {
+                        itemFromJson(item).toMediaItem(playable = false)
+                    } else {
+                        browsableFromJson(item)
+                    },
                 )
             }
         }
-        result.sendResult(items)
     }
 
-    private fun itemFor(json: JSONObject): MediaBrowserCompat.MediaItem {
-        val playable = json.optBoolean("playable", true)
-        return if (playable) {
-            playable(
-                json.getString("id"),
-                json.getString("title"),
-                json.optString("subtitle", ""),
-                json.optString("artwork", ""),
-            )
-        } else {
-            browsable(
-                json.getString("id"),
-                json.getString("title"),
-                json.optString("subtitle", ""),
-                json.optString("artwork", ""),
-            )
+    private fun suggestedItems(): List<MediaItem> {
+        val radios = radioItems()
+        val firstEpisodePerSeries = allPlayableItems()
+            .filter { it.seriesId != null }
+            .distinctBy { it.seriesId }
+        return (radios + firstEpisodePerSeries)
+            .distinctBy { it.id }
+            .take(10)
+            .map { it.toMediaItem(playable = false) }
+    }
+
+    private fun searchItems(query: String): List<CatalogItem> {
+        val normalized = normalize(query)
+        if (isLatestPodcastQuery(normalized)) {
+            return allPlayableItems().firstOrNull { it.seriesId != null }?.let(::listOf)
+                ?: emptyList()
         }
+
+        val all = allPlayableItems().ifEmpty { listOf(fallbackRadioItem()) }
+        if (normalized.isEmpty()) return emptyList()
+
+        val direct = all.filter { item ->
+            normalize(item.title).contains(normalized) ||
+                normalize(item.artist).contains(normalized) ||
+                normalize(item.id).contains(normalized) ||
+                aliasesFor(item.id).any { normalized.contains(it) }
+        }
+        if (direct.isNotEmpty()) return direct
+
+        return if (normalized in setOf("radio", "radiotedu", "radio tedu", "live", "canli")) {
+            radioItems().take(1)
+        } else {
+            emptyList()
+        }
+    }
+
+    private fun resolveRequestedItem(requested: MediaItem): CatalogItem? {
+        val query = requested.requestMetadata.searchQuery
+        if (!query.isNullOrBlank()) return searchItems(query).firstOrNull()
+        if (requested.mediaId.isNotEmpty()) return findItem(requested.mediaId)
+        return requested.requestMetadata.mediaUri?.toString()?.let { uri ->
+            allPlayableItems().firstOrNull { it.url == uri }
+        }
+    }
+
+    private fun queueFor(item: CatalogItem): List<CatalogItem> = when {
+        item.seriesId != null -> allPlayableItems().filter { it.seriesId == item.seriesId }
+            .ifEmpty { listOf(item) }
+        radioItems().any { it.id == item.id } -> radioItems()
+        else -> listOf(item)
+    }
+
+    private fun meteredSafeQueueFor(item: CatalogItem): List<CatalogItem> {
+        val queue = queueFor(item)
+        if (!isMeteredNetwork()) return queue
+        return queue.filterNot { it.quality == "flac" }
+            .ifEmpty { listOf(fallbackRadioItem()) }
+    }
+
+    private fun findCategory(mediaId: String): JSONObject? {
+        val categories = readCatalog().optJSONArray("categories") ?: return null
+        return categoryById(categories, mediaId)
+    }
+
+    private fun categoryById(categories: JSONArray, mediaId: String): JSONObject? {
+        for (i in 0 until categories.length()) {
+            val category = categories.optJSONObject(i) ?: continue
+            if (category.optString("id") == mediaId) return category
+        }
+        return null
+    }
+
+    private fun topLevelCategories(categories: JSONArray): List<JSONObject> = buildList {
+        for (i in 0 until categories.length()) {
+            val category = categories.optJSONObject(i) ?: continue
+            if (!category.has("parentId")) add(category)
+        }
+    }
+
+    private fun browsableFromJson(json: JSONObject): MediaItem {
+        val id = json.optString("id")
+        val mediaType = when {
+            id == CAT_RADIO -> MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS
+            id == CAT_PODCASTS || id.startsWith("podcast-series:") ->
+                MediaMetadata.MEDIA_TYPE_FOLDER_PODCASTS
+            else -> MediaMetadata.MEDIA_TYPE_FOLDER_MIXED
+        }
+        return browsable(
+            id,
+            json.optString("title", localizedString(R.string.app_name)),
+            json.optString("subtitle", ""),
+            json.optString("artwork", ""),
+            mediaType,
+        )
     }
 
     private fun browsable(
@@ -491,125 +753,30 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         title: String,
         subtitle: String,
         artwork: String,
-    ): MediaBrowserCompat.MediaItem =
-        MediaBrowserCompat.MediaItem(
-            description(id, title, subtitle, artwork),
-            MediaBrowserCompat.MediaItem.FLAG_BROWSABLE,
-        )
-
-    private fun playable(
-        id: String,
-        title: String,
-        subtitle: String,
-        artwork: String,
-    ): MediaBrowserCompat.MediaItem =
-        MediaBrowserCompat.MediaItem(
-            description(id, title, subtitle, artwork),
-            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE,
-        )
-
-    private fun description(
-        id: String,
-        title: String,
-        subtitle: String,
-        artwork: String,
-    ): MediaDescriptionCompat {
-        val b = MediaDescriptionCompat.Builder()
-            .setMediaId(id)
+        mediaType: Int,
+    ): MediaItem {
+        val extras = Bundle().apply {
+            putInt(
+                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+            )
+            putInt(
+                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+                MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
+            )
+        }
+        val metadata = MediaMetadata.Builder()
             .setTitle(title)
-        if (subtitle.isNotEmpty()) b.setSubtitle(subtitle)
-        val localBitmap = localIconBitmap(artwork)
-        if (localBitmap != null) {
-            b.setIconBitmap(localBitmap)
-        } else if (artwork.isNotEmpty()) {
-            b.setIconUri(Uri.parse(artwork))
-        }
-        return b.build()
+            .setSubtitle(subtitle.ifEmpty { null })
+            .setIsBrowsable(true)
+            .setIsPlayable(false)
+            .setMediaType(mediaType)
+            .setExtras(extras)
+            .applyArtwork(artwork)
+            .build()
+        return MediaItem.Builder().setMediaId(id).setMediaMetadata(metadata).build()
     }
 
-    /** Decode bundled vector/raster tiles; car hosts often cannot dereference
-     * android.resource:// URIs and otherwise render a blank white square. */
-    private fun localIconBitmap(artwork: String): Bitmap? {
-        if (!artwork.startsWith("android.resource://")) return null
-        val name = artwork.substringAfterLast('/').substringBefore('?')
-        val id = resources.getIdentifier(name, "drawable", packageName)
-        if (id == 0) return null
-        val drawable = resources.getDrawable(id, theme) ?: return null
-        val width = drawable.intrinsicWidth.coerceAtLeast(1)
-        val height = drawable.intrinsicHeight.coerceAtLeast(1)
-        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
-            drawable.setBounds(0, 0, width, height)
-            drawable.draw(Canvas(bitmap))
-        }
-    }
-
-    private fun readCatalog(): JSONObject {
-        val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val raw = prefs.getString(KEY_CATALOG, null) ?: return JSONObject()
-        return try {
-            JSONObject(raw)
-        } catch (e: Exception) {
-            JSONObject()
-        }
-    }
-
-    // --- Car transport -> native ExoPlayer (headless, no JS) ---
-
-    // Each callback drives the native ExoPlayer directly. There is NO MORE
-    // CarBridge.command relay to JS for transport/playback, so playback works on
-    // a cold start from the car even when the RN JS runtime never registered its
-    // listener. PlaybackState is set from the player's real state (see
-    // playerListener / syncPlaybackState), never optimistically here.
-    private inner class SessionCallback : MediaSessionCompat.Callback() {
-        override fun onPlay() {
-            val p = player()
-            // After a stop()/error the player sits in STATE_IDLE; play() alone
-            // would just set playWhenReady and stay silent. Re-prepare the
-            // existing item so "play" actually resumes instead of no-opping.
-            if (p.playbackState == Player.STATE_IDLE && p.currentMediaItem != null) {
-                session.setPlaybackState(buildState(PlaybackStateCompat.STATE_BUFFERING))
-                armBufferingWatchdog()
-                p.prepare()
-            }
-            p.play()
-        }
-
-        override fun onPause() {
-            player?.pause()
-        }
-
-        override fun onStop() {
-            cancelBufferingWatchdog()
-            player?.stop()
-            @Suppress("DEPRECATION")
-            stopForeground(true)
-            isForeground = false
-            session.setPlaybackState(buildState(PlaybackStateCompat.STATE_STOPPED))
-        }
-
-        override fun onSkipToNext() {
-            if (!cyclePodcast(1)) cycleRadio(1)
-        }
-
-        override fun onSkipToPrevious() {
-            if (!cyclePodcast(-1)) cycleRadio(-1)
-        }
-
-        override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-            if (mediaId != null) {
-                playMediaId(mediaId)
-            }
-        }
-
-        override fun onPlayFromSearch(query: String?, extras: Bundle?) {
-            playFromSearch(query)
-        }
-    }
-
-    /**
-     * A playable catalog item: its id, stream url, and now-playing metadata.
-     * Looked up natively from the catalog JSON so playback needs no JS.
-     */
     private data class CatalogItem(
         val id: String,
         val url: String,
@@ -618,190 +785,271 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         val artwork: String,
         val seriesId: String? = null,
         val quality: String? = null,
+        val audioFormat: String? = null,
     )
 
-    private fun itemFromJson(json: JSONObject): CatalogItem =
-        CatalogItem(
+    private fun CatalogItem.toMediaItem(playable: Boolean): MediaItem {
+        val progress = if (seriesId != null) podcastProgress(id) else 0.0
+        val extras = Bundle().apply {
+            putString(MediaConstants.METADATA_KEY_CONTENT_ID, id)
+            audioFormat?.let { putString(EXTRA_AUDIO_FORMAT, it) }
+            if (seriesId != null) {
+                putString(MediaConstants.METADATA_KEY_SERIES_CONTENT_ID, seriesId)
+                putDouble(
+                    MediaConstants.DESCRIPTION_EXTRAS_KEY_COMPLETION_PERCENTAGE,
+                    progress,
+                )
+                putInt(
+                    MediaConstants.DESCRIPTION_EXTRAS_KEY_COMPLETION_STATUS,
+                    when {
+                        progress >= 0.95 ->
+                            MediaConstants.DESCRIPTION_EXTRAS_VALUE_COMPLETION_STATUS_FULLY_PLAYED
+                        progress > 0.0 ->
+                            MediaConstants.DESCRIPTION_EXTRAS_VALUE_COMPLETION_STATUS_PARTIALLY_PLAYED
+                        else ->
+                            MediaConstants.DESCRIPTION_EXTRAS_VALUE_COMPLETION_STATUS_NOT_PLAYED
+                    },
+                )
+            }
+        }
+        val metadata = MediaMetadata.Builder()
+            .setTitle(title)
+            .setDisplayTitle(title)
+            .setArtist(artist.ifEmpty { null })
+            .setAlbumTitle(
+                if (seriesId != null) {
+                    artist.ifEmpty { localizedString(R.string.car_podcasts) }
+                } else {
+                    null
+                },
+            )
+            .setStation(if (seriesId == null) title else null)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .setMediaType(
+                if (seriesId == null) {
+                    MediaMetadata.MEDIA_TYPE_RADIO_STATION
+                } else {
+                    MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE
+                },
+            )
+            .setExtras(extras)
+            .applyArtwork(artwork)
+            .build()
+        return MediaItem.Builder()
+            .setMediaId(id)
+            .setMediaMetadata(metadata)
+            .apply { if (playable) setUri(url) }
+            .build()
+    }
+
+    private fun itemFromJson(json: JSONObject): CatalogItem {
+        val quality = json.optString("quality", "").ifEmpty { null }
+        val seriesId = json.optString("seriesId", "").ifEmpty { null }
+        return CatalogItem(
             id = json.optString("id", ""),
             url = json.optString("url", ""),
-            title = json.optString("title", "RadioTEDU"),
+            title = json.optString("title", localizedString(R.string.app_name)),
             artist = json.optString("subtitle", ""),
             artwork = json.optString("artwork", ""),
-            seriesId = json.optString("seriesId", "").ifEmpty { null },
-            quality = json.optString("quality", "").ifEmpty { null },
+            seriesId = seriesId,
+            quality = quality,
+            audioFormat = json.optString("audioFormat", "").ifEmpty {
+                when (quality) {
+                    "flac" -> "FLAC"
+                    "low", "normal" -> "HE-AAC v1"
+                    else -> if (seriesId != null) localizedString(R.string.car_podcast_audio) else null
+                }
+            },
         )
+    }
 
-    /** Every playable item across the radio and podcast categories, in order. */
     private fun allPlayableItems(): List<CatalogItem> {
-        val out = mutableListOf<CatalogItem>()
-        val catalog = readCatalog()
-        val categories = catalog.optJSONArray("categories")
-        if (categories != null) {
-            for (i in 0 until categories.length()) {
-                val items = categories.getJSONObject(i).optJSONArray("items") ?: continue
-                addPlayable(items, out)
-            }
+        val output = mutableListOf<CatalogItem>()
+        val categories = readCatalog().optJSONArray("categories") ?: return output
+        for (i in 0 until categories.length()) {
+            addPlayable(categories.optJSONObject(i)?.optJSONArray("items"), output)
         }
-        return out
+        return output.distinctBy { it.id }
     }
 
-    private fun addPlayable(arr: JSONArray?, out: MutableList<CatalogItem>) {
-        if (arr == null) return
-        for (j in 0 until arr.length()) {
-            val obj = arr.getJSONObject(j)
-            if (!obj.optBoolean("playable", true)) continue
-            val item = itemFromJson(obj)
-            if (item.url.isNotEmpty()) out.add(item)
+    private fun addPlayable(items: JSONArray?, output: MutableList<CatalogItem>) {
+        if (items == null) return
+        for (i in 0 until items.length()) {
+            val json = items.optJSONObject(i) ?: continue
+            if (!json.optBoolean("playable", true)) continue
+            val item = itemFromJson(json)
+            if (item.id.isNotEmpty() && item.url.isNotEmpty()) output.add(item)
         }
     }
 
-    /**
-     * Static fallback station. Used when the JS catalog is empty (the app has
-     * never been opened, so SharedPreferences has no catalog yet) so the car can
-     * still browse and voice-play the main RadioTEDU stream on a true cold start.
-     */
-    private fun fallbackRadioItem(): CatalogItem =
-        CatalogItem(
-            id = FALLBACK_RADIO_ID,
-            url = FALLBACK_RADIO_URL,
-            title = FALLBACK_RADIO_TITLE,
-            artist = FALLBACK_RADIO_SUBTITLE,
-            artwork = FALLBACK_RADIO_ARTWORK,
-            quality = "normal",
-        )
-
-    /** The RADIO category's playable items (live stations) in catalog order. */
     private fun radioItems(): List<CatalogItem> {
-        val out = mutableListOf<CatalogItem>()
         val categories = readCatalog().optJSONArray("categories")
         if (categories != null) {
-            for (i in 0 until categories.length()) {
-                val cat = categories.getJSONObject(i)
-                if (cat.optString("id") == "cat_radio") {
-                    addPlayable(cat.optJSONArray("items"), out)
-                    break
-                }
-            }
+            val output = mutableListOf<CatalogItem>()
+            addPlayable(categoryById(categories, CAT_RADIO)?.optJSONArray("items"), output)
+            if (output.isNotEmpty()) return output
         }
-        // Never return empty: voice search / skip must always have a station.
-        if (out.isEmpty()) out.add(fallbackRadioItem())
-        return out
+        return listOf(fallbackRadioItem())
     }
 
-    /** Look up a playable item by id across categories. */
     private fun findItem(mediaId: String): CatalogItem? =
         allPlayableItems().firstOrNull { it.id == mediaId }
-            ?: run {
-                // Non-playable rows (e.g. jukebox:none) are excluded above; also
-                // search raw items so a stale id still resolves if it has a url.
-                val catalog = readCatalog()
-                val categories = catalog.optJSONArray("categories")
-                if (categories != null) {
-                    for (i in 0 until categories.length()) {
-                        val items =
-                            categories.getJSONObject(i).optJSONArray("items") ?: continue
-                        for (j in 0 until items.length()) {
-                            val obj = items.getJSONObject(j)
-                            if (obj.optString("id") == mediaId) return itemFromJson(obj)
-                        }
-                    }
-                }
-                // Empty-catalog cold start: resolve the fallback station id so a
-                // tap from the synthesized browse tree still plays.
-                if (mediaId == FALLBACK_RADIO_ID) fallbackRadioItem() else null
-            }
+            ?: if (mediaId == FALLBACK_RADIO_ID) fallbackRadioItem() else null
 
-    /**
-     * Play a catalog item by id, fully natively. Sets STATE_BUFFERING + metadata
-     * IMMEDIATELY so the car shows buffering (not a dead spinner) while the
-     * stream connects, then prepares + plays on ExoPlayer. STATE_ERROR if the
-     * item is missing or has no url.
-     */
-    private fun playMediaId(mediaId: String) {
-        val item = findItem(mediaId)
-        if (item == null || item.url.isEmpty()) {
-            setErrorState("Bu içerik çalınamıyor")
-            return
+    private fun fallbackRadioItem(): CatalogItem = CatalogItem(
+        id = FALLBACK_RADIO_ID,
+        url = FALLBACK_RADIO_URL,
+        title = localizedString(R.string.app_name),
+        artist = localizedString(R.string.car_live_radio),
+        artwork = FALLBACK_RADIO_ARTWORK,
+        quality = "normal",
+        audioFormat = "HE-AAC v1",
+    )
+
+    private fun MediaMetadata.Builder.applyArtwork(artwork: String): MediaMetadata.Builder = apply {
+        if (artwork.isBlank()) return@apply
+
+        // Keep the original URI so in-process/current Media3 hosts can load the
+        // full 2048 px resource. Also attach a tiny deterministic thumbnail for
+        // hosts that cannot dereference resources owned by another package.
+        runCatching { setArtworkUri(Uri.parse(artwork)) }
+        val tileData = bundledTileResource(artwork)?.let(::renderBundledTile)
+        if (tileData != null) {
+            setArtworkData(tileData, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
         }
-        playItem(item)
     }
 
-    /** Set metadata + buffering state, then prepare and play the stream. */
-    private fun playItem(item: CatalogItem) {
-        if (item.quality == "flac" && isMeteredNetwork()) {
-            setErrorState("FLAC uses considerably more mobile data. Connect to Wi-Fi or choose Normal.")
-            return
+    private fun bundledTileResource(artwork: String): Int? {
+        val uri = runCatching { Uri.parse(artwork) }.getOrNull() ?: return null
+        if (
+            uri.scheme != ContentResolver.SCHEME_ANDROID_RESOURCE ||
+            uri.authority != packageName
+        ) {
+            return null
         }
-        activeCatalogItem = item
-        setSessionMetadata(item.title, item.artist)
-        // Show buffering immediately so the car never sits on a dead spinner.
-        session.setPlaybackState(buildState(PlaybackStateCompat.STATE_BUFFERING))
-        // Arm the watchdog so a stream that connects but never delivers data
-        // resolves to STATE_ERROR rather than buffering forever.
-        armBufferingWatchdog()
-        val p = player()
-        p.setMediaItem(MediaItem.fromUri(item.url))
-        p.prepare()
-        p.play()
+        return when (uri.lastPathSegment) {
+            "car_tile_radio" -> R.drawable.car_tile_radio
+            "car_tile_podcasts" -> R.drawable.car_tile_podcasts
+            "car_station_radiotedu" -> R.drawable.car_station_radiotedu_thumb
+            "car_station_classic" -> R.drawable.car_station_classic_thumb
+            "car_station_cazz" -> R.drawable.car_station_cazz_thumb
+            "car_station_lofi" -> R.drawable.car_station_lofi_thumb
+            "car_station_energize" -> R.drawable.car_station_energize_thumb
+            "car_station_rock" -> R.drawable.car_station_rock_thumb
+            "car_station_en" -> R.drawable.car_station_en_thumb
+            "car_station_fr" -> R.drawable.car_station_fr_thumb
+            else -> null
+        }
     }
 
-    /**
-     * For live radio, "skip" = change station: find the currently playing radio
-     * item and move to the next/previous one in the catalog, wrapping around.
-     */
-    private fun cycleRadio(direction: Int) {
-        val radios = radioItems()
-        if (radios.isEmpty()) return
-        val currentUrl =
-            (player?.currentMediaItem?.localConfiguration?.uri)?.toString()
-        val currentIndex = radios.indexOfFirst { it.url == currentUrl }
-        val nextIndex =
-            if (currentIndex == -1) {
-                if (direction >= 0) 0 else radios.size - 1
-            } else {
-                ((currentIndex + direction) % radios.size + radios.size) % radios.size
-            }
-        playItem(radios[nextIndex])
+    private fun renderBundledTile(resourceId: Int): ByteArray? {
+        tileArtworkCache[resourceId]?.let { return it }
+        val drawable = ContextCompat.getDrawable(this, resourceId)?.mutate() ?: return null
+        val bitmap = Bitmap.createBitmap(
+            CAR_TILE_SIZE_PX,
+            CAR_TILE_SIZE_PX,
+            Bitmap.Config.ARGB_8888,
+        )
+        drawable.setBounds(0, 0, bitmap.width, bitmap.height)
+        drawable.draw(Canvas(bitmap))
+        val bytes = ByteArrayOutputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+            output.toByteArray()
+        }
+        bitmap.recycle()
+        return bytes.takeIf { it.size <= CAR_TILE_MAX_BYTES }?.also {
+            tileArtworkCache[resourceId] = it
+        }
     }
 
-    /** Keep podcast Next/Previous inside the selected series. */
-    private fun cyclePodcast(direction: Int): Boolean {
-        val seriesId = activeCatalogItem?.seriesId ?: return false
-        val episodes = allPlayableItems().filter { it.seriesId == seriesId }
-        if (episodes.isEmpty()) return false
-        val currentIndex = episodes.indexOfFirst { it.id == activeCatalogItem?.id }
-        val nextIndex =
-            if (currentIndex == -1) {
-                if (direction >= 0) 0 else episodes.size - 1
-            } else {
-                ((currentIndex + direction) % episodes.size + episodes.size) % episodes.size
-            }
-        playItem(episodes[nextIndex])
-        return true
+    private fun readCatalog(): JSONObject {
+        val raw = prefs().getString(KEY_CATALOG, null) ?: return JSONObject()
+        return runCatching { JSONObject(raw) }.getOrDefault(JSONObject())
     }
+
+    private fun localizedString(@StringRes resourceId: Int): String {
+        val language = prefs().getString(
+            KEY_LANGUAGE_PREFERENCE,
+            SYSTEM_LANGUAGE_PREFERENCE,
+        ) ?: SYSTEM_LANGUAGE_PREFERENCE
+        if (language !in SUPPORTED_LANGUAGE_CODES) {
+            return getString(resourceId)
+        }
+        val configuration = Configuration(resources.configuration).apply {
+            setLocale(Locale.forLanguageTag(language))
+        }
+        return createConfigurationContext(configuration).getString(resourceId)
+    }
+
+    private fun prefs() = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private fun isMeteredNetwork(): Boolean =
         (getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager)
             ?.isActiveNetworkMetered == true
 
-    /**
-     * Voice search: play the first radio item whose title contains the query
-     * (case-insensitive), else the first radio item. Always plays something so
-     * "Play RadioTEDU" never dead-ends.
-     */
-    private fun playFromSearch(query: String?) {
-        val radios = radioItems()
-        if (radios.isEmpty()) {
-            session.setPlaybackState(buildState(PlaybackStateCompat.STATE_ERROR))
-            return
-        }
-        val q = query?.trim()?.lowercase().orEmpty()
-        val match =
-            if (q.isEmpty()) {
-                radios.first()
-            } else {
-                radios.firstOrNull { it.title.lowercase().contains(q) } ?: radios.first()
-            }
-        playItem(match)
+    private fun normalize(value: String): String {
+        val normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
+            .lowercase(Locale.ROOT)
+        return normalized.replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()
+    }
+
+    private fun isLatestPodcastQuery(query: String): Boolean =
+        query in setOf("podcast", "подкаст", "بودكاست") ||
+            listOf(
+                "latest podcast",
+                "newest podcast",
+                "latest episode",
+                "newest episode",
+                "son podcast",
+                "son bolum",
+                "yeni podcast",
+                "yeni bolum",
+                "последний подкаст",
+                "новый подкаст",
+                "последний выпуск",
+                "новый выпуск",
+                "احدث بودكاست",
+                "احدث حلقة",
+                "neuester podcast",
+                "neueste folge",
+                "letzte folge",
+                "dernier podcast",
+                "nouveau podcast",
+                "dernier episode",
+                "nouvel episode",
+            ).any(query::contains)
+
+    private fun aliasesFor(mediaId: String): Set<String> = when (mediaId) {
+        "radiotedu-main" -> setOf(
+            "radiotedu", "radio tedu", "radio", "main", "ana kanal", "canli",
+            "радио теду", "главная станция", "прямой эфир",
+            "راديو تيدو", "الاذاعة الرئيسية", "بث مباشر",
+            "hauptsender", "live radio", "station principale", "radio en direct",
+        )
+        "radiotedu-classic" -> setOf(
+            "classic", "classical", "klasik", "классика", "классическая",
+            "كلاسيك", "كلاسيكية", "klassik", "klassische musik", "classique",
+            "musique classique",
+        )
+        "radiotedu-jazz" -> setOf("jazz", "cazz", "caz", "джаз", "جاز")
+        "radiotedu-lofi" -> setOf(
+            "lofi", "lo fi", "lo-fi", "лоу фай", "лоуфай", "لو فاي",
+        )
+        "radiotedu-energize" -> setOf(
+            "energize", "energy", "enerji", "энергия", "طاقة", "energie",
+        )
+        "radiotedu-spark" -> setOf("spark")
+        "radiotedu-rock" -> setOf("rock", "рок", "روك")
+        "radiotedu-en" -> setOf(
+            "english", "ingilizce", "radio tedu english", "английский", "انجليزي",
+            "englisch", "anglais",
+        )
+        "radiotedu-fr" -> setOf(
+            "french", "francais", "fransizca", "radio tedu french", "французский",
+            "فرنسي", "franzosisch",
+        )
+        else -> emptySet()
     }
 }

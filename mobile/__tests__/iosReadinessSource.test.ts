@@ -7,10 +7,20 @@ const read = (relative: string) =>
   fs.readFileSync(path.join(root, relative), 'utf8');
 
 describe('iOS release readiness', () => {
+  it('uses the public app name independently of the internal product name', () => {
+    const plist = read('ios/RadioTEDUMobile/Info.plist').replace(/\r\n/g, '\n');
+    expect(plist).toContain(
+      '<key>CFBundleDisplayName</key>\n\t<string>RadioTEDU</string>',
+    );
+    expect(plist).toContain(
+      '<key>CFBundleName</key>\n\t<string>$(PRODUCT_NAME)</string>',
+    );
+  });
+
   it('uses the current cross-platform release version', () => {
     const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
-    expect(project).toContain('MARKETING_VERSION = 1.2.3;');
-    expect(project).toContain('CURRENT_PROJECT_VERSION = 12030;');
+    expect(project).toContain('MARKETING_VERSION = 1.2.4;');
+    expect(project).toContain('CURRENT_PROJECT_VERSION = 12040;');
   });
 
   it('uses secure transport, required permissions, audio, and deep links', () => {

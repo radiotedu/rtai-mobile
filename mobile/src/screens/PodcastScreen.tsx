@@ -18,6 +18,7 @@ import TrackPlayer, {
   usePlaybackState,
 } from 'react-native-track-player';
 import { COLORS, SPACING } from '../theme/theme';
+import {logSafeError} from '../utils/safeLog';
 import {
   fetchPodcasts,
   resolvePodcastLaunchUrl,
@@ -85,7 +86,7 @@ const PodcastScreen = () => {
       }
       setPage(pageToLoad);
     } catch (e) {
-      console.log('Failed to fetch podcasts', e);
+      logSafeError('podcasts.load', e);
       Alert.alert(copy('common.error'), copy('podcast.empty'));
     } finally {
       setLoading(false);
@@ -153,7 +154,7 @@ const PodcastScreen = () => {
       }
       await TrackPlayer.play();
     } catch (error) {
-      console.error('Error playing podcast:', error);
+      logSafeError('podcasts.play', error);
       Alert.alert(copy('common.error'), copy('podcast.playError'));
     } finally {
       setPlayingId(null);

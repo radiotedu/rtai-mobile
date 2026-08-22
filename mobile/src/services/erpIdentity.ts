@@ -4,6 +4,24 @@ import axios from 'axios';
 import {BASE_API} from './config';
 
 export const TEDU_LOGIN_RETURN_URI = 'radiotedu://auth/erp/linked';
+export const ERP_IDENTITY_TIMEOUT_MS = 15000;
+
+export type ErpIdentityErrorCode =
+  | 'erp.callbackFailed'
+  | 'erp.invalidResponse'
+  | 'erp.unsafeUrl'
+  | 'erp.invalidSession'
+  | 'erp.startFailed';
+
+export class ErpIdentityError extends Error {
+  readonly code: ErpIdentityErrorCode;
+
+  constructor(code: ErpIdentityErrorCode) {
+    super(code);
+    this.name = 'ErpIdentityError';
+    this.code = code;
+  }
+}
 
 export type TeduLoginSession = {
   user: Record<string, unknown>;
@@ -15,7 +33,7 @@ export type TeduLoginSession = {
 export type TeduLoginCallback =
   | {matched: false}
   | {matched: true; code: string; error: null}
-  | {matched: true; code: null; error: string};
+  | {matched: true; code: null; error: ErpIdentityErrorCode};
 
 type ParsedUrl = {
   protocol: string;
@@ -32,13 +50,17 @@ function parseUrl(value: string): ParsedUrl | null {
   const match = value.trim().match(
     /^([a-z][a-z\d+.-]*):\/\/([^/?#]+)(\/[^?#]*)?(?:\?([^#]*))?/i,
   );
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
 
   const authority = match[2].split('@').pop() ?? '';
   const hostname = authority.split(':')[0].toLowerCase();
   const searchParams: Record<string, string> = {};
   for (const pair of (match[4] ?? '').split('&')) {
-    if (!pair) continue;
+    if (!pair) {
+      continue;
+    }
     const [rawKey, rawValue = ''] = pair.split('=');
     try {
       searchParams[decodeURIComponent(rawKey)] = decodeURIComponent(rawValue.replace(/\+/g, ' '));
@@ -57,7 +79,7 @@ function parseUrl(value: string): ParsedUrl | null {
 
 function responseData<T>(response: {data?: {data?: T}}): T {
   if (!response.data?.data) {
-    throw new Error('RadioTEDU giriş yanıtı doğrulanamadı.');
+    throw new ErpIdentityError('erp.invalidResponse');
   }
   return response.data.data;
 }
@@ -65,7 +87,9 @@ function responseData<T>(response: {data?: {data?: T}}): T {
 export function parseTeduLoginCallback(url: string): TeduLoginCallback {
   try {
     const callback = parseUrl(url);
-    if (!callback) return {matched: false};
+    if (!callback) {
+      return {matched: false};
+    }
     const normalizedPath = callback.pathname.replace(/\/$/, '');
     if (
       callback.protocol !== 'radiotedu:' ||
@@ -84,17 +108,30 @@ export function parseTeduLoginCallback(url: string): TeduLoginCallback {
     return {
       matched: true,
       code: null,
-      error: 'TEDÜ girişi tamamlanamadı. Lütfen tekrar deneyin.',
+      error: 'erp.callbackFailed',
     };
   } catch {
     return {matched: false};
   }
 }
 
-export async function startTeduLogin(): Promise<void> {
-  const response = await axios.post(`${BASE_API}/auth/erp-link/login/start`, {
-    return_uri: TEDU_LOGIN_RETURN_URI,
-  });
+function throwIfAborted(signal?: AbortSignal): void {
+  if (!signal?.aborted) {
+    return;
+  }
+  const error = new Error('ERP identity request aborted');
+  error.name = 'AbortError';
+  throw error;
+}
+
+export async function startTeduLogin(signal?: AbortSignal): Promise<void> {
+  throwIfAborted(signal);
+  const response = await axios.post(
+    `${BASE_API}/auth/erp-link/login/start`,
+    {return_uri: TEDU_LOGIN_RETURN_URI},
+    {timeout: ERP_IDENTITY_TIMEOUT_MS, signal},
+  );
+  throwIfAborted(signal);
   const data = responseData<{authorization_url?: string}>(response);
   const authorizationUrl = data.authorization_url?.trim() ?? '';
   const parsedAuthorizationUrl = parseUrl(authorizationUrl);
@@ -104,16 +141,26 @@ export async function startTeduLogin(): Promise<void> {
     parsedAuthorizationUrl.hostname !== 'radiotedu.com' ||
     parsedAuthorizationUrl.pathname !== '/erp/oauth/authorize'
   ) {
-    throw new Error('TEDÜ giriş adresi güvenli değil.');
+    throw new ErpIdentityError('erp.unsafeUrl');
   }
+  throwIfAborted(signal);
   await Linking.openURL(authorizationUrl);
 }
 
-export async function exchangeTeduLoginCode(code: string): Promise<TeduLoginSession> {
-  const response = await axios.post(`${BASE_API}/auth/erp-link/login/exchange`, {code});
+export async function exchangeTeduLoginCode(
+  code: string,
+  signal?: AbortSignal,
+): Promise<TeduLoginSession> {
+  throwIfAborted(signal);
+  const response = await axios.post(
+    `${BASE_API}/auth/erp-link/login/exchange`,
+    {code},
+    {timeout: ERP_IDENTITY_TIMEOUT_MS, signal},
+  );
+  throwIfAborted(signal);
   const session = responseData<TeduLoginSession>(response);
   if (!session.access_token || !session.refresh_token || !session.user) {
-    throw new Error('TEDÜ oturumu doğrulanamadı.');
+    throw new ErpIdentityError('erp.invalidSession');
   }
   return session;
 }

@@ -28,9 +28,9 @@ const TASKS_KEY = '@radiotedu/focus_tasks';
 
 // Ambient channels offered for focusing (ids from RADIO_CHANNELS).
 const AMBIENT = [
-  {id: 'radiotedu-jazz', label: 'Jazz', icon: 'saxophone'},
-  {id: 'radiotedu-classic', label: 'Classic', icon: 'music-clef-treble'},
-  {id: 'radiotedu-lofi', label: 'Lo-Fi', icon: 'headphones'},
+  {id: 'radiotedu-jazz', labelKey: 'focus.jazz', icon: 'saxophone'},
+  {id: 'radiotedu-classic', labelKey: 'focus.classic', icon: 'music-clef-treble'},
+  {id: 'radiotedu-lofi', labelKey: 'focus.lofi', icon: 'headphones'},
 ];
 
 type Task = {id: string; text: string; done: boolean};
@@ -222,7 +222,7 @@ const FocusScreen = ({navigation}: any) => {
                         styles.ambientLabel,
                         active && {color: COLORS.primary},
                       ]}>
-                      {a.label}
+                      {t(a.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 );

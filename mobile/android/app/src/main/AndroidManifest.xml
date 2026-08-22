@@ -2,12 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Legacy storage perms scoped to Android <= 12; not needed on 13+ where the
-         photo picker is used. Limits attack surface on modern devices. -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <!-- Avatar selection uses the system image picker. Camera and broad storage
+         permissions are intentionally absent until an actual capture flow exists. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -93,15 +90,18 @@
         </intent-filter>
       </service>
 
-      <!-- RadioTEDU car media browser: the single MediaBrowserService the
-           Android Auto / Automotive head unit connects to. Provides the browse
-           tree (Live Radio / Podcasts / Rankings / Jukebox) and a MediaSession;
-           transport + selections are forwarded to RNTP in JS. -->
+      <!-- RadioTEDU's single Media3 library/playback service. Android Auto,
+           Automotive OS, system media controls, Assistant, and Gemini connect
+           to this service. Its driver-safe tree contains Live Radio + Podcasts;
+           native ExoPlayer playback works without the React Native runtime. -->
       <service
         android:name=".car.RadioTeduCarService"
         android:exported="true"
         android:foregroundServiceType="mediaPlayback">
         <intent-filter>
+          <!-- Media3 controllers use this action. Keep the platform browse
+               action alongside it for older Android Auto/AAOS hosts. -->
+          <action android:name="androidx.media3.session.MediaLibraryService" />
           <action android:name="android.media.browse.MediaBrowserService" />
         </intent-filter>
         <!-- AAOS reads the media-app opt-in from the MediaBrowserService

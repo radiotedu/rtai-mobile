@@ -99,6 +99,8 @@ const ConsentScreen = () => {
           <Text style={styles.legalText}>{t('privacy.controllerNotice')}</Text>
           <Text style={styles.legalHeading}>{t('privacy.noticeHeading')}</Text>
           <Text style={styles.legalText}>{t('privacy.fullNotice')}</Text>
+          <Text style={styles.legalHeading}>{t('privacy.thirdPartyHeading')}</Text>
+          <Text style={styles.legalText}>{t('privacy.thirdPartyNotice')}</Text>
         </View>
 
         <View style={styles.row}>

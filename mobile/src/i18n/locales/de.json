@@ -67,6 +67,9 @@
     "addTaskPlaceholder": "Aufgabe hinzufügen…",
     "noTasks": "Noch keine Aufgaben",
     "ambient": "Fokus-Sounds",
+    "jazz": "Jazz",
+    "classic": "Klassik",
+    "lofi": "Lo-Fi",
     "add": "Hinzufügen"
   },
   "privacy": {
@@ -77,6 +80,8 @@
     "controllerNotice": "TED University / RadioTEDU (TED University Radio), Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara, Türkiye. Datenschutzanfragen: radio@tedu.edu.tr.",
     "noticeHeading": "Mobile Datenschutzhinweise — Version 22. August 2026",
     "fullNotice": "Angegebene Identitäts-/Kontaktdaten, Authentifizierungs-, Sitzungs- und Sicherheitsdaten, Profil/Avatar, Favoriten und Wiedergabefortschritt, Gold-Aktivität, Konto-/ERP-Verknüpfung und Supportnachrichten können zur Bereitstellung und Absicherung des Dienstes, Vertragserfüllung, Missbrauchsprävention und Erfüllung gesetzlicher Pflichten verarbeitet werden. Rechtsgrundlagen sind Vertrag, gesetzliche Pflicht und verhältnismäßige berechtigte Interessen; Einwilligung gilt nur, wenn gesondert erteilt. Empfänger können befugtes RadioTEDU/TEDU-Personal, beauftragte Hosting-, E-Mail-, Identitäts-, Sicherheits- und Analysedienste sowie Behörden sein. Speicherung erfolgt nur solange für Dienst, gesetzliche Pflichten, Streitfälle, Sicherheit und Backups erforderlich. Google Analytics bleibt bis zur Einwilligung aus; Google kann Daten mit geeigneten Garantien außerhalb Türkiye/des EWR verarbeiten. Kein Verkauf, keine gezielte Werbung, keine ausschließlich automatisierten Entscheidungen mit Rechtswirkung. Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung/Widerspruch, gegebenenfalls Übertragbarkeit und Widerruf: radio@tedu.edu.tr; Beschwerde bei KVKK oder zuständiger EWR-Aufsicht. Kontolöschung ist im Profil verfügbar; gesetzliche Aufbewahrung kann sie begrenzen.",
+    "thirdPartyHeading": "Dienste für Wiedergabebilder",
+    "thirdPartyNotice": "Wenn ein Stream Titel und Interpret liefert, kann die App diesen Suchtext an Apples öffentliche iTunes Search API senden, um Coverbilder zu finden. Apple erhält außerdem übliche Verbindungsdaten wie die IP-Adresse; RadioTEDU-Kontotoken oder E-Mail werden nicht gesendet. Diese Bildanfrage ist von Google Analytics getrennt und erfolgt nur bei Nutzung der betreffenden Wiedergabemetadaten. Fehlende Profil- und Inhaltsbilder verwenden gebündelte lokale Platzhalter.",
     "termsHeading": "In-App-Nutzungsbedingungen — Version 22. August 2026",
     "fullTerms": "Mit dem Häkchen akzeptieren Sie diese Bedingungen gegenüber RadioTEDU. Nutzen Sie die App rechtmäßig und persönlich, schützen Sie Zugangsdaten und stören oder umgehen Sie Dienste/Sicherheit nicht. Rechtswidrige oder rechtsverletzende Inhalte sind verboten. Inhalte, Marken und Software bleiben Eigentum ihrer Inhaber. Streams können sich ändern oder ausfallen; zwingende Verbraucherrechte bleiben bestehen. Gold ist ein nicht übertragbarer, bargeldloser App-Vorteil ohne garantierten Geldwert. Bei Missbrauch oder wesentlichem Verstoß kann ein Konto im Rahmen geltender Rechte eingeschränkt werden. Türkisches Recht gilt unter Wahrung zwingender Verbraucher-, Datenschutz- und Gerichtsstandsrechte. Wesentliche Änderungen erfordern neue Zustimmung. Kontakt: radio@tedu.edu.tr.",
     "analyticsLabel": "Optionale Nutzungsanalyse",
@@ -97,6 +102,7 @@
     "viewPolicy": "Datenschutzhinweis",
     "viewTerms": "Nutzungsbedingungen",
     "googlePrivacy": "Google-Datenschutzerklärung",
+    "applePrivacy": "Apple-Datenschutzrichtlinie",
     "acceptSelected": "Auswahl akzeptieren",
     "declineAll": "Ohne Analyse fortfahren",
     "manage": "Daten & Einwilligung verwalten",

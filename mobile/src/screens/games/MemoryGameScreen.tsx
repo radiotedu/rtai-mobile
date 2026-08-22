@@ -8,6 +8,8 @@ import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} fr
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {isPracticeGame} from './gameRoutes';
+import {logSafeError} from '../../utils/safeLog';
 
 type MemoryCard = {
   id: string;
@@ -56,7 +58,7 @@ const MemoryGameScreen = () => {
       });
       setAwardedXp(Number(result?.points_awarded ?? 0));
     } catch (error) {
-      console.error('Memory score submit failed:', error);
+      logSafeError('games.memory.submit', error);
       setSubmitFailed(true);
     } finally {
       setIsSubmitting(false);
@@ -158,6 +160,7 @@ const MemoryGameScreen = () => {
         awardedXp={awardedXp}
         isSubmitting={isSubmitting}
         submitFailed={submitFailed}
+        practice={isPracticeGame(game)}
         onRetrySubmit={() => submitFinalScore(score)}
         onRestart={resetGame}
         onExit={() => navigation.goBack()}

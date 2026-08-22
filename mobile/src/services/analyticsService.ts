@@ -1,8 +1,9 @@
 /** Consent-gated Google Analytics for Firebase bridge (Android only). */
 import {NativeModules, Platform} from 'react-native';
+import {CONSENT_VERSION} from '../privacy/consentVersion';
 
 type AnalyticsBridge = {
-  setCollectionEnabled(enabled: boolean): void;
+  setCollectionEnabled(enabled: boolean, consentVersion: number): void;
   setDemographics(ageRange: string | null, gender: string | null): void;
   logEvent(name: string, params: Record<string, string | number | boolean>): void;
 };
@@ -17,7 +18,7 @@ export function setAnalyticsConsent(
   demo?: {ageRange?: string | null; gender?: string | null},
 ): void {
   analyticsAllowed = allowed && Platform.OS === 'android' && Boolean(bridge);
-  bridge?.setCollectionEnabled(analyticsAllowed);
+  bridge?.setCollectionEnabled(analyticsAllowed, CONSENT_VERSION);
   bridge?.setDemographics(
     analyticsAllowed ? demo?.ageRange ?? null : null,
     analyticsAllowed ? demo?.gender ?? null : null,
@@ -28,7 +29,9 @@ function send(
   name: string,
   params: Record<string, string | number | boolean> = {},
 ): void {
-  if (!analyticsAllowed) return;
+  if (!analyticsAllowed) {
+    return;
+  }
   try {
     bridge?.logEvent(name, params);
   } catch {

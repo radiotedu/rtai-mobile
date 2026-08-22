@@ -23,4 +23,16 @@ describe('native game interaction safety', () => {
 
     expect(manifest).toContain('android.permission.VIBRATE');
   });
+
+  it('keeps rhythm scoring independent from translated feedback text', () => {
+    const source = fs.readFileSync(
+      path.join(__dirname, '../src/screens/games/RhythmTapScreen.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('const isPerfect = latency < 420');
+    expect(source).toContain('const gained = isPerfect ?');
+    expect(source).not.toContain("judgement === 'Perfect'");
+    expect(source).not.toContain('progressLabel={`Beat');
+  });
 });

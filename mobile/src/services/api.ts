@@ -36,6 +36,24 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 type RefreshedAccess = {accessToken: string};
 let refreshRequest: Promise<RefreshedAccess> | null = null;
 
+function redactRejectedRequest(error: unknown): unknown {
+  if (!axios.isAxiosError(error) || !error.config) {
+    return error;
+  }
+  const headers = error.config.headers as
+    | (InternalAxiosRequestConfig['headers'] & {delete?: (name: string) => void})
+    | undefined;
+  if (typeof headers?.delete === 'function') {
+    headers.delete('Authorization');
+  } else if (headers) {
+    delete (headers as Record<string, unknown>).Authorization;
+    delete (headers as Record<string, unknown>).authorization;
+  }
+  error.config.data = undefined;
+  error.config.params = undefined;
+  return error;
+}
+
 export function isDefinitiveAuthRejection(error: unknown): boolean {
   if (!axios.isAxiosError(error)) {
     return false;
@@ -115,11 +133,11 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        return Promise.reject(refreshError);
+        return Promise.reject(redactRejectedRequest(refreshError));
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(redactRejectedRequest(error));
   }
 );
 

@@ -88,7 +88,7 @@ function main() {
     check(exists('android/tv/src/main/res/drawable/tv_banner.png'), 'Android TV banner exists', '320x180 TV banner'),
     check(!/screenOrientation=/.test(manifest), 'Adaptive layouts are not orientation-locked', 'no android:screenOrientation on MainActivity'),
     check(/resizeableActivity="true"/.test(manifest), 'Large screen and foldable resize support is explicit', 'resizeableActivity=true'),
-    check(/MediaBrowserServiceCompat|MediaSessionCompat/.test(proguard), 'Release keep rules cover car media services', 'proguard-rules.pro'),
+    check(/androidx\.media3\.\*\*/.test(proguard) && /com\.radiotedumobile\.car\.\*\*/.test(proguard), 'Release keep rules cover car media services', 'proguard-rules.pro'),
     check(/Privacy Policy URL/.test(releaseChecklist), 'Release checklist covers Play privacy URL', 'docs/RELEASE_CHECKLIST.md'),
     check(/Live Updates/.test(modernReadiness) && /media notification fallback/i.test(modernReadiness), 'Android 16 Live Updates fallback is documented', 'docs/ANDROID_MODERN_PUBLISH_READINESS.md'),
     check(/16 KB page/i.test(modernReadiness) && /predictive back/i.test(modernReadiness), 'Android 16 readiness checks are documented', 'docs/ANDROID_MODERN_PUBLISH_READINESS.md'),

@@ -12,10 +12,65 @@ export const JUKE_LOCAL_CONTROLLER_URL =
   'https://radiotedu.com/juke-local/controller/';
 
 export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) {
-  return buildWebViewAccountBridge(authState, [
+  return `${buildWebViewAccountBridge(authState, [
     '/jukebox/api/',
     '/juke-local/api/',
-  ]);
+  ])}
+    (function () {
+      var trustedController = window.location.protocol === 'https:' &&
+        window.location.hostname === 'radiotedu.com' &&
+        window.location.port === '' &&
+        window.location.pathname.replace(/\\/+$/, '') === '/juke-local/controller';
+      if (!trustedController) return true;
+
+      // The current controller reads its bearer token through Axios from the
+      // same-origin token key. Emulate only that key in memory: never leave a
+      // native bearer token in origin-wide persistent WebView localStorage.
+      var state = window.__RADIOTEDU_NATIVE_AUTH__ || {};
+      try {
+        if (!window.__RADIOTEDU_TOKEN_STORAGE_SHIM__) {
+          var originalGetItem = Storage.prototype.getItem;
+          var originalSetItem = Storage.prototype.setItem;
+          var originalRemoveItem = Storage.prototype.removeItem;
+          window.__RADIOTEDU_TOKEN_STORAGE_SHIM__ = {
+            getItem: originalGetItem,
+            setItem: originalSetItem,
+            removeItem: originalRemoveItem
+          };
+          // Remove any token persisted by older app builds before installing
+          // the ephemeral compatibility view.
+          originalRemoveItem.call(window.localStorage, 'token');
+          Storage.prototype.getItem = function (key) {
+            if (this === window.localStorage && key === 'token') {
+              return window.__RADIOTEDU_EPHEMERAL_TOKEN__ || null;
+            }
+            return originalGetItem.call(this, key);
+          };
+          Storage.prototype.setItem = function (key, value) {
+            if (this === window.localStorage && key === 'token') {
+              window.__RADIOTEDU_EPHEMERAL_TOKEN__ = String(value || '');
+              return;
+            }
+            return originalSetItem.call(this, key, value);
+          };
+          Storage.prototype.removeItem = function (key) {
+            if (this === window.localStorage && key === 'token') {
+              window.__RADIOTEDU_EPHEMERAL_TOKEN__ = '';
+              return;
+            }
+            return originalRemoveItem.call(this, key);
+          };
+        }
+        window.__RADIOTEDU_EPHEMERAL_TOKEN__ =
+          typeof state.accessToken === 'string' ? state.accessToken : '';
+      } catch (_) {}
+      window.dispatchEvent(new CustomEvent('radiotedu:native-auth', {
+        detail: {authenticated: Boolean(state.accessToken)}
+      }));
+      true;
+    })();
+    true;
+  `;
 }
 
 export function buildJukeLocalControllerUrl(deviceCode?: unknown): string {

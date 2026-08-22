@@ -67,6 +67,9 @@
     "addTaskPlaceholder": "Görev ekle…",
     "noTasks": "Henüz görev yok",
     "ambient": "Odak sesleri",
+    "jazz": "Caz",
+    "classic": "Klasik",
+    "lofi": "Lo-Fi",
     "add": "Ekle"
   },
   "privacy": {
@@ -77,6 +80,8 @@
     "controllerNotice": "TED Üniversitesi / RadioTEDU (TED Üniversitesi Radyosu), Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara. Gizlilik ve ilgili kişi başvuruları: radio@tedu.edu.tr.",
     "noticeHeading": "Mobil aydınlatma metni — sürüm 22 Ağustos 2026",
     "fullNotice": "Hesap ve hizmet verileri: verdiğiniz kimlik ve iletişim bilgileri, kimlik doğrulama/oturum ve güvenlik kayıtları, profil/avatar, favoriler ve dinleme ilerlemesi, Gold hareketleri, hesap/ERP bağlantı kayıtları ve destek iletileri; talep edilen hizmetleri sunmak ve güvenliğini sağlamak, Koşulları uygulamak, kötüye kullanımı önlemek ve hukuki yükümlülükleri yerine getirmek için işlenebilir. Hukuki sebepler sözleşmenin kurulması/ifası, hukuki yükümlülük ve temel haklarınıza zarar vermeyen meşru menfaattir; açık rıza yalnızca ayrıca istendiği alanlarda kullanılır. Veriler yetkili RadioTEDU/TEDÜ personeli, sözleşmeli barındırma, e-posta, kimlik, güvenlik ve analiz sağlayıcıları ile hukuken zorunlu hâllerde yetkili makamlarla paylaşılabilir. Veriler hesap/hizmet için gerekli süre boyunca, sonrasında yalnızca kanuni, uyuşmazlık, güvenlik ve yedekleme sürelerince saklanır. İsteğe bağlı Google Analytics rızaya kadar kapalıdır; Google verileri uygun güvenceler kapsamında Türkiye/AEA dışında işleyebilir. RadioTEDU kişisel verileri satmaz, analizi hedefli reklam için kullanmaz ve yalnız otomatik işleme dayalı hukuki sonuç doğuran karar vermez. KVKK m.11 kapsamındaki bilgi, erişim, düzeltme, silme/yok etme, itiraz ve zararın giderilmesi hakları ile uygulanabildiğinde GDPR erişim, kısıtlama ve taşınabilirlik haklarınızı kullanabilir; rızayı önceki hukuka uygun işlemleri etkilemeden geri çekebilirsiniz. radio@tedu.edu.tr adresine başvurabilir ve KVKK Kuruluna veya yetkili AEA makamına şikâyet edebilirsiniz. Hesap silme Profil bölümündedir; kanuni saklama zorunlulukları silmeyi sınırlayabilir.",
+    "thirdPartyHeading": "Oynatma görseli hizmetleri",
+    "thirdPartyNotice": "Bir yayın şarkı ve sanatçı metni sağladığında uygulama, kapak görseli bulmak için bu arama metnini Apple'ın açık iTunes Search API'sine gönderebilir. Apple IP adresi gibi olağan bağlantı verilerini de alır; RadioTEDU hesap anahtarı veya e-posta gönderilmez. Bu görsel isteği Google Analytics'ten ayrıdır ve yalnız ilgili oynatma metadatası kullanıldığında yapılır. Eksik profil ve içerik görsellerinde paketlenmiş yerel yer tutucular kullanılır.",
     "termsHeading": "Uygulama içi Kullanım Koşulları — sürüm 22 Ağustos 2026",
     "fullTerms": "Kabul kutusunu işaretleyerek RadioTEDU ile bu Koşulları kabul edersiniz. Uygulamayı hukuka uygun ve kişisel amaçlarla kullanın; hesap bilgilerinizi koruyun; hizmetleri bozmayın, güvenliği aşmayın, yayınları kötüye kullanmayın, hukuka veya başkasının haklarına aykırı içerik göndermeyin. RadioTEDU içeriği, markaları ve yazılımı sahiplerine veya lisans verenlere aittir. Yayınlar ve çevrim içi özellikler ağlara ve üçüncü taraflara bağlıdır; değişebilir veya kesilebilir, emredici tüketici hakları saklıdır. Gold nakit değeri ve devredilebilirliği olmayan uygulama içi bir faydadır; parasal değeri garanti edilmez. Kötüye kullanım veya esaslı ihlalde hesap, uygulanabilir haklar saklı kalmak üzere sınırlandırılabilir. Emredici tüketici, veri koruma ve görevli merci hakları saklı kalmak üzere Türk hukuku uygulanır. Esaslı değişikliklerde yeniden kabul istenir. İletişim: radio@tedu.edu.tr.",
     "analyticsLabel": "İsteğe bağlı kullanım analizi",
@@ -97,6 +102,7 @@
     "viewPolicy": "Aydınlatma ve Gizlilik Metni",
     "viewTerms": "Kullanım Koşulları",
     "googlePrivacy": "Google Gizlilik Politikası",
+    "applePrivacy": "Apple Gizlilik Politikası",
     "acceptSelected": "Seçilenleri kabul et",
     "declineAll": "Analiz olmadan devam et",
     "manage": "Veri ve izinleri yönet",

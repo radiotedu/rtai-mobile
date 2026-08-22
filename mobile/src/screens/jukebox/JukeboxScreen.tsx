@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,12 +31,17 @@ import GlobalHeader from '../../components/GlobalHeader';
 import PageTransition from '../../components/PageTransition';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {logSafeError} from '../../utils/safeLog';
 
 const JukeboxScreen = ({ route }: any) => {
   const { user, guestLogin, logout } = useAuth();
   const navigation = useNavigation<any>();
   const {i18n} = useTranslation();
-  const copy = (key: string) => appCopy(i18n.language, key);
+  const copy = useCallback(
+    (key: string, values: Record<string, string | number> = {}) =>
+      appCopy(i18n.language, key, values),
+    [i18n.language],
+  );
   const deviceCodeFromLink = route.params?.deviceCode;
 
   const [queue, setQueue] = useState<any[]>([]);
@@ -75,7 +80,7 @@ const JukeboxScreen = ({ route }: any) => {
         const response = await api.get('/jukebox/devices');
         setDeviceList(response.data.data.devices || []);
       } catch (error) {
-        console.error('Failed to fetch devices:', error);
+        logSafeError('jukebox.devices', error);
       }
     };
     fetchDevices();
@@ -94,7 +99,7 @@ const JukeboxScreen = ({ route }: any) => {
         // Save last connected device
         await AsyncStorage.setItem('last_jukebox_code', code);
       } catch (error) {
-        console.error('Failed to connect to device:', error);
+        logSafeError('jukebox.connect', error);
       } finally {
         setIsLoading(false);
       }
@@ -143,11 +148,11 @@ const JukeboxScreen = ({ route }: any) => {
     });
 
     socket.on('song_skipped', () => {
-      Alert.alert('Şarkı Geçildi', 'Topluluk oylaması sonucu şarkı geçildi.');
+      Alert.alert(copy('juke.songSkippedTitle'), copy('juke.songSkippedText'));
     });
 
     socket.on('song_rejected', () => {
-      Alert.alert('Şarkı Kaldırıldı', 'Kuyruğa eklediğiniz şarkı kaldırıldı.');
+      Alert.alert(copy('juke.songRejectedTitle'), copy('juke.songRejectedText'));
     });
 
     socket.on('force_logout', async () => {
@@ -163,7 +168,7 @@ const JukeboxScreen = ({ route }: any) => {
     return () => {
       socket.disconnect();
     };
-  }, [deviceCodeFromLink, device, logout]);
+  }, [copy, deviceCodeFromLink, device, logout]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -190,7 +195,7 @@ const JukeboxScreen = ({ route }: any) => {
       const response = await api.get('/jukebox/songs', { params: searchParams });
       setSearchResults(response.data.data.items);
     } catch (error: any) {
-      console.error('Search failed:', error);
+      logSafeError('jukebox.search', error);
     } finally {
       setIsSearching(false);
     }
@@ -198,7 +203,7 @@ const JukeboxScreen = ({ route }: any) => {
 
   const handleRequestSong = async (song: any) => {
     if (!device) {
-      Alert.alert('Hata', 'Lutfen once bir muzik kutusuna baglanin.');
+      Alert.alert(copy('juke.error'), copy('juke.connectFirst'));
       return;
     }
 
@@ -212,7 +217,7 @@ const JukeboxScreen = ({ route }: any) => {
 
   const handleGuestSubmit = async () => {
     if (!guestName.trim()) {
-      Alert.alert('Hata', 'Lütfen bir isim girin.');
+      Alert.alert(copy('juke.error'), copy('juke.nameRequired'));
       return;
     }
 
@@ -227,7 +232,8 @@ const JukeboxScreen = ({ route }: any) => {
         setPendingSong(null);
       }
     } catch (error: any) {
-      Alert.alert('Hata', error.message);
+      logSafeError('jukebox.guest', error);
+      Alert.alert(copy('juke.error'), copy('juke.guestLoginError'));
     } finally {
       setIsLoading(false);
     }
@@ -242,23 +248,23 @@ const JukeboxScreen = ({ route }: any) => {
         device_id: device.id,
         ...songSelectionPayload,
       }, { headers });
-      Alert.alert('Basarili', 'Sarki kuyruga eklendi.');
+      Alert.alert(copy('juke.requestSuccessTitle'), copy('juke.requestSuccessText'));
       setSearch('');
       setSearchResults([]);
     } catch (error: any) {
+      logSafeError('jukebox.request', error);
       if (error.response?.data?.code === 'GUEST_LIMIT_REACHED') {
-        const serverMessage = error.response?.data?.error || 'Misafir limitiniz doldu.';
         Alert.alert(
-          'Limit Asildi',
-          serverMessage,
+          copy('juke.guestLimitTitle'),
+          copy('juke.guestLimitText'),
           [
-            { text: 'Iptal', style: 'cancel' },
-            { text: 'Giris Yap', onPress: () => navigation.navigate('Auth', { screen: 'Login' }) },
-            { text: 'Uye Ol', onPress: () => navigation.navigate('Auth', { screen: 'Register' }) },
+            { text: copy('juke.cancel'), style: 'cancel' },
+            { text: copy('juke.signIn'), onPress: () => navigation.navigate('Auth', { screen: 'Login' }) },
+            { text: copy('juke.register'), onPress: () => navigation.navigate('Auth', { screen: 'Register' }) },
           ]
         );
       } else {
-        Alert.alert('Hata', error.response?.data?.error || 'Sarki eklenemedi.');
+        Alert.alert(copy('juke.error'), copy('juke.requestError'));
       }
     } finally {
       setIsLoading(false);
@@ -280,10 +286,11 @@ const JukeboxScreen = ({ route }: any) => {
         setLastSupervoteAtOverride(new Date().toISOString());
       }
     } catch (error: any) {
+      logSafeError('jukebox.vote', error);
       if (error.response?.data?.code === 'SUPER_VOTE_COOLDOWN') {
         setLastSupervoteAtOverride(new Date().toISOString());
       }
-      Alert.alert('Hata', error.response?.data?.error || 'Oy verilemedi.');
+      Alert.alert(copy('juke.error'), copy('juke.voteError'));
     }
   };
 
@@ -293,20 +300,21 @@ const JukeboxScreen = ({ route }: any) => {
     let coverUrl = item.cover_url;
     if (coverUrl && coverUrl.startsWith('/')) {
       coverUrl = storageApi + coverUrl;
-    } else if (!coverUrl) {
-      coverUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.title)}&background=random&color=fff`;
     }
+    const coverSource = coverUrl
+      ? {uri: coverUrl}
+      : require('../../assets/images/notification-icon.png');
 
     return (
       <View style={styles.queueItem}>
         <Text style={styles.index}>{index + 1}</Text>
-        <Image source={{ uri: coverUrl }} style={styles.queueArt} />
+        <Image source={coverSource} style={styles.queueArt} />
 
         <View style={styles.songInfo}>
           <Text style={styles.songTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.songArtist} numberOfLines={1}>{item.artist}</Text>
           <Text style={styles.addedBy}>
-            {item.added_by_name || 'Radio TEDU'} tarafından
+            {copy('juke.addedBy', {name: item.added_by_name || 'RadioTEDU'})}
           </Text>
         </View>
 
@@ -353,12 +361,14 @@ const JukeboxScreen = ({ route }: any) => {
     const storageApi = STORAGE_API;
     let coverUrl = song.cover_url;
     if (coverUrl && coverUrl.startsWith('/')) coverUrl = storageApi + coverUrl;
-    else if (!coverUrl) coverUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(song.title)}&background=random&color=fff`;
+    const coverSource = coverUrl
+      ? {uri: coverUrl}
+      : require('../../assets/images/notification-icon.png');
 
     return (
       <View style={styles.heroContainer}>
         <View style={styles.heroContent}>
-          <Image source={{ uri: coverUrl }} style={styles.heroArt} />
+          <Image source={coverSource} style={styles.heroArt} />
           <View style={styles.heroInfo}>
             <View style={styles.playingTag}>
               <View style={styles.pulsingDot} />
@@ -367,7 +377,7 @@ const JukeboxScreen = ({ route }: any) => {
             <Text style={styles.heroTitle} numberOfLines={2}>{song.title}</Text>
             <Text style={styles.heroArtist} numberOfLines={1}>{song.artist}</Text>
             <Text style={styles.heroRequester}>
-              <Icon name="account" size={12} /> {song.added_by_name || 'Otomatik'}
+              <Icon name="account" size={12} /> {song.added_by_name || copy('juke.automatic')}
             </Text>
           </View>
         </View>
@@ -493,7 +503,8 @@ const JukeboxScreen = ({ route }: any) => {
                         await AsyncStorage.setItem('last_jukebox_code', d.device_code);
                         setShowDeviceSelector(false);
                       } catch (error) {
-                        Alert.alert('Hata', 'Cihaza bağlanılamadı');
+                        logSafeError('jukebox.deviceSelection', error);
+                        Alert.alert(copy('juke.error'), copy('juke.deviceConnectionError'));
                       } finally {
                         setIsLoading(false);
                       }

@@ -9,6 +9,8 @@ import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} fr
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {isPracticeGame} from './gameRoutes';
+import {logSafeError} from '../../utils/safeLog';
 
 const TOTAL_BEATS = 28;
 
@@ -69,7 +71,7 @@ const RhythmTapScreen = () => {
       });
       setAwardedXp(Number(result?.points_awarded ?? 0));
     } catch (error) {
-      console.error('Rhythm score submit failed:', error);
+      logSafeError('games.rhythm.submit', error);
       setSubmitFailed(true);
     } finally {
       setIsSubmitting(false);
@@ -95,16 +97,17 @@ const RhythmTapScreen = () => {
 
     if (laneIndex === activeLane) {
       const latency = Date.now() - beatStartedAtRef.current;
-      const judgement = latency < 420 ? copy('games.perfect') : copy('games.good');
+      const isPerfect = latency < 420;
+      const judgement = isPerfect ? copy('games.perfect') : copy('games.good');
       const nextStreak = streakRef.current + 1;
-      const gained = judgement === 'Perfect' ? 42 + nextStreak * 4 : 28 + nextStreak * 3;
+      const gained = isPerfect ? 42 + nextStreak * 4 : 28 + nextStreak * 3;
       const nextScore = scoreRef.current + gained;
       scoreRef.current = nextScore;
       streakRef.current = nextStreak;
       setScore(nextScore);
       setStreak(nextStreak);
       setFeedback(`${judgement} +${gained}`);
-      Vibration.vibrate(judgement === 'Perfect' ? 12 : 20);
+      Vibration.vibrate(isPerfect ? 12 : 20);
     } else {
       setMisses((value) => value + 1);
       streakRef.current = 0;
@@ -153,7 +156,7 @@ const RhythmTapScreen = () => {
         title={copy('games.rhythm')}
         subtitle={copy('games.rhythmSubtitle')}
         score={score}
-        progressLabel={`Beat ${beat}/${TOTAL_BEATS}`}
+        progressLabel={`${beat}/${TOTAL_BEATS}`}
         rightLabel={`${misses} ${copy('games.rhythmMisses')}`}
         onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
@@ -183,6 +186,7 @@ const RhythmTapScreen = () => {
         awardedXp={awardedXp}
         isSubmitting={isSubmitting}
         submitFailed={submitFailed}
+        practice={isPracticeGame(game)}
         onRetrySubmit={() => submitFinalScore(score)}
         onRestart={resetGame}
         onExit={() => navigation.goBack()}

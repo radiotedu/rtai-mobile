@@ -26,6 +26,7 @@ import {
 import {getQrRewardCodeFromRouteParams} from '../services/qrLinking';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
+import {logSafeError} from '../utils/safeLog';
 
 const EventsScreen = () => {
   const navigation = useNavigation<any>();
@@ -53,7 +54,7 @@ const EventsScreen = () => {
       setEvents(nextEvents);
       setMarket(nextMarket);
     } catch (error) {
-      console.error('Failed to load events:', error);
+      logSafeError('events.load', error);
       Alert.alert(copy('common.error'), copy('events.error'));
     } finally {
       setLoading(false);
@@ -75,7 +76,7 @@ const EventsScreen = () => {
       await registerEvent(event.id);
       Alert.alert(copy('events.saved'), copy('events.saved'));
     } catch (error) {
-      console.error('Failed to register event:', error);
+      logSafeError('events.register', error);
       Alert.alert(copy('common.error'), copy('events.error'));
     }
   };
@@ -98,7 +99,7 @@ const EventsScreen = () => {
       setQrCode('');
       Alert.alert(copy('common.success'), copy('events.goldEarned', {points: result?.points_awarded ?? 0}));
     } catch (error) {
-      console.error('Failed to claim QR reward:', error);
+      logSafeError('events.qrReward', error);
       Alert.alert(copy('common.error'), copy('events.error'));
     } finally {
       setClaiming(false);

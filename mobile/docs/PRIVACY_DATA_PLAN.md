@@ -50,11 +50,18 @@ Implementation:
 No Measurement Protocol API secret is embedded in the client. The Firebase SDK
 uses the Android app configuration supplied by Google.
 
+## Published mobile notices
+
+The app links the public repository copies of the mobile-specific
+[`Privacy Notice`](../../docs/MOBILE_PRIVACY_NOTICE.md) and
+[`Terms of Use`](../../docs/MOBILE_TERMS_OF_USE.md). These replace the incomplete
+generic website pages for mobile registration and in-app legal links. Move them
+to stable RadioTEDU-owned web URLs after the same text is published there.
+
 ## Release-owner requirements
 
-- Publish a mobile-specific KVKK aydınlatma/privacy notice containing controller
-  identity, purposes, legal bases, recipients/third-country transfers, collection
-  method, retention, security, and rights/contact routes.
+- Keep the published mobile notice accurate and approve it through the
+  controller's legal/privacy process before store production rollout.
 - Keep the notice and optional consent separate. Keep analytics optional and
   default-off; essential service processing must not be described as consented
   analytics.

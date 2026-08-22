@@ -112,7 +112,7 @@ const StreamSettingsScreen = () => {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
-          accessibilityLabel="Back">
+          accessibilityLabel={copy('common.back')}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
         <View style={styles.navTitleWrap}>

@@ -35,7 +35,7 @@ const StudyHomeScreen = () => {
         <GlobalHeader />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.kicker}>Study</Text>
+            <Text style={styles.kicker}>{copy('study.kicker')}</Text>
             <Text style={styles.title}>{copy('study.title')}</Text>
             <Text style={styles.subtitle}>{copy('study.subtitle')}</Text>
           </View>

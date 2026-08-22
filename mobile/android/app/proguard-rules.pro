@@ -19,8 +19,9 @@
 # JS via the React bridge; must survive minification).
 -keep class com.radiotedumobile.car.** { *; }
 
-# AndroidX media (MediaBrowserServiceCompat / MediaSessionCompat).
+# AndroidX media compatibility constants plus Media3 library/session playback.
 -keep class androidx.media.** { *; }
+-keep class androidx.media3.** { *; }
 
 # react-native-vector-icons (fonts loaded by name).
 -keep class com.oblador.vectoricons.** { *; }

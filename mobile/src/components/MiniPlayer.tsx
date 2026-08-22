@@ -19,6 +19,36 @@ import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioChannels';
+import {logSafeError} from '../utils/safeLog';
+
+export function getDeepestActiveRouteName(state: any): string | undefined {
+  let currentState = state;
+  let activeRouteName: string | undefined;
+
+  while (currentState?.routes?.length) {
+    const index = typeof currentState.index === 'number' ? currentState.index : 0;
+    const activeRoute = currentState.routes[index];
+    if (!activeRoute) {
+      break;
+    }
+
+    activeRouteName = activeRoute.name;
+    currentState = activeRoute.state;
+  }
+
+  return activeRouteName;
+}
+
+export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean {
+  return (
+    !activeRouteName ||
+    activeRouteName === 'MainTabs' ||
+    activeRouteName === 'Radio' ||
+    activeRouteName === 'Profile' ||
+    activeRouteName === 'Jukebox' ||
+    activeRouteName === 'Player'
+  );
+}
 
 const MiniPlayer = () => {
   const playbackState = usePlaybackState();
@@ -28,38 +58,8 @@ const MiniPlayer = () => {
   const {activeChannels} = useChannels();
   const [isChangingChannel, setIsChangingChannel] = React.useState(false);
 
-  // More robust detection: check if Radio tab is currently active
-  const isOnRadioTab = useNavigationState(state => {
-    if (!state) {
-      return true;
-    } // Default to hiding if state not ready
-    try {
-      // Get the active route in the stack (should be 'Main')
-      const stackRoute = state.routes[state.index] as any;
-      if (stackRoute.name === 'Profile') {
-        return false;
-      } // Not on radio, but on profile
-
-      // Check if there's nested tab state
-      if (stackRoute.state && stackRoute.state.index !== undefined) {
-        const tabState = stackRoute.state;
-        const activeTab = tabState.routes[tabState.index];
-        return activeTab?.name === 'Radio';
-      }
-      // If no nested state, assume first tab (Radio) is active
-      return true;
-    } catch {
-      return true; // Default to hiding if any error
-    }
-  });
-
-  const isOnProfileScreen = useNavigationState(state => {
-    if (!state) {
-      return false;
-    }
-    const route = state.routes[state.index] as any;
-    return route.name === 'Profile';
-  });
+  const activeRouteName = useNavigationState(getDeepestActiveRouteName);
+  const shouldHideForRoute = shouldHideMiniPlayerForRoute(activeRouteName);
 
   const state = playbackState?.state;
   const isPlaying = state === State.Playing;
@@ -82,8 +82,7 @@ const MiniPlayer = () => {
   // Only hide on specific screens.
   if (
     (!displayTrack && !isChangingChannel) ||
-    isOnProfileScreen ||
-    isOnRadioTab
+    shouldHideForRoute
   ) {
     return null;
   }
@@ -123,7 +122,7 @@ const MiniPlayer = () => {
       // notification controls stay intact (no full reset).
       await playChannelById(prevChannel.id);
     } catch (error) {
-      console.log('Skip error:', error);
+      logSafeError('miniPlayer.previous', error);
     } finally {
       setTimeout(() => setIsChangingChannel(false), 500);
     }
@@ -160,7 +159,7 @@ const MiniPlayer = () => {
       // notification controls stay intact (no full reset).
       await playChannelById(nextChannel.id);
     } catch (error) {
-      console.log('Skip error:', error);
+      logSafeError('miniPlayer.next', error);
     } finally {
       setTimeout(() => setIsChangingChannel(false), 500);
     }

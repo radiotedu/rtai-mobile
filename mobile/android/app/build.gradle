@@ -100,8 +100,8 @@ android {
         applicationId "com.radiotedumobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 12030
-        versionName "1.2.3"
+        versionCode 12040
+        versionName "1.2.4"
     }
     // Single APK distribution: the same package installs on phones/tablets and
     // exposes optional Android Auto / Automotive media surfaces through the
@@ -158,24 +158,25 @@ dependencies {
         implementation jscFlavor
     }
 
-    // androidx.media provides MediaBrowserServiceCompat / MediaSessionCompat used
-    // by RadioTeduCarService. The androidx.car.app (Car App Library) dependency was
-    // removed — this app uses the standard media-browser template, not the Car App
-    // Library, so no androidx.car.app/CarAppService/Screen/Session symbols exist.
+    // Keep every Media3 artifact on one stable release. MediaLibraryService is the
+    // future-proof browser/session surface used by Android Auto, AAOS, Assistant,
+    // Gemini, system media controls, and Wear controllers. Playback stays native
+    // and headless, with no dependency on the React Native runtime.
+    // 1.11.x publishes Kotlin 2.2 metadata. RN 0.76's third-party Gradle
+    // modules still invoke Kotlin 1.9, so 1.10.1 is the newest safe line until
+    // the React Native toolchain is upgraded as a coordinated release.
+    def media3Version = "1.10.1"
+    // MediaConstants supplies the official Android Auto browse-style and
+    // podcast completion keys; playback/session APIs themselves are Media3.
     implementation("androidx.media:media:1.7.0")
-
-    // media3 ExoPlayer lets RadioTeduCarService play the radio stream NATIVELY and
-    // HEADLESSLY, with no dependency on the RN JS runtime. This fixes the cold-start
-    // "stuck on loading" bug: on a cold start from the car the JS bridge listener is
-    // not registered, so the old "relay transport to JS" path never started playback.
-    // Pinned to 1.3.1 for compileSdk 34 compatibility.
-    implementation("androidx.media3:media3-exoplayer:1.3.1")
-    implementation("androidx.media3:media3-common:1.3.1")
+    implementation("androidx.media3:media3-session:${media3Version}")
+    implementation("androidx.media3:media3-exoplayer:${media3Version}")
+    implementation("androidx.media3:media3-common:${media3Version}")
     // media3-datasource provides DefaultHttpDataSource, used to give the car
     // stream finite connect/read timeouts so a half-open stream surfaces as an
     // error instead of buffering forever. It is a transitive dep of
-    // media3-exoplayer, but pinned explicitly so the import always resolves.
-    implementation("androidx.media3:media3-datasource:1.3.1")
+    // media3-exoplayer, but declared explicitly so the import always resolves.
+    implementation("androidx.media3:media3-datasource:${media3Version}")
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

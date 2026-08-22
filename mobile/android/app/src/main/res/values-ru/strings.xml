@@ -1,0 +1,10 @@
+<resources>
+    <string name="car_live_radio">Радио в прямом эфире</string>
+    <string name="car_playback_error">Ошибка воспроизведения</string>
+    <string name="car_stream_connect_error">Не удалось подключиться к потоку</string>
+    <string name="car_flac_metered_warning">FLAC расходует значительно больше мобильного трафика. Подключитесь к Wi-Fi или выберите обычное качество.</string>
+    <string name="car_no_media_item_requested">Не выбрано содержимое для воспроизведения</string>
+    <string name="car_unknown_media_item">Неизвестный медиаматериал RadioTEDU</string>
+    <string name="car_podcasts">Подкасты RadioTEDU</string>
+    <string name="car_podcast_audio">Аудио подкаста</string>
+</resources>

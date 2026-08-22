@@ -1,0 +1,10 @@
+<resources>
+    <string name="car_live_radio">البث الإذاعي المباشر</string>
+    <string name="car_playback_error">خطأ في التشغيل</string>
+    <string name="car_stream_connect_error">تعذّر الاتصال بالبث</string>
+    <string name="car_flac_metered_warning">يستهلك FLAC بيانات هاتف أكثر بكثير. اتصل بشبكة Wi-Fi أو اختر الجودة العادية.</string>
+    <string name="car_no_media_item_requested">لم يتم اختيار محتوى للتشغيل</string>
+    <string name="car_unknown_media_item">محتوى RadioTEDU غير معروف</string>
+    <string name="car_podcasts">بودكاست RadioTEDU</string>
+    <string name="car_podcast_audio">صوت بودكاست</string>
+</resources>

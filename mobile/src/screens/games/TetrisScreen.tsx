@@ -9,6 +9,8 @@ import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} fr
 import {FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {isPracticeGame} from './gameRoutes';
+import {logSafeError} from '../../utils/safeLog';
 
 type Cell = {x: number; y: number};
 type Piece = {shape: Cell[]; x: number; y: number; color: string};
@@ -72,7 +74,7 @@ const TetrisScreen = () => {
       });
       setAwardedXp(Number(result?.points_awarded ?? 0));
     } catch (error) {
-      console.error('Tetris score submit failed:', error);
+      logSafeError('games.tetris.submit', error);
       setSubmitFailed(true);
     } finally {
       setIsSubmitting(false);
@@ -233,6 +235,7 @@ const TetrisScreen = () => {
         awardedXp={awardedXp}
         isSubmitting={isSubmitting}
         submitFailed={submitFailed}
+        practice={isPracticeGame(game)}
         onRetrySubmit={() => submitFinalScore(score)}
         onRestart={resetGame}
         onExit={() => navigation.goBack()}

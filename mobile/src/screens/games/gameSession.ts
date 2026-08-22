@@ -4,6 +4,7 @@ import {
   submitGameScore,
   VerifiedGameSession,
 } from '../../services/gamificationService';
+import {isPracticeGame} from './gameRoutes';
 
 const verifiedRounds = new Map<string, Promise<VerifiedGameSession | null>>();
 
@@ -12,6 +13,10 @@ export function createClientRoundId(game: ArcadeGame) {
 }
 
 export function prepareVerifiedGameRound(game: ArcadeGame, clientRoundId: string) {
+  if (isPracticeGame(game)) {
+    return;
+  }
+
   if (!verifiedRounds.has(clientRoundId)) {
     verifiedRounds.set(clientRoundId, startGameSession(game.id, clientRoundId).catch(() => null));
   }
@@ -35,8 +40,8 @@ export function buildGameScorePayload(params: {
   };
 }
 
-export function getGameResultMessage(score: number, awardedXp: number) {
-  return `${Math.max(0, Math.floor(score))} skor · +${Math.max(0, Math.floor(awardedXp))} XP`;
+export function getGameResultMessage(score: number, awardedGold: number, scoreLabel = 'Score') {
+  return `${scoreLabel} ${Math.max(0, Math.floor(score))} · +${Math.max(0, Math.floor(awardedGold))} Gold`;
 }
 
 export async function submitMobileGameScore(params: {
@@ -45,6 +50,10 @@ export async function submitMobileGameScore(params: {
   clientRoundId: string;
   startedAt: number;
 }) {
+  if (isPracticeGame(params.game)) {
+    return {points_awarded: 0, practice: true};
+  }
+
   const proof = await verifiedRounds.get(params.clientRoundId);
   if (!proof) {
     throw new Error('Verified game session is unavailable');

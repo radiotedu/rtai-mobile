@@ -21,9 +21,10 @@ import {
   fetchGames,
   fetchMarketItems,
 } from '../services/gamificationService';
-import {BUILTIN_GAMES, getGameRouteForSlug} from './games/gameRoutes';
+import {BUILTIN_GAMES, getGameRouteForSlug, isPracticeGame} from './games/gameRoutes';
 import {screenCopy} from '../i18n/screenCopy';
 import {gameListCopy} from '../i18n/gameListCopy';
+import {logSafeError} from '../utils/safeLog';
 
 const GamesScreen = () => {
   const navigation = useNavigation<any>();
@@ -50,7 +51,7 @@ const GamesScreen = () => {
       setGames(nextGames);
       setMarket(nextMarket);
     } catch (error) {
-      console.error('Failed to load games:', error);
+      logSafeError('games.load', error);
       Alert.alert(copy('home.errorTitle'), copy('games.empty'));
     } finally {
       setLoading(false);
@@ -86,7 +87,7 @@ const GamesScreen = () => {
   }, [games]);
 
   const handlePlay = (game: ArcadeGame) => {
-    if (isAccountRequired) {
+    if (isAccountRequired && !isPracticeGame(game)) {
       Alert.alert(copy('study.loginRequired'), copy('games.account'));
       return;
     }
@@ -154,7 +155,11 @@ const GamesScreen = () => {
                   );
                 })()}
                 <View style={styles.gameMetaRow}>
-                  <Text style={styles.gameMeta}>{copy('games.dailyLimit', {points: game.daily_point_limit || 0})}</Text>
+                  <Text style={styles.gameMeta}>
+                    {isPracticeGame(game)
+                      ? copy('games.practiceNoRewards')
+                      : copy('games.dailyLimit', {points: game.daily_point_limit ?? 0})}
+                  </Text>
                   <Text style={styles.gameMeta}>{copy('games.slug', {slug: game.slug || '—'})}</Text>
                 </View>
                 <TouchableOpacity

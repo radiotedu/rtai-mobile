@@ -67,6 +67,9 @@
     "addTaskPlaceholder": "Add a task…",
     "noTasks": "No tasks yet",
     "ambient": "Focus sounds",
+    "jazz": "Jazz",
+    "classic": "Classical",
+    "lofi": "Lo-Fi",
     "add": "Add"
   },
   "privacy": {
@@ -77,6 +80,8 @@
     "controllerNotice": "TED University / RadioTEDU (TED University Radio), Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara, Türkiye. Privacy and rights requests: radio@tedu.edu.tr.",
     "noticeHeading": "Mobile privacy notice — version 22 August 2026",
     "fullNotice": "Account and service data: identifiers and contact details you provide, authentication/session and security records, profile/avatar, favourites and playback progress, Gold activity, account/ERP-link records, and support messages may be processed to provide and secure requested services, perform the Terms, prevent abuse, and meet legal duties. Legal bases are contract performance, legal obligation, and proportionate legitimate interests; consent is used only where requested. Recipients may include authorised RadioTEDU/TEDU personnel, contracted hosting, email, identity, security and analytics providers, and authorities where legally required. Data is retained while needed for the account/service and then only for applicable statutory, dispute, security and backup periods. Optional Google Analytics remains off until consent and is described separately below; Google may process data outside Türkiye/EEA under applicable safeguards. RadioTEDU does not sell personal data, use analytics for targeted ads, or make decisions producing legal effects solely by automation. You may request access, information, correction, deletion, restriction/objection, portability where applicable, and withdraw consent without affecting earlier lawful processing. Contact radio@tedu.edu.tr; you may also complain to the Turkish KVKK Authority or your competent EEA authority. Account deletion is available in Profile. Legal retention duties may limit deletion.",
+    "thirdPartyHeading": "Playback artwork services",
+    "thirdPartyNotice": "When a stream supplies song and artist text, the app may send that search text to Apple's public iTunes Search API to find cover artwork. Apple also receives ordinary connection data such as the IP address; no RadioTEDU account token or email is sent. This artwork request is separate from Google Analytics and occurs only while related playback metadata is used. Missing profile and content images use bundled local placeholders.",
     "termsHeading": "In-app Terms of Use — version 22 August 2026",
     "fullTerms": "By checking acceptance, you agree to these Terms with RadioTEDU. Use the app lawfully and for personal purposes; protect account credentials; do not disrupt services, evade security, misuse streams, or submit unlawful or rights-infringing material. RadioTEDU content, brands and software remain owned by or licensed to their respective owners. Streams and online features depend on networks and third parties and may change or be unavailable; mandatory consumer rights remain unaffected. Gold is a non-cash, non-transferable in-service benefit with no guaranteed monetary value. Accounts may be restricted for abuse or material breach, subject to applicable rights. Turkish law applies, without removing mandatory consumer or data-protection rights or competent forums. Material changes require renewed acceptance. Contact: radio@tedu.edu.tr.",
     "analyticsLabel": "Optional usage analytics",
@@ -97,6 +102,7 @@
     "viewPolicy": "Privacy Notice",
     "viewTerms": "Terms of Use",
     "googlePrivacy": "Google Privacy Policy",
+    "applePrivacy": "Apple Privacy Policy",
     "acceptSelected": "Accept selected",
     "declineAll": "Continue without analytics",
     "manage": "Manage data & consent",

@@ -14,6 +14,7 @@ import {
   setRuntimeVisibleChannels,
 } from '../data/radioChannels';
 import {checkStreamAvailability} from '../utils/api';
+import {logSafeError} from '../utils/safeLog';
 
 interface ChannelContextType {
   activeChannels: RadioChannel[];
@@ -67,7 +68,7 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
         setActiveChannels(active);
       }
     } catch (error) {
-      console.error('[ChannelContext] Error checking streams:', error);
+      logSafeError('channels.availability', error);
       const fallback = channelsVisibleWithoutLiveCheck();
       setRuntimeVisibleChannels(fallback);
       setActiveChannels(fallback);

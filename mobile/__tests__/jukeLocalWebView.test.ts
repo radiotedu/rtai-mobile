@@ -16,7 +16,10 @@ describe('juke-local app WebView contract', () => {
     expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
     expect(script).toContain('access-token');
     expect(script).toContain('display_name');
-    expect(script).not.toContain('localStorage');
+    expect(script).toContain('window.__RADIOTEDU_EPHEMERAL_TOKEN__');
+    expect(script).toContain("originalRemoveItem.call(window.localStorage, 'token')");
+    expect(script).not.toContain("window.localStorage.setItem('token'");
+    expect(script).toContain("window.location.pathname.replace(/\\/+$/, '') === '/juke-local/controller'");
   });
 
   it('opens the public phone controller and forwards a scanned device code', () => {
@@ -91,8 +94,17 @@ describe('juke-local app WebView contract', () => {
     expect(script).toContain('/jukebox/api/');
     expect(script).toContain("parsed.hostname === 'radiotedu.com'");
     expect(script).toContain('short-lived-token\\u003c/script>');
-    expect(script).not.toContain('localStorage');
+    expect(script).toContain("window.location.hostname === 'radiotedu.com'");
+    expect(script).toContain("window.location.protocol === 'https:'");
     expect(script).not.toContain('document.cookie');
     expect(script).not.toContain('?access_token=');
+  });
+
+  it('clears the ephemeral controller compatibility token on app logout', () => {
+    const script = buildJukeLocalAuthInjection({accessToken: null, user: null});
+
+    expect(script).toContain("typeof state.accessToken === 'string' ? state.accessToken : ''");
+    expect(script).toContain("originalRemoveItem.call(window.localStorage, 'token')");
+    expect(script).toContain('authenticated: Boolean(state.accessToken)');
   });
 });

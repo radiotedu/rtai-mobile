@@ -1,5 +1,6 @@
 import {describe, expect, it} from '@jest/globals';
 import {gameListCopy} from '../src/i18n/gameListCopy';
+import {screenCopy} from '../src/i18n/screenCopy';
 
 describe('game catalog localization', () => {
   it('localizes bundled slugs instead of leaking backend language', () => {
@@ -13,5 +14,16 @@ describe('game catalog localization', () => {
       title: 'Server title',
       description: 'Server description',
     });
+  });
+
+  it('ships accurate practice and Arabic catalog copy', () => {
+    expect(gameListCopy('word-guess', 'ar').description).toBe(
+      'اكتشف الكلمة المخفية من خلال التلميحات.',
+    );
+    expect(gameListCopy('word-guess', 'ar').description).not.toMatch(/[А-Яа-я]/);
+
+    for (const language of ['en', 'tr', 'ru', 'ar', 'de', 'fr']) {
+      expect(screenCopy(language, 'games.practiceNoRewards')).toContain('Gold');
+    }
   });
 });

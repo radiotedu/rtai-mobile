@@ -44,7 +44,7 @@ const GAME_LIST_COPY: Record<string, LocalizedGameText> = {
     en: {title: 'Word Guess', description: 'Find the hidden word from the clues.'},
     tr: {title: 'Kelime Tahmini', description: 'İpuçlarıyla gizli kelimeyi bul.'},
     ru: {title: 'Угадай слово', description: 'Найдите загаданное слово по подсказкам.'},
-    ar: {title: 'خمن الكلمة', description: 'اكتشف الكلمة المخفية по التلميحات.'},
+    ar: {title: 'خمن الكلمة', description: 'اكتشف الكلمة المخفية من خلال التلميحات.'},
     de: {title: 'Wort raten', description: 'Finde das versteckte Wort anhand der Hinweise.'},
     fr: {title: 'Devine le mot', description: 'Trouvez le mot caché grâce aux indices.'},
   },

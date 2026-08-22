@@ -12,6 +12,7 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {getGameResultMessage} from './gameSession';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {screenCopy} from '../../i18n/screenCopy';
 
 interface GameShellProps {
   title: string;
@@ -120,6 +121,7 @@ export function GameResultModal({
   awardedXp,
   isSubmitting,
   submitFailed,
+  practice,
   onRetrySubmit,
   onRestart,
   onExit,
@@ -130,30 +132,38 @@ export function GameResultModal({
   awardedXp: number;
   isSubmitting?: boolean;
   submitFailed?: boolean;
+  practice?: boolean;
   onRetrySubmit?: () => void;
   onRestart: () => void;
   onExit: () => void;
 }) {
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
+  const catalogCopy = (key: string) => screenCopy(i18n.language, key);
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={styles.resultCard}>
           <View style={styles.resultIcon}>
-            <Icon name={submitFailed ? 'wifi-alert' : 'trophy-award'} size={38} color={COLORS.primary} />
+            <Icon name={practice ? 'controller-classic' : submitFailed ? 'wifi-alert' : 'trophy-award'} size={38} color={COLORS.primary} />
           </View>
           <Text style={styles.resultTitle}>{title || copy('games.roundFinished')}</Text>
-          <Text style={styles.resultScore}>{getGameResultMessage(score, awardedXp)}</Text>
+          <Text style={styles.resultScore}>
+            {practice
+              ? `${copy('games.score')} ${Math.max(0, Math.floor(score))}`
+              : getGameResultMessage(score, awardedXp, copy('games.score'))}
+          </Text>
           <Text style={styles.resultSubtitle}>
-            {isSubmitting
+            {practice
+              ? catalogCopy('games.practiceNoRewards')
+              : isSubmitting
               ? copy('games.submitting')
               : submitFailed
                 ? copy('games.submitFailed')
                 : copy('games.saved')}
           </Text>
 
-          {submitFailed && onRetrySubmit ? (
+          {!practice && submitFailed && onRetrySubmit ? (
             <TouchableOpacity style={styles.primaryButton} onPress={onRetrySubmit}>
               <Text style={styles.primaryButtonText}>{copy('games.retrySubmit')}</Text>
             </TouchableOpacity>

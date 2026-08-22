@@ -45,6 +45,15 @@ with “Are you in RadioTEDU crew?”. Ensure Study, Voting, and JukeLocal links
 preserve the authenticated session. Keep English, Turkish, Russian, Arabic,
 German, and French pages internally consistent.
 
+Treat mobile crew OAuth as a release-blocking security item. The current
+`radiotedu:` callback is claimable by another app and exchanges only `{code}`.
+Propose one of these exact contracts, then wait for approval: (1) a dedicated
+HTTPS mobile callback plus Android `assetlinks.json` and Apple AASA association,
+or (2) server-enforced OAuth PKCE S256 where start binds `code_challenge` and
+exchange requires the matching `code_verifier`. Do not merely echo a client
+nonce, and do not place codes, tokens, or verifiers in logs or persistent web
+storage.
+
 **NEVER DELETE WORDPRESS, ERP, OR ANY FILES. DO NOT CHANGE OR DELETE FILES
 unless explicitly approved.** Preserve backups, data, security, KVKK, GDPR,
 and production behavior. Inspect only first; provide findings, risks, exact

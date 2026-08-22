@@ -6,6 +6,7 @@ import { COLORS, SPACING } from '../../theme/theme';
 import { SOCKET_ORIGIN, SOCKET_PATH, STORAGE_API } from '../../services/config';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {logSafeError} from '../../utils/safeLog';
 import {
   fetchActiveNextSongVoteRound,
   getCandidateCoverUrl,
@@ -77,7 +78,8 @@ function CandidateOption({
 
 export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) {
   const {i18n} = useTranslation();
-  const copy = (key: string) => appCopy(i18n.language, key);
+  const copy = (key: string, values: Record<string, string | number> = {}) =>
+    appCopy(i18n.language, key, values);
   const [round, setRound] = useState<NextSongVoteRound | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [votingCandidateId, setVotingCandidateId] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
       setIsLoading(true);
       setRound(await fetchActiveNextSongVoteRound(deviceId));
     } catch (error) {
-      console.error('Failed to fetch next-song vote round:', error);
+      logSafeError('voting.round', error);
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +146,8 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
         setRound(nextRound);
       }
     } catch (error: any) {
-      Alert.alert(copy('common.error'), error.response?.data?.error || copy('votePanel.error'));
+      logSafeError('voting.submit', error);
+      Alert.alert(copy('common.error'), copy('votePanel.error'));
     } finally {
       setVotingCandidateId(null);
     }
@@ -162,7 +165,7 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
         {remainingSeconds !== null && (
           <View style={styles.timerPill}>
             <Icon name="timer-outline" size={14} color={COLORS.textMuted} />
-            <Text style={styles.timerText}>{remainingSeconds}s</Text>
+            <Text style={styles.timerText}>{copy('votePanel.seconds', {seconds: remainingSeconds})}</Text>
           </View>
         )}
       </View>

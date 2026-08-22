@@ -24,6 +24,7 @@ import {
 } from '../../services/registrationPolicy';
 import {useTranslation} from 'react-i18next';
 import {authCopy} from '../../i18n/screenCopy';
+import {logSafeError} from '../../utils/safeLog';
 
 const RegisterScreen = () => {
     const [email, setEmail] = useState('');
@@ -70,7 +71,8 @@ const RegisterScreen = () => {
             });
             Alert.alert(copy('register.successTitle'), copy('register.success'));
         } catch (error: any) {
-            Alert.alert(copy('register.genericError'), error.message);
+            logSafeError('auth.register', error);
+            Alert.alert(copy('register.genericError'), copy('register.requestError'));
         } finally {
             setIsLoading(false);
         }

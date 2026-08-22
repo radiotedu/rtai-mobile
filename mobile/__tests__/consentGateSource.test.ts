@@ -31,8 +31,12 @@ describe('consent gate startup fallback', () => {
       path.join(__dirname, '../src/screens/ConsentScreen.tsx'),
       'utf8',
     );
+    const versionSource = fs.readFileSync(
+      path.join(__dirname, '../src/privacy/consentVersion.ts'),
+      'utf8',
+    );
 
-    expect(consentSource).toContain('CONSENT_VERSION = 3');
+    expect(versionSource).toContain('CONSENT_VERSION = 4');
     expect(consentSource).toContain('termsAccepted: false');
     expect(consentSource).toContain('decidedAt: null');
     expect(screenSource).toContain('useState(false)');

@@ -30,7 +30,7 @@ describe('Avatar closet Study menu', () => {
 
     expect(closetSource).toContain('walletPoints');
     expect(closetSource).toContain('spendable_points');
-    expect(closetSource).toContain('Global points');
+    expect(closetSource).toContain("copy('avatar.points')");
     expect(closetSource).toContain('setWalletPoints(purchase.points');
   });
 });

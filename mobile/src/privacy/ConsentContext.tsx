@@ -8,10 +8,11 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {rotateInstallId} from './installId';
+import {CONSENT_VERSION} from './consentVersion';
 import {REGISTRATION_TERMS_VERSION} from '../services/registrationPolicy';
 
 // Bump when the privacy policy / consent terms materially change → re-prompts.
-export const CONSENT_VERSION = 3;
+export {CONSENT_VERSION} from './consentVersion';
 const STORAGE_KEY = '@radiotedu/consent';
 
 export type AgeRange =

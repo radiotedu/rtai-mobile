@@ -10,6 +10,7 @@ import {
     Platform,
     Image,
     Alert,
+    Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -18,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {authCopy} from '../../i18n/screenCopy';
+import {logSafeError} from '../../utils/safeLog';
 
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
@@ -46,7 +48,8 @@ const LoginScreen = () => {
             await login(email, password);
             // Navigation state will automatically update via AuthContext
         } catch (error: any) {
-            Alert.alert(copy('login.errorTitle'), error.message);
+            logSafeError('auth.login', error);
+            Alert.alert(copy('login.errorTitle'), copy('login.requestError'));
         } finally {
             setIsLoading(false);
         }
@@ -56,8 +59,21 @@ const LoginScreen = () => {
         try {
             await loginWithTedu();
         } catch (error: any) {
-            Alert.alert(copy('login.teduErrorTitle'), error.message);
+            logSafeError('auth.erpLogin', error);
+            const errorKey =
+                typeof error?.code === 'string' && error.code.startsWith('erp.')
+                    ? error.code
+                    : 'erp.startFailed';
+            Alert.alert(
+                copy('login.teduErrorTitle'),
+                copy(errorKey),
+            );
         }
+    };
+
+    const handleForgotPassword = async () => {
+        const subject = encodeURIComponent(copy('login.resetSubject'));
+        await Linking.openURL(`mailto:radio@tedu.edu.tr?subject=${subject}`);
     };
 
     return (
@@ -97,7 +113,7 @@ const LoginScreen = () => {
                             )}
                         </TouchableOpacity>
                         {teduLoginError ? (
-                            <Text style={styles.teduError}>{teduLoginError}</Text>
+                            <Text style={styles.teduError}>{copy(teduLoginError)}</Text>
                         ) : null}
 
                         <View style={styles.dividerRow}>
@@ -138,8 +154,12 @@ const LoginScreen = () => {
                             </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity style={styles.forgotPassword}>
-                        <Text style={styles.forgotPasswordText}>{copy('login.forgot')}</Text>
+                        <TouchableOpacity
+                            style={styles.forgotPassword}
+                            onPress={handleForgotPassword}
+                            accessibilityRole="link"
+                            accessibilityLabel={copy('login.forgot')}>
+                            <Text style={styles.forgotPasswordText}>{copy('login.forgot')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity

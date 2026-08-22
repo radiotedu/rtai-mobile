@@ -22,6 +22,7 @@ import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
 import {getChannelCopy} from '../i18n/channelCopy';
+import {logSafeError} from '../utils/safeLog';
 import api from '../services/api';
 import {
   RADIO_CHANNELS,
@@ -72,7 +73,7 @@ const RadioScreen = () => {
   useEffect(() => {
     loadFavoriteChannelIds()
       .then(setFavoriteIds)
-      .catch((error) => console.log('Failed to load radio favorites:', error));
+      .catch((error) => logSafeError('radio.favoritesLoad', error));
   }, []);
 
   // Reset the per-track up/down vote whenever the station or the playing song
@@ -118,7 +119,7 @@ const RadioScreen = () => {
       const response = await api.get(`/radio/history/${channelId}`);
       setHistory(response.data.data || []);
     } catch (error) {
-      console.log('Failed to fetch history:', error);
+      logSafeError('radio.history', error);
       setHistory([]);
     } finally {
       setIsLoadingHistory(false);
@@ -172,7 +173,7 @@ const RadioScreen = () => {
     try {
       await saveFavoriteChannelIds(nextFavorites);
     } catch (error) {
-      console.log('Failed to save radio favorites:', error);
+      logSafeError('radio.favoritesSave', error);
     }
   };
 
@@ -205,7 +206,10 @@ const RadioScreen = () => {
         <Text style={styles.historyArtist} numberOfLines={1}>{item.artist}</Text>
       </View>
       <Text style={styles.historyTime}>
-        {new Date(item.played_at).toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'})}
+        {new Date(item.played_at).toLocaleTimeString(i18n.resolvedLanguage || i18n.language || 'en', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}
       </Text>
     </View>
   );
@@ -227,7 +231,7 @@ const RadioScreen = () => {
               <View style={styles.liveRow}>
                 <View style={styles.liveBadge}>
                   <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>LIVE</Text>
+                  <Text style={styles.liveText}>{copy('radio.live')}</Text>
                 </View>
               </View>
               <Text style={styles.trackTitle} numberOfLines={1}>{displayTitle}</Text>

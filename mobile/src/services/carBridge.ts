@@ -11,7 +11,7 @@
  */
 import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event, State} from 'react-native-track-player';
-import i18n from '../i18n';
+import i18n, {getLanguagePreference} from '../i18n';
 import {getChannelCopy} from '../i18n/channelCopy';
 import {checkStreamAvailability} from '../utils/api';
 import {
@@ -25,7 +25,6 @@ import {
 import type {Podcast} from './podcastService';
 import {
   buildChannelTrack,
-  channelArtwork,
   ensureBrowsableQueue,
   findChannelByQuery,
   playAdjacentQueueItem,
@@ -44,12 +43,32 @@ const CarBridge = NativeModules.RadioTeduCarBridge as
         artwork: string,
         isPlaying: boolean,
       ) => void;
+      setLanguagePreference?: (preference: string) => void;
     }
   | undefined;
 
 const isAvailable = Platform.OS === 'android' && !!CarBridge;
 // Bundled vector tiles so the car grid matches the design's coloured destinations.
 const TILE = 'android.resource://com.radiotedumobile/drawable/';
+
+// Android Auto runs in another process. Metro/file asset URIs are private to
+// the app and can render as blank artwork there, so car metadata uses packaged,
+// cross-process resources built from the approved 2048x2048 square artwork.
+const CAR_STATION_ARTWORK: Record<string, string> = {
+  'radiotedu-main': `${TILE}car_station_radiotedu`,
+  'radiotedu-classic': `${TILE}car_station_classic`,
+  'radiotedu-jazz': `${TILE}car_station_cazz`,
+  'radiotedu-lofi': `${TILE}car_station_lofi`,
+  'radiotedu-energize': `${TILE}car_station_energize`,
+  'radiotedu-spark': `${TILE}car_station_energize`,
+  'radiotedu-rock': `${TILE}car_station_rock`,
+  'radiotedu-en': `${TILE}car_station_en`,
+  'radiotedu-fr': `${TILE}car_station_fr`,
+};
+
+function carStationArtwork(channelId: string): string {
+  return CAR_STATION_ARTWORK[channelId] ?? `${TILE}car_station_radiotedu`;
+}
 
 let cachedPodcasts: Podcast[] = [];
 let catalogQuality: StreamQuality = 'normal';
@@ -68,6 +87,8 @@ type CarItem = {
   // which is exactly channel.streams?.[quality] || channel.streamUrl.
   url: string;
   quality?: StreamQuality;
+  /** Machine-readable codec/format hint for Media3 car metadata. */
+  audioFormat?: 'HE-AAC v1' | 'FLAC' | 'Podcast audio';
   /** Podcast series identifier; used by native Android Auto Next/Previous. */
   seriesId?: string;
 };
@@ -83,13 +104,22 @@ function radioItems(): CarItem[] {
       description: c.description,
     });
     const track = buildChannelTrack(c, catalogQuality);
+    const audioFormat = track.streamQuality === 'flac' ? 'FLAC' : 'HE-AAC v1';
+    const stationOnly = shouldUseStationOnlyPresentation(c, track.streamQuality);
+    const description = stationOnly ? '' : copy.description;
     return {
       id: c.id,
       title: copy.name,
-      subtitle: shouldUseStationOnlyPresentation(c, catalogQuality) ? '' : copy.description,
-      artwork: channelArtwork(c),
+      // Make lossless playback explicit on distraction-safe car surfaces. The
+      // mount path stays private; low/normal remain visually uncluttered.
+      subtitle:
+        track.streamQuality === 'flac'
+          ? [audioFormat, description].filter(Boolean).join(' · ')
+          : description,
+      artwork: carStationArtwork(c.id),
       playable: true,
       quality: track.streamQuality,
+      audioFormat,
       url: track.url,
     };
   });
@@ -108,34 +138,14 @@ function podcastItems(): CarItem[] {
         artwork: p.imageUrl ?? '',
         playable: true,
         seriesId: `podcast-series:${encodeURIComponent(seriesTitle)}`,
+        audioFormat: 'Podcast audio',
         // filtered above on !!p.audioUrl, so this is always a real URL.
         url: p.audioUrl ?? '',
       };
     });
 }
 
-/** Build and push the car browse tree (Live Radio + Podcasts). */
-export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
-  if (!isAvailable) {
-    return;
-  }
-  if (podcasts) {
-    cachedPodcasts = podcasts;
-  }
-  const checks = await Promise.all(
-    RADIO_CHANNELS.map(async channel => ({
-      channel,
-      isAvailable: await checkStreamAvailability(channel.streamUrl).catch(
-        () => false,
-      ),
-    })),
-  );
-  catalogChannels = buildVisibleChannels(checks);
-  if (catalogChannels.length === 0) {
-    catalogChannels = channelsVisibleWithoutLiveCheck();
-  }
-  setRuntimeVisibleChannels(catalogChannels);
-  catalogQuality = (await resolveCurrentStreamPreferences()).quality;
+function writeCachedCarCatalog(): void {
   const tr = t();
 
   const pods = podcastItems();
@@ -143,8 +153,9 @@ export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
     pods.reduce((groups, episode) => {
       const id = episode.seriesId ?? 'podcast-series:RadioTEDU%20Podcasts';
       const existing = groups.get(id);
-      if (existing) existing.items.push(episode);
-      else {
+      if (existing) {
+        existing.items.push(episode);
+      } else {
         groups.set(id, {
           id,
           title: episode.subtitle || 'RadioTEDU Podcasts',
@@ -192,6 +203,39 @@ export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
     CarBridge!.setCatalog(JSON.stringify({categories}));
   } catch {
     // best-effort
+  }
+}
+
+/** Build and push the car browse tree (Live Radio + Podcasts). */
+export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
+  if (!isAvailable) {
+    return;
+  }
+  if (podcasts) {
+    cachedPodcasts = podcasts;
+  }
+  const checks = await Promise.all(
+    RADIO_CHANNELS.map(async channel => ({
+      channel,
+      isAvailable: await checkStreamAvailability(channel.streamUrl).catch(
+        () => false,
+      ),
+    })),
+  );
+  catalogChannels = buildVisibleChannels(checks);
+  if (catalogChannels.length === 0) {
+    catalogChannels = channelsVisibleWithoutLiveCheck();
+  }
+  setRuntimeVisibleChannels(catalogChannels);
+  catalogQuality = (await resolveCurrentStreamPreferences()).quality;
+  writeCachedCarCatalog();
+}
+
+function syncCarLanguagePreference(): void {
+  try {
+    CarBridge?.setLanguagePreference?.(getLanguagePreference());
+  } catch {
+    // Older native shells ignore the preference until the next app update.
   }
 }
 
@@ -257,7 +301,11 @@ async function pushNowPlaying() {
     CarBridge!.updateNowPlaying(
       stationOnly ? 'RadioTEDU Lo-Fi' : track?.title ?? 'RadioTEDU',
       stationOnly ? '' : (track?.artist as string) ?? '',
-      stationOnly ? channelArtwork(channel!) : (track?.artwork as string) ?? '',
+      stationOnly
+        ? carStationArtwork(channel!.id)
+        : channel
+          ? carStationArtwork(channel.id)
+          : (track?.artwork as string) ?? '',
       state === State.Playing,
     );
   } catch {
@@ -274,6 +322,14 @@ export function initCarBridge(): void {
   }
   initialized = true;
 
+  syncCarLanguagePreference();
+  i18n.on('languageChanged', () => {
+    syncCarLanguagePreference();
+    // Reuse verified channels/podcasts so translated labels reach Media3
+    // synchronously, without waiting for another availability network pass.
+    writeCachedCarCatalog();
+  });
+
   DeviceEventEmitter.addListener('RadioTeduCarCommand', e => {
     handleCommand(e?.action, e?.mediaId ?? null);
   });
@@ -281,5 +337,5 @@ export function initCarBridge(): void {
   TrackPlayer.addEventListener(Event.PlaybackState, pushNowPlaying);
   TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, pushNowPlaying);
 
-  void pushCarCatalog();
+  pushCarCatalog().catch(() => undefined);
 }

@@ -26,6 +26,7 @@ import {
   MarketItem,
   fetchGamificationHome,
 } from '../services/gamificationService';
+import {logSafeError} from '../utils/safeLog';
 
 const emptyHome: GamificationHome = {
   points: {
@@ -47,13 +48,13 @@ const HomeScreen = () => {
     [i18n.language],
   );
   const {user} = useAuth();
-  const [home, setHome] = useState<GamificationHome>(emptyHome);
+  const [home, setHome] = useState<GamificationHome | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadHome = useCallback(async () => {
     if (!user) {
-      setHome(emptyHome);
+      setHome(null);
       return;
     }
 
@@ -61,7 +62,7 @@ const HomeScreen = () => {
     try {
       setHome(await fetchGamificationHome());
     } catch (error) {
-      console.error('Failed to fetch gamification home:', error);
+      logSafeError('home.gamification', error);
       Alert.alert(copy('home.errorTitle'), copy('home.errorText'));
     } finally {
       setLoading(false);
@@ -77,6 +78,9 @@ const HomeScreen = () => {
     setRefreshing(true);
     loadHome();
   };
+
+  const accountHome = user ? home : null;
+  const homeData = accountHome ?? emptyHome;
 
   return (
     <PageTransition>
@@ -99,9 +103,9 @@ const HomeScreen = () => {
             </Text>
 
             <View style={styles.pointsRow}>
-              <MetricCard label="Lifetime Gold" value={home.points.lifetime_points || user?.rank_score || 0} />
-              <MetricCard label="Gold balance" value={home.points.spendable_points || 0} accent />
-              <MetricCard label="Monthly Gold" value={home.points.monthly_points || user?.monthly_rank_score || 0} />
+              <MetricCard label={copy('home.lifetimeGold')} value={accountHome?.points.lifetime_points ?? user?.rank_score ?? 0} />
+              <MetricCard label={copy('home.goldBalance')} value={accountHome?.points.spendable_points ?? user?.gold_balance ?? 0} accent />
+              <MetricCard label={copy('home.monthlyGold')} value={accountHome?.points.monthly_points ?? user?.monthly_rank_score ?? 0} />
             </View>
           </View>
 
@@ -135,25 +139,25 @@ const HomeScreen = () => {
           ) : (
             <>
               <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
-              {home.events.length === 0 ? (
+              {homeData.events.length === 0 ? (
                 <EmptyCard text={copy('home.noEvents')} />
               ) : (
-                home.events.slice(0, 3).map((event) => <EventPreview key={event.id} event={event} />)
+                homeData.events.slice(0, 3).map((event) => <EventPreview key={event.id} event={event} />)
               )}
 
               <SectionHeader title={copy('home.arcade')} action={copy('home.play')} onPress={() => navigation.navigate('Games')} />
-              {home.games.length === 0 ? (
+              {homeData.games.length === 0 ? (
                 <EmptyCard text={copy('home.noGames')} />
               ) : (
-                home.games.slice(0, 3).map((game) => <GamePreview key={game.id} game={game} />)
+                homeData.games.slice(0, 3).map((game) => <GamePreview key={game.id} game={game} />)
               )}
 
               <SectionHeader title={copy('home.marketShowcase')} action={copy('home.marketItems')} onPress={() => navigation.navigate('Market')} />
-              {home.market.length === 0 ? (
+              {homeData.market.length === 0 ? (
                 <EmptyCard text={copy('home.noMarket')} />
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {home.market.slice(0, 8).map((item) => <MarketPreview key={item.id} item={item} />)}
+                  {homeData.market.slice(0, 8).map((item) => <MarketPreview key={item.id} item={item} />)}
                 </ScrollView>
               )}
             </>

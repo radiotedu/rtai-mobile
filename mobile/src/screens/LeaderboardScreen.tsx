@@ -17,26 +17,32 @@ import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import api from '../services/api';
+import {STORAGE_API} from '../services/config';
 import {MarketItem, fetchMarketItems} from '../services/gamificationService';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
+import {screenCopy} from '../i18n/screenCopy';
+import {logSafeError} from '../utils/safeLog';
 
 type LeaderboardPeriod = 'total' | 'monthly';
 type LeaderboardCategory = 'total' | 'listening' | 'events' | 'games' | 'social' | 'jukebox';
 
 const categories: Array<{value: LeaderboardCategory; key: string}> = [
-  {value: 'total', key: 'leaderboard.title'},
-  {value: 'jukebox', key: 'tabs.jukebox'},
-  {value: 'listening', key: 'common.listen'},
-  {value: 'events', key: 'events.title'},
-  {value: 'games', key: 'games.title'},
-  {value: 'social', key: 'home.social'},
+  {value: 'total', key: 'leaderboard.category.total'},
+  {value: 'jukebox', key: 'leaderboard.category.jukebox'},
+  {value: 'listening', key: 'leaderboard.category.listening'},
+  {value: 'events', key: 'leaderboard.category.events'},
+  {value: 'games', key: 'leaderboard.category.games'},
+  {value: 'social', key: 'leaderboard.category.social'},
 ];
 
 const LeaderboardScreen = () => {
   const navigation = useNavigation<any>();
-  const {i18n, t} = useTranslation();
-  const copy = (key: string) => appCopy(i18n.language, key);
+  const {i18n} = useTranslation();
+  const copy = (key: string, values: Record<string, string | number> = {}) => {
+    const screenValue = screenCopy(i18n.language, key, values);
+    return screenValue === key ? appCopy(i18n.language, key, values) : screenValue;
+  };
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [market, setMarket] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +59,7 @@ const LeaderboardScreen = () => {
   useEffect(() => {
     fetchMarketItems()
       .then(setMarket)
-      .catch((error) => console.error('Failed to fetch leaderboard market:', error));
+      .catch((error) => logSafeError('leaderboard.market', error));
   }, []);
 
   const fetchLeaderboard = async (
@@ -77,7 +83,7 @@ const LeaderboardScreen = () => {
 
       setLeaderboard(response.data.data.leaderboard || []);
     } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
+      logSafeError('leaderboard.load', error);
     } finally {
       if (requestSeq === requestSeqRef.current) {
         setLoading(false);
@@ -116,14 +122,11 @@ const LeaderboardScreen = () => {
           )}
         </View>
 
-        <Image
-          source={{uri: item.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.display_name)}&background=random&color=fff`}}
-          style={styles.avatar}
-        />
+        <LeaderboardAvatar avatarUrl={item.avatar_url} displayName={item.display_name} />
 
         <View style={styles.infoContainer}>
-          <Text style={styles.name}>{item.display_name}</Text>
-          <Text style={styles.songsAdded}>{item.total_songs_added} {copy('leaderboard.songs')} · {item.monthly_rank_score || 0} {copy('leaderboard.monthly')}</Text>
+          <Text style={styles.name}>{item.display_name || copy('profile.guest')}</Text>
+          <Text style={styles.songsAdded}>{item.total_songs_added ?? 0} {copy('leaderboard.songs')} · {item.monthly_rank_score ?? 0} {copy('leaderboard.monthly')}</Text>
         </View>
 
         <View style={styles.pointsContainer}>
@@ -169,7 +172,7 @@ const LeaderboardScreen = () => {
                 onPress={() => setCategory(item.value)}
                 style={[styles.categoryChip, category === item.value && styles.categoryChipActive]}>
                 <Text style={[styles.categoryChipText, category === item.value && styles.categoryChipTextActive]}>
-                  {item.key.startsWith('leaderboard.') || item.key.startsWith('events.') ? copy(item.key) : t(item.key)}
+                  {copy(item.key)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -213,6 +216,53 @@ const LeaderboardScreen = () => {
     </PageTransition>
   );
 };
+
+function LeaderboardAvatar({avatarUrl, displayName}: {avatarUrl?: string | null; displayName?: string}) {
+  const [loadFailed, setLoadFailed] = useState(false);
+  const resolvedUrl = resolveLeaderboardAvatarUrl(avatarUrl);
+
+  useEffect(() => {
+    setLoadFailed(false);
+  }, [resolvedUrl]);
+
+  if (resolvedUrl && !loadFailed) {
+    return (
+      <Image
+        source={{uri: resolvedUrl}}
+        style={styles.avatar}
+        onError={() => setLoadFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <View style={[styles.avatar, styles.avatarFallback]}>
+      <Text style={styles.avatarInitials}>{getLeaderboardInitials(displayName ?? '')}</Text>
+    </View>
+  );
+}
+
+function resolveLeaderboardAvatarUrl(value?: string | null): string | null {
+  const avatar = value?.trim();
+  if (!avatar) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(avatar)) {
+    return avatar;
+  }
+  return `${STORAGE_API.replace(/\/$/, '')}/${avatar.replace(/^\//, '')}`;
+}
+
+export function getLeaderboardInitials(value: string): string {
+  const initials = value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => Array.from(part)[0] ?? '')
+    .join('');
+  return (initials || 'R').toLocaleUpperCase();
+}
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
@@ -292,6 +342,8 @@ const styles = StyleSheet.create({
   },
   rankText: {fontSize: 18, fontWeight: 'bold', color: COLORS.textMuted},
   avatar: {width: 40, height: 40, borderRadius: 20, marginRight: SPACING.md},
+  avatarFallback: {alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(227,30,36,0.18)'},
+  avatarInitials: {color: COLORS.text, fontSize: 14, fontWeight: '900'},
   infoContainer: {flex: 1},
   name: {fontSize: 16, fontWeight: 'bold', color: COLORS.text},
   songsAdded: {fontSize: 12, color: COLORS.textMuted, marginTop: 2},

@@ -9,6 +9,9 @@ import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} fr
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {gameListCopy} from '../../i18n/gameListCopy';
+import {isPracticeGame} from './gameRoutes';
+import {logSafeError} from '../../utils/safeLog';
 
 type Point = {x: number; y: number};
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -22,6 +25,7 @@ const SnakeScreen = () => {
   const game = route.params?.game as ArcadeGame;
   const {i18n} = useTranslation();
   const copy = useCallback((key: string) => appCopy(i18n.language, key), [i18n.language]);
+  const localizedGame = gameListCopy('snake', i18n.language);
   const [snake, setSnake] = useState<Point[]>(START_SNAKE);
   const [food, setFood] = useState<Point>(() => createFood(START_SNAKE));
   const [direction, setDirection] = useState<Direction>('right');
@@ -60,7 +64,7 @@ const SnakeScreen = () => {
       });
       setAwardedXp(Number(result?.points_awarded ?? 0));
     } catch (error) {
-      console.error('Snake score submit failed:', error);
+      logSafeError('games.snake.submit', error);
       setSubmitFailed(true);
     } finally {
       setIsSubmitting(false);
@@ -161,8 +165,8 @@ const SnakeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <GameShell
-        title="Snake"
-        subtitle="Premium Arcade"
+        title={localizedGame.title}
+        subtitle={localizedGame.description}
         score={score}
         progressLabel={`${snake.length} ${copy('games.snakeLength')}`}
         rightLabel={running ? copy('games.snakeRight') : copy('games.snakeStopped')}
@@ -214,6 +218,7 @@ const SnakeScreen = () => {
         awardedXp={awardedXp}
         isSubmitting={isSubmitting}
         submitFailed={submitFailed}
+        practice={isPracticeGame(game)}
         onRetrySubmit={submitFinalScore}
         onRestart={resetGame}
         onExit={() => navigation.goBack()}

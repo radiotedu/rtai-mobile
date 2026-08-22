@@ -1,8 +1,8 @@
 # RadioTEDU — Release & Compliance Checklist
 
 Production readiness for a real university radio (TED University). Every item is
-tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
-(needs a human / account / asset I can't provide).
+tagged: **[done]**, **[code]** (implemented or implementable here), **[you]**
+(needs a human/account), or **[blocked]** (external production dependency).
 
 ---
 
@@ -10,10 +10,11 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 
 - **[you]** Google Play Developer account (a **TED University org account** is
   recommended over a personal one; D-U-N-S may be required for org verification).
-- **[you]** **Privacy Policy URL** hosted at `https://radiotedu.com/gizlilik-politikasi/`
-  (the in-app consent + Data&Privacy screens link here). Must describe the
-  essential account/Gold processing and optional Firebase Analytics. See
-  `docs/PRIVACY_DATA_PLAN.md`.
+- **[done]** **Privacy Policy URL:** the public repository
+  [`MOBILE_PRIVACY_NOTICE.md`](../../docs/MOBILE_PRIVACY_NOTICE.md), with matching
+  [`MOBILE_TERMS_OF_USE.md`](../../docs/MOBILE_TERMS_OF_USE.md), is linked by
+  registration, consent, and Data & Privacy. Publish the same reviewed text on
+  stable RadioTEDU-owned URLs before replacing these temporary links.
 - **[you]** **Data safety form** (Play Console): declare what we collect. Source
   of truth = the deployed app/backend inventory. Essential account features
   process account data. Optional Firebase Analytics processes app-instance ID,
@@ -25,7 +26,7 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 - **[code/done]** **Target API level**: phone/tablet targetSdk 36; Wear targetSdk 35; TV exceeds its API 34 minimum
   Play publishing. Re-check each year (Play raises the floor ~annually).
 - **[code/done]** **Permissions minimized & justified** (see `SECURITY_REVIEW.md`):
-  CAMERA (avatar), media playback foreground service, notifications, scoped
+  media playback foreground service, notifications, system image picker
   storage. Provide a **prominent-disclosure** justification for the foreground
   media service in the Play listing.
 - **[you]** **Account deletion**: Play requires an in-app + web path to delete
@@ -34,9 +35,10 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 
 ## 2. Android Auto / Automotive OS — quality
 
-- **[done]** Custom `MediaBrowserService` (RNTP v4 has none) + MediaSession.
-- **[done]** Android Auto voice actions for "Play Radio TEDU", "Play latest
-  podcast", and "Open jukebox" route through media-session search handling.
+- **[done]** Media3 `MediaLibraryService` + `MediaLibrarySession` + ExoPlayer,
+  with legacy/modern car discovery actions and system media controls.
+- **[done]** Localized Android Auto voice search supports Live Radio and latest
+  podcast commands in all six app languages. Jukebox stays out of the car UI.
 - **[done]** Driver-safe design: ≤2-tap depth, flat lists, large targets,
   Jukebox is **listen-only** (no QR/add/vote), dark template.
 - **[code/done]** Study, Çim alan, avatar clothes, Spark, and Rock are
@@ -45,11 +47,10 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 - **[done]** **Single APK car distribution**: the phone/tablet APK also exposes
   Android Auto / Automotive media surfaces through optional manifest features,
   like standard media apps such as Spotify. No separate Automotive APK is built.
-- **[code]** **Content style hints** set (grid root / list children) — verify
+- **[done]** **Content style hints** set (grid root / list children) — verify
   rendering on the head unit.
-- **[you]** Square ≥512 px artwork per channel + a Classic-specific asset
-  (current logos are landscape; see `ANDROID_AUTO.md`).
-- **[you]** **`JUKEBOX_STREAM_URL`** for the communal listen-only stream.
+- **[done]** Approved centered 2048×2048 station artwork is bundled; lightweight
+  128×128 thumbnails prevent car-browse decode stalls.
 - **[you]** **Distraction-optimized review**: Google manually reviews car apps;
   follow the Android for Cars **Quality** guidelines before submitting.
 - **[you]** **CarPlay** (iOS) needs Apple's CarPlay-audio **entitlement**
@@ -61,9 +62,11 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
   demographics), default-off, versioned; withdraw/delete in Profile.
 - **[done]** Firebase Analytics default-off, consent-gated, advertising ID
   removed, ad personalization denied, and analytics identity reset on withdrawal.
-- **[you]** **Aydınlatma Metni** + **Açık Rıza Metni** (KVKK) + Privacy Policy,
-  hosted & localized. Name the **data controller** (TED University entity) +
-  KVKK contact e-mail.
+- **[code/done]** Mobile notice identifies the controller, contact, purposes,
+  legal bases, recipients/transfers, retention criteria, rights, optional
+  analytics, and Apple artwork lookup. Six-language in-app text exists.
+- **[you]** Controller/legal approval and publication of the reviewed notice on
+  a stable RadioTEDU-owned URL remain production-owner gates.
 - **[you]** If any users are **under 18** (university prep/younger), confirm
   parental-consent handling.
 - **[done]** Data minimization, retention plan documented (`PRIVACY_DATA_PLAN`).
@@ -82,6 +85,9 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 - **[code/done]** Adaptive Android support removes portrait lock and keeps
   MainActivity resizable for tablets, foldables, ChromeOS, and future desktop
   modes.
+- **[blocked]** Crew ERP login must use server-enforced PKCE or a verified HTTPS
+  app/universal link before production. The current claimable custom scheme is
+  not a release-safe OAuth redirect (`SECURITY_REVIEW.md` #9).
 - **[code/done]** Android 16 readiness is tracked for predictive back,
   edge-to-edge, 16 KB page compatibility, startup diagnostics, notification
   compatibility, and Live Updates fallback behavior.

@@ -89,6 +89,7 @@
     "demographicsLabel": "Données démographiques (âge, genre)",
     "demographicsDesc": "Facultatif. Nous aide à comprendre qui écoute.",
     "ageRange": "Tranche d'âge",
+    "minorAnalyticsNotice": "Votre tranche d'âge reste sur cet appareil pour déterminer l'admissibilité aux analyses facultatives. Les moins de 18 ans ne peuvent activer ni l'analyse ni les données démographiques. Elle n'est envoyée à Google que si le partage démographique est activé.",
     "gender": "Genre",
     "genderFemale": "Femme",
     "genderMale": "Homme",

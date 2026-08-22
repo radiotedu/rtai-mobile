@@ -21,6 +21,14 @@ import {useChannels} from '../context/ChannelContext';
 import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioChannels';
 import {logSafeError} from '../utils/safeLog';
 
+const IMMERSIVE_GAME_ROUTES = new Set([
+  'SnakeGame',
+  'MemoryGame',
+  'TetrisGame',
+  'RhythmTapGame',
+  'WordGuessGame',
+]);
+
 export function getDeepestActiveRouteName(state: any): string | undefined {
   let currentState = state;
   let activeRouteName: string | undefined;
@@ -46,7 +54,8 @@ export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean 
     activeRouteName === 'Radio' ||
     activeRouteName === 'Profile' ||
     activeRouteName === 'Jukebox' ||
-    activeRouteName === 'Player'
+    activeRouteName === 'Player' ||
+    IMMERSIVE_GAME_ROUTES.has(activeRouteName)
   );
 }
 

@@ -4,14 +4,30 @@ import {
   parseHttpUrl,
 } from './safeHttpUrlService';
 import {
+  asWebViewUserPresentation,
   buildWebViewAccountBridge,
   type WebViewAccountAuthState,
 } from './webViewAccountBridge';
+import {normalizeWebViewLocale} from './webViewLocale';
 
 export const JUKE_LOCAL_CONTROLLER_URL =
   'https://radiotedu.com/juke-local/controller/';
 
+function serializeForInjection(value: unknown) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) {
+  const compatibilityState = {
+    accessToken: authState.accessToken,
+    user: authState.accessToken
+      ? asWebViewUserPresentation(authState.user)
+      : null,
+  };
+
   return `${buildWebViewAccountBridge(authState, [
     '/jukebox/api/',
     '/juke-local/api/',
@@ -23,10 +39,11 @@ export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) 
         window.location.pathname.replace(/\\/+$/, '') === '/juke-local/controller';
       if (!trustedController) return true;
 
-      // The current controller reads its bearer token through Axios from the
-      // same-origin token key. Emulate only that key in memory: never leave a
-      // native bearer token in origin-wide persistent WebView localStorage.
-      var state = window.__RADIOTEDU_NATIVE_AUTH__ || {};
+      // RELEASE BLOCKER: the deployed controller reads its short-lived bearer
+      // through Axios/localStorage. Keep this compatibility state only on the
+      // exact controller route until its native auth adapter ships.
+      var state = ${serializeForInjection(compatibilityState)};
+      window.__RADIOTEDU_NATIVE_AUTH__ = state;
       try {
         if (!window.__RADIOTEDU_TOKEN_STORAGE_SHIM__) {
           var originalGetItem = Storage.prototype.getItem;
@@ -73,13 +90,19 @@ export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) 
   `;
 }
 
-export function buildJukeLocalControllerUrl(deviceCode?: unknown): string {
+export function buildJukeLocalControllerUrl(
+  deviceCode?: unknown,
+  locale?: unknown,
+): string {
   const normalizedCode =
     typeof deviceCode === 'string' ? deviceCode.trim() : '';
+  const query = [`lang=${normalizeWebViewLocale(locale)}`];
 
-  return normalizedCode
-    ? `${JUKE_LOCAL_CONTROLLER_URL}?code=${encodeFormQueryValue(normalizedCode)}`
-    : JUKE_LOCAL_CONTROLLER_URL;
+  if (normalizedCode) {
+    query.unshift(`code=${encodeFormQueryValue(normalizedCode)}`);
+  }
+
+  return `${JUKE_LOCAL_CONTROLLER_URL}?${query.join('&')}`;
 }
 
 export function isAllowedJukeLocalNavigation(url: string): boolean {

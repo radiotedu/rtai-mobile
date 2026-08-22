@@ -1,0 +1,10 @@
+{
+  "en-home-account": {"locale":"de","eyebrow":"RADIO, STUDY UND GOLD","headline":"Dein RadioTEDU-Startbildschirm.","altText":"RadioTEDU-Startseite mit angemeldetem Gold-Konto und Funktionsnavigation.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-radio-live": {"locale":"de","eyebrow":"LIVE-RADIO","headline":"Live-Metadaten. Deine Qualität.","altText":"RadioTEDU-Live-Radio mit echtem Sender, Titelmetadaten und Qualitätssteuerung.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-radio-flac-warning": {"locale":"de","eyebrow":"VERLUSTFREIES AUDIO","headline":"FLAC mit Schutz für mobile Daten.","altText":"RadioTEDU-FLAC-Auswahl mit echter Warnung zum mobilen Datenverbrauch.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-podcast-series": {"locale":"de","eyebrow":"PODCASTS","headline":"Echte RadioTEDU-Podcasts abspielen.","altText":"RadioTEDU-Podcastansicht mit echten Folgen und aktiven Wiedergabesteuerungen.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-study-timer": {"locale":"de","eyebrow":"STUDY","headline":"25 Minuten konzentrieren.","altText":"RadioTEDU Focus mit aktivem 25-Minuten-Countdown und Fokussounds.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-voting": {"locale":"de","eyebrow":"VOTING","headline":"Aktuellen Abstimmungsstatus sehen.","altText":"RadioTEDU Voting mit geschlossenem Rundenstatus und Hinweis auf die nächste Runde.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-jukebox": {"locale":"de","eyebrow":"JUKEBOX","headline":"Jukebox mit dem Smartphone verbinden.","altText":"Echter RadioTEDU-Jukebox-Verbindungsbildschirm.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"},
+  "en-games-gold": {"locale":"de","eyebrow":"SPIELE","headline":"Fünf Spiele in einer App.","altText":"Echter RadioTEDU-Games-Bildschirm mit spielbarer Spieleliste.","proofLabel":"ECHTER APP-BILDSCHIRM • KEIN MOCK-UP"}
+}

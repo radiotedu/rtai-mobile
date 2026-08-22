@@ -28,6 +28,11 @@ When enabled, Google Analytics for Firebase may receive:
 - approximate location derived by Google from a masked IP address;
 - optional self-declared age range and gender, only with the separate switch.
 
+The app keeps the selected age range locally as an optional-analytics eligibility
+guard. Analytics and demographics require an adult range; selecting under 18 (or
+restoring an under-18 choice) turns both off and clears gender. The age range is
+passed to Google only when an adult separately enables demographic sharing.
+
 The app does not attach account ID, name, email, phone, advertising ID, contacts,
 GPS, or precise location to analytics. Google is a third-party recipient. The UI
 links both RadioTEDU's privacy notice and Google's privacy policy.
@@ -71,7 +76,8 @@ to stable RadioTEDU-owned web URLs after the same text is published there.
 - Complete Google Play Data safety from actual release behavior, including
   Firebase's automatically collected app-instance, device, activity, and coarse
   location data when analytics is enabled.
-- Provide functioning account and data-rights request/deletion routes. Confirm
-  handling for minors before collecting age information.
+- Provide functioning account and data-rights request/deletion routes. Obtain
+  qualified review of age assurance and parental/guardian handling; the local
+  under-18 analytics guard is not a legal certification.
 - Obtain Turkish/EU privacy counsel approval before describing the service as
   KVKK/GDPR compliant.

@@ -3,6 +3,8 @@ import {describe, expect, it} from '@jest/globals';
 import {
   STUDY_REMOTE_ROOT,
   buildStudyEntryUrl,
+  createStudyAuthClearInjection,
+  createStudyPublicAccountBridge,
   createStudyWebViewBridge,
   isAllowedStudyNavigation,
 } from '../src/services/studyWebViewService';
@@ -10,8 +12,11 @@ import {
 describe('Study WebView service', () => {
   it('builds the separate app-only Study website URL', () => {
     expect(STUDY_REMOTE_ROOT).toBe('https://radiotedu.com/study/');
-    expect(buildStudyEntryUrl('chim-alan')).toBe(
-      'https://radiotedu.com/study/?embedded=mobile&room=chim-alan',
+    expect(buildStudyEntryUrl('chim-alan', 'ru-RU')).toBe(
+      'https://radiotedu.com/study/?embedded=mobile&room=chim-alan&lang=ru',
+    );
+    expect(buildStudyEntryUrl('library', 'not-supported&room=evil')).toBe(
+      'https://radiotedu.com/study/?embedded=mobile&room=library&lang=en',
     );
   });
 
@@ -48,8 +53,29 @@ describe('Study WebView service', () => {
 
     expect(script).toContain('window.RadioTEDUStudyBridge');
     expect(script).toContain('short-lived-access-token');
+    expect(script).not.toContain('__RADIOTEDU_STUDY_ACCESS_TOKEN__');
+    expect(script).not.toContain('"accessToken":"short-lived-access-token"');
     expect(script).not.toContain('localStorage.setItem');
     expect(script).not.toContain('refresh_token');
+  });
+
+  it('clears runtime Study auth when the native session ends', () => {
+    const script = createStudyAuthClearInjection();
+
+    expect(script).toContain('updateStudyAuth(null)');
+    expect(script).toContain('window.RadioTEDUStudyBridge = null');
+    expect(script).not.toContain('__RADIOTEDU_STUDY_ACCESS_TOKEN__');
+    expect(script).not.toContain('localStorage');
+  });
+
+  it('clears any secure fetch closure before exposing a public account', () => {
+    const script = createStudyPublicAccountBridge({
+      account: {id: 'guest-1', displayName: 'Guest', authenticated: false},
+      globalPoints: 0,
+    });
+
+    expect(script).toContain('updateStudyAuth(null)');
+    expect(script).not.toContain('accessToken');
   });
 
   it('binds fetch before the remote Study bundle captures it in Android WebView', () => {
@@ -64,7 +90,11 @@ describe('Study WebView service', () => {
       accessToken: 'short-lived-access-token',
     });
 
-    expect(script).toContain('window.fetch = window.fetch.bind(window)');
+    expect(script).toContain('window.__RADIOTEDU_UPDATE_STUDY_AUTH__');
+    expect(script).toContain('Object.freeze(nativeStudyFetch)');
+    expect(script).toContain('Object.freeze(NativeStudyHeaders)');
+    expect(script).not.toContain('__RADIOTEDU_STUDY_ACCESS_TOKEN__');
+    expect(script).not.toContain('__RADIOTEDU_STUDY_FETCH_INSTALLED__');
   });
 
   it('isolates Study storage and translates production legacy avatar ids', () => {

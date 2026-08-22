@@ -32,6 +32,11 @@ Depending on the features used, RadioTEDU may process:
 - optional analytics and self-declared demographic selections only after the
   corresponding consent is enabled.
 
+A self-declared age range is retained locally on the device to determine
+eligibility for optional analytics. Selecting under 18 disables analytics and
+demographic sharing. The age range is sent to Google only when an adult user
+separately enables demographic sharing.
+
 Passwords are submitted to the authentication service and are not intentionally
 included in analytics events. RadioTEDU does not sell personal data and does not
 use app analytics for targeted advertising.

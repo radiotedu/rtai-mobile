@@ -176,6 +176,12 @@ export function setCachedPodcasts(podcasts: Podcast[]): void {
   cachedPodcasts = podcasts;
 }
 
+/** First playable cached episode; fetch order is newest-first. */
+export function getLatestCachedPodcastId(): string | null {
+  const latest = cachedPodcasts.find(podcast => !!podcast.audioUrl);
+  return latest ? `${PODCAST_ID_PREFIX}${latest.id}` : null;
+}
+
 /** Replace the entire queue with channels (+ cached podcasts). */
 export async function rebuildBrowsableQueue(
   quality: StreamQuality,

@@ -1,0 +1,10 @@
+{
+  "en-home-account": {"locale":"ru","eyebrow":"РАДИО, STUDY И GOLD","headline":"Один аккаунт. Все функции.","altText":"Главный экран RadioTEDU с выполненным входом, Gold и навигацией по функциям.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-radio-live": {"locale":"ru","eyebrow":"РАДИО В ЭФИРЕ","headline":"Метаданные в эфире. Ваше качество.","altText":"RadioTEDU с реальной станцией, метаданными песни и выбором качества.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-radio-flac-warning": {"locale":"ru","eyebrow":"АУДИО БЕЗ ПОТЕРЬ","headline":"FLAC с защитой мобильного трафика.","altText":"Выбор FLAC RadioTEDU с реальным предупреждением о мобильном трафике.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-podcast-series": {"locale":"ru","eyebrow":"ПОДКАСТЫ","headline":"Продолжайте внутри каждой серии.","altText":"Серия подкастов RadioTEDU с реальными сгруппированными эпизодами и воспроизведением.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-study-timer": {"locale":"ru","eyebrow":"STUDY","headline":"Следите за каждой минутой фокуса.","altText":"RadioTEDU Study с реальным активным таймером и прошедшими минутами.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-voting": {"locale":"ru","eyebrow":"VOTING","headline":"Голосуйте с аккаунтом RadioTEDU.","altText":"RadioTEDU Voting после входа с реальными кандидатами и голосованием.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-jukebox": {"locale":"ru","eyebrow":"JUKEBOX","headline":"Управляйте залом со смартфона.","altText":"Подключённый RadioTEDU Jukebox с реальным треком, очередью и поиском.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"},
+  "en-games-gold": {"locale":"ru","eyebrow":"ИГРЫ И GOLD","headline":"Играйте. Набирайте очки. Проверяйте награды.","altText":"Реальный результат игры RadioTEDU с итоговым счётом и подтверждённым изменением Gold.","proofLabel":"РЕАЛЬНЫЙ ЭКРАН ПРИЛОЖЕНИЯ • НЕ МАКЕТ"}
+}

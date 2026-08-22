@@ -159,6 +159,20 @@ describe('Android Auto car bridge source contract', () => {
     expect(nativeSourceText).toContain('R.string.car_flac_metered_warning');
   });
 
+  it('allowlists only Live Radio and Podcasts from cached or cold-start catalogs', () => {
+    const serviceSource = nativeSource();
+
+    expect(serviceSource).toContain('ROOT_CATEGORY_IDS = listOf(CAT_RADIO, CAT_PODCASTS)');
+    expect(serviceSource).toContain('CarCatalogPolicy.isAllowedCategory');
+    expect(serviceSource).toContain('CarCatalogPolicy.isAllowedItem');
+    expect(serviceSource).toContain('for (category in allowedCatalogCategories(categories))');
+    expect(serviceSource).toContain('ROOT_CATEGORY_IDS.map { id ->');
+    expect(serviceSource).toContain('fallbackRootCategory(id)');
+    expect(serviceSource).toContain('RADIO_CATEGORY_ARTWORK');
+    expect(serviceSource).toContain('PODCAST_CATEGORY_ARTWORK');
+    expect(serviceSource).not.toContain('topLevelCategories(categories)');
+  });
+
   it('resumes podcasts from schema-versioned absolute positions but never seeks live radio', () => {
     const serviceSource = nativeSource();
 
@@ -176,18 +190,22 @@ describe('Android Auto car bridge source contract', () => {
   it('keeps voice aliases and latest-podcast playback deterministic', () => {
     const serviceSource = nativeSource();
 
-    expect(serviceSource).toContain('isLatestPodcastQuery');
-    expect(serviceSource).toContain('"latest podcast"');
+    expect(serviceSource).toContain('CarVoiceQueryPolicy.isLatestPodcastQuery');
+    expect(serviceSource).toContain('CarVoiceQueryPolicy.stationAliasScore');
+    expect(serviceSource).toContain('.sortedByDescending { (_, score) -> score }');
+    expect(serviceSource).toContain('"latest", "newest"');
+    expect(serviceSource).toContain('latestWords.any(words::contains)');
+    expect(serviceSource).toContain('podcastWords.any(words::contains)');
     expect(serviceSource).toContain('"jazz", "cazz", "caz"');
     expect(serviceSource).toContain('"lofi", "lo fi", "lo-fi"');
     expect(serviceSource).toContain('allPlayableItems().firstOrNull { it.seriesId != null }');
     expect(serviceSource).toContain('Regex("[^\\\\p{L}\\\\p{N}]+")');
     expect(serviceSource).not.toContain('Regex("[^a-z0-9]+")');
     expect(serviceSource).toContain('if (normalized.isEmpty()) return emptyList()');
-    expect(serviceSource).toContain('"последний подкаст"');
-    expect(serviceSource).toContain('"احدث بودكاست"');
-    expect(serviceSource).toContain('"neuester podcast"');
-    expect(serviceSource).toContain('"dernier podcast"');
+    expect(serviceSource).toContain('"последний", "новый"');
+    expect(serviceSource).toContain('"احدث"');
+    expect(serviceSource).toContain('"neuester", "neueste", "letzte"');
+    expect(serviceSource).toContain('"dernier", "nouveau", "nouvel"');
     expect(serviceSource).toContain('"радио теду"');
     expect(serviceSource).toContain('"راديو تيدو"');
   });

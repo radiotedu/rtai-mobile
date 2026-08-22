@@ -12,6 +12,11 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
 import {AgeRange, Gender, useConsent} from '../privacy/ConsentContext';
+import {
+  CONSENT_AGE_RANGES,
+  isAdultConsentAge,
+  normalizeConsentForAge,
+} from '../privacy/minorConsentPolicy';
 import {setAnalyticsConsent} from '../services/analyticsService';
 import {
   PRIVACY_URL,
@@ -19,14 +24,6 @@ import {
   TERMS_URL,
 } from '../services/registrationPolicy';
 
-const AGE_RANGES: AgeRange[] = [
-  'under18',
-  '18-24',
-  '25-34',
-  '35-44',
-  '45-54',
-  '55plus',
-];
 const GENDERS: Gender[] = ['female', 'male', 'other', 'na'];
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
 const GENDER_LABEL_KEY: Record<Gender, string> = {
@@ -55,22 +52,33 @@ const ConsentScreen = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [ageRange, setAgeRange] = useState<AgeRange | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
+  const adultAnalyticsEligible = isAdultConsentAge(ageRange);
+
+  const chooseAgeRange = (nextAgeRange: AgeRange) => {
+    setAgeRange(nextAgeRange);
+    if (!isAdultConsentAge(nextAgeRange)) {
+      setAnalytics(false);
+      setDemographics(false);
+      setGender(null);
+    }
+  };
 
   const accept = async () => {
     if (!termsAccepted) {
       return;
     }
-    await saveConsent({
+    const selected = normalizeConsentForAge({
       analytics,
       demographics,
-      ageRange: demographics ? ageRange : null,
+      ageRange,
       gender: demographics ? gender : null,
       termsAccepted: true,
       termsVersion: REGISTRATION_TERMS_VERSION,
     });
-    setAnalyticsConsent(analytics, {
-      ageRange: demographics ? ageRange : null,
-      gender: demographics ? gender : null,
+    await saveConsent(selected);
+    setAnalyticsConsent(selected.analytics, {
+      ageRange: selected.demographics ? selected.ageRange : null,
+      gender: selected.demographics ? selected.gender : null,
     });
   };
 
@@ -81,7 +89,7 @@ const ConsentScreen = () => {
     await saveConsent({
       analytics: false,
       demographics: false,
-      ageRange: null,
+      ageRange,
       gender: null,
       termsAccepted: true,
       termsVersion: REGISTRATION_TERMS_VERSION,
@@ -103,19 +111,43 @@ const ConsentScreen = () => {
           <Text style={styles.legalText}>{t('privacy.thirdPartyNotice')}</Text>
         </View>
 
+        <View style={styles.demo}>
+          <Text style={styles.groupLabel}>{t('privacy.ageRange')}</Text>
+          <Text style={styles.minorNotice}>
+            {t('privacy.minorAnalyticsNotice')}
+          </Text>
+          <View style={styles.chips}>
+            {CONSENT_AGE_RANGES.map(r => (
+              <TouchableOpacity
+                key={r}
+                onPress={() => chooseAgeRange(r)}
+                style={[styles.chip, ageRange === r && styles.chipOn]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    ageRange === r && styles.chipTextOn,
+                  ]}>
+                  {ageLabel(t, r)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <View style={styles.row}>
           <View style={styles.rowText}>
             <Text style={styles.rowLabel}>{t('privacy.analyticsLabel')}</Text>
             <Text style={styles.rowDesc}>{t('privacy.analyticsDesc')}</Text>
           </View>
           <Switch
-            value={analytics}
+            value={adultAnalyticsEligible && analytics}
             onValueChange={value => {
               setAnalytics(value);
               if (!value) {
                 setDemographics(false);
               }
             }}
+            disabled={!adultAnalyticsEligible}
             trackColor={{true: COLORS.primary, false: '#555'}}
           />
         </View>
@@ -128,31 +160,13 @@ const ConsentScreen = () => {
           <Switch
             value={analytics && demographics}
             onValueChange={setDemographics}
-            disabled={!analytics}
+            disabled={!adultAnalyticsEligible || !analytics}
             trackColor={{true: COLORS.primary, false: '#555'}}
           />
         </View>
 
         {demographics && (
           <View style={styles.demo}>
-            <Text style={styles.groupLabel}>{t('privacy.ageRange')}</Text>
-            <View style={styles.chips}>
-              {AGE_RANGES.map(r => (
-                <TouchableOpacity
-                  key={r}
-                  onPress={() => setAgeRange(r)}
-                  style={[styles.chip, ageRange === r && styles.chipOn]}>
-                  <Text
-                    style={[
-                      styles.chipText,
-                      ageRange === r && styles.chipTextOn,
-                    ]}>
-                    {ageLabel(t, r)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <Text style={styles.groupLabel}>{t('privacy.gender')}</Text>
             <View style={styles.chips}>
               {GENDERS.map(g => (
@@ -241,6 +255,7 @@ const styles = StyleSheet.create({
   rowDesc: {color: COLORS.textMuted, fontSize: 12, marginTop: 2},
   demo: {marginTop: SPACING.sm, marginBottom: SPACING.md},
   groupLabel: {color: COLORS.text, fontSize: 14, fontWeight: '700', marginTop: SPACING.md, marginBottom: SPACING.sm},
+  minorNotice: {color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: SPACING.sm},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm},
   chip: {
     paddingHorizontal: SPACING.md,

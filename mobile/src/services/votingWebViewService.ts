@@ -3,8 +3,13 @@ import {
   buildWebViewAccountBridge,
   type WebViewAccountAuthState,
 } from './webViewAccountBridge';
+import {normalizeWebViewLocale} from './webViewLocale';
 
 export const VOTING_WEBVIEW_URL = 'https://radiotedu.com/vote/?embed=1';
+
+export function buildVotingWebViewUrl(locale?: unknown) {
+  return `${VOTING_WEBVIEW_URL}&lang=${normalizeWebViewLocale(locale)}`;
+}
 
 export type VotingWebViewAuthState = WebViewAccountAuthState;
 
@@ -90,57 +95,6 @@ export function parseVotingWebViewMessage(
   }
 }
 
-function serializeForInjection(value: unknown) {
-  return JSON.stringify(value)
-    .replace(/</g, '\\u003c')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
-}
-
 export function buildVotingAuthInjection(authState: VotingWebViewAuthState) {
-  return `${buildWebViewAccountBridge(authState, ['/jukebox/api/'])}
-    (function () {
-      var nativeFetch = window.__RADIOTEDU_NATIVE_FETCH__;
-      if (!nativeFetch && typeof window.fetch === 'function') {
-        nativeFetch = window.fetch.bind(window);
-        window.__RADIOTEDU_NATIVE_FETCH__ = nativeFetch;
-      }
-      window.__RADIOTEDU_SET_AUTH__ = function (nextAuth) {
-        var nextToken = nextAuth && typeof nextAuth.accessToken === 'string'
-          ? nextAuth.accessToken
-          : '';
-        if (nativeFetch && nextToken) {
-          window.fetch = function (resource, options) {
-            var rawUrl = typeof resource === 'string'
-              ? resource
-              : (resource && resource.url ? resource.url : String(resource));
-            var target;
-            try { target = new URL(rawUrl, window.location.origin); } catch (_) { return nativeFetch(resource, options); }
-            if (target.origin !== window.location.origin ||
-                target.pathname.indexOf('/jukebox/api/v1/') !== 0) {
-              return nativeFetch(resource, options);
-            }
-            var headers = new Headers(
-              resource && typeof resource === 'object' && resource.headers
-                ? resource.headers
-                : undefined,
-            );
-            if (options && options.headers) {
-              new Headers(options.headers).forEach(function (value, name) {
-                headers.set(name, value);
-              });
-            }
-            headers.set('Authorization', 'Bearer ' + nextToken);
-            return nativeFetch(resource, Object.assign({}, options || {}, {headers: headers}));
-          };
-        } else if (nativeFetch) {
-          window.fetch = nativeFetch;
-        }
-        window.dispatchEvent(new Event('radiotedu:native-auth'));
-      };
-      window.__RADIOTEDU_SET_AUTH__(${serializeForInjection(authState)});
-      true;
-    })();
-    true;
-  `;
+  return buildWebViewAccountBridge(authState, ['/jukebox/api/v1/']);
 }

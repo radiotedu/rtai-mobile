@@ -9,8 +9,9 @@ describe('NextSongVote production WebView surface', () => {
   );
 
   it('mounts the production Voting WebView instead of the native voting client', () => {
-    expect(screenSource).toContain('VOTING_WEBVIEW_URL');
-    expect(screenSource).toContain('source={{uri: VOTING_WEBVIEW_URL}}');
+    expect(screenSource).toContain('buildVotingWebViewUrl');
+    expect(screenSource).toContain('source={{uri: votingUrl}}');
+    expect(screenSource).toContain('i18n.resolvedLanguage ?? i18n.language');
     expect(screenSource).not.toContain('NextSongVotePanel');
     expect(screenSource).not.toContain('socket.io-client');
     expect(screenSource).not.toContain('nextSongVote');

@@ -40,6 +40,8 @@ describe('Study navigation', () => {
     expect(source).toContain('domStorageEnabled');
     expect(source).not.toContain('domStorageEnabled={false}');
     expect(source).toContain('getAccessToken()');
+    expect(source).toContain('subscribeAuthSessionChanges(refreshAuthBridge)');
+    expect(source).toContain('i18n.resolvedLanguage ?? i18n.language');
     expect(source).not.toContain('refresh_token');
     expect(source).not.toContain('FOCUS_WEB_URL');
   });

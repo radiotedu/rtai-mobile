@@ -64,8 +64,8 @@ describe('Hermes URL compatibility', () => {
   });
 
   it('builds and normalizes WebView URLs without the global URL implementation', () => {
-    expect(buildJukeLocalControllerUrl(' TEDU 01 ')).toBe(
-      'https://radiotedu.com/juke-local/controller/?code=TEDU+01',
+    expect(buildJukeLocalControllerUrl(' TEDU 01 ', 'de-DE')).toBe(
+      'https://radiotedu.com/juke-local/controller/?code=TEDU+01&lang=de',
     );
     expect(
       normalizeJukeLocalAppPath('juke-local/controller/?code=TEDU%2001'),

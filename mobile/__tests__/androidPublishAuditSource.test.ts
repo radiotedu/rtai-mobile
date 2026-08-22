@@ -23,7 +23,8 @@ describe('android publish audit source', () => {
   });
 
   it('documents applicable beta/preview surfaces separately from not-applicable platform features', () => {
-    expect(modernReadiness()).toContain('RadioTEDU supports all applicable Android beta/preview readiness surfaces');
+    expect(modernReadiness()).toContain('Stable media integrations ship as production features');
+    expect(modernReadiness()).toContain('No Android 16 `Notification.ProgressStyle` implementation is claimed yet');
     expect(modernReadiness()).toContain('SMS OTP protection: not applicable');
     expect(modernReadiness()).toContain('camera/video/pro codec beta features: not applicable');
     expect(releaseChecklist()).toContain('Android 16 QPR beta');

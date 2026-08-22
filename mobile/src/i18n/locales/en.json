@@ -89,6 +89,7 @@
     "demographicsLabel": "Demographics (age, gender)",
     "demographicsDesc": "Optional. Helps us understand who listens.",
     "ageRange": "Age range",
+    "minorAnalyticsNotice": "Your age range stays on this device to determine optional-analytics eligibility. Under-18 users cannot enable analytics or demographics. It is sent to Google only if demographic sharing is enabled.",
     "gender": "Gender",
     "genderFemale": "Female",
     "genderMale": "Male",

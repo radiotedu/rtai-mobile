@@ -1,8 +1,9 @@
 # Android Modern Publish Readiness
 
-This app ships modern Android integrations as production features, not internal-only Labs.
-
-RadioTEDU supports all applicable Android beta/preview readiness surfaces through runtime-gated media, notification, car, adaptive layout, and audit layers. Store approval, Android Auto review, Google Maps media-control surfacing, and real head-unit behavior are ready for validation but still require Google review or real device/emulator testing.
+Stable media integrations ship as production features. Preview-only Android
+surfaces remain explicitly unclaimed until implemented and proven on a matching
+runtime. Store approval, Android Auto review, Google Maps surfacing, and head-unit
+behavior still require Google review or real device/emulator evidence.
 
 ## Published System Integrations
 
@@ -10,18 +11,23 @@ RadioTEDU supports all applicable Android beta/preview readiness surfaces throug
 - **Media surfaces:** React Native Track Player owns phone playback. The native Media3 library service owns cold-start car playback plus its dynamic notification, lock-screen, headset/Bluetooth, ICY, and media-session metadata.
 - **Android Auto / Automotive:** `RadioTeduCarService` is a Media3 `MediaLibraryService`/`MediaLibrarySession`; the single APK keeps automotive hardware optional and retains the legacy browse action for older hosts.
 - **Study safety:** Study, Çim alan, avatar clothes, games, rankings, account, voting, and Jukebox are phone-only app surfaces and must not appear in Android Auto browse trees or car templates.
-- **Live Updates readiness:** Android 16+ is detected in the readiness matrix. Live radio, active podcast playback, jukebox queue state, and event countdowns use a media notification fallback below API 36.
+- **Live Updates:** playback uses the standard media notification on every API.
+  No Android 16 `Notification.ProgressStyle` implementation is claimed yet.
 - **Google Analytics:** Firebase Analytics is configured for Android, disabled by
   default, enabled only after opt-in, and built without advertising-ID collection.
-- **Push notifications:** backend `/api/v1/notifications/*` routes handle device token registration, preference updates, dry runs, and admin sends.
+- **Push notifications:** backend registration/preferences contracts exist, but
+  this client does not yet acquire or rotate an FCM token. Do not market push
+  delivery until native token registration and a real delivery test are added.
 - **Admin sending panel:** the web controller includes a production notification composer with dry-run default, audience targeting, deep links, and delivery counts.
 
 ## Android 16 Live Updates
 
 RadioTEDU treats Live Updates as a platform-gated surface, not a separate product mode.
 
-- API 36+ ongoing, user-visible activities can resolve to `live-update`.
-- Older Android versions use the existing media notification fallback for radio, podcast, and jukebox audio.
+- API 36+ still uses the existing media-notification path until ProgressStyle is
+  implemented and runtime-tested.
+- Older Android versions use the same media notification fallback for radio,
+  podcast, and jukebox audio.
 - Event countdowns use standard notification fallback until platform support is available.
 - The fallback path remains first-class so playback and queue visibility still work on Android 13, 14, and 15.
 
@@ -63,10 +69,14 @@ The readiness layer and audit cover:
 
 ## Android 16 QPR Beta Readiness
 
-- Developer verification / install flow: ready for release-owner validation; documented as a Play/Android Studio verification item.
+- Developer verification / install flow: pending release-owner validation;
+  documented as a Play/Android Studio verification item.
 - SMS OTP protection: not applicable. RadioTEDU does not read SMS OTPs and does not depend on SMS Retriever or User Consent APIs.
-- Custom app icon shapes: launcher and round launcher icons exist across density buckets, including dark system variants; preview icon masks remain a device/emulator QA item.
-- ART/GC and performance changes: startup, playback start, car browse loading, queue rebuild, and notification registration are covered as audit/test scenarios. Runtime code avoids preview-only API calls without gating.
+- Custom app icon shapes: launcher and round launcher icons exist across density
+  buckets; preview icon masks remain a device/emulator QA item.
+- ART/GC and performance changes: startup, playback start, car browse loading,
+  queue rebuild, and notification behavior remain runtime QA items. Runtime code
+  avoids preview-only API calls without gating.
 
 ## Android 17 Beta Readiness
 

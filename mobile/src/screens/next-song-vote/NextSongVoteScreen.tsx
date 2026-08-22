@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -26,7 +26,7 @@ import PageTransition from '../../components/PageTransition';
 import {useAuth} from '../../context/AuthContext';
 import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
 import {
-  VOTING_WEBVIEW_URL,
+  buildVotingWebViewUrl,
   buildVotingAuthInjection,
   classifyVotingNavigation,
   isAllowedVotingNavigation,
@@ -61,6 +61,11 @@ export default function NextSongVoteScreen() {
   const [hasLoadError, setHasLoadError] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
+  const votingUrl = useMemo(
+    () =>
+      buildVotingWebViewUrl(i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage],
+  );
 
   const injectCurrentAuth = useCallback(() => {
     if (!webViewReadyRef.current) {
@@ -221,9 +226,9 @@ export default function NextSongVoteScreen() {
             </View>
           ) : !hasLoadError ? (
             <WebView
-              key={`production-vote-${reloadKey}`}
+              key={`production-vote-${votingUrl}-${reloadKey}`}
               ref={webViewRef}
-              source={{uri: VOTING_WEBVIEW_URL}}
+              source={{uri: votingUrl}}
               style={styles.webView}
               originWhitelist={['https://*']}
               javaScriptEnabled

@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, features
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps, features
 
 WIDTH = 1080
 HEIGHT = 1920
@@ -87,6 +87,7 @@ def main() -> None:
         type=Path,
         default=Path("mobile/logos/logo-radiotedu-splash.png"),
     )
+    parser.add_argument("--background", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
@@ -122,7 +123,10 @@ def main() -> None:
 
     font_path = args.font.resolve()
     logo_path = args.logo.resolve()
-    for required_path in (copy_path, font_path, logo_path):
+    background_path = args.background.resolve() if args.background else None
+    for required_path in (copy_path, font_path, logo_path, background_path):
+        if required_path is None:
+            continue
         if not required_path.exists():
             raise SystemExit(f"Required asset missing: {required_path}")
 
@@ -146,18 +150,27 @@ def main() -> None:
         raise SystemExit("Invalid OS inset crop.")
     screen = raw.convert("RGB").crop(crop_box)
 
-    canvas = Image.new("RGB", (WIDTH, HEIGHT), "#08090c")
-    draw = ImageDraw.Draw(canvas)
-    for y in range(HEIGHT):
-        red = max(8, int(28 - 18 * y / HEIGHT))
-        draw.line((0, y, WIDTH, y), fill=(red, 7, 10))
-    glow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
-    glow_draw = ImageDraw.Draw(glow)
-    glow_draw.ellipse((650, -180, 1280, 450), fill=(227, 30, 36, 75))
-    glow_draw.ellipse((-260, 1280, 420, 2050), fill=(183, 139, 48, 38))
-    canvas = Image.alpha_composite(
-        canvas.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(90))
-    ).convert("RGB")
+    if background_path:
+        canvas = ImageOps.fit(
+            Image.open(background_path).convert("RGB"),
+            (WIDTH, HEIGHT),
+            method=Image.Resampling.LANCZOS,
+        )
+        shade = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 35))
+        canvas = Image.alpha_composite(canvas.convert("RGBA"), shade).convert("RGB")
+    else:
+        canvas = Image.new("RGB", (WIDTH, HEIGHT), "#08090c")
+        draw = ImageDraw.Draw(canvas)
+        for y in range(HEIGHT):
+            red = max(8, int(28 - 18 * y / HEIGHT))
+            draw.line((0, y, WIDTH, y), fill=(red, 7, 10))
+        glow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+        glow_draw = ImageDraw.Draw(glow)
+        glow_draw.ellipse((650, -180, 1280, 450), fill=(227, 30, 36, 75))
+        glow_draw.ellipse((-260, 1280, 420, 2050), fill=(183, 139, 48, 38))
+        canvas = Image.alpha_composite(
+            canvas.convert("RGBA"), glow.filter(ImageFilter.GaussianBlur(90))
+        ).convert("RGB")
     draw = ImageDraw.Draw(canvas)
 
     logo = Image.open(logo_path).convert("RGBA")
@@ -250,6 +263,7 @@ def main() -> None:
             "altText": copy["altText"],
             "fontSha256": digest(font_path),
             "logoSha256": digest(logo_path),
+            "backgroundSha256": digest(background_path) if background_path else None,
             "copySha256": digest(copy_path),
             "layout": LAYOUT_VERSION,
         }

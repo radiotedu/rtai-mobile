@@ -3,6 +3,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 export const DEFAULT_API_BASE = 'https://radiotedu.com/jukebox/api/v1';
+const PLAYABLE_GAME_SLUGS = new Set(['snake', 'memory', 'tetris', 'rhythm-tap', 'word-guess']);
 
 function assertRecord(value, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label} is not an object.`);
@@ -111,15 +112,40 @@ export async function verifyProductionAccount({
   ];
 
   if (mutate) {
-    if (!games.length || typeof games[0]?.id !== 'string') throw new Error('No production game is available for score testing.');
-    await request(`/gamification/games/${encodeURIComponent(games[0].id)}/score`, {
+    const game = games.find(candidate =>
+      typeof candidate?.id === 'string' && PLAYABLE_GAME_SLUGS.has(String(candidate?.slug ?? '').toLowerCase()),
+    );
+    if (!game) throw new Error('No production game maps to a playable mobile route.');
+    const clientRoundId = `e2e-${randomUUID()}`;
+    const gameStarted = assertRecord(await request(`/gamification/games/${encodeURIComponent(game.id)}/start`, {
       body: {
-        score: 1,
-        client_round_id: `e2e-${randomUUID()}`,
-        play_duration_ms: 10_000,
+        client_round_id: clientRoundId,
         submission_source: 'mobile_game',
       },
-    });
+    }), 'gamification.game.start');
+    const gameSession = assertRecord(gameStarted.session, 'gamification.game.start.session');
+    if (typeof gameSession.id !== 'string' || typeof gameStarted.nonce !== 'string') {
+      throw new Error('Game start did not return a session id and nonce.');
+    }
+    const gameResult = assertRecord(await request(`/gamification/games/${encodeURIComponent(game.id)}/score`, {
+      body: {
+        score: 1,
+        client_round_id: clientRoundId,
+        play_duration_ms: 10_000,
+        submission_source: 'mobile_game',
+        session_id: gameSession.id,
+        nonce: gameStarted.nonce,
+      },
+    }), 'gamification.game.score');
+    const awardedGold = numberField(gameResult, 'points_awarded', 'gamification.game.score');
+    if (awardedGold <= 0) throw new Error('Production game awarded no Gold.');
+    const afterGame = assertRecord(await request('/gamification/home'), 'gamification.home.after-game');
+    const afterGamePoints = assertRecord(afterGame.points, 'gamification.home.after-game.points');
+    const beforeLifetime = numberField(points, 'lifetime_points', 'gamification.home.points');
+    const afterLifetime = numberField(afterGamePoints, 'lifetime_points', 'gamification.home.after-game.points');
+    if (afterLifetime < beforeLifetime + awardedGold) {
+      throw new Error('Game Gold did not persist in the account balance.');
+    }
     checks.push('game-score-award');
 
     const started = assertRecord(await request('/study/sessions/start', {

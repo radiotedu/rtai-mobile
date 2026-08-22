@@ -11,6 +11,8 @@ import {execFileSync} from 'node:child_process';
 
 const command = process.argv[2];
 const argv = process.argv.slice(3);
+const RADIOTEDU_RELEASE_SIGNER_SHA256 =
+  'b3b08db1c4aefbf4251d53951061ada727796479de45d817f9576232ff2d9439';
 
 function parseArgs(values) {
   const out = {};
@@ -134,14 +136,28 @@ function inspectInstalledApp(serial, packageName, component) {
   const packageDump = String(adbRun(serial, ['shell', 'dumpsys', 'package', packageName]));
   const versionName = packageDump.match(/versionName=([^\s]+)/)?.[1];
   const versionCode = packageDump.match(/versionCode=(\d+)/)?.[1];
+  const buildGitSha = packageDump.match(
+    /com\.radiotedumobile\.BUILD_GIT_SHA=([0-9a-f]{40})/i,
+  )?.[1]?.toLowerCase();
+  const buildGitDirty = packageDump.match(
+    /com\.radiotedumobile\.BUILD_GIT_DIRTY=(true|false)/i,
+  )?.[1]?.toLowerCase() === 'true';
   if (!versionName || !versionCode) {
     throw new Error(`Cannot verify installed package/version for ${packageName}.`);
+  }
+  if (!buildGitSha) {
+    throw new Error(`Installed package has no immutable BUILD_GIT_SHA metadata: ${packageName}.`);
+  }
+  if (!packageDump.includes('com.radiotedumobile.BUILD_GIT_DIRTY=')) {
+    throw new Error(`Installed package has no BUILD_GIT_DIRTY metadata: ${packageName}.`);
   }
   return {
     packageName,
     component: resolveComponent(serial, component),
     versionName,
     versionCode,
+    buildGitSha,
+    buildGitDirty,
     baseApkPath,
     baseApkSha256: installedFileSha256(serial, baseApkPath),
   };
@@ -161,9 +177,10 @@ function verifyInstalledApp(serial, session) {
   }
   if (
     installed.versionName !== session.versionName ||
-    installed.versionCode !== session.versionCode
+    installed.versionCode !== session.versionCode ||
+    installed.buildGitSha !== session.buildGitSha
   ) {
-    throw new Error('Installed package version differs from the prepared session.');
+    throw new Error('Installed package version or build Git SHA differs from the prepared session.');
   }
   return installed;
 }
@@ -251,10 +268,13 @@ function inspectApkSignature(apk) {
   };
 }
 
-function requestedEnglishLocale(value) {
+const SUPPORTED_STORE_LOCALES = new Set(['en', 'tr', 'ar', 'ru', 'de', 'fr']);
+
+function requestedStoreLocale(value) {
   const locale = String(value).trim().replaceAll('_', '-');
-  if (!/^en(?:-[A-Za-z0-9]+)*$/i.test(locale)) {
-    throw new Error('Store evidence locale must be an English BCP-47 tag.');
+  const root = locale.split('-')[0].toLowerCase();
+  if (!/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)*$/.test(locale) || !SUPPORTED_STORE_LOCALES.has(root)) {
+    throw new Error('Store evidence locale must be a supported BCP-47 tag: en, tr, ar, ru, de, or fr.');
   }
   return locale;
 }
@@ -368,7 +388,7 @@ function verifyLocales(serial, session) {
     !localeMatches(observedApp, session.locale)
   ) {
     throw new Error(
-      `English locale verification failed (device=${observedDevice}, app=${observedApp}).`,
+      `Store locale verification failed (device=${observedDevice}, app=${observedApp}).`,
     );
   }
   return {requested: session.locale, device: observedDevice, app: observedApp};
@@ -470,7 +490,7 @@ function prepare() {
   const serial = resolveSerial(args.serial && String(args.serial));
   const requestedSize = parseSize(required('size'));
   const requestedDensity = Number(required('density'));
-  const locale = requestedEnglishLocale(required('locale'));
+  const locale = requestedStoreLocale(required('locale'));
   if (!fs.existsSync(apk)) throw new Error(`APK not found: ${apk}`);
   if (git(['status', '--porcelain', '--untracked-files=all'])) {
     throw new Error(
@@ -489,6 +509,19 @@ function prepare() {
   const apkBytes = fs.readFileSync(apk);
   const apkDigest = sha256(apkBytes);
   const signature = inspectApkSignature(apk);
+  const expectedSignerSha256 = required('expected-signer-sha256').toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expectedSignerSha256)) {
+    throw new Error('--expected-signer-sha256 must be one SHA-256 certificate fingerprint.');
+  }
+  if (expectedSignerSha256 !== RADIOTEDU_RELEASE_SIGNER_SHA256) {
+    throw new Error('Requested signer is not the pinned RadioTEDU production release signer.');
+  }
+  if (!signature.available || !signature.verified) {
+    throw new Error('Expected release signer cannot be enforced because apksigner is unavailable.');
+  }
+  if (!signature.certificateSha256.includes(expectedSignerSha256)) {
+    throw new Error('APK signer certificate does not match the expected production release signer.');
+  }
 
   adbRun(serial, ['shell', 'wm', 'size', `${requestedSize.width}x${requestedSize.height}`]);
   adbRun(serial, ['shell', 'wm', 'density', String(requestedDensity)]);
@@ -527,10 +560,20 @@ function prepare() {
   if (installed.baseApkSha256 !== apkDigest) {
     throw new Error('Installed base.apk hash differs from the exact input APK.');
   }
+  const gitSha = git(['rev-parse', 'HEAD']).toLowerCase();
+  if (installed.buildGitSha !== gitSha) {
+    throw new Error(
+      `APK was built from ${installed.buildGitSha}, but the clean evidence source is ${gitSha}.`,
+    );
+  }
+  if (installed.buildGitDirty) {
+    throw new Error('APK was built from a dirty tracked or untracked worktree.');
+  }
   const session = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     createdAt: new Date().toISOString(),
-    gitSha: git(['rev-parse', 'HEAD']),
+    gitSha,
+    buildGitSha: installed.buildGitSha,
     packageName,
     component,
     versionName: installed.versionName,
@@ -544,7 +587,13 @@ function prepare() {
     width: actualSize.width,
     height: actualSize.height,
     density: actualDensity,
-    apk: {path: apk, sha256: apkDigest, bytes: apkBytes.length, signature},
+    apk: {
+      path: apk,
+      sha256: apkDigest,
+      bytes: apkBytes.length,
+      signature,
+      expectedSignerSha256,
+    },
     installedBaseApk: {
       path: installed.baseApkPath,
       sha256: installed.baseApkSha256,
@@ -557,8 +606,8 @@ function prepare() {
 function capture() {
   const sessionPath = path.resolve(required('session'));
   const session = readJson(sessionPath);
-  if (session.schemaVersion !== 2) {
-    throw new Error('Capture requires a schemaVersion 2 verified APK session.');
+  if (session.schemaVersion !== 3) {
+    throw new Error('Capture requires a schemaVersion 3 source-bound APK session.');
   }
   if (fs.existsSync(path.join(path.dirname(sessionPath), 'raw-manifest.sha256'))) {
     throw new Error('Raw evidence is sealed; no further captures are allowed.');
@@ -599,7 +648,7 @@ function capture() {
   const manifestPath = path.join(root, 'raw-manifest.json');
   const manifest = fs.existsSync(manifestPath)
     ? readJson(manifestPath)
-    : {schemaVersion: 2, session: 'session.json', captures: []};
+    : {schemaVersion: 3, session: 'session.json', captures: []};
   const id = required('id');
   const digest = sha256(png);
   if (
@@ -628,6 +677,7 @@ function capture() {
       component: installed.component,
       versionName: installed.versionName,
       versionCode: installed.versionCode,
+      buildGitSha: installed.buildGitSha,
       baseApkSha256: installed.baseApkSha256,
       locale: localeVerification,
     },

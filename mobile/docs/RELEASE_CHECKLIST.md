@@ -39,11 +39,11 @@ tagged: **[done]**, **[code]** (implemented or implementable here), **[you]**
   with legacy/modern car discovery actions and system media controls.
 - **[done]** Localized Android Auto voice search supports Live Radio and latest
   podcast commands in all six app languages. Jukebox stays out of the car UI.
-- **[done]** Driver-safe design: ≤2-tap depth, flat lists, large targets,
-  Jukebox is **listen-only** (no QR/add/vote), dark template.
-- **[code/done]** Study, Çim alan, avatar clothes, Spark, and Rock are
-  **phone-only** and excluded from Android Auto browse trees, voice actions,
-  playback queues, and templates.
+- **[done]** Driver-safe design: ≤2-tap depth, flat lists, large targets, and
+  only Live Radio plus Podcasts at the root.
+- **[code/done]** Study, Çim alan, avatar clothes, games, rankings, account,
+  voting, and Jukebox are phone-only. Live Radio may include Spark, Rock,
+  English, or Français only while their streams pass the availability check.
 - **[done]** **Single APK car distribution**: the phone/tablet APK also exposes
   Android Auto / Automotive media surfaces through optional manifest features,
   like standard media apps such as Spotify. No separate Automotive APK is built.
@@ -67,8 +67,13 @@ tagged: **[done]**, **[code]** (implemented or implementable here), **[you]**
   analytics, and Apple artwork lookup. Six-language in-app text exists.
 - **[you]** Controller/legal approval and publication of the reviewed notice on
   a stable RadioTEDU-owned URL remain production-owner gates.
-- **[you]** If any users are **under 18** (university prep/younger), confirm
-  parental-consent handling.
+- **[code/done]** Selecting an **under-18** age range disables optional analytics
+  and demographics; restored and updated consent is normalized so those choices
+  cannot remain enabled. The local age marker is not sent to analytics unless an
+  adult separately enables demographic sharing.
+- **[you]** Confirm the service's age-assurance, parental/guardian handling, and
+  country-specific child-protection requirements with qualified counsel. The
+  client guard is conservative engineering, not legal certification.
 - **[done]** Data minimization, retention plan documented (`PRIVACY_DATA_PLAN`).
 
 ## 4. Security & release build

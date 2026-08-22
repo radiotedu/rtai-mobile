@@ -10,18 +10,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {rotateInstallId} from './installId';
 import {CONSENT_VERSION} from './consentVersion';
 import {REGISTRATION_TERMS_VERSION} from '../services/registrationPolicy';
+import {
+  ConsentAgeRange,
+  normalizeConsentForAge,
+} from './minorConsentPolicy';
 
 // Bump when the privacy policy / consent terms materially change → re-prompts.
 export {CONSENT_VERSION} from './consentVersion';
 const STORAGE_KEY = '@radiotedu/consent';
 
-export type AgeRange =
-  | 'under18'
-  | '18-24'
-  | '25-34'
-  | '35-44'
-  | '45-54'
-  | '55plus';
+export type AgeRange = ConsentAgeRange;
 export type Gender = 'female' | 'male' | 'other' | 'na';
 
 export interface ConsentState {
@@ -73,7 +71,14 @@ export const ConsentProvider: React.FC<{children: ReactNode}> = ({children}) => 
           const parsed = JSON.parse(raw) as ConsentState;
           // Re-prompt if the consent version changed.
           if (parsed.version === CONSENT_VERSION) {
-            setConsent({...DEFAULT_STATE, ...parsed});
+            const restored = normalizeConsentForAge({
+              ...DEFAULT_STATE,
+              ...parsed,
+            });
+            setConsent(restored);
+            if (JSON.stringify(restored) !== JSON.stringify(parsed)) {
+              await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+            }
           }
         }
       } catch {
@@ -93,18 +98,13 @@ export const ConsentProvider: React.FC<{children: ReactNode}> = ({children}) => 
 
   const saveConsent = useCallback(
     async (next: Partial<ConsentState>) => {
-      const merged: ConsentState = {
+      const merged = normalizeConsentForAge<ConsentState>({
         ...consent,
         ...next,
         decided: Boolean(next.termsAccepted ?? consent.termsAccepted),
         version: CONSENT_VERSION,
         decidedAt: new Date().toISOString(),
-      };
-      // If demographics consent is off, never keep demographic values.
-      if (!merged.demographics) {
-        merged.ageRange = null;
-        merged.gender = null;
-      }
+      });
       await persist(merged);
     },
     [consent, persist],

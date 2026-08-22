@@ -2,7 +2,7 @@
   "en-home-account": {
     "locale": "en",
     "eyebrow": "RADIO, STUDY AND GOLD",
-    "headline": "One account. Every feature.",
+    "headline": "Your RadioTEDU home.",
     "altText": "RadioTEDU home screen showing signed-in Gold and feature navigation.",
     "proofLabel": "REAL APP SCREEN • NO MOCK UI"
   },
@@ -23,22 +23,22 @@
   "en-podcast-series": {
     "locale": "en",
     "eyebrow": "PODCASTS",
-    "headline": "Continue within every series.",
-    "altText": "RadioTEDU podcast series screen showing real grouped episodes and playback.",
+    "headline": "Play real RadioTEDU podcasts.",
+    "altText": "RadioTEDU podcast screen showing real episodes and active playback controls.",
     "proofLabel": "REAL APP SCREEN • NO MOCK UI"
   },
   "en-study-timer": {
     "locale": "en",
     "eyebrow": "STUDY",
-    "headline": "See every focused minute.",
-    "altText": "Authenticated RadioTEDU Study screen showing a real active focus timer and elapsed minutes.",
+    "headline": "Focus for 25 minutes.",
+    "altText": "RadioTEDU Focus screen showing a real active 25-minute countdown and focus sounds.",
     "proofLabel": "REAL APP SCREEN • NO MOCK UI"
   },
   "en-voting": {
     "locale": "en",
     "eyebrow": "VOTING",
-    "headline": "Vote with your RadioTEDU account.",
-    "altText": "Authenticated RadioTEDU Voting screen showing real candidates and vote controls.",
+    "headline": "See the current voting status.",
+    "altText": "RadioTEDU Voting screen showing the real current closed-round status and next-round notice.",
     "proofLabel": "REAL APP SCREEN • NO MOCK UI"
   },
   "en-jukebox": {

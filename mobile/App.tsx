@@ -218,14 +218,15 @@ function ConsentGate({
       return;
     }
     setAnalyticsConsent(consent.analytics, {
-      ageRange: consent.ageRange,
-      gender: consent.gender,
+      ageRange: consent.demographics ? consent.ageRange : null,
+      gender: consent.demographics ? consent.gender : null,
     });
     Analytics.appOpen();
   }, [
     ready,
     consent.decided,
     consent.analytics,
+    consent.demographics,
     consent.ageRange,
     consent.gender,
   ]);

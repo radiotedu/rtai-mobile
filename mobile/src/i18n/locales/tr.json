@@ -89,6 +89,7 @@
     "demographicsLabel": "Demografi (yaş, cinsiyet)",
     "demographicsDesc": "İsteğe bağlı. Kimlerin dinlediğini anlamamıza yardımcı olur.",
     "ageRange": "Yaş aralığı",
+    "minorAnalyticsNotice": "Yaş aralığınız, isteğe bağlı analiz uygunluğunu belirlemek için bu cihazda tutulur. 18 yaş altı kullanıcılar analiz veya demografiyi etkinleştiremez. Yalnız demografi paylaşımı etkinse Google'a gönderilir.",
     "gender": "Cinsiyet",
     "genderFemale": "Kadın",
     "genderMale": "Erkek",

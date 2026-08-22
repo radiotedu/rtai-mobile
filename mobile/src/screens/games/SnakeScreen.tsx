@@ -29,7 +29,7 @@ const SnakeScreen = () => {
   const [snake, setSnake] = useState<Point[]>(START_SNAKE);
   const [food, setFood] = useState<Point>(() => createFood(START_SNAKE));
   const [direction, setDirection] = useState<Direction>('right');
-  const [running, setRunning] = useState(true);
+  const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(1);
@@ -41,12 +41,8 @@ const SnakeScreen = () => {
   const scoreRef = useRef(0);
   const comboRef = useRef(1);
   const submittedRef = useRef(false);
-  const roundIdRef = useRef(createClientRoundId(game));
+  const roundIdRef = useRef('');
   const startedAtRef = useRef(Date.now());
-
-  useEffect(() => {
-    prepareVerifiedGameRound(game, roundIdRef.current);
-  }, [game]);
 
   useEffect(() => {
     directionRef.current = direction;
@@ -130,8 +126,7 @@ const SnakeScreen = () => {
 
   const resetGame = () => {
     const nextSnake = START_SNAKE;
-    roundIdRef.current = createClientRoundId(game);
-    prepareVerifiedGameRound(game, roundIdRef.current);
+    roundIdRef.current = '';
     startedAtRef.current = Date.now();
     submittedRef.current = false;
     scoreRef.current = 0;
@@ -145,7 +140,19 @@ const SnakeScreen = () => {
     setSnake(nextSnake);
     setFood(createFood(nextSnake));
     setGameOver(false);
-    setRunning(true);
+    setRunning(false);
+  };
+
+  const toggleRunning = () => {
+    if (gameOver) {
+      return;
+    }
+    if (!roundIdRef.current) {
+      roundIdRef.current = createClientRoundId(game);
+      startedAtRef.current = Date.now();
+      prepareVerifiedGameRound(game, roundIdRef.current);
+    }
+    setRunning(value => !value);
   };
 
   const setSafeDirection = (next: Direction) => {
@@ -198,15 +205,18 @@ const SnakeScreen = () => {
         </View>
 
         <View style={styles.controls}>
-          <ControlButton icon="arrow-up-bold" onPress={() => setSafeDirection('up')} />
-          <View style={styles.controlRow}>
-            <ControlButton icon="arrow-left-bold" onPress={() => setSafeDirection('left')} />
-            <TouchableOpacity style={styles.pauseButton} onPress={() => setRunning((value) => !value)} disabled={gameOver}>
-              <Icon name={running ? 'pause' : 'play'} size={26} color="#fff" />
-            </TouchableOpacity>
-            <ControlButton icon="arrow-right-bold" onPress={() => setSafeDirection('right')} />
-          </View>
-          <ControlButton icon="arrow-down-bold" onPress={() => setSafeDirection('down')} />
+          <ControlButton icon="arrow-left-bold" label={copy('games.rhythmLeft')} onPress={() => setSafeDirection('left')} />
+          <ControlButton icon="arrow-up-bold" label={copy('games.snakeUp')} onPress={() => setSafeDirection('up')} />
+          <TouchableOpacity
+            style={styles.pauseButton}
+            onPress={toggleRunning}
+            disabled={gameOver}
+            accessibilityRole="button"
+            accessibilityLabel={copy(running ? 'games.pause' : 'games.resume')}>
+            <Icon name={running ? 'pause' : 'play'} size={26} color="#fff" />
+          </TouchableOpacity>
+          <ControlButton icon="arrow-down-bold" label={copy('games.snakeDown')} onPress={() => setSafeDirection('down')} />
+          <ControlButton icon="arrow-right-bold" label={copy('games.rhythmRight')} onPress={() => setSafeDirection('right')} />
         </View>
 
         <Text style={styles.helpText}>{copy('games.snakeHelp')}</Text>
@@ -227,9 +237,13 @@ const SnakeScreen = () => {
   );
 };
 
-function ControlButton({icon, onPress}: {icon: string; onPress: () => void}) {
+function ControlButton({icon, label, onPress}: {icon: string; label: string; onPress: () => void}) {
   return (
-    <TouchableOpacity style={styles.controlButton} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.controlButton}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}>
       <Icon name={icon} size={28} color={COLORS.text} />
     </TouchableOpacity>
   );
@@ -273,10 +287,9 @@ const styles = StyleSheet.create({
   snakeCell: {backgroundColor: COLORS.primary},
   snakeHead: {backgroundColor: '#FFB020'},
   foodCell: {backgroundColor: '#34C759'},
-  controls: {alignItems: 'center', marginTop: SPACING.lg, gap: SPACING.sm},
-  controlRow: {flexDirection: 'row', alignItems: 'center', gap: SPACING.sm},
-  controlButton: {width: 62, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
-  pauseButton: {width: 62, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary},
+  controls: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg, gap: 6},
+  controlButton: {width: 54, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
+  pauseButton: {width: 54, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary},
   helpText: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginTop: SPACING.md},
 });
 

@@ -42,6 +42,11 @@ import java.io.ByteArrayOutputStream
 import java.text.Normalizer
 import java.util.Locale
 
+private const val CAT_RADIO = "cat_radio"
+private const val CAT_PODCASTS = "cat_podcasts"
+private const val PODCAST_SERIES_PREFIX = "podcast-series:"
+private val ROOT_CATEGORY_IDS = listOf(CAT_RADIO, CAT_PODCASTS)
+
 /**
  * RadioTEDU's single Android media library and native playback service.
  *
@@ -59,8 +64,6 @@ class RadioTeduCarService : MediaLibraryService() {
         const val KEY_LANGUAGE_PREFERENCE = "language_preference"
 
         private const val ROOT_ID = "__ROOT__"
-        private const val CAT_RADIO = "cat_radio"
-        private const val CAT_PODCASTS = "cat_podcasts"
         private const val SESSION_ID = "RadioTeduMediaLibrary"
         private const val TAG = "RadioTeduCarService"
         private const val SYSTEM_LANGUAGE_PREFERENCE = "system"
@@ -98,6 +101,10 @@ class RadioTeduCarService : MediaLibraryService() {
         private const val FALLBACK_RADIO_URL = "https://stream.radiotedu.com/radio"
         private const val FALLBACK_RADIO_ARTWORK =
             "android.resource://com.radiotedumobile/drawable/car_station_radiotedu"
+        private const val RADIO_CATEGORY_ARTWORK =
+            "android.resource://com.radiotedumobile/drawable/car_tile_radio"
+        private const val PODCAST_CATEGORY_ARTWORK =
+            "android.resource://com.radiotedumobile/drawable/car_tile_podcasts"
     }
 
     private lateinit var player: ExoPlayer
@@ -231,10 +238,40 @@ class RadioTeduCarService : MediaLibraryService() {
     /** Split common ICY "Artist - Title" blocks into structured fields. */
     private fun normalizeIcyMetadata(mediaMetadata: MediaMetadata) {
         if (publishingNormalizedMetadata) return
-        val fallback = activeCatalogItem ?: return
+        val current = player.currentMediaItem ?: return
+        val fallback = findItem(current.mediaId) ?: activeCatalogItem ?: return
+        val index = player.currentMediaItemIndex
+        if (index == C.INDEX_UNSET) return
 
-        // Lo-Fi intentionally presents only its station identity on low/normal.
-        if (fallback.id == "radiotedu-lofi" && fallback.quality != "flac") return
+        val incoming = CarMetadataText(
+            title = mediaMetadata.title?.toString()?.trim().orEmpty(),
+            artist = mediaMetadata.artist?.toString()?.trim().orEmpty().ifEmpty { null },
+        )
+        val stationSafe = CarMetadataPolicy.sanitizeIcy(
+            mediaId = fallback.id,
+            quality = fallback.quality,
+            stationTitle = fallback.title,
+            incoming = incoming,
+        )
+        if (stationSafe != incoming) {
+            val alreadySafe = mediaMetadata.title?.toString() == stationSafe.title &&
+                mediaMetadata.displayTitle?.toString() == stationSafe.title &&
+                mediaMetadata.artist.isNullOrEmpty() &&
+                mediaMetadata.station?.toString() == fallback.title
+            if (!alreadySafe) {
+                replaceCurrentMetadata(
+                    index,
+                    current,
+                    current.mediaMetadata.buildUpon()
+                        .setTitle(stationSafe.title)
+                        .setDisplayTitle(stationSafe.title)
+                        .setArtist(null)
+                        .setStation(fallback.title)
+                        .build(),
+                )
+            }
+            return
+        }
 
         val rawTitle = mediaMetadata.title?.toString()?.trim().orEmpty()
         if (rawTitle.isEmpty()) return
@@ -256,10 +293,6 @@ class RadioTeduCarService : MediaLibraryService() {
             return
         }
 
-        val index = player.currentMediaItemIndex
-        val current = player.currentMediaItem ?: return
-        if (index == C.INDEX_UNSET) return
-
         val normalized = current.mediaMetadata.buildUpon()
             .setTitle(title)
             .setDisplayTitle(title)
@@ -267,13 +300,21 @@ class RadioTeduCarService : MediaLibraryService() {
             .setStation(if (fallback.seriesId == null) fallback.title else null)
             .build()
 
+        replaceCurrentMetadata(index, current, normalized)
+    }
+
+    private fun replaceCurrentMetadata(
+        index: Int,
+        current: MediaItem,
+        metadata: MediaMetadata,
+    ) {
         publishingNormalizedMetadata = true
         try {
             // Same local configuration: ExoPlayer keeps the live socket and only
             // updates timeline metadata, avoiding a stream restart.
             player.replaceMediaItem(
                 index,
-                current.buildUpon().setMediaMetadata(normalized).build(),
+                current.buildUpon().setMediaMetadata(metadata).build(),
             )
             triggerNotificationUpdate()
         } finally {
@@ -391,13 +432,20 @@ class RadioTeduCarService : MediaLibraryService() {
         if (!::librarySession.isInitialized) return
         val catalog = readCatalog()
         val categories = catalog.optJSONArray("categories")
-        val rootCount = if (categories == null) 1 else topLevelCategories(categories).size
-        librarySession.notifyChildrenChanged(ROOT_ID, rootCount, null)
+        librarySession.notifyChildrenChanged(ROOT_ID, ROOT_CATEGORY_IDS.size, null)
         categories ?: return
-        for (i in 0 until categories.length()) {
-            val category = categories.optJSONObject(i) ?: continue
+        for (category in allowedCatalogCategories(categories)) {
             val id = category.optString("id")
-            val count = category.optJSONArray("items")?.length() ?: 0
+            val items = category.optJSONArray("items")
+            val count = if (items == null) {
+                0
+            } else {
+                (0 until items.length()).count { index ->
+                    items.optJSONObject(index)?.let { item ->
+                        isAllowedCatalogItem(id, item)
+                    } == true
+                }
+            }
             if (id.isNotEmpty()) librarySession.notifyChildrenChanged(id, count, null)
         }
     }
@@ -444,6 +492,7 @@ class RadioTeduCarService : MediaLibraryService() {
             val item = when {
                 mediaId == ROOT_ID -> rootMediaItem()
                 else -> findCategory(mediaId)?.let(::browsableFromJson)
+                    ?: fallbackRootCategory(mediaId)
                     ?: findItem(mediaId)?.toMediaItem(playable = false)
             }
             return if (item != null) {
@@ -616,31 +665,33 @@ class RadioTeduCarService : MediaLibraryService() {
 
     private fun childrenFor(parentId: String): List<MediaItem> {
         val categories = readCatalog().optJSONArray("categories")
-        if (categories == null) {
-            return when (parentId) {
-                ROOT_ID -> listOf(
-                    browsable(
-                        CAT_RADIO,
-                        localizedString(R.string.car_live_radio),
-                        localizedString(R.string.app_name),
-                        "",
-                        MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS,
-                    ),
-                )
-                CAT_RADIO -> listOf(fallbackRadioItem().toMediaItem(playable = false))
-                else -> emptyList()
+        if (parentId == ROOT_ID) {
+            return ROOT_CATEGORY_IDS.map { id ->
+                categories?.let { allowedCategoryById(it, id) }
+                    ?.let(::browsableFromJson)
+                    ?: requireNotNull(fallbackRootCategory(id))
             }
         }
 
-        if (parentId == ROOT_ID) {
-            return topLevelCategories(categories).map(::browsableFromJson)
+        if (categories == null) {
+            return if (parentId == CAT_RADIO) {
+                listOf(fallbackRadioItem().toMediaItem(playable = false))
+            } else {
+                emptyList()
+            }
         }
 
-        val category = categoryById(categories, parentId) ?: return emptyList()
+        val category = allowedCategoryById(categories, parentId)
+            ?: return if (parentId == CAT_RADIO) {
+                listOf(fallbackRadioItem().toMediaItem(playable = false))
+            } else {
+                emptyList()
+            }
         val items = category.optJSONArray("items") ?: return emptyList()
         return buildList {
             for (i in 0 until items.length()) {
                 val item = items.optJSONObject(i) ?: continue
+                if (!isAllowedCatalogItem(parentId, item)) continue
                 add(
                     if (item.optBoolean("playable", true)) {
                         itemFromJson(item).toMediaItem(playable = false)
@@ -673,12 +724,16 @@ class RadioTeduCarService : MediaLibraryService() {
         val all = allPlayableItems().ifEmpty { listOf(fallbackRadioItem()) }
         if (normalized.isEmpty()) return emptyList()
 
-        val direct = all.filter { item ->
-            normalize(item.title).contains(normalized) ||
+        val direct = all.map { item ->
+            val textMatch = normalize(item.title).contains(normalized) ||
                 normalize(item.artist).contains(normalized) ||
-                normalize(item.id).contains(normalized) ||
-                aliasesFor(item.id).any { normalized.contains(it) }
+                normalize(item.id).contains(normalized)
+            val aliasScore = CarVoiceQueryPolicy.stationAliasScore(item.id, normalized)
+            item to maxOf(aliasScore, if (textMatch) 1 else 0)
         }
+            .filter { (_, score) -> score > 0 }
+            .sortedByDescending { (_, score) -> score }
+            .map { (item, _) -> item }
         if (direct.isNotEmpty()) return direct
 
         return if (normalized in setOf("radio", "radiotedu", "radio tedu", "live", "canli")) {
@@ -713,7 +768,7 @@ class RadioTeduCarService : MediaLibraryService() {
 
     private fun findCategory(mediaId: String): JSONObject? {
         val categories = readCatalog().optJSONArray("categories") ?: return null
-        return categoryById(categories, mediaId)
+        return allowedCategoryById(categories, mediaId)
     }
 
     private fun categoryById(categories: JSONArray, mediaId: String): JSONObject? {
@@ -724,11 +779,49 @@ class RadioTeduCarService : MediaLibraryService() {
         return null
     }
 
-    private fun topLevelCategories(categories: JSONArray): List<JSONObject> = buildList {
+    private fun allowedCatalogCategories(categories: JSONArray): List<JSONObject> = buildList {
         for (i in 0 until categories.length()) {
             val category = categories.optJSONObject(i) ?: continue
-            if (!category.has("parentId")) add(category)
+            if (isAllowedCatalogCategory(category)) add(category)
         }
+    }
+
+    private fun allowedCategoryById(categories: JSONArray, mediaId: String): JSONObject? =
+        categoryById(categories, mediaId)?.takeIf(::isAllowedCatalogCategory)
+
+    private fun isAllowedCatalogCategory(category: JSONObject): Boolean {
+        return CarCatalogPolicy.isAllowedCategory(
+            id = category.optString("id"),
+            parentId = category.optString("parentId", ""),
+            hasParentId = category.has("parentId"),
+        )
+    }
+
+    private fun isAllowedCatalogItem(parentId: String, json: JSONObject): Boolean {
+        return CarCatalogPolicy.isAllowedItem(
+            parentId = parentId,
+            itemId = json.optString("id"),
+            seriesId = json.optString("seriesId", ""),
+            playable = json.optBoolean("playable", true),
+        )
+    }
+
+    private fun fallbackRootCategory(mediaId: String): MediaItem? = when (mediaId) {
+        CAT_RADIO -> browsable(
+            CAT_RADIO,
+            localizedString(R.string.car_live_radio),
+            localizedString(R.string.app_name),
+            RADIO_CATEGORY_ARTWORK,
+            MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS,
+        )
+        CAT_PODCASTS -> browsable(
+            CAT_PODCASTS,
+            localizedString(R.string.car_podcasts),
+            localizedString(R.string.app_name),
+            PODCAST_CATEGORY_ARTWORK,
+            MediaMetadata.MEDIA_TYPE_FOLDER_PODCASTS,
+        )
+        else -> null
     }
 
     private fun browsableFromJson(json: JSONObject): MediaItem {
@@ -867,17 +960,23 @@ class RadioTeduCarService : MediaLibraryService() {
     private fun allPlayableItems(): List<CatalogItem> {
         val output = mutableListOf<CatalogItem>()
         val categories = readCatalog().optJSONArray("categories") ?: return output
-        for (i in 0 until categories.length()) {
-            addPlayable(categories.optJSONObject(i)?.optJSONArray("items"), output)
+        for (category in allowedCatalogCategories(categories)) {
+            val parentId = category.optString("id")
+            addPlayable(parentId, category.optJSONArray("items"), output)
         }
         return output.distinctBy { it.id }
     }
 
-    private fun addPlayable(items: JSONArray?, output: MutableList<CatalogItem>) {
+    private fun addPlayable(
+        parentId: String,
+        items: JSONArray?,
+        output: MutableList<CatalogItem>,
+    ) {
         if (items == null) return
         for (i in 0 until items.length()) {
             val json = items.optJSONObject(i) ?: continue
             if (!json.optBoolean("playable", true)) continue
+            if (!isAllowedCatalogItem(parentId, json)) continue
             val item = itemFromJson(json)
             if (item.id.isNotEmpty() && item.url.isNotEmpty()) output.add(item)
         }
@@ -887,7 +986,11 @@ class RadioTeduCarService : MediaLibraryService() {
         val categories = readCatalog().optJSONArray("categories")
         if (categories != null) {
             val output = mutableListOf<CatalogItem>()
-            addPlayable(categoryById(categories, CAT_RADIO)?.optJSONArray("items"), output)
+            addPlayable(
+                CAT_RADIO,
+                allowedCategoryById(categories, CAT_RADIO)?.optJSONArray("items"),
+                output,
+            )
             if (output.isNotEmpty()) return output
         }
         return listOf(fallbackRadioItem())
@@ -995,31 +1098,48 @@ class RadioTeduCarService : MediaLibraryService() {
         return normalized.replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()
     }
 
-    private fun isLatestPodcastQuery(query: String): Boolean =
-        query in setOf("podcast", "подкаст", "بودكاست") ||
-            listOf(
-                "latest podcast",
-                "newest podcast",
-                "latest episode",
-                "newest episode",
-                "son podcast",
-                "son bolum",
-                "yeni podcast",
-                "yeni bolum",
-                "последний подкаст",
-                "новый подкаст",
-                "последний выпуск",
-                "новый выпуск",
-                "احدث بودكاست",
-                "احدث حلقة",
-                "neuester podcast",
-                "neueste folge",
-                "letzte folge",
-                "dernier podcast",
-                "nouveau podcast",
-                "dernier episode",
-                "nouvel episode",
-            ).any(query::contains)
+    private fun isLatestPodcastQuery(query: String): Boolean {
+        return CarVoiceQueryPolicy.isLatestPodcastQuery(query)
+    }
+
+}
+
+/** Pure voice-intent policy kept outside Android APIs for executable JVM coverage. */
+internal object CarVoiceQueryPolicy {
+    private val latestWords = normalizedWords(
+        "latest", "newest", "son", "yeni", "последний", "новый", "احدث",
+        "neuester", "neueste", "letzte", "dernier", "nouveau", "nouvel",
+    )
+    private val podcastWords = normalizedWords(
+        "podcast", "episode", "bolum", "подкаст", "выпуск", "بودكاست", "حلقة",
+        "folge",
+    )
+
+    fun isLatestPodcastQuery(value: String): Boolean {
+        val query = normalize(value)
+        if (query in normalizedWords("podcast", "подкаст", "بودكاست")) return true
+        val words = query.split(' ').filter(String::isNotEmpty).toSet()
+        return latestWords.any(words::contains) && podcastWords.any(words::contains)
+    }
+
+    /** Specific station aliases outrank the generic RadioTEDU/main alias. */
+    fun stationAliasScore(mediaId: String, value: String): Int {
+        val query = normalize(value)
+        val paddedQuery = " $query "
+        val longestAlias = aliasesFor(mediaId)
+            .map(::normalize)
+            .filter { alias -> alias.isNotEmpty() && paddedQuery.contains(" $alias ") }
+            .maxOfOrNull(String::length)
+            ?: return 0
+        val specificity = if (mediaId == "radiotedu-main") 100 else 1_000
+        return specificity + longestAlias
+    }
+
+    fun bestStationAlias(value: String, mediaIds: List<String>): String? =
+        mediaIds.map { mediaId -> mediaId to stationAliasScore(mediaId, value) }
+            .filter { (_, score) -> score > 0 }
+            .maxByOrNull { (_, score) -> score }
+            ?.first
 
     private fun aliasesFor(mediaId: String): Set<String> = when (mediaId) {
         "radiotedu-main" -> setOf(
@@ -1052,4 +1172,57 @@ class RadioTeduCarService : MediaLibraryService() {
         )
         else -> emptySet()
     }
+
+    private fun normalizedWords(vararg values: String): Set<String> =
+        values.map(::normalize).toSet()
+
+    private fun normalize(value: String): String =
+        Normalizer.normalize(value, Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
+            .lowercase(Locale.ROOT)
+            .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+            .trim()
+}
+
+/** Pure cached-catalog boundary: old/foreign categories never reach car surfaces. */
+internal object CarCatalogPolicy {
+    fun isAllowedCategory(id: String, parentId: String, hasParentId: Boolean): Boolean = when {
+        id in ROOT_CATEGORY_IDS -> !hasParentId
+        id.startsWith(PODCAST_SERIES_PREFIX) -> parentId == CAT_PODCASTS
+        else -> false
+    }
+
+    fun isAllowedItem(
+        parentId: String,
+        itemId: String,
+        seriesId: String,
+        playable: Boolean,
+    ): Boolean {
+        if (!playable) {
+            return parentId == CAT_PODCASTS && itemId.startsWith(PODCAST_SERIES_PREFIX)
+        }
+        return when {
+            parentId == CAT_RADIO -> seriesId.isEmpty()
+            parentId == CAT_PODCASTS -> seriesId.startsWith(PODCAST_SERIES_PREFIX)
+            parentId.startsWith(PODCAST_SERIES_PREFIX) -> seriesId == parentId
+            else -> false
+        }
+    }
+}
+
+internal data class CarMetadataText(val title: String, val artist: String?)
+
+/** Prevents station-only streams from leaking incoming ICY text to system surfaces. */
+internal object CarMetadataPolicy {
+    fun sanitizeIcy(
+        mediaId: String,
+        quality: String?,
+        stationTitle: String,
+        incoming: CarMetadataText,
+    ): CarMetadataText =
+        if (mediaId == "radiotedu-lofi" && quality != "flac") {
+            CarMetadataText(title = stationTitle, artist = null)
+        } else {
+            incoming
+        }
 }

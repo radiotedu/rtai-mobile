@@ -34,8 +34,14 @@ const JukeLocalWebViewScreen = () => {
     () =>
       buildJukeLocalControllerUrl(
         route.params?.deviceCode ?? route.params?.code,
+        i18n.resolvedLanguage ?? i18n.language,
       ),
-    [route.params?.code, route.params?.deviceCode],
+    [
+      i18n.language,
+      i18n.resolvedLanguage,
+      route.params?.code,
+      route.params?.deviceCode,
+    ],
   );
   const refreshAuthBridge = useCallback(async () => {
     if (isAuthLoading) {
@@ -58,7 +64,7 @@ const JukeLocalWebViewScreen = () => {
   }, [isAuthLoading, user]);
 
   useEffect(() => {
-    void refreshAuthBridge();
+    refreshAuthBridge();
     return subscribeAuthSessionChanges(refreshAuthBridge);
   }, [refreshAuthBridge]);
 

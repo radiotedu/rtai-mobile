@@ -3,6 +3,7 @@ import {describe, expect, it} from '@jest/globals';
 import {
   VOTING_WEBVIEW_URL,
   buildVotingAuthInjection,
+  buildVotingWebViewUrl,
   classifyVotingNavigation,
   isAllowedVotingNavigation,
   parseVotingWebViewMessage,
@@ -11,6 +12,12 @@ import {
 describe('Voting WebView security contract', () => {
   it('uses the exact production embed URL', () => {
     expect(VOTING_WEBVIEW_URL).toBe('https://radiotedu.com/vote/?embed=1');
+    expect(buildVotingWebViewUrl('fr-FR')).toBe(
+      'https://radiotedu.com/vote/?embed=1&lang=fr',
+    );
+    expect(buildVotingWebViewUrl('evil&embed=0')).toBe(
+      'https://radiotedu.com/vote/?embed=1&lang=en',
+    );
   });
 
   it('allows only the production HTTPS /vote page inside the WebView', () => {
@@ -59,18 +66,24 @@ describe('Voting WebView security contract', () => {
     ).toBeNull();
   });
 
-  it('serializes authenticated state into runtime-only injection code', () => {
+  it('keeps the authenticated bearer in the pinned fetch closure', () => {
     const script = buildVotingAuthInjection({
       accessToken: 'secret-token</script>',
-      user: {id: 'user-1', display_name: 'Ada'},
+      user: {
+        id: 'user-1',
+        display_name: 'Ada',
+        email: 'private@example.test',
+      },
     });
 
-    expect(script).toContain('window.__RADIOTEDU_SET_AUTH__');
+    expect(script).toContain('window.__RADIOTEDU_UPDATE_NATIVE_AUTH__');
     expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
-    expect(script).toContain('["/jukebox/api/"]');
+    expect(script).toContain('["/jukebox/api/v1/"]');
     expect(script).toContain("parsed.hostname === 'radiotedu.com'");
-    expect(script).toContain("headers.set('Authorization', 'Bearer '");
-    expect(script).toContain('"accessToken":"secret-token\\u003c/script>"');
+    expect(script).toContain("nativeHeadersSet(headers, 'Authorization', 'Bearer '");
+    expect(script).toContain('secret-token\\u003c/script>');
+    expect(script).not.toContain('"accessToken":');
+    expect(script).not.toContain('private@example.test');
     expect(script.trim().endsWith('true;')).toBe(true);
     expect(script).not.toContain('localStorage');
     expect(script).not.toContain('console.');
@@ -81,8 +94,9 @@ describe('Voting WebView security contract', () => {
   it('builds a null auth payload for logout', () => {
     const script = buildVotingAuthInjection({accessToken: null, user: null});
 
-    expect(script).toContain('"accessToken":null');
-    expect(script).toContain('"user":null');
+    expect(script).toContain('window.__RADIOTEDU_UPDATE_NATIVE_AUTH__(');
+    expect(script).toContain('{"authenticated":false,"user":null}');
+    expect(script).not.toContain('"accessToken":');
     expect(script.trim().endsWith('true;')).toBe(true);
   });
 });

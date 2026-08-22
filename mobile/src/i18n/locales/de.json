@@ -89,6 +89,7 @@
     "demographicsLabel": "Demografie (Alter, Geschlecht)",
     "demographicsDesc": "Optional. Hilft uns zu verstehen, wer zuhört.",
     "ageRange": "Altersgruppe",
+    "minorAnalyticsNotice": "Ihre Altersgruppe bleibt auf diesem Gerät, um die Berechtigung für optionale Analysen zu bestimmen. Unter 18-Jährige können Analyse und Demografie nicht aktivieren. Sie wird nur bei aktivierter Demografie-Freigabe an Google gesendet.",
     "gender": "Geschlecht",
     "genderFemale": "Weiblich",
     "genderMale": "Männlich",

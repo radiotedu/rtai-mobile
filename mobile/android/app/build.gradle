@@ -84,6 +84,24 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+def gitShaOutput = new ByteArrayOutputStream()
+exec {
+    workingDir rootProject.projectDir
+    commandLine 'git', 'rev-parse', 'HEAD'
+    standardOutput = gitShaOutput
+}
+def buildGitSha = gitShaOutput.toString('UTF-8').trim().toLowerCase()
+if (!(buildGitSha ==~ /[0-9a-f]{40}/)) {
+    throw new GradleException('Unable to bind Android build to an immutable Git SHA.')
+}
+def gitStatusOutput = new ByteArrayOutputStream()
+exec {
+    workingDir rootProject.projectDir
+    commandLine 'git', 'status', '--porcelain', '--untracked-files=all'
+    standardOutput = gitStatusOutput
+}
+def buildGitDirty = !gitStatusOutput.toString('UTF-8').trim().isEmpty()
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
@@ -102,6 +120,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 12040
         versionName "1.2.4"
+        manifestPlaceholders.buildGitSha = buildGitSha
+        manifestPlaceholders.buildGitDirty = buildGitDirty.toString()
     }
     // Single APK distribution: the same package installs on phones/tablets and
     // exposes optional Android Auto / Automotive media surfaces through the
@@ -177,6 +197,9 @@ dependencies {
     // error instead of buffering forever. It is a transitive dep of
     // media3-exoplayer, but declared explicitly so the import always resolves.
     implementation("androidx.media3:media3-datasource:${media3Version}")
+
+    // Pure JVM policy tests only; not packaged into release builds.
+    testImplementation("junit:junit:4.13.2")
 }
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

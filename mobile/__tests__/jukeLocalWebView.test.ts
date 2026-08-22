@@ -1,4 +1,6 @@
 import {describe, expect, it} from '@jest/globals';
+import fs from 'fs';
+import path from 'path';
 
 import {
   buildJukeLocalAuthInjection,
@@ -11,23 +13,37 @@ describe('juke-local app WebView contract', () => {
   it('seeds the authenticated RadioTEDU account bridge before the controller bundle starts', () => {
     const script = buildJukeLocalAuthInjection({
       accessToken: 'access-token',
-      user: {id: 'user-1', display_name: 'Ada', is_guest: false},
+      user: {
+        id: 'user-1',
+        display_name: 'Ada',
+        avatar_url: 'https://radiotedu.com/avatar.png',
+        email: 'private@example.test',
+        role: 'admin',
+      },
     });
     expect(script).toContain('window.__RADIOTEDU_NATIVE_AUTH__');
     expect(script).toContain('access-token');
     expect(script).toContain('display_name');
+    expect(script).not.toContain('private@example.test');
+    expect(script).not.toContain('"role":"admin"');
     expect(script).toContain('window.__RADIOTEDU_EPHEMERAL_TOKEN__');
     expect(script).toContain("originalRemoveItem.call(window.localStorage, 'token')");
     expect(script).not.toContain("window.localStorage.setItem('token'");
     expect(script).toContain("window.location.pathname.replace(/\\/+$/, '') === '/juke-local/controller'");
+    expect(script.indexOf("window.location.protocol === 'https:'")).toBeLessThan(
+      script.lastIndexOf('window.__RADIOTEDU_NATIVE_AUTH__ = state'),
+    );
   });
 
   it('opens the public phone controller and forwards a scanned device code', () => {
     expect(buildJukeLocalControllerUrl()).toBe(
-      'https://radiotedu.com/juke-local/controller/',
+      'https://radiotedu.com/juke-local/controller/?lang=en',
     );
-    expect(buildJukeLocalControllerUrl(' TEDU 01 ')).toBe(
-      'https://radiotedu.com/juke-local/controller/?code=TEDU+01',
+    expect(buildJukeLocalControllerUrl(' TEDU 01 ', 'ar-EG')).toBe(
+      'https://radiotedu.com/juke-local/controller/?code=TEDU+01&lang=ar',
+    );
+    expect(buildJukeLocalControllerUrl(undefined, 'xx&code=evil')).toBe(
+      'https://radiotedu.com/juke-local/controller/?lang=en',
     );
   });
 
@@ -106,5 +122,17 @@ describe('juke-local app WebView contract', () => {
     expect(script).toContain("typeof state.accessToken === 'string' ? state.accessToken : ''");
     expect(script).toContain("originalRemoveItem.call(window.localStorage, 'token')");
     expect(script).toContain('authenticated: Boolean(state.accessToken)');
+  });
+
+  it('documents removal of exact-route compatibility exposure as a release blocker', () => {
+    const blocker = fs.readFileSync(
+      path.join(__dirname, '../docs/JUKE_LOCAL_NATIVE_AUTH_BLOCKER.md'),
+      'utf8',
+    );
+
+    expect(blocker).toContain('release blocker');
+    expect(blocker).toContain('/juke-local/controller/');
+    expect(blocker).toContain('__RADIOTEDU_EPHEMERAL_TOKEN__');
+    expect(blocker).toContain('short-lived');
   });
 });

@@ -46,7 +46,7 @@ describe('androidReadinessService', () => {
       notificationVisibility: 'available',
       mediaSession: 'available',
       androidAuto: 'available',
-      liveUpdates: 'live-update',
+      liveUpdates: 'media-notification',
       adaptiveLayout: 'split-ready',
       android16: 'ready',
       android16Qpr: 'ready',
@@ -127,6 +127,7 @@ describe('androidReadinessService', () => {
         activity: 'podcast',
         isOngoing: true,
         userVisible: true,
+        hasProgressStyleImplementation: true,
       }),
     ).toEqual({
       surface: 'live-update',
@@ -148,6 +149,22 @@ describe('androidReadinessService', () => {
       surface: 'media-notification',
       fallbackSurface: 'media-notification',
       reason: 'requires-android-16',
+    });
+  });
+
+  it('does not claim Android 16 Live Updates without a ProgressStyle implementation', () => {
+    expect(
+      resolveLiveUpdateCapability({
+        platform: 'android',
+        apiLevel: 36,
+        activity: 'radio',
+        isOngoing: true,
+        userVisible: true,
+      }),
+    ).toEqual({
+      surface: 'media-notification',
+      fallbackSurface: 'media-notification',
+      reason: 'implementation-not-verified',
     });
   });
 

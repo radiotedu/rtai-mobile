@@ -20,4 +20,9 @@ describe('Home Gold value precedence', () => {
     expect(source).toContain("copy('home.monthlyGold')");
     expect(source).not.toContain('label="Lifetime Gold"');
   });
+
+  it('refreshes authoritative Gold whenever Home regains focus', () => {
+    expect(source).toContain('useFocusEffect(');
+    expect(source).toContain('void loadHome();');
+  });
 });

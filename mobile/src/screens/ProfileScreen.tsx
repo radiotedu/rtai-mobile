@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import api from '../services/api';
-import { STORAGE_API, isAnalyticsConfigured } from '../services/config';
+import { STORAGE_API } from '../services/config';
 import {logSafeError} from '../utils/safeLog';
 import {
   createPodcastFeed,
@@ -36,10 +36,6 @@ import {
   type ProfileCustomization,
   type UserBadge,
 } from '../services/profileService';
-import {
-  buildAndroidReadiness,
-  type NotificationPermissionResult,
-} from '../services/androidReadinessService';
 import {
   requestAndroidNotificationPermission,
   updateNotificationPreferences,
@@ -77,7 +73,6 @@ const ProfileScreen = () => {
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [favoritesForm, setFavoritesForm] = useState<ProfileCustomization>({});
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermissionResult>('unavailable');
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
     podcast: true,
     radio: true,
@@ -91,18 +86,6 @@ const ProfileScreen = () => {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const STORAGE_API_LOCAL = STORAGE_API;
-  const androidReadiness = useMemo(
-    () =>
-      buildAndroidReadiness({
-        platform: Platform.OS,
-        version: Platform.Version,
-        notificationPermission,
-        androidAutoAvailable: Platform.OS === 'android',
-        analyticsConfigured: isAnalyticsConfigured(),
-      }),
-    [notificationPermission],
-  );
-
   const loadFeeds = useCallback(async () => {
     if (!isAdmin) {
       setSavedFeeds([]);
@@ -180,7 +163,6 @@ const ProfileScreen = () => {
   const handleEnableNotifications = async () => {
     try {
       const status = await requestAndroidNotificationPermission();
-      setNotificationPermission(status);
       Alert.alert(
         status === 'granted'
           ? copy('profile.notificationsReady')
@@ -559,38 +541,6 @@ const ProfileScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{copy('profile.androidSystem')}</Text>
           <View style={styles.readinessCard}>
-            <View style={styles.readinessHeader}>
-              <Icon name="cellphone-cog" size={22} color={COLORS.primary} />
-              <View style={styles.readinessHeaderText}>
-                <Text style={styles.readinessTitle}>{copy('profile.readinessTitle')}</Text>
-                <Text style={styles.readinessSubtitle}>{copy('profile.readinessSubtitle')}</Text>
-              </View>
-            </View>
-
-            <View style={styles.readinessGrid}>
-              {[
-                ['profile.readiness.notifications', androidReadiness.notificationVisibility],
-                ['profile.readiness.media', androidReadiness.mediaSession],
-                ['profile.readiness.auto', androidReadiness.androidAuto],
-                ['profile.readiness.liveUpdates', androidReadiness.liveUpdates],
-                ['profile.readiness.adaptive', androidReadiness.adaptiveLayout],
-                ['profile.readiness.android16', androidReadiness.android16],
-                ['profile.readiness.android16Qpr', androidReadiness.android16Qpr],
-                ['profile.readiness.android17', androidReadiness.android17],
-                ['profile.readiness.googleMaps', androidReadiness.googleMapsMediaControls],
-                ['profile.readiness.xr', androidReadiness.xrSafe],
-                ['profile.readiness.audio', androidReadiness.audioQuality],
-                ['profile.readiness.analytics', androidReadiness.analytics],
-              ].map(([labelKey, value]) => (
-                <View style={styles.readinessPill} key={labelKey}>
-                  <Text style={styles.readinessPillLabel}>{copy(labelKey)}</Text>
-                  <Text style={styles.readinessPillValue}>
-                    {copy(readinessStatusCopyKey(value))}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
             <TouchableOpacity style={styles.saveProfileButton} onPress={handleEnableNotifications}>
               <Text style={styles.saveProfileButtonText}>{copy('profile.enableNotifications')}</Text>
             </TouchableOpacity>
@@ -1076,51 +1026,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  readinessHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  readinessHeaderText: {
-    flex: 1,
-  },
-  readinessTitle: {
-    color: COLORS.text,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  readinessSubtitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 17,
-  },
-  readinessGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-  },
-  readinessPill: {
-    width: '47%',
-    padding: SPACING.sm,
-    borderRadius: 12,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  readinessPillLabel: {
-    color: COLORS.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  readinessPillValue: {
-    color: COLORS.text,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 3,
-  },
   preferenceEnabled: {
     borderColor: 'rgba(227, 30, 36, 0.35)',
   },
@@ -1331,11 +1236,6 @@ export function getInitials(value: string): string {
     .map(part => Array.from(part)[0] ?? '')
     .join('');
   return (initials || 'R').toLocaleUpperCase();
-}
-
-function readinessStatusCopyKey(value: string): string {
-  const suffix = value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
-  return `profile.status.${suffix}`;
 }
 
 function formatFeedTimestamp(value: string, language: string): string {

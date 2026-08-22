@@ -14,6 +14,7 @@ function jsonResponse(payload, status = 200) {
 function productionApiMock({accountId = 'account-1'} = {}) {
   const calls = [];
   let avatarPurchased = false;
+  let lifetimePoints = 120;
   const fetchImpl = async (url, options) => {
     const {pathname, search} = new URL(url);
     const endpoint = `${pathname.replace('/jukebox/api/v1', '')}${search}`;
@@ -23,8 +24,7 @@ function productionApiMock({accountId = 'account-1'} = {}) {
     const fixtures = {
       '/auth/me': {id: accountId},
       '/gamification/me': {account_id: accountId},
-      '/gamification/home': {points: {lifetime_points: 120, spendable_points: 100}},
-      '/gamification/games': {games: [{id: 'game-1'}]},
+      '/gamification/games': {games: [{id: 'game-1', slug: 'snake'}]},
       '/gamification/market': {items: [{id: 'market-1'}]},
       '/gamification/events': {events: [{id: 'event-1'}]},
       '/gamification/events/my-tickets': {tickets: []},
@@ -32,10 +32,19 @@ function productionApiMock({accountId = 'account-1'} = {}) {
       '/gamification/study-room?room_id=library': {room: {id: 'library'}},
       '/gamification/study-room?room_id=chim-alan': {room: {id: 'chim-alan'}},
     };
+    if (endpoint === '/gamification/home') {
+      return jsonResponse({points: {lifetime_points: lifetimePoints, spendable_points: 100}});
+    }
     if (endpoint === '/study/avatar/me') {
       return jsonResponse({ownedItemIds: avatarPurchased ? ['avatar-1'] : [], equipped: avatarPurchased ? {top: 'avatar-1'} : {}});
     }
-    if (endpoint === '/gamification/games/game-1/score') return jsonResponse({points_awarded: 1});
+    if (endpoint === '/gamification/games/game-1/start') {
+      return jsonResponse({session: {id: 'game-session-1'}, nonce: 'game-nonce-1'});
+    }
+    if (endpoint === '/gamification/games/game-1/score') {
+      lifetimePoints += 1;
+      return jsonResponse({points_awarded: 1});
+    }
     if (endpoint === '/study/sessions/start') return jsonResponse({session: {id: 'session-1'}, nonce: 'nonce-1'});
     if (endpoint === '/study/sessions/session-1/heartbeat') return jsonResponse({session: {id: 'session-1'}, nonce: 'nonce-2'});
     if (endpoint === '/study/sessions/session-1/finish') return jsonResponse({awarded_points: 1});
@@ -91,5 +100,25 @@ test('explicit mutation mode verifies Gold awards, spend, avatar, and Study pers
   assert.equal(result.checks.includes('avatar-purchase-equip-persistence'), true);
   assert.equal(result.checks.includes('market-gold-spend'), true);
   assert.equal(result.checks.includes('gold-persistence'), true);
+  const gameStart = mock.calls.find(call => call.endpoint === '/gamification/games/game-1/start');
+  const gameScore = mock.calls.find(call => call.endpoint === '/gamification/games/game-1/score');
+  assert.equal(typeof JSON.parse(gameStart.options.body).client_round_id, 'string');
+  assert.equal(JSON.parse(gameScore.options.body).session_id, 'game-session-1');
+  assert.equal(JSON.parse(gameScore.options.body).nonce, 'game-nonce-1');
   assert.equal(mock.calls.some(call => call.endpoint === '/study/avatar/purchase'), true);
+});
+
+test('mutation refuses catalog games that the mobile UI cannot launch', async () => {
+  const mock = productionApiMock();
+  const fetchImpl = async (url, options) => {
+    const endpoint = new URL(url).pathname.replace('/jukebox/api/v1', '');
+    if (endpoint === '/gamification/games') {
+      return jsonResponse({games: [{id: 'unknown-game', slug: 'not-in-mobile'}]});
+    }
+    return mock.fetchImpl(url, options);
+  };
+  await assert.rejects(
+    verifyProductionAccount({expectedAccountId: 'account-1', fetchImpl, mutate: true, token: 'test-token'}),
+    /playable mobile route/,
+  );
 });

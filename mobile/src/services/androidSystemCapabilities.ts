@@ -7,12 +7,13 @@ export type LiveUpdateInput = {
   activity: AndroidActivityKind;
   isOngoing: boolean;
   userVisible: boolean;
+  hasProgressStyleImplementation?: boolean;
 };
 
 export type LiveUpdateCapability = {
   surface: 'live-update' | 'media-notification' | 'standard-notification' | 'none';
   fallbackSurface: 'media-notification' | 'standard-notification';
-  reason: 'android-16-progress-centric' | 'requires-android-16' | 'not-user-visible' | 'non-android';
+  reason: 'android-16-progress-centric' | 'requires-android-16' | 'implementation-not-verified' | 'not-user-visible' | 'non-android';
 };
 
 export type VoiceAction = {
@@ -140,6 +141,10 @@ export function resolveLiveUpdateCapability(input: LiveUpdateInput): LiveUpdateC
 
   if (input.apiLevel < 36) {
     return {surface: fallbackSurface, fallbackSurface, reason: 'requires-android-16'};
+  }
+
+  if (!input.hasProgressStyleImplementation) {
+    return {surface: fallbackSurface, fallbackSurface, reason: 'implementation-not-verified'};
   }
 
   return {surface: 'live-update', fallbackSurface, reason: 'android-16-progress-centric'};

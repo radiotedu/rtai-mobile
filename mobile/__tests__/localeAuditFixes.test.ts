@@ -1,7 +1,7 @@
 import {describe, expect, it} from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
-import {appCopy} from '../src/i18n/appCopy';
+import {appCopy, missingAppCopyKeys} from '../src/i18n/appCopy';
 import {authCopy, screenCopy} from '../src/i18n/screenCopy';
 
 const languages = ['en', 'tr', 'ru', 'ar', 'de', 'fr'];
@@ -10,6 +10,12 @@ const readSource = (relativePath: string) =>
   fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
 
 describe('six-language source audit fixes', () => {
+  it('keeps every app-copy key complete across supported languages', () => {
+    for (const language of languages) {
+      expect(missingAppCopyKeys(language as 'en' | 'tr' | 'ru' | 'ar' | 'de' | 'fr')).toEqual([]);
+    }
+  });
+
   it('ships every newly used copy key in all supported languages', () => {
     const appKeys = [
       'common.back',

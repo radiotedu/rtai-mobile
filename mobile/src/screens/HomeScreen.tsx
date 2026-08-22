@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
@@ -70,9 +70,11 @@ const HomeScreen = () => {
     }
   }, [copy, user]);
 
-  useEffect(() => {
-    loadHome();
-  }, [loadHome]);
+  useFocusEffect(
+    useCallback(() => {
+      void loadHome();
+    }, [loadHome]),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

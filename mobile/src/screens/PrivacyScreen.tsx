@@ -14,6 +14,12 @@ import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
 import {useConsent} from '../privacy/ConsentContext';
+import {
+  CONSENT_AGE_RANGES,
+  ConsentAgeRange,
+  isAdultConsentAge,
+  normalizeConsentForAge,
+} from '../privacy/minorConsentPolicy';
 import {setAnalyticsConsent} from '../services/analyticsService';
 import {PRIVACY_URL, TERMS_URL} from '../services/registrationPolicy';
 
@@ -21,18 +27,35 @@ const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
 const APPLE_PRIVACY_URL = 'https://www.apple.com/legal/privacy/';
 const RIGHTS_REQUEST_URL = 'mailto:radio@tedu.edu.tr?subject=KVKK%20GDPR%20Data%20Request';
 
+function ageLabel(t: (key: string) => string, ageRange: ConsentAgeRange): string {
+  if (ageRange === 'under18') {
+    return t('privacy.ageUnder18');
+  }
+  if (ageRange === '55plus') {
+    return t('privacy.age55plus');
+  }
+  return ageRange;
+}
+
 const PrivacyScreen = ({navigation}: any) => {
   const {t} = useTranslation();
   const {consent, saveConsent, withdrawAll} = useConsent();
 
-  const update = async (next: {analytics?: boolean; demographics?: boolean}) => {
-    const normalized =
-      next.analytics === false ? {...next, demographics: false} : next;
-    const merged = {...consent, ...normalized};
-    await saveConsent(normalized);
+  const update = async (next: {
+    analytics?: boolean;
+    demographics?: boolean;
+    ageRange?: ConsentAgeRange;
+  }) => {
+    const merged = normalizeConsentForAge({...consent, ...next});
+    await saveConsent({
+      analytics: merged.analytics,
+      demographics: merged.demographics,
+      ageRange: merged.ageRange,
+      gender: merged.gender,
+    });
     setAnalyticsConsent(merged.analytics, {
-      ageRange: merged.demographics ? consent.ageRange : null,
-      gender: merged.demographics ? consent.gender : null,
+      ageRange: merged.demographics ? merged.ageRange : null,
+      gender: merged.demographics ? merged.gender : null,
     });
   };
 
@@ -69,6 +92,32 @@ const PrivacyScreen = ({navigation}: any) => {
           <Text style={styles.legalText}>{t('privacy.fullTerms')}</Text>
         </View>
 
+        <View style={styles.demo}>
+          <Text style={styles.groupLabel}>{t('privacy.ageRange')}</Text>
+          <Text style={styles.minorNotice}>
+            {t('privacy.minorAnalyticsNotice')}
+          </Text>
+          <View style={styles.chips}>
+            {CONSENT_AGE_RANGES.map(ageRange => (
+              <TouchableOpacity
+                key={ageRange}
+                onPress={() => update({ageRange})}
+                style={[
+                  styles.chip,
+                  consent.ageRange === ageRange && styles.chipOn,
+                ]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    consent.ageRange === ageRange && styles.chipTextOn,
+                  ]}>
+                  {ageLabel(t, ageRange)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <View style={styles.row}>
           <View style={styles.rowText}>
             <Text style={styles.rowLabel}>{t('privacy.analyticsLabel')}</Text>
@@ -77,6 +126,7 @@ const PrivacyScreen = ({navigation}: any) => {
           <Switch
             value={consent.analytics}
             onValueChange={v => update({analytics: v})}
+            disabled={!isAdultConsentAge(consent.ageRange)}
             trackColor={{true: COLORS.primary, false: '#555'}}
             thumbColor={consent.analytics ? '#FFFFFF' : '#f4f3f4'}
             ios_backgroundColor="#555"
@@ -92,7 +142,9 @@ const PrivacyScreen = ({navigation}: any) => {
           <Switch
             value={consent.analytics && consent.demographics}
             onValueChange={v => update({demographics: v})}
-            disabled={!consent.analytics}
+            disabled={
+              !isAdultConsentAge(consent.ageRange) || !consent.analytics
+            }
             trackColor={{true: COLORS.primary, false: '#555'}}
             thumbColor={consent.demographics ? '#FFFFFF' : '#f4f3f4'}
             ios_backgroundColor="#555"
@@ -163,6 +215,21 @@ const styles = StyleSheet.create({
   legalCard: {backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.md, marginBottom: SPACING.md},
   legalHeading: {color: COLORS.text, fontSize: 14, fontWeight: '800', marginBottom: SPACING.xs},
   legalText: {color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: SPACING.md},
+  demo: {marginBottom: SPACING.md},
+  groupLabel: {color: COLORS.text, fontSize: 14, fontWeight: '700', marginBottom: SPACING.sm},
+  minorNotice: {color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: SPACING.sm},
+  chips: {flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm},
+  chip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+  },
+  chipOn: {backgroundColor: COLORS.primary, borderColor: COLORS.primary},
+  chipText: {color: COLORS.text, fontSize: 13},
+  chipTextOn: {color: '#fff', fontWeight: '700'},
   row: {
     flexDirection: 'row',
     alignItems: 'center',

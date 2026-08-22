@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {getAccessToken} from '../../services/authTokenStorage';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -7,9 +7,11 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView} from 'react-native-webview';
 
 import {useAuth} from '../../context/AuthContext';
+import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
 import {BASE_API} from '../../services/config';
 import {
   buildStudyEntryUrl,
+  createStudyAuthClearInjection,
   createStudyWebViewBridge,
   isAllowedStudyNavigation,
 } from '../../services/studyWebViewService';
@@ -24,6 +26,8 @@ const LibraryStudyWebView = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const webViewRef = useRef<any>(null);
+  const mountedRef = useRef(true);
+  const authReadVersionRef = useRef(0);
   const {user} = useAuth();
   const {i18n} = useTranslation();
   const copy = (key: string) => screenCopy(i18n.language, key);
@@ -32,28 +36,11 @@ const LibraryStudyWebView = () => {
   const [credentialsReady, setCredentialsReady] = useState(false);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [credentialAccountId, setCredentialAccountId] = useState<string | null>(
+    null,
+  );
   const roomId = route.params?.locationId === 'chim-alan' ? 'chim-alan' : 'library';
   const isLocked = !user || user.is_guest;
-
-  useEffect(() => {
-    let active = true;
-    getAccessToken()
-      .then(token => {
-        if (active) {
-          setAccessToken(token);
-          setCredentialsReady(true);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setAccessToken(null);
-          setCredentialsReady(true);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const account = useMemo(
     () =>
@@ -67,25 +54,70 @@ const LibraryStudyWebView = () => {
     [user],
   );
 
-  const bridgeScript = useMemo(() => {
-    if (!account) {
-      return 'true;';
-    }
-    const publicInput = {
-      account,
-      globalPoints: Number(user?.rank_score ?? 0),
-    };
-    if (!accessToken) {
-      return 'true;';
-    }
-    return createStudyWebViewBridge({
-      ...publicInput,
-      apiBase: BASE_API,
-      accessToken,
-    });
-  }, [accessToken, account, user?.rank_score]);
+  const createBridgeScript = useCallback(
+    (token: string | null) => {
+      if (!account || !token) {
+        return 'true;';
+      }
+      return createStudyWebViewBridge({
+        account,
+        globalPoints: Number(user?.rank_score ?? 0),
+        apiBase: BASE_API,
+        accessToken: token,
+      });
+    },
+    [account, user?.rank_score],
+  );
 
-  const gameUrl = buildStudyEntryUrl(roomId);
+  const refreshAuthBridge = useCallback(async () => {
+    const requestVersion = ++authReadVersionRef.current;
+    let token: string | null = null;
+    try {
+      token = await getAccessToken();
+    } catch {
+      token = null;
+    }
+
+    if (
+      !mountedRef.current ||
+      requestVersion !== authReadVersionRef.current
+    ) {
+      return;
+    }
+
+    const nextToken = user && !user.is_guest ? token : null;
+    setAccessToken(nextToken);
+    setCredentialAccountId(user?.id ?? null);
+    setCredentialsReady(true);
+    webViewRef.current?.injectJavaScript(
+      nextToken
+        ? createBridgeScript(nextToken)
+        : createStudyAuthClearInjection(),
+    );
+  }, [createBridgeScript, user]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      authReadVersionRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    refreshAuthBridge();
+    return subscribeAuthSessionChanges(refreshAuthBridge);
+  }, [refreshAuthBridge]);
+
+  const bridgeScript = useMemo(() => {
+    return createBridgeScript(accessToken);
+  }, [accessToken, createBridgeScript]);
+
+  const gameUrl = useMemo(
+    () =>
+      buildStudyEntryUrl(roomId, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, roomId],
+  );
 
   if (isLocked) {
     return (
@@ -99,7 +131,7 @@ const LibraryStudyWebView = () => {
     );
   }
 
-  if (!credentialsReady) {
+  if (!credentialsReady || credentialAccountId !== user?.id) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loading}>
@@ -138,7 +170,7 @@ const LibraryStudyWebView = () => {
         </View>
       ) : null}
       <WebView
-        key={`remote-study-${reloadKey}`}
+        key={`remote-study-${gameUrl}-${reloadKey}`}
         ref={webViewRef}
         source={{uri: gameUrl}}
         style={styles.webView}

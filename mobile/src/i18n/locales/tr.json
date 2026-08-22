@@ -35,6 +35,7 @@
     "nowPlaying": "Çalıyor",
     "stationsOnAir": "{{count}} yayın aktif",
     "showsCount": "{{count}} program",
+    "episodesCount": "{{count}} bölüm",
     "weeklyCharts": "Bu haftanın listesi",
     "communalQueue": "TEDU Ne Çalıyor",
     "recentlyPlayed": "Son Çalınanlar",

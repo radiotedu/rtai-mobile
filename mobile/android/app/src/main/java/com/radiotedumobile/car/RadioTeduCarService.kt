@@ -3,6 +3,8 @@ package com.radiotedumobile.car
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -184,6 +186,8 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         val httpFactory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
             .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
+            // Ask Icecast/Shoutcast servers to include ICY metadata blocks.
+            .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
             .setAllowCrossProtocolRedirects(true)
         val created = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
@@ -413,9 +417,11 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
 
         if (categories != null) {
             if (parentId == ROOT_ID) {
-                // The four destinations (grid).
+                // Only top-level destinations (Live Radio + Podcasts). Podcast
+                // series categories are nested beneath cat_podcasts.
                 for (i in 0 until categories.length()) {
                     val cat = categories.getJSONObject(i)
+                    if (cat.has("parentId")) continue
                     items.add(
                         browsable(
                             cat.getString("id"),
@@ -424,13 +430,6 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
                             cat.optString("artwork", ""),
                         ),
                     )
-                }
-                // Recently Played row (playable, shown after the destinations).
-                val recent = catalog.optJSONArray("recent")
-                if (recent != null) {
-                    for (j in 0 until recent.length()) {
-                        items.add(itemFor(recent.getJSONObject(j)))
-                    }
                 }
             } else {
                 for (i in 0 until categories.length()) {
@@ -519,8 +518,29 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
             .setMediaId(id)
             .setTitle(title)
         if (subtitle.isNotEmpty()) b.setSubtitle(subtitle)
-        if (artwork.isNotEmpty()) b.setIconUri(Uri.parse(artwork))
+        val localBitmap = localIconBitmap(artwork)
+        if (localBitmap != null) {
+            b.setIconBitmap(localBitmap)
+        } else if (artwork.isNotEmpty()) {
+            b.setIconUri(Uri.parse(artwork))
+        }
         return b.build()
+    }
+
+    /** Decode bundled vector/raster tiles; car hosts often cannot dereference
+     * android.resource:// URIs and otherwise render a blank white square. */
+    private fun localIconBitmap(artwork: String): Bitmap? {
+        if (!artwork.startsWith("android.resource://")) return null
+        val name = artwork.substringAfterLast('/').substringBefore('?')
+        val id = resources.getIdentifier(name, "drawable", packageName)
+        if (id == 0) return null
+        val drawable = resources.getDrawable(id, theme) ?: return null
+        val width = drawable.intrinsicWidth.coerceAtLeast(1)
+        val height = drawable.intrinsicHeight.coerceAtLeast(1)
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+            drawable.setBounds(0, 0, width, height)
+            drawable.draw(Canvas(bitmap))
+        }
     }
 
     private fun readCatalog(): JSONObject {
@@ -568,11 +588,11 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         }
 
         override fun onSkipToNext() {
-            cycleRadio(1)
+            if (!cyclePodcast(1)) cycleRadio(1)
         }
 
         override fun onSkipToPrevious() {
-            cycleRadio(-1)
+            if (!cyclePodcast(-1)) cycleRadio(-1)
         }
 
         override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
@@ -596,6 +616,8 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         val title: String,
         val artist: String,
         val artwork: String,
+        val seriesId: String? = null,
+        val quality: String? = null,
     )
 
     private fun itemFromJson(json: JSONObject): CatalogItem =
@@ -605,9 +627,11 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
             title = json.optString("title", "RadioTEDU"),
             artist = json.optString("subtitle", ""),
             artwork = json.optString("artwork", ""),
+            seriesId = json.optString("seriesId", "").ifEmpty { null },
+            quality = json.optString("quality", "").ifEmpty { null },
         )
 
-    /** Every playable item across all categories + the recent row, in order. */
+    /** Every playable item across the radio and podcast categories, in order. */
     private fun allPlayableItems(): List<CatalogItem> {
         val out = mutableListOf<CatalogItem>()
         val catalog = readCatalog()
@@ -618,7 +642,6 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
                 addPlayable(items, out)
             }
         }
-        addPlayable(catalog.optJSONArray("recent"), out)
         return out
     }
 
@@ -644,6 +667,7 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
             title = FALLBACK_RADIO_TITLE,
             artist = FALLBACK_RADIO_SUBTITLE,
             artwork = FALLBACK_RADIO_ARTWORK,
+            quality = "normal",
         )
 
     /** The RADIO category's playable items (live stations) in catalog order. */
@@ -664,7 +688,7 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
         return out
     }
 
-    /** Look up a playable item by id across categories + recent. */
+    /** Look up a playable item by id across categories. */
     private fun findItem(mediaId: String): CatalogItem? =
         allPlayableItems().firstOrNull { it.id == mediaId }
             ?: run {
@@ -680,13 +704,6 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
                             val obj = items.getJSONObject(j)
                             if (obj.optString("id") == mediaId) return itemFromJson(obj)
                         }
-                    }
-                }
-                val recent = catalog.optJSONArray("recent")
-                if (recent != null) {
-                    for (j in 0 until recent.length()) {
-                        val obj = recent.getJSONObject(j)
-                        if (obj.optString("id") == mediaId) return itemFromJson(obj)
                     }
                 }
                 // Empty-catalog cold start: resolve the fallback station id so a
@@ -711,6 +728,10 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
 
     /** Set metadata + buffering state, then prepare and play the stream. */
     private fun playItem(item: CatalogItem) {
+        if (item.quality == "flac" && isMeteredNetwork()) {
+            setErrorState("FLAC uses considerably more mobile data. Connect to Wi-Fi or choose Normal.")
+            return
+        }
         activeCatalogItem = item
         setSessionMetadata(item.title, item.artist)
         // Show buffering immediately so the car never sits on a dead spinner.
@@ -742,6 +763,26 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
             }
         playItem(radios[nextIndex])
     }
+
+    /** Keep podcast Next/Previous inside the selected series. */
+    private fun cyclePodcast(direction: Int): Boolean {
+        val seriesId = activeCatalogItem?.seriesId ?: return false
+        val episodes = allPlayableItems().filter { it.seriesId == seriesId }
+        if (episodes.isEmpty()) return false
+        val currentIndex = episodes.indexOfFirst { it.id == activeCatalogItem?.id }
+        val nextIndex =
+            if (currentIndex == -1) {
+                if (direction >= 0) 0 else episodes.size - 1
+            } else {
+                ((currentIndex + direction) % episodes.size + episodes.size) % episodes.size
+            }
+        playItem(episodes[nextIndex])
+        return true
+    }
+
+    private fun isMeteredNetwork(): Boolean =
+        (getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager)
+            ?.isActiveNetworkMetered == true
 
     /**
      * Voice search: play the first radio item whose title contains the query

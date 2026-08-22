@@ -35,6 +35,7 @@
     "nowPlaying": "Now Playing",
     "stationsOnAir": "{{count}} stations on air",
     "showsCount": "{{count}} shows",
+    "episodesCount": "{{count}} episodes",
     "weeklyCharts": "This week's charts",
     "communalQueue": "What TEDU Plays",
     "recentlyPlayed": "Recently Played",

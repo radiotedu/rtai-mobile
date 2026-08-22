@@ -35,6 +35,7 @@
     "nowPlaying": "يُشغّل الآن",
     "stationsOnAir": "{{count}} محطة على الهواء",
     "showsCount": "{{count}} برنامج",
+    "episodesCount": "{{count}} حلقات",
     "weeklyCharts": "قائمة هذا الأسبوع",
     "communalQueue": "ماذا يُشغّل TEDU",
     "recentlyPlayed": "شُغّل مؤخرًا",

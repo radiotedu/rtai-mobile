@@ -35,6 +35,7 @@
     "nowPlaying": "Lecture en cours",
     "stationsOnAir": "{{count}} stations à l'antenne",
     "showsCount": "{{count}} émissions",
+    "episodesCount": "{{count}} épisodes",
     "weeklyCharts": "Classement de la semaine",
     "communalQueue": "Ce que TEDU diffuse",
     "recentlyPlayed": "Écoutés récemment",

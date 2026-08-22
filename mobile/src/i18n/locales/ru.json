@@ -35,6 +35,7 @@
     "nowPlaying": "Сейчас играет",
     "stationsOnAir": "{{count}} станций в эфире",
     "showsCount": "{{count}} шоу",
+    "episodesCount": "{{count}} эпизодов",
     "weeklyCharts": "Чарты недели",
     "communalQueue": "Что играет в TEDU",
     "recentlyPlayed": "Недавно играли",

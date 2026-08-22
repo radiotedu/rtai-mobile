@@ -33,7 +33,7 @@ describe('Firebase Analytics privacy configuration', () => {
   test('embeds complete legal notices and secures account tokens', () => {
     const consent = read('src/screens/ConsentScreen.tsx');
     const tokenStorage = read('src/services/authTokenStorage.ts');
-    const locales = ['en', 'tr', 'de', 'nl', 'ru', 'ar'];
+    const locales = ['en', 'tr', 'de', 'fr', 'ru', 'ar'];
     expect(consent).toContain("t('privacy.fullNotice')");
     expect(consent).toContain("t('privacy.fullTerms')");
     for (const locale of locales) {

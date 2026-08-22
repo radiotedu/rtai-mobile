@@ -22,6 +22,8 @@ import {
     PRIVACY_URL,
     TERMS_URL,
 } from '../../services/registrationPolicy';
+import {useTranslation} from 'react-i18next';
+import {authCopy} from '../../i18n/screenCopy';
 
 const RegisterScreen = () => {
     const [email, setEmail] = useState('');
@@ -34,27 +36,29 @@ const RegisterScreen = () => {
 
     const { register } = useAuth();
     const navigation = useNavigation<any>();
+    const {i18n} = useTranslation();
+    const copy = (key: string) => authCopy(i18n.language, key);
     const requiresAdultAge = email.includes('@') && !isTeduInstitutionEmail(email);
 
     const handleRegister = async () => {
         if (!email || !password || !displayName) {
-            Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
+            Alert.alert(copy('register.genericError'), copy('login.missingFields'));
             return;
         }
 
         if (password.length < 6) {
-            Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır.');
+            Alert.alert(copy('register.genericError'), copy('register.passwordError'));
             return;
         }
 
         if (!legalAccepted) {
-            Alert.alert('Onay gerekli', 'Kullanım Koşulları ve Gizlilik Bildirimi’ni kabul etmelisiniz.');
+            Alert.alert(copy('register.confirmTitle'), copy('register.confirm'));
             return;
         }
 
         const numericAge = Number(age);
         if (requiresAdultAge && (!Number.isInteger(numericAge) || numericAge < 18)) {
-            Alert.alert('Yaş sınırı', 'TEDÜ dışı e-posta ile kayıt için 18 yaşında veya daha büyük olmalısınız.');
+            Alert.alert(copy('register.ageTitle'), copy('register.ageError'));
             return;
         }
 
@@ -64,9 +68,9 @@ const RegisterScreen = () => {
                 legalAccepted,
                 age: requiresAdultAge ? numericAge : undefined,
             });
-            Alert.alert('Başarılı', 'RadioTEDU hesabınız oluşturuldu ve oturum açıldı.');
+            Alert.alert(copy('register.successTitle'), copy('register.success'));
         } catch (error: any) {
-            Alert.alert('Hata', error.message);
+            Alert.alert(copy('register.genericError'), error.message);
         } finally {
             setIsLoading(false);
         }
@@ -92,8 +96,8 @@ const RegisterScreen = () => {
                 >
                 <View style={styles.content}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Kayıt Ol</Text>
-                        <Text style={styles.subtitle}>Yeni bir hesap oluşturun</Text>
+                        <Text style={styles.title}>{copy('register.title')}</Text>
+                        <Text style={styles.subtitle}>{copy('register.subtitle')}</Text>
                     </View>
 
                     <View style={styles.form}>
@@ -101,7 +105,7 @@ const RegisterScreen = () => {
                             <Icon name="account-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Ad Soyad"
+                                placeholder={copy('register.name')}
                                 placeholderTextColor={COLORS.textMuted}
                                 value={displayName}
                                 onChangeText={setDisplayName}
@@ -113,7 +117,7 @@ const RegisterScreen = () => {
                                 <Icon name="calendar-account-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                                 <TextInput
                                     style={styles.input}
-                                    placeholder="Yaş (18+)"
+                                    placeholder={copy('register.age')}
                                     placeholderTextColor={COLORS.textMuted}
                                     value={age}
                                     onChangeText={(value) => setAge(value.replace(/\D/g, '').slice(0, 3))}
@@ -127,7 +131,7 @@ const RegisterScreen = () => {
                             <Icon name="email-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="E-posta"
+                                placeholder={copy('register.email')}
                                 placeholderTextColor={COLORS.textMuted}
                                 value={email}
                                 onChangeText={setEmail}
@@ -148,16 +152,16 @@ const RegisterScreen = () => {
                                 color={legalAccepted ? COLORS.primary : COLORS.textMuted}
                             />
                             <Text style={styles.legalText}>
-                                Kayıt olarak Kullanım Koşulları’nı kabul eder ve Gizlilik Bildirimi’ni okuduğunuzu onaylarsınız.
+                                {copy('register.legal')}
                             </Text>
                         </TouchableOpacity>
                         <View style={styles.legalLinks}>
                             <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
-                                <Text style={styles.legalLink}>Kullanım Koşulları</Text>
+                                <Text style={styles.legalLink}>{copy('register.terms')}</Text>
                             </TouchableOpacity>
                             <Text style={styles.legalSeparator}>·</Text>
                             <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL)}>
-                                <Text style={styles.legalLink}>Gizlilik Bildirimi</Text>
+                                <Text style={styles.legalLink}>{copy('register.privacy')}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -165,7 +169,7 @@ const RegisterScreen = () => {
                             <Icon name="lock-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Şifre"
+                                placeholder={copy('register.password')}
                                 placeholderTextColor={COLORS.textMuted}
                                 value={password}
                                 onChangeText={setPassword}
@@ -188,15 +192,15 @@ const RegisterScreen = () => {
                             {isLoading ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
-                                <Text style={styles.registerButtonText}>Kayıt Ol</Text>
+                                <Text style={styles.registerButtonText}>{copy('register.submit')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Zaten hesabınız var mı? </Text>
+                        <Text style={styles.footerText}>{copy('register.haveAccount')} </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                            <Text style={styles.loginText}>Giriş Yap</Text>
+                            <Text style={styles.loginText}>{copy('register.login')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

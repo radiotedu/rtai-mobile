@@ -4,6 +4,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import io from 'socket.io-client';
 import { COLORS, SPACING } from '../../theme/theme';
 import { SOCKET_ORIGIN, SOCKET_PATH, STORAGE_API } from '../../services/config';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 import {
   fetchActiveNextSongVoteRound,
   getCandidateCoverUrl,
@@ -74,6 +76,8 @@ function CandidateOption({
 }
 
 export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) {
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const [round, setRound] = useState<NextSongVoteRound | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [votingCandidateId, setVotingCandidateId] = useState<string | null>(null);
@@ -140,7 +144,7 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
         setRound(nextRound);
       }
     } catch (error: any) {
-      Alert.alert('Hata', error.response?.data?.error || 'Oy gönderilemedi.');
+      Alert.alert(copy('common.error'), error.response?.data?.error || copy('votePanel.error'));
     } finally {
       setVotingCandidateId(null);
     }
@@ -153,7 +157,7 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
       <View style={styles.headerRow}>
         <View style={styles.titleRow}>
           <Icon name="vote" size={20} color={COLORS.primary} />
-          <Text style={styles.title}>Sıradaki Şarkı</Text>
+          <Text style={styles.title}>{copy('votePanel.title')}</Text>
         </View>
         {remainingSeconds !== null && (
           <View style={styles.timerPill}>
@@ -183,7 +187,7 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
       ) : (
         <View style={styles.emptyState}>
           <Image source={fallbackArt} style={styles.emptyLogo} />
-          <Text style={styles.emptyText}>Yeni oylama başladığında burada görünecek.</Text>
+          <Text style={styles.emptyText}>{copy('votePanel.empty')}</Text>
         </View>
       )}
     </View>

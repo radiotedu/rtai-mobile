@@ -14,6 +14,9 @@ import {
   isAllowedStudyNavigation,
 } from '../../services/studyWebViewService';
 import {COLORS, SPACING} from '../../theme/theme';
+import {useTranslation} from 'react-i18next';
+import {screenCopy} from '../../i18n/screenCopy';
+import {appCopy} from '../../i18n/appCopy';
 
 const WebView = NativeWebView as any;
 
@@ -22,6 +25,9 @@ const LibraryStudyWebView = () => {
   const route = useRoute<any>();
   const webViewRef = useRef<any>(null);
   const {user} = useAuth();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => screenCopy(i18n.language, key);
+  const appText = (key: string) => appCopy(i18n.language, key);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [credentialsReady, setCredentialsReady] = useState(false);
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -85,9 +91,9 @@ const LibraryStudyWebView = () => {
     return (
       <SafeAreaView style={styles.lockedContainer}>
         <Icon name="lock-outline" size={34} color={COLORS.primary} />
-        <Text style={styles.lockedTitle}>Login required</Text>
+        <Text style={styles.lockedTitle}>{copy('study.loginRequired')}</Text>
         <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('Auth', {screen: 'Login'})}>
-          <Text style={styles.primaryButtonText}>Login</Text>
+          <Text style={styles.primaryButtonText}>{copy('study.login')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -107,9 +113,9 @@ const LibraryStudyWebView = () => {
     return (
       <SafeAreaView style={styles.lockedContainer}>
         <Icon name="account-lock-outline" size={34} color={COLORS.primary} />
-        <Text style={styles.lockedTitle}>Your session expired</Text>
+        <Text style={styles.lockedTitle}>{copy('study.loginRequired')}</Text>
         <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('Auth', {screen: 'Login'})}>
-          <Text style={styles.primaryButtonText}>Login again</Text>
+          <Text style={styles.primaryButtonText}>{copy('study.login')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -120,14 +126,14 @@ const LibraryStudyWebView = () => {
       {hasLoadError ? (
         <View style={styles.errorPanel}>
           <Icon name="alert-circle-outline" size={32} color={COLORS.primary} />
-          <Text style={styles.errorTitle}>Study could not open</Text>
+          <Text style={styles.errorTitle}>{appText('study.errorTitle')}</Text>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => {
               setHasLoadError(false);
               setReloadKey(value => value + 1);
             }}>
-            <Text style={styles.primaryButtonText}>Retry</Text>
+            <Text style={styles.primaryButtonText}>{appText('study.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -139,7 +145,7 @@ const LibraryStudyWebView = () => {
         originWhitelist={['https://radiotedu.com']}
         javaScriptEnabled
         cacheEnabled={false}
-        domStorageEnabled={false}
+        domStorageEnabled
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
         mixedContentMode="never"

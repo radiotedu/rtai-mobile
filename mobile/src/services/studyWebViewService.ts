@@ -95,6 +95,7 @@ export const createStudyWebViewBridge = (input: StudySecureBridgeInput) => `
 
     if (typeof window.fetch === 'function') {
       var nativeStudyFetch = window.fetch.bind(window);
+      var studyAccessToken = ${asInjectedJson(input.accessToken)};
       window.fetch = window.fetch.bind(window);
       var legacyToClientWearable = {
         'default-hair': 'short-hair',
@@ -113,6 +114,22 @@ export const createStudyWebViewBridge = (input: StudySecureBridgeInput) => `
           ? resource
           : (resource && resource.url ? resource.url : String(resource));
         var requestOptions = options;
+        var studyApiRequest = requestUrl.indexOf('/jukebox/api/v1/study') !== -1 ||
+          requestUrl.indexOf('/jukebox/api/v1/economy') !== -1;
+        if (studyApiRequest && studyAccessToken) {
+          var authHeaders = new Headers(
+            resource && typeof resource === 'object' && resource.headers
+              ? resource.headers
+              : (options && options.headers ? options.headers : undefined),
+          );
+          if (options && options.headers) {
+            new Headers(options.headers).forEach(function (value, name) {
+              authHeaders.set(name, value);
+            });
+          }
+          authHeaders.set('Authorization', 'Bearer ' + studyAccessToken);
+          requestOptions = Object.assign({}, options || {}, {headers: authHeaders});
+        }
         if (
           (requestUrl.indexOf('/study/avatar/equip') !== -1 ||
             requestUrl.indexOf('/study/avatar/purchase') !== -1) &&
@@ -162,6 +179,11 @@ export const createStudyWebViewBridge = (input: StudySecureBridgeInput) => `
       account: input.account,
       globalPoints: input.globalPoints,
     })};
+    if (window.RadioTEDUStudyBridge) {
+      window.RadioTEDUStudyBridge.request = function (resource, options) {
+        return window.fetch(resource, options);
+      };
+    }
     window.dispatchEvent(new CustomEvent('radiotedu:study-account', {detail: window.RadioTEDUStudyAccount}));
     window.dispatchEvent(new CustomEvent('radiotedu:study-bridge-ready'));
     true;

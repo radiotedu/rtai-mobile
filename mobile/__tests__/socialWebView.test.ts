@@ -40,8 +40,8 @@ describe('Social WebView surface', () => {
     expect(screenSource).toContain('AuthGuard');
     expect(screenSource).toContain('const isRegisteredUser = Boolean(user && !user.is_guest)');
     expect(screenSource).toContain('if (!isRegisteredUser)');
-    expect(screenSource).toContain('Now register');
-    expect(screenSource).toContain('Social is only available for registered RadioTEDU accounts.');
+    expect(screenSource).toContain("copy('social.registerTitle')");
+    expect(screenSource).toContain("copy('social.registerText')");
   });
 
   it('refreshes the shared account after profile avatar changes', () => {

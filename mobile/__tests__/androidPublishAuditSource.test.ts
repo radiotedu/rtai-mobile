@@ -31,7 +31,7 @@ describe('android publish audit source', () => {
     expect(releaseChecklist()).toContain('Google Maps media controls');
     expect(releaseChecklist()).toContain('Single APK car distribution');
     expect(modernReadiness()).toContain('RadioTEDU does not ship a separate Automotive APK');
-    expect(modernReadiness()).toContain('Languages: en, tr, ru, ar, de, nl');
+    expect(modernReadiness()).toContain('Languages: en, tr, ru, ar, de, fr');
     expect(modernReadiness()).toContain('FLAC streams warn on mobile data');
   });
 });

@@ -10,6 +10,8 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../../theme/theme';
 import {getGameResultMessage} from './gameSession';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
 interface GameShellProps {
   title: string;
@@ -30,6 +32,8 @@ export function GameShell({
   onBack,
   children,
 }: GameShellProps) {
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   return (
     <View style={styles.shell}>
       <View style={styles.navbar}>
@@ -45,7 +49,7 @@ export function GameShell({
 
       <View style={styles.scoreCard}>
         <View>
-          <Text style={styles.scoreLabel}>Skor</Text>
+          <Text style={styles.scoreLabel}>{copy('games.score')}</Text>
           <Text style={styles.scoreValue}>{score}</Text>
         </View>
         <View style={styles.scoreMeta}>
@@ -111,7 +115,7 @@ export function FeedbackToast({text}: {text?: string | null}) {
 
 export function GameResultModal({
   visible,
-  title = 'Tur bitti',
+  title,
   score,
   awardedXp,
   isSubmitting,
@@ -130,6 +134,8 @@ export function GameResultModal({
   onRestart: () => void;
   onExit: () => void;
 }) {
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
@@ -137,28 +143,28 @@ export function GameResultModal({
           <View style={styles.resultIcon}>
             <Icon name={submitFailed ? 'wifi-alert' : 'trophy-award'} size={38} color={COLORS.primary} />
           </View>
-          <Text style={styles.resultTitle}>{title}</Text>
+          <Text style={styles.resultTitle}>{title || copy('games.roundFinished')}</Text>
           <Text style={styles.resultScore}>{getGameResultMessage(score, awardedXp)}</Text>
           <Text style={styles.resultSubtitle}>
             {isSubmitting
-              ? 'Skor sunucuya gönderiliyor...'
+              ? copy('games.submitting')
               : submitFailed
-                ? 'Skor gönderilemedi. Bağlantıyı kontrol edip tekrar dene.'
-                : 'Skorun kaydedildi. Yeni turda daha yüksek combo hedefle.'}
+                ? copy('games.submitFailed')
+                : copy('games.saved')}
           </Text>
 
           {submitFailed && onRetrySubmit ? (
             <TouchableOpacity style={styles.primaryButton} onPress={onRetrySubmit}>
-              <Text style={styles.primaryButtonText}>Tekrar Gönder</Text>
+              <Text style={styles.primaryButtonText}>{copy('games.retrySubmit')}</Text>
             </TouchableOpacity>
           ) : null}
 
           <View style={styles.resultActions}>
             <TouchableOpacity style={styles.secondaryButton} onPress={onExit}>
-              <Text style={styles.secondaryButtonText}>Oyunlar</Text>
+              <Text style={styles.secondaryButtonText}>{copy('games.exit')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.primaryButton} onPress={onRestart}>
-              <Text style={styles.primaryButtonText}>Tekrar Oyna</Text>
+              <Text style={styles.primaryButtonText}>{copy('games.restart')}</Text>
             </TouchableOpacity>
           </View>
         </View>

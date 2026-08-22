@@ -26,6 +26,7 @@ import {
   RADIO_CHANNELS,
   RadioChannel,
   StreamQuality,
+  shouldUseStationOnlyPresentation,
 } from '../data/radioChannels';
 import {isPodcastId, playChannelById} from '../services/playbackQueue';
 import {
@@ -37,19 +38,21 @@ import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 import {useStreamPreferences} from '../hooks/useStreamPreferences';
 import type {StreamQualityPreference} from '../services/streamPreferences';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
 
 const QUALITY_OPTIONS: Array<{
   quality: StreamQualityPreference;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: string;
 }> = [
-  {quality: 'automatic', label: 'Automatic', description: 'Adapts to your connection', icon: 'auto-fix'},
-  {quality: 'low', label: 'Low', description: 'HE-AAC v1 · uses less data', icon: 'signal-cellular-1'},
-  {quality: 'normal', label: 'Normal', description: 'HE-AAC v1 · standard quality', icon: 'signal-cellular-2'},
-  {quality: 'flac', label: 'FLAC', description: 'Lossless · Track metadata currently unavailable', icon: 'waveform'},
+  {quality: 'automatic', labelKey: 'player.automatic', descriptionKey: 'player.adapts', icon: 'auto-fix'},
+  {quality: 'low', labelKey: 'player.low', descriptionKey: 'player.lowDescription', icon: 'signal-cellular-1'},
+  {quality: 'normal', labelKey: 'player.normal', descriptionKey: 'player.normalDescription', icon: 'signal-cellular-2'},
+  {quality: 'flac', labelKey: 'player.flac', descriptionKey: 'player.flacDescription', icon: 'waveform'},
 ];
 
 /**
@@ -64,6 +67,8 @@ const PlayerScreen = () => {
   const {metadata} = useMetadata();
   const {activeChannels} = useChannels();
   const {preferences, setPreferences} = useStreamPreferences();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const {width, height} = useWindowDimensions();
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -92,23 +97,20 @@ const PlayerScreen = () => {
   const isPlaying = state === State.Playing;
   const isBuffering = state === State.Buffering || state === State.Loading;
 
-  const displayArtwork =
-    metadata?.artwork ||
-    activeTrack?.artwork ||
-    currentChannel?.logo ||
-    FALLBACK_ARTWORK;
+  const currentQuality: StreamQuality = (activeTrack?.streamQuality as StreamQuality) || (preferences.quality === 'automatic' ? 'normal' : preferences.quality) || 'normal';
+  const stationOnlyPresentation = shouldUseStationOnlyPresentation(currentChannel, currentQuality);
+  const displayArtwork = stationOnlyPresentation
+    ? activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK
+    : metadata?.artwork || activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK;
   const displayArtworkSource =
     typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
-  const displayTitle =
-    metadata?.title || activeTrack?.title || currentChannel?.name || 'RadioTEDU';
+  const displayTitle = stationOnlyPresentation
+    ? currentChannel?.name || 'RadioTEDU Lo-Fi'
+    : metadata?.title || activeTrack?.title || currentChannel?.name || 'RadioTEDU';
   const displayArtist =
-    metadata?.artist ||
-    (activeTrack?.artist as string) ||
-    currentChannel?.description ||
-    'RadioTEDU';
+    stationOnlyPresentation ? '' : metadata?.artist || (activeTrack?.artist as string) || currentChannel?.description || 'RadioTEDU';
 
   const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
-  const currentQuality: StreamQuality = (activeTrack?.streamQuality as StreamQuality) || (preferences.quality === 'automatic' ? 'normal' : preferences.quality) || 'normal';
   const isFlacActive = currentQuality === 'flac';
 
   const dismissPlayer = useCallback(() => {
@@ -253,16 +255,16 @@ const PlayerScreen = () => {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.topButton}
-            accessibilityLabel="Kapat">
+            accessibilityLabel={copy('player.close')}>
             <Icon name="chevron-down" size={30} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.topLabel} numberOfLines={1}>
-            {isLive ? 'CANLI YAYIN' : 'ÇALIYOR'}
+            {isLive ? copy('player.live') : copy('player.playing')}
           </Text>
           {currentChannel ? <TouchableOpacity
             onPress={() => setQualityMenuVisible(true)}
             style={styles.topButton}
-            accessibilityLabel="Audio quality menu">
+            accessibilityLabel={copy('player.qualityMenu')}>
             <Icon name="tune-variant" size={23} color={COLORS.text} />
           </TouchableOpacity> : <View style={styles.topButton} />}
         </View>
@@ -276,11 +278,13 @@ const PlayerScreen = () => {
             scrollOffsetY.current = event.nativeEvent.contentOffset.y;
           }}>
           <View style={styles.artWrap}>
-            <Image
-              source={displayArtworkSource}
-              style={[styles.art, {width: artSize, height: artSize}]}
-              resizeMode="cover"
-            />
+            {displayArtworkSource ? (
+              <Image
+                source={displayArtworkSource}
+                style={[styles.art, {width: artSize, height: artSize}]}
+                resizeMode="cover"
+              />
+            ) : <View style={[styles.art, styles.artPlaceholder, {width: artSize, height: artSize}]} />}
           </View>
 
           <View style={styles.metaRow}>
@@ -296,7 +300,7 @@ const PlayerScreen = () => {
               onPress={toggleFavorite}
               disabled={!currentChannel}
               style={styles.heartButton}
-              accessibilityLabel={isFavorite ? 'Favoriden çıkar' : 'Favoriye ekle'}>
+              accessibilityLabel={isFavorite ? copy('player.favoriteRemove') : copy('player.favoriteAdd')}>
               <Icon
                 name={isFavorite ? 'heart' : 'heart-outline'}
                 size={28}
@@ -309,7 +313,7 @@ const PlayerScreen = () => {
             <View style={styles.liveRow}>
               <View style={styles.liveBadge}>
                 <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
+                <Text style={styles.liveText}>{copy('player.live')}</Text>
               </View>
 
               {/* Golden FLAC Symbol / Badge when FLAC is chosen */}
@@ -373,8 +377,8 @@ const PlayerScreen = () => {
           onPress={() => setQualityMenuVisible(false)}>
           <View style={styles.qualityMenu} onStartShouldSetResponder={() => true}>
             <View style={styles.menuHandle} />
-            <Text style={styles.menuTitle}>Audio quality</Text>
-            <Text style={styles.menuSubtitle}>Choose quality for the current station.</Text>
+            <Text style={styles.menuTitle}>{copy('player.quality')}</Text>
+            <Text style={styles.menuSubtitle}>{copy('player.adapts')}</Text>
             {QUALITY_OPTIONS.filter(
               option => option.quality !== 'flac' || Boolean(currentChannel?.streams.flac),
             ).map(option => {
@@ -388,8 +392,8 @@ const PlayerScreen = () => {
                   onPress={() => applyQualityChange(option.quality)}>
                   <Icon name={option.icon} size={22} color={gold ? '#FFD700' : selected ? COLORS.primary : COLORS.textMuted} />
                   <View style={styles.menuOptionText}>
-                    <Text style={[styles.menuOptionTitle, gold && styles.menuOptionGold]}>{option.label}</Text>
-                    <Text style={styles.menuOptionDescription}>{option.description}</Text>
+                    <Text style={[styles.menuOptionTitle, gold && styles.menuOptionGold]}>{copy(option.labelKey)}</Text>
+                    <Text style={styles.menuOptionDescription}>{copy(option.descriptionKey)}</Text>
                   </View>
                   {isSwitchingQuality && selected ? (
                     <ActivityIndicator size="small" color={COLORS.primary} />
@@ -443,6 +447,9 @@ const styles = StyleSheet.create({
   art: {
     borderRadius: 16,
     backgroundColor: COLORS.surface,
+  },
+  artPlaceholder: {
+    borderWidth: 0,
   },
   metaRow: {
     flexDirection: 'row',

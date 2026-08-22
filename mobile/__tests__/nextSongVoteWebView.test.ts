@@ -38,8 +38,8 @@ describe('NextSongVote production WebView surface', () => {
   });
 
   it('implements retry, renderer failure, foreground auth refresh, and Android back handling', () => {
-    expect(screenSource).toContain('Voting’e bağlanılamadı');
-    expect(screenSource).toContain('Tekrar dene');
+    expect(screenSource).toContain("copy('vote.errorTitle')");
+    expect(screenSource).toContain("copy('vote.retry')");
     expect(screenSource).toContain('onRenderProcessGone');
     expect(screenSource).toContain('onContentProcessDidTerminate');
     expect(screenSource).toContain('AppState.addEventListener(');

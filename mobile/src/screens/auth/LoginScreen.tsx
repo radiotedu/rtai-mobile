@@ -16,6 +16,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SPACING } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
+import {authCopy} from '../../i18n/screenCopy';
 
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
@@ -30,10 +32,12 @@ const LoginScreen = () => {
         teduLoginError,
     } = useAuth();
     const navigation = useNavigation<any>();
+    const {i18n} = useTranslation();
+    const copy = (key: string) => authCopy(i18n.language, key);
 
     const handleLogin = async () => {
         if (!email || !password) {
-            Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
+            Alert.alert(copy('login.errorTitle'), copy('login.missingFields'));
             return;
         }
 
@@ -42,7 +46,7 @@ const LoginScreen = () => {
             await login(email, password);
             // Navigation state will automatically update via AuthContext
         } catch (error: any) {
-            Alert.alert('Hata', error.message);
+            Alert.alert(copy('login.errorTitle'), error.message);
         } finally {
             setIsLoading(false);
         }
@@ -52,7 +56,7 @@ const LoginScreen = () => {
         try {
             await loginWithTedu();
         } catch (error: any) {
-            Alert.alert('TEDÜ girişi', error.message);
+            Alert.alert(copy('login.teduErrorTitle'), error.message);
         }
     };
 
@@ -70,8 +74,8 @@ const LoginScreen = () => {
                             style={styles.logo}
                             resizeMode="contain"
                         />
-                        <Text style={styles.title}>Hoş Geldiniz</Text>
-                        <Text style={styles.subtitle}>Devam etmek için giriş yapın</Text>
+                        <Text style={styles.title}>{copy('login.title')}</Text>
+                        <Text style={styles.subtitle}>{copy('login.subtitle')}</Text>
                     </View>
 
                     {/* Form Section */}
@@ -81,14 +85,14 @@ const LoginScreen = () => {
                             onPress={handleTeduLogin}
                             disabled={isTeduLoginLoading || isLoading}
                             accessibilityRole="button"
-                            accessibilityLabel="TEDÜ ile giriş yap"
+                            accessibilityLabel={copy('login.tedu')}
                         >
                             {isTeduLoginLoading ? (
                                 <ActivityIndicator color={COLORS.text} />
                             ) : (
                                 <>
                                     <Icon name="school-outline" size={22} color={COLORS.text} />
-                                    <Text style={styles.teduButtonText}>TEDÜ ile giriş yap</Text>
+                                    <Text style={styles.teduButtonText}>{copy('login.tedu')}</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -98,7 +102,7 @@ const LoginScreen = () => {
 
                         <View style={styles.dividerRow}>
                             <View style={styles.dividerLine} />
-                            <Text style={styles.dividerText}>veya RadioTEDU hesabı</Text>
+                            <Text style={styles.dividerText}>{copy('login.accountDivider')}</Text>
                             <View style={styles.dividerLine} />
                         </View>
 
@@ -106,7 +110,7 @@ const LoginScreen = () => {
                             <Icon name="email-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="E-posta"
+                                placeholder={copy('login.email')}
                                 placeholderTextColor={COLORS.textMuted}
                                 value={email}
                                 onChangeText={setEmail}
@@ -119,7 +123,7 @@ const LoginScreen = () => {
                             <Icon name="lock-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Şifre"
+                                placeholder={copy('login.password')}
                                 placeholderTextColor={COLORS.textMuted}
                                 value={password}
                                 onChangeText={setPassword}
@@ -135,7 +139,7 @@ const LoginScreen = () => {
                         </View>
 
                         <TouchableOpacity style={styles.forgotPassword}>
-                            <Text style={styles.forgotPasswordText}>Şifremi Unuttum</Text>
+                        <Text style={styles.forgotPasswordText}>{copy('login.forgot')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -146,16 +150,16 @@ const LoginScreen = () => {
                             {isLoading ? (
                                 <ActivityIndicator color="#fff" />
                             ) : (
-                                <Text style={styles.loginButtonText}>Giriş Yap</Text>
+                                <Text style={styles.loginButtonText}>{copy('login.submit')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>
 
                     {/* Footer Section */}
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Hesabınız yok mu? </Text>
+                        <Text style={styles.footerText}>{copy('login.noAccount')} </Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text style={styles.registerText}>Kayıt Ol</Text>
+                            <Text style={styles.registerText}>{copy('login.register')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

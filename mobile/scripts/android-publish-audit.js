@@ -48,7 +48,7 @@ function main() {
     exists('__tests__/studyService.test.ts'),
     exists('__tests__/carBridgeSource.test.ts'),
   ].every(Boolean);
-  const localeFiles = ['en', 'tr', 'ru', 'ar', 'de', 'nl'].every((lang) =>
+  const localeFiles = ['en', 'tr', 'ru', 'ar', 'de', 'fr'].every((lang) =>
     exists(`src/i18n/locales/${lang}.json`)
   );
 
@@ -97,7 +97,7 @@ function main() {
     check(/Google Maps media controls/i.test(modernReadiness) && /MediaSession/i.test(modernReadiness), 'Google Maps media controls readiness is documented', 'docs/ANDROID_MODERN_PUBLISH_READINESS.md'),
     check(backendConnectivityTests, 'Backend connectivity contract tests are present', 'next-song, notifications, study, car bridge'),
     check(/buildAndroid16QprReadiness/.test(androidReadinessTest) && /buildAndroid17Readiness/.test(androidReadinessTest), 'Android beta readiness unit tests are present', '__tests__/androidReadiness.test.ts'),
-    check(localeFiles && /SUPPORTED_LANGUAGES\s*=\s*\['en', 'tr', 'ru', 'ar', 'de', 'nl'\]/.test(i18nIndex), 'Six-language localization bundle is present', 'en,tr,ru,ar,de,nl locale files'),
+    check(localeFiles && /SUPPORTED_LANGUAGES\s*=\s*\['en', 'tr', 'ru', 'ar', 'de', 'fr'\]/.test(i18nIndex), 'Six-language localization bundle is present', 'en,tr,ru,ar,de,fr locale files'),
     check(/RTL_LANGUAGES[\s\S]*\['ar'\]/.test(i18nIndex), 'Arabic RTL language support is declared', 'RTL_LANGUAGES includes ar'),
     check(/shouldShowFlacMobileDataWarning/.test(languageFlacTest), 'FLAC mobile-data warning policy is tested', '__tests__/languageAndFlacReadiness.test.ts'),
     check(/Bluetooth/i.test(modernReadiness) && /Dolby/i.test(modernReadiness), 'Modern audio route practices are documented', 'docs/ANDROID_MODERN_PUBLISH_READINESS.md'),

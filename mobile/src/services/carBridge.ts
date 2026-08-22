@@ -15,6 +15,7 @@
 import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event, State} from 'react-native-track-player';
 import i18n from '../i18n';
+import {getChannelCopy} from '../i18n/channelCopy';
 import api from './api';
 import {checkStreamAvailability} from '../utils/api';
 import {
@@ -22,6 +23,7 @@ import {
   channelsVisibleWithoutLiveCheck,
   RADIO_CHANNELS,
   setRuntimeVisibleChannels,
+  shouldUseStationOnlyPresentation,
   StreamQuality,
 } from '../data/radioChannels';
 import {JUKEBOX_STREAM_URL} from './config';
@@ -93,14 +95,20 @@ function mainChannelUrl(): string {
 // --- Destination data (best-effort; empty on failure, never throws) ---
 
 function radioItems(): CarItem[] {
-  return catalogChannels.map(c => ({
-    id: c.id,
-    title: c.name,
-    subtitle: c.description,
-    artwork: channelArtwork(c),
-    playable: true,
-    url: buildChannelTrack(c, catalogQuality).url,
-  }));
+  return catalogChannels.map(c => {
+    const copy = getChannelCopy(c.copyKey, i18n.language, {
+      name: c.name,
+      description: c.description,
+    });
+    return {
+      id: c.id,
+      title: copy.name,
+      subtitle: shouldUseStationOnlyPresentation(c, catalogQuality) ? '' : copy.description,
+      artwork: channelArtwork(c),
+      playable: true,
+      url: buildChannelTrack(c, catalogQuality).url,
+    };
+  });
 }
 
 function podcastItems(): CarItem[] {
@@ -202,16 +210,20 @@ async function recentItems(): Promise<CarItem[]> {
         artwork: channelArtwork(c),
         url: buildChannelTrack(c, catalogQuality).url,
       }));
-  return source.map(r => ({
-    id: r.id,
-    title: r.title,
-    subtitle: r.artist,
-    artwork: r.artwork,
-    playable: true,
-    // Carry the recent item's own url; if it has none (older recents predate
-    // the url field), resolve by channel id, falling back to the main channel.
-    url: r.url || channelUrlById(r.id) || mainChannelUrl(),
-  }));
+  return source.map(r => {
+    const channel = RADIO_CHANNELS.find(c => c.id === r.id);
+    const stationOnly = shouldUseStationOnlyPresentation(channel, catalogQuality);
+    return {
+      id: r.id,
+      title: stationOnly ? 'RadioTEDU Lo-Fi' : r.title,
+      subtitle: stationOnly ? '' : r.artist,
+      artwork: stationOnly && channel ? channelArtwork(channel) : r.artwork,
+      playable: true,
+      // Carry the recent item's own url; if it has none (older recents predate
+      // the url field), resolve by channel id, falling back to the main channel.
+      url: r.url || channelUrlById(r.id) || mainChannelUrl(),
+    };
+  });
 }
 
 /** Build and push the full car browse tree (4 destinations + recently played). */
@@ -382,10 +394,12 @@ async function pushNowPlaying() {
   try {
     const track = await TrackPlayer.getActiveTrack();
     const {state} = await TrackPlayer.getPlaybackState();
+    const channel = RADIO_CHANNELS.find(item => item.id === String(track?.id ?? ''));
+    const stationOnly = shouldUseStationOnlyPresentation(channel, (track as any)?.streamQuality);
     CarBridge!.updateNowPlaying(
-      track?.title ?? 'RadioTEDU',
-      (track?.artist as string) ?? '',
-      (track?.artwork as string) ?? '',
+      stationOnly ? 'RadioTEDU Lo-Fi' : track?.title ?? 'RadioTEDU',
+      stationOnly ? '' : (track?.artist as string) ?? '',
+      stationOnly ? channelArtwork(channel!) : (track?.artwork as string) ?? '',
       state === State.Playing,
     );
   } catch {

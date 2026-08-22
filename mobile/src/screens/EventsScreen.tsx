@@ -24,11 +24,15 @@ import {
   registerEvent,
 } from '../services/gamificationService';
 import {getQrRewardCodeFromRouteParams} from '../services/qrLinking';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 
 const EventsScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user} = useAuth();
+  const {i18n} = useTranslation();
+  const copy = useCallback((key: string, values: Record<string, string | number> = {}) => appCopy(i18n.language, key, values), [i18n.language]);
   const autoClaimedQrCodeRef = useRef<string | null>(null);
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [market, setMarket] = useState<MarketItem[]>([]);
@@ -50,12 +54,12 @@ const EventsScreen = () => {
       setMarket(nextMarket);
     } catch (error) {
       console.error('Failed to load events:', error);
-      Alert.alert('Hata', 'Etkinlikler yüklenemedi.');
+      Alert.alert(copy('common.error'), copy('events.error'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, [copy, user]);
 
   useEffect(() => {
     load();
@@ -63,28 +67,28 @@ const EventsScreen = () => {
 
   const handleRegister = async (event: AppEvent) => {
     if (isAccountRequired) {
-      Alert.alert('Hesap gerekli', 'Etkinliğe katılım ve Gold için giriş yapmalısın.');
+      Alert.alert(copy('events.accountRequired'), copy('events.accountRequired'));
       return;
     }
 
     try {
       await registerEvent(event.id);
-      Alert.alert('Kaydedildi', 'Etkinlik biletin profil hesabına işlendi.');
+      Alert.alert(copy('events.saved'), copy('events.saved'));
     } catch (error) {
       console.error('Failed to register event:', error);
-      Alert.alert('Hata', 'Etkinliğe kayıt yapılamadı.');
+      Alert.alert(copy('common.error'), copy('events.error'));
     }
   };
 
   const claimQrCode = useCallback(async (rawCode?: string) => {
     const code = (rawCode ?? qrCode).trim();
     if (!code) {
-      Alert.alert('Kod gerekli', 'QR kodunu veya görev kodunu gir.');
+      Alert.alert(copy('events.codeRequired'), copy('events.qrText'));
       return;
     }
 
     if (isAccountRequired) {
-      Alert.alert('Hesap gerekli', 'QR Gold ödülü için giriş yapmalısın.');
+      Alert.alert(copy('events.accountRequired'), copy('events.accountRequired'));
       return;
     }
 
@@ -92,14 +96,14 @@ const EventsScreen = () => {
     try {
       const result: any = await claimQrReward(code);
       setQrCode('');
-      Alert.alert('Gold earned', `+${result?.points_awarded ?? 0} Gold hesabına işlendi.`);
+      Alert.alert(copy('common.success'), copy('events.goldEarned', {points: result?.points_awarded ?? 0}));
     } catch (error) {
       console.error('Failed to claim QR reward:', error);
-      Alert.alert('Hata', 'Bu QR ödülü işlenemedi.');
+      Alert.alert(copy('common.error'), copy('events.error'));
     } finally {
       setClaiming(false);
     }
-  }, [isAccountRequired, qrCode]);
+  }, [copy, isAccountRequired, qrCode]);
 
   useEffect(() => {
     const linkedQrCode = getQrRewardCodeFromRouteParams(route.params);
@@ -122,7 +126,7 @@ const EventsScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.navbarTitle}>Etkinlikler</Text>
+        <Text style={styles.navbarTitle}>{copy('events.title')}</Text>
         <View style={styles.navbarSpacer} />
       </View>
 
@@ -131,9 +135,9 @@ const EventsScreen = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
         showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <Text style={styles.kicker}>Kampüs görevleri</Text>
-          <Text style={styles.title}>Bilet, check-in ve QR görevlerinden Gold kazan.</Text>
-          <Text style={styles.subtitle}>Etkinliğe katıl, kapıda check-in yap, kampüsteki QR görevlerini tamamla.</Text>
+          <Text style={styles.kicker}>{copy('events.kicker')}</Text>
+          <Text style={styles.title}>{copy('events.heroTitle')}</Text>
+          <Text style={styles.subtitle}>{copy('events.heroSubtitle')}</Text>
         </View>
 
         <View style={styles.qrCard}>
@@ -141,14 +145,14 @@ const EventsScreen = () => {
             <Icon name="qrcode-scan" size={28} color={COLORS.primary} />
           </View>
           <View style={styles.qrBody}>
-            <Text style={styles.cardTitle}>QR görev kodu</Text>
-              <Text style={styles.cardText}>QR kodunu okut ya da görev kodunu gir.</Text>
+            <Text style={styles.cardTitle}>{copy('events.qrTitle')}</Text>
+              <Text style={styles.cardText}>{copy('events.qrText')}</Text>
             <TextInput
               value={qrCode}
               onChangeText={setQrCode}
               editable={!isAccountRequired && !claiming}
               autoCapitalize="characters"
-              placeholder="Örn: TEDU-QR-01"
+              placeholder={copy('events.qrPlaceholder')}
               placeholderTextColor={COLORS.textMuted}
               style={styles.input}
             />
@@ -156,26 +160,26 @@ const EventsScreen = () => {
               style={[styles.primaryButton, (isAccountRequired || claiming) && styles.disabledButton]}
               onPress={handleQrClaim}
               disabled={isAccountRequired || claiming}>
-              <Text style={styles.primaryButtonText}>{isAccountRequired ? 'Hesap gerekli' : claiming ? 'İşleniyor...' : "Gold'u Al"}</Text>
+              <Text style={styles.primaryButtonText}>{isAccountRequired ? copy('events.accountRequired') : claiming ? copy('events.claiming') : copy('events.claim')}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Yaklaşan etkinlikler</Text>
+        <Text style={styles.sectionTitle}>{copy('events.upcoming')}</Text>
         {loading && !refreshing ? (
           <ActivityIndicator color={COLORS.primary} style={styles.loader} />
         ) : events.length === 0 ? (
-          <Empty text="Henüz aktif etkinlik yok. Admin paneli veya canlı sunucu verisiyle dolacak." />
+          <Empty text={copy('events.empty')} />
         ) : (
           events.map((event) => (
             <View key={event.id} style={styles.eventCard}>
               <Text style={styles.eventTitle}>{event.title}</Text>
-              <Text style={styles.eventMeta}>{formatEventDate(event.starts_at)} · {event.location || 'Kampüs'}</Text>
+              <Text style={styles.eventMeta}>{formatEventDate(event.starts_at, i18n.language)} · {event.location || copy('events.campus')}</Text>
               {event.description ? <Text style={styles.eventDescription} numberOfLines={3}>{event.description}</Text> : null}
               <View style={styles.eventFooter}>
-                <Text style={styles.eventPoints}>+{event.check_in_points || 0} check-in Gold</Text>
+                <Text style={styles.eventPoints}>+{event.check_in_points || 0} {copy('events.checkinGold')}</Text>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => handleRegister(event)}>
-                  <Text style={styles.secondaryButtonText}>Katıl</Text>
+                  <Text style={styles.secondaryButtonText}>{copy('events.join')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -183,9 +187,9 @@ const EventsScreen = () => {
         )}
 
         <View style={styles.marketHeader}>
-          <Text style={styles.sectionTitle}>Etkinlik marketi</Text>
+          <Text style={styles.sectionTitle}>{copy('events.eventMarket')}</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Market')}>
-            <Text style={styles.marketLink}>Tümü</Text>
+            <Text style={styles.marketLink}>{copy('events.all')}</Text>
           </TouchableOpacity>
         </View>
         {market.slice(0, 4).map((item) => (
@@ -208,9 +212,9 @@ function Empty({text}: {text: string}) {
   );
 }
 
-function formatEventDate(value?: string | null) {
+function formatEventDate(value?: string | null, language = 'en') {
   if (!value) {
-    return 'Tarih yakında';
+    return '';
   }
 
   const date = new Date(value);
@@ -218,7 +222,7 @@ function formatEventDate(value?: string | null) {
     return value;
   }
 
-  return date.toLocaleString('tr-TR', {day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'});
+  return date.toLocaleString(language, {day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'});
 }
 
 const styles = StyleSheet.create({

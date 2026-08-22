@@ -13,21 +13,25 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
 import {
   AppLanguage,
+  LanguagePreference,
   SUPPORTED_LANGUAGES,
   getCurrentLanguage,
+  getLanguagePreference,
   setLanguage,
 } from '../i18n';
 
 const LanguageScreen = ({navigation}: any) => {
   const {t} = useTranslation();
   const [current, setCurrent] = useState<AppLanguage>(getCurrentLanguage());
+  const [preference, setPreference] = useState<LanguagePreference>(getLanguagePreference());
 
-  const onSelect = async (lang: AppLanguage) => {
-    if (lang === current) {
+  const onSelect = async (lang: LanguagePreference) => {
+    if (lang !== 'system' && lang === current && preference !== 'system') {
       return;
     }
     const directionChanged = await setLanguage(lang);
-    setCurrent(lang);
+    setPreference(lang);
+    setCurrent(getCurrentLanguage());
     if (directionChanged) {
       Alert.alert(t('language.select'), t('language.restartNotice'));
     }
@@ -45,11 +49,11 @@ const LanguageScreen = ({navigation}: any) => {
         <View style={{width: 26}} />
       </View>
       <FlatList
-        data={SUPPORTED_LANGUAGES as readonly AppLanguage[]}
+        data={['system', ...SUPPORTED_LANGUAGES] as readonly LanguagePreference[]}
         keyExtractor={item => item}
         contentContainerStyle={styles.list}
         renderItem={({item}) => {
-          const selected = item === current;
+          const selected = item === preference;
           return (
             <TouchableOpacity
               style={[styles.row, selected && styles.rowSelected]}

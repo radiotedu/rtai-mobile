@@ -7,14 +7,18 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
-const LANES = ['Sol', 'Orta', 'Sağ'];
 const TOTAL_BEATS = 28;
 
 const RhythmTapScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
+  const lanes = [copy('games.rhythmLeft'), copy('games.rhythmCenter'), copy('games.rhythmRight')];
   const [activeLane, setActiveLane] = useState(1);
   const [beat, setBeat] = useState(1);
   const [score, setScore] = useState(0);
@@ -46,7 +50,7 @@ const RhythmTapScreen = () => {
       setMisses((value) => value + 1);
       streakRef.current = 0;
       setStreak(0);
-      setFeedback('Miss');
+      setFeedback(copy('games.miss'));
       advanceBeat();
     }, 1100);
 
@@ -79,7 +83,7 @@ const RhythmTapScreen = () => {
         return current;
       }
       beatStartedAtRef.current = Date.now();
-      setActiveLane(Math.floor(Math.random() * LANES.length));
+      setActiveLane(Math.floor(Math.random() * lanes.length));
       return current + 1;
     });
   };
@@ -91,7 +95,7 @@ const RhythmTapScreen = () => {
 
     if (laneIndex === activeLane) {
       const latency = Date.now() - beatStartedAtRef.current;
-      const judgement = latency < 420 ? 'Perfect' : 'Good';
+      const judgement = latency < 420 ? copy('games.perfect') : copy('games.good');
       const nextStreak = streakRef.current + 1;
       const gained = judgement === 'Perfect' ? 42 + nextStreak * 4 : 28 + nextStreak * 3;
       const nextScore = scoreRef.current + gained;
@@ -105,7 +109,7 @@ const RhythmTapScreen = () => {
       setMisses((value) => value + 1);
       streakRef.current = 0;
       setStreak(0);
-      setFeedback('Wrong lane');
+      setFeedback(copy('games.wrongLane'));
     }
 
     advanceBeat();
@@ -146,17 +150,17 @@ const RhythmTapScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <GameShell
-        title="Ritim Tap"
-        subtitle="Beat yakalama"
+        title={copy('games.rhythm')}
+        subtitle={copy('games.rhythmSubtitle')}
         score={score}
         progressLabel={`Beat ${beat}/${TOTAL_BEATS}`}
-        rightLabel={`${misses} kaçan`}
+        rightLabel={`${misses} ${copy('games.rhythmMisses')}`}
         onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
-        <ComboMeter label="Ritim serisi" value={Math.max(1, streak)} />
+        <ComboMeter label={copy('games.rhythmCombo')} value={Math.max(1, streak)} />
 
         <View style={styles.laneRow}>
-          {LANES.map((lane, index) => (
+          {lanes.map((lane, index) => (
             <TouchableOpacity
               key={lane}
               style={[styles.lane, activeLane === index && styles.activeLane]}
@@ -169,7 +173,7 @@ const RhythmTapScreen = () => {
         </View>
         <TouchableOpacity style={styles.pauseButton} onPress={() => setRunning((value) => !value)} disabled={finished}>
           <Icon name={running ? 'pause' : 'play'} size={22} color="#fff" />
-          <Text style={styles.pauseText}>{running ? 'Duraklat' : 'Devam'}</Text>
+          <Text style={styles.pauseText}>{running ? copy('games.pause') : copy('games.resume')}</Text>
         </TouchableOpacity>
       </GameShell>
 

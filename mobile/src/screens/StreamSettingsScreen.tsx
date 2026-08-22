@@ -13,7 +13,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import NetInfo from '@react-native-community/netinfo';
 import TrackPlayer, {State} from 'react-native-track-player';
 import {COLORS, SPACING} from '../theme/theme';
-import type {StreamQuality} from '../data/radioChannels';
 import {useStreamPreferences} from '../hooks/useStreamPreferences';
 import {
   automaticQualityForNetwork,
@@ -22,49 +21,36 @@ import {
   StreamQualityPreference,
 } from '../services/streamPreferences';
 import {isPodcastId, playChannelById} from '../services/playbackQueue';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 
 const QUALITY_OPTIONS: Array<{
   value: StreamQualityPreference;
-  title: string;
-  description: string;
   icon: string;
 }> = [
   {
     value: 'automatic',
-    title: 'Automatic',
-    description: 'Adapts between Low (32 kbit) and Normal (192 kbit). Fallback automatically on slow connection.',
     icon: 'auto-fix',
   },
   {
     value: 'low',
-    title: 'Low (32 kbit)',
-    description: 'HE-AAC v1. Uses the least data and starts fastest on weak connections.',
     icon: 'signal-cellular-1',
   },
   {
     value: 'normal',
-    title: 'Normal (192 kbit)',
-    description: 'HE-AAC v1. Standard RadioTEDU stream.',
     icon: 'signal-cellular-2',
   },
   {
     value: 'flac',
-    title: 'FLAC (Lossless)',
-    description: 'Available only on Classic and Jazz. Uses considerably more data.',
     icon: 'waveform',
   },
 ];
 
-const QUALITY_LABELS: Record<StreamQuality, string> = {
-  low: 'Low',
-  normal: 'Normal',
-  high: 'High',
-  flac: 'FLAC',
-};
-
 const StreamSettingsScreen = () => {
   const navigation = useNavigation<any>();
   const {preferences, setPreferences, isLoading} = useStreamPreferences();
+  const {i18n} = useTranslation();
+  const copy = (key: string, values: Record<string, string | number> = {}) => appCopy(i18n.language, key, values);
   const [network, setNetwork] = useState<StreamNetworkSnapshot>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -83,14 +69,14 @@ const StreamSettingsScreen = () => {
 
   const networkLabel =
     network.type === 'cellular'
-      ? 'Mobile data'
+      ? copy('stream.mobileData')
       : network.type === 'wifi'
-        ? 'Wi-Fi'
+        ? copy('stream.wifi')
         : network.type === 'ethernet'
-          ? 'Ethernet'
+          ? copy('stream.ethernet')
           : network.isConnected === false
-            ? 'Offline'
-            : 'Connection';
+            ? copy('stream.offline')
+            : copy('stream.connection');
 
   const applyToCurrentChannel = async () => {
     const track = await TrackPlayer.getActiveTrack();
@@ -114,7 +100,7 @@ const StreamSettingsScreen = () => {
       await setPreferences({...preferences, quality});
       await applyToCurrentChannel();
     } catch {
-      setError('Streaming quality could not be applied. Your previous stream remains available.');
+      setError(copy('stream.applyError'));
     } finally {
       setIsSaving(false);
     }
@@ -130,8 +116,8 @@ const StreamSettingsScreen = () => {
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
         <View style={styles.navTitleWrap}>
-          <Text style={styles.navTitle}>Streaming</Text>
-          <Text style={styles.navSubtitle}>Adaptive audio quality</Text>
+          <Text style={styles.navTitle}>{copy('stream.title')}</Text>
+          <Text style={styles.navSubtitle}>{copy('stream.subtitle')}</Text>
         </View>
         <View style={styles.backButton}>
           {isSaving || isLoading ? (
@@ -156,15 +142,15 @@ const StreamSettingsScreen = () => {
           <View style={styles.statusBody}>
             <Text style={styles.statusEyebrow}>{networkLabel}</Text>
             <Text style={styles.statusTitle}>
-              Automatic would use {QUALITY_LABELS[automaticQuality]}
+              {copy('stream.automaticWouldUse', {quality: copy(`player.${automaticQuality}`)})}
             </Text>
           </View>
-          <Text style={styles.savedText}>Saved instantly</Text>
+          <Text style={styles.savedText}>{copy('stream.saved')}</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>Audio quality</Text>
+        <Text style={styles.sectionTitle}>{copy('stream.audioQuality')}</Text>
         <Text style={styles.sectionDescription}>
-          Normal is the default RadioTEDU stream. Existing legacy channel links remain available as automatic fallbacks.
+          {copy('stream.description')}
         </Text>
 
         <View style={styles.optionGroup}>
@@ -187,12 +173,12 @@ const StreamSettingsScreen = () => {
                 </View>
                 <View style={styles.optionBody}>
                   <View style={styles.optionTitleRow}>
-                    <Text style={styles.optionTitle}>{option.title}</Text>
+                    <Text style={styles.optionTitle}>{copy(`player.${option.value}`)}</Text>
                     {option.value === 'automatic' ? (
-                      <Text style={styles.recommended}>RECOMMENDED</Text>
+                      <Text style={styles.recommended}>{copy('stream.recommended')}</Text>
                     ) : null}
                   </View>
-                  <Text style={styles.optionDescription}>{option.description}</Text>
+                  <Text style={styles.optionDescription}>{copy(`player.${option.value === 'automatic' ? 'adapts' : `${option.value}Description`}`)}</Text>
                 </View>
                 <Icon
                   name={selected ? 'radiobox-marked' : 'radiobox-blank'}
@@ -208,7 +194,7 @@ const StreamSettingsScreen = () => {
           <View style={styles.warning}>
             <Icon name="alert-outline" size={22} color="#FFB15C" />
             <Text style={styles.warningText}>
-              FLAC is selected on mobile data. RadioTEDU will ask for confirmation before playback.
+              {copy('stream.flacWarning')}
             </Text>
           </View>
         ) : null}
@@ -216,7 +202,7 @@ const StreamSettingsScreen = () => {
         <View style={styles.channelNote}>
           <Icon name="translate" size={22} color="#8CB4FF" />
           <Text style={styles.channelNoteText}>
-            Quality changes apply to every currently available station.
+            {copy('stream.description')}
           </Text>
         </View>
 

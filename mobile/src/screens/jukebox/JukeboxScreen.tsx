@@ -29,10 +29,14 @@ import {
 } from '../../services/jukeboxContract';
 import GlobalHeader from '../../components/GlobalHeader';
 import PageTransition from '../../components/PageTransition';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
 const JukeboxScreen = ({ route }: any) => {
   const { user, guestLogin, logout } = useAuth();
   const navigation = useNavigation<any>();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const deviceCodeFromLink = route.params?.deviceCode;
 
   const [queue, setQueue] = useState<any[]>([]);
@@ -342,7 +346,7 @@ const JukeboxScreen = ({ route }: any) => {
         <View style={styles.idleDisc}>
           <Icon name="music-note" size={40} color={COLORS.textMuted} />
         </View>
-        <Text style={styles.idleText}>Şarkı bekleniyor...</Text>
+        <Text style={styles.idleText}>{copy('juke.waiting')}</Text>
       </View>
     );
 
@@ -358,7 +362,7 @@ const JukeboxScreen = ({ route }: any) => {
           <View style={styles.heroInfo}>
             <View style={styles.playingTag}>
               <View style={styles.pulsingDot} />
-              <Text style={styles.playingTagText}>ŞU AN ÇALIYOR</Text>
+              <Text style={styles.playingTagText}>{copy('juke.nowPlaying')}</Text>
             </View>
             <Text style={styles.heroTitle} numberOfLines={2}>{song.title}</Text>
             <Text style={styles.heroArtist} numberOfLines={1}>{song.artist}</Text>
@@ -371,7 +375,7 @@ const JukeboxScreen = ({ route }: any) => {
         <View style={styles.voteBar}>
           <TouchableOpacity style={styles.voteBtn} onPress={() => handleVote(song, 1)}>
             <Icon name="thumb-up" size={24} color="#4ADE80" />
-            <Text style={[styles.voteBtnText, { color: '#4ADE80' }]}>Begen</Text>
+            <Text style={[styles.voteBtnText, { color: '#4ADE80' }]}>{copy('juke.like')}</Text>
           </TouchableOpacity>
 
           <View style={styles.voteDivider} />
@@ -380,7 +384,7 @@ const JukeboxScreen = ({ route }: any) => {
             <>
               <TouchableOpacity style={styles.voteBtn} onPress={() => handleVote(song, 1, true)}>
                 <Icon name={song.user_vote === 3 || song.user_vote === 4 ? 'star' : 'star-outline'} size={24} color="#F59E0B" />
-                <Text style={[styles.voteBtnText, { color: '#F59E0B' }]}>Super</Text>
+                <Text style={[styles.voteBtnText, { color: '#F59E0B' }]}>{copy('juke.super')}</Text>
               </TouchableOpacity>
               <View style={styles.voteDivider} />
             </>
@@ -388,7 +392,7 @@ const JukeboxScreen = ({ route }: any) => {
 
           <TouchableOpacity style={styles.voteBtn} onPress={() => handleVote(song, -1)}>
             <Icon name="thumb-down" size={24} color="#F87171" />
-            <Text style={[styles.voteBtnText, { color: '#F87171' }]}>Begenme</Text>
+            <Text style={[styles.voteBtnText, { color: '#F87171' }]}>{copy('juke.dislike')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -408,13 +412,13 @@ const JukeboxScreen = ({ route }: any) => {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Ücretsiz Şarkı Hakkı!</Text>
+              <Text style={styles.modalTitle}>{copy('juke.guestTitle')}</Text>
               <Text style={styles.modalText}>
-                RadyoTEDU'da ilk şarkınızı misafir olarak ücretsiz isteyebilirsiniz. Lütfen isminizi girin:
+                {copy('juke.guestText')}
               </Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="İsminiz"
+                placeholder={copy('juke.namePlaceholder')}
                 placeholderTextColor={COLORS.textMuted}
                 value={guestName}
                 onChangeText={setGuestName}
@@ -425,13 +429,13 @@ const JukeboxScreen = ({ route }: any) => {
                   style={[styles.modalButton, { backgroundColor: 'transparent' }]}
                   onPress={() => setShowGuestModal(false)}
                 >
-                  <Text style={[styles.modalButtonText, { color: COLORS.textMuted }]}>İptal</Text>
+                  <Text style={[styles.modalButtonText, { color: COLORS.textMuted }]}>{copy('juke.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalButton}
                   onPress={handleGuestSubmit}
                 >
-                  <Text style={styles.modalButtonText}>Devam Et</Text>
+                  <Text style={styles.modalButtonText}>{copy('juke.continue')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -454,7 +458,7 @@ const JukeboxScreen = ({ route }: any) => {
               style={styles.modalContent}
             >
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Müzik Kutusu Seçin</Text>
+                <Text style={styles.modalTitle}>{copy('juke.selectDevice')}</Text>
                 <TouchableOpacity
                   onPress={() => setShowDeviceSelector(false)}
                   style={styles.closeButton}
@@ -467,7 +471,7 @@ const JukeboxScreen = ({ route }: any) => {
                 <View style={styles.emptyDeviceContainer}>
                   <Icon name="poker-chip" size={48} color={COLORS.textMuted} style={{ marginBottom: 12 }} />
                   <Text style={{ color: COLORS.textMuted, textAlign: 'center' }}>
-                    Aktif bir müzik kutusu bulunamadı.
+                    {copy('juke.noDevices')}
                   </Text>
                 </View>
               ) : (
@@ -513,7 +517,7 @@ const JukeboxScreen = ({ route }: any) => {
                 style={[styles.modalButton, { marginTop: 16, backgroundColor: 'rgba(255,255,255,0.05)' }]}
                 onPress={() => setShowDeviceSelector(false)}
               >
-                <Text style={[styles.modalButtonText, { color: COLORS.text }]}>Vazgeç</Text>
+                <Text style={[styles.modalButtonText, { color: COLORS.text }]}>{copy('juke.disconnect')}</Text>
               </TouchableOpacity>
             </TouchableOpacity>
           </TouchableOpacity>
@@ -523,7 +527,7 @@ const JukeboxScreen = ({ route }: any) => {
         <TouchableOpacity style={styles.deviceBanner} onPress={() => setShowDeviceSelector(true)}>
           <Icon name="map-marker-radius" size={16} color={COLORS.primary} />
           <Text style={styles.deviceText}>
-            {device ? (device.location || device.name) : 'Cihaz Seçin'}
+            {device ? (device.location || device.name) : copy('juke.chooseDevice')}
           </Text>
           <Icon name="chevron-down" size={16} color={COLORS.textMuted} />
         </TouchableOpacity>
@@ -533,7 +537,7 @@ const JukeboxScreen = ({ route }: any) => {
             <Icon name="magnify" size={20} color={COLORS.textMuted} style={{ marginLeft: 10 }} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Şarkı ara..."
+              placeholder={copy('juke.searchPlaceholder')}
               placeholderTextColor={COLORS.textMuted}
               value={search}
               onChangeText={setSearch}
@@ -544,7 +548,7 @@ const JukeboxScreen = ({ route }: any) => {
 
         {searchResults.length > 0 ? (
           <View style={{ flex: 1, paddingHorizontal: SPACING.md }}>
-            <Text style={styles.sectionTitle}>Sonuçlar</Text>
+            <Text style={styles.sectionTitle}>{copy('juke.results')}</Text>
             <FlatList
               data={searchResults}
               keyExtractor={item => getCatalogSongKey(item)}
@@ -558,7 +562,7 @@ const JukeboxScreen = ({ route }: any) => {
               <>
                 <NowPlayingHero song={nowPlaying} />
                 <View style={styles.queueHeader}>
-                  <Text style={styles.sectionTitle}>Müzik Kuyruğu</Text>
+                  <Text style={styles.sectionTitle}>{copy('juke.queue')}</Text>
                   <View style={styles.queueCountBadge}>
                     <Text style={styles.queueCountText}>{queue.length}</Text>
                   </View>
@@ -569,7 +573,7 @@ const JukeboxScreen = ({ route }: any) => {
             renderItem={renderQueueItem}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={() => (
-              <Text style={styles.emptyText}>Kuyruk boş. İlk isteği sen yap!</Text>
+              <Text style={styles.emptyText}>{copy('juke.empty')}</Text>
             )}
           />
         )}

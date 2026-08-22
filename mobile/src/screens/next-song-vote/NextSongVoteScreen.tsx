@@ -13,6 +13,7 @@ import {
 import {getAccessToken} from '../../services/authTokenStorage';
 import NetInfo from '@react-native-community/netinfo';
 import {useNavigation} from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
@@ -33,6 +34,7 @@ import {
   type VotingWebViewAuthState,
 } from '../../services/votingWebViewService';
 import {COLORS, SPACING} from '../../theme/theme';
+import {screenCopy} from '../../i18n/screenCopy';
 
 const WebView = NativeWebView as any;
 const EMPTY_AUTH_STATE: VotingWebViewAuthState = {
@@ -42,6 +44,8 @@ const EMPTY_AUTH_STATE: VotingWebViewAuthState = {
 
 export default function NextSongVoteScreen() {
   const navigation = useNavigation<any>();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => screenCopy(i18n.language, key);
   const {user} = useAuth();
   const webViewRef = useRef<any>(null);
   const mountedRef = useRef(true);
@@ -163,6 +167,15 @@ export default function NextSongVoteScreen() {
     [readAndInjectAuth],
   );
 
+  const handleVotingLoadEnd = useCallback(() => {
+    setIsLoading(false);
+    // Production page currently has no native-ready postMessage. Treat the
+    // completed document as ready, then let the injected bearer bridge trigger
+    // its session refresh.
+    webViewReadyRef.current = true;
+    readAndInjectAuth();
+  }, [readAndInjectAuth]);
+
   const handleNavigationRequest = useCallback((request: {url: string}) => {
     const decision = classifyVotingNavigation(request.url);
     if (decision === 'allowed') {
@@ -232,7 +245,7 @@ export default function NextSongVoteScreen() {
                 webViewReadyRef.current = false;
                 setIsLoading(true);
               }}
-              onLoadEnd={() => setIsLoading(false)}
+              onLoadEnd={handleVotingLoadEnd}
               onError={showConnectionError}
               onHttpError={(event: {
                 nativeEvent: {statusCode: number};
@@ -250,18 +263,18 @@ export default function NextSongVoteScreen() {
           ) : (
             <View style={styles.errorPanel}>
               <Icon name="wifi-alert" size={40} color={COLORS.primary} />
-              <Text style={styles.errorTitle}>Voting’e bağlanılamadı</Text>
+              <Text style={styles.errorTitle}>{copy('vote.errorTitle')}</Text>
               <Text style={styles.errorText}>
                 {isOffline
-                  ? 'İnternet bağlantını kontrol edip tekrar dene.'
-                  : 'Voting servisi şu anda açılamıyor.'}
+                  ? copy('vote.offline')
+                  : copy('vote.unavailable')}
               </Text>
               <TouchableOpacity
                 style={styles.retryButton}
                 onPress={retry}
                 accessibilityRole="button"
-                accessibilityLabel="Voting bağlantısını tekrar dene">
-                <Text style={styles.retryButtonText}>Tekrar dene</Text>
+                accessibilityLabel={copy('vote.retry')}>
+                <Text style={styles.retryButtonText}>{copy('vote.retry')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -269,7 +282,7 @@ export default function NextSongVoteScreen() {
           {isLoading && !hasLoadError ? (
             <View style={styles.loadingPanel} pointerEvents="none">
               <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.loadingText}>Voting yükleniyor…</Text>
+              <Text style={styles.loadingText}>{copy('vote.loading')}</Text>
             </View>
           ) : null}
         </View>

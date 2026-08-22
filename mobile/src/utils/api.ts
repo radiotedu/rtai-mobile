@@ -24,12 +24,14 @@ export const fetchAlbumArtwork = async (
 export const checkStreamAvailability = async (
   streamUrl: string,
 ): Promise<boolean> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
     console.log(`Checking stream: ${streamUrl}`);
     const controller = new AbortController();
-    // Shortened timeout to 5s. If it hangs for 5s, it's likely streaming/buffering.
-    // Explicit errors (404) usually return instantly (<1s).
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    // A live mount should return headers immediately. A timeout is not proof
+    // that a station is on air: treating it as live made dormant mounts such
+    // as Spark appear in the station list.
+    timeoutId = setTimeout(() => controller.abort(), 5000);
 
     // Use GET with immediate abort to validate connection & status
     const response = await fetch(streamUrl, {
@@ -40,6 +42,7 @@ export const checkStreamAvailability = async (
     });
 
     clearTimeout(timeoutId);
+    timeoutId = undefined;
 
     // Check status code
     const isStatusValid = response.status === 200 || response.status === 206;
@@ -69,17 +72,9 @@ export const checkStreamAvailability = async (
 
     return isValid;
   } catch (error: any) {
-    // CRITICAL FIX:
-    // Offline streams (404/500) fail nicely in the 'try' block.
-    // Active streams usually hang (buffering) and trigger AbortError/Timeout.
-    // Therefore: Timeout/Abort = LIKELY ACTIVE.
-
-    // Check for AbortError (timeout)
-    if (error.name === 'AbortError' || error.message.includes('Aborted')) {
-      console.log(`Stream Check Timeout (Assumed Active): ${streamUrl}`);
-      return true;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
-
     console.log(`Stream Check Error for ${streamUrl}:`, error);
     return false;
   }

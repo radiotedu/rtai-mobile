@@ -33,6 +33,8 @@ import {
 import {resolveCurrentStreamPreferences} from '../services/streamPreferences';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 
 const PodcastScreen = () => {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
@@ -43,6 +45,8 @@ const PodcastScreen = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const activeTrack = useActiveTrack();
   const playbackState = usePlaybackState();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
 
   const hasLoadedRef = useRef(false);
 
@@ -54,6 +58,8 @@ const PodcastScreen = () => {
     useCallback(() => {
       loadPodcasts(1, false, hasLoadedRef.current);
       hasLoadedRef.current = true;
+      // loadPodcasts is declared below and intentionally remains stable for this focus listener.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 
@@ -80,7 +86,7 @@ const PodcastScreen = () => {
       setPage(pageToLoad);
     } catch (e) {
       console.log('Failed to fetch podcasts', e);
-      Alert.alert('Hata', 'Podcast listesi alınamadı.');
+      Alert.alert(copy('common.error'), copy('podcast.empty'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -125,10 +131,10 @@ const PodcastScreen = () => {
         try {
           await Linking.openURL(url);
         } catch {
-          Alert.alert('Hata', 'Bölüm açılamadı.');
+          Alert.alert(copy('common.error'), copy('podcast.openError'));
         }
       } else {
-        Alert.alert('Bilgi', 'Bu bölüm için oynatılabilir ses bulunamadı.');
+        Alert.alert(copy('common.error'), copy('podcast.noAudio'));
       }
       return;
     }
@@ -148,7 +154,7 @@ const PodcastScreen = () => {
       await TrackPlayer.play();
     } catch (error) {
       console.error('Error playing podcast:', error);
-      Alert.alert('Hata', 'Podcast oynatılamadı.');
+      Alert.alert(copy('common.error'), copy('podcast.playError'));
     } finally {
       setPlayingId(null);
     }
@@ -163,7 +169,7 @@ const PodcastScreen = () => {
           <ActivityIndicator color={COLORS.primary} />
         ) : (
           <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadMore}>
-            <Text style={styles.loadMoreText}>Daha Fazla Yükle</Text>
+            <Text style={styles.loadMoreText}>{copy('podcast.loadMore')}</Text>
             <Icon name="chevron-down" size={20} color={COLORS.primary} />
           </TouchableOpacity>
         )}
@@ -209,7 +215,7 @@ const PodcastScreen = () => {
         {loading && page === 1 ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Podcastler yükleniyor...</Text>
+            <Text style={styles.loadingText}>{copy('podcast.loading')}</Text>
           </View>
         ) : (
           <FlatList
@@ -224,12 +230,12 @@ const PodcastScreen = () => {
               <View style={styles.emptyContainer}>
                 <Icon name="microphone-off" size={48} color={COLORS.surface} />
                 <Text style={styles.emptyText}>
-                  Henüz podcast bulunmuyor veya bağlantı hatası.
+                  {copy('podcast.empty')}
                 </Text>
                 <TouchableOpacity
                   style={styles.retryButton}
                   onPress={() => loadPodcasts(1)}>
-                  <Text style={styles.retryText}>Tekrar Dene</Text>
+                  <Text style={styles.retryText}>{copy('podcast.retry')}</Text>
                 </TouchableOpacity>
               </View>
             )}

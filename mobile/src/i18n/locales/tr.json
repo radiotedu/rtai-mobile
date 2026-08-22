@@ -4,7 +4,8 @@
     "radio": "Yayın",
     "podcasts": "Podcastler",
     "jukebox": "Jukebox",
-    "leaderboard": "Sıralama"
+    "leaderboard": "Sıralama",
+    "study": "Study"
   },
   "common": {
     "play": "Oynat",
@@ -42,12 +43,13 @@
   "language": {
     "select": "Dil",
     "restartNotice": "Uygulama yazı yönünü değiştirecek. Tamamlamak için uygulamayı yeniden açın.",
+    "system": "Telefon dili",
     "en": "English",
     "ru": "Русский",
     "ar": "العربية",
     "tr": "Türkçe",
     "de": "Deutsch",
-    "nl": "Nederlands"
+    "fr": "Français"
   },
   "focus": {
     "title": "Odaklan",

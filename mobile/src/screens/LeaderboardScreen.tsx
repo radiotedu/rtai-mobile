@@ -18,21 +18,25 @@ import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import api from '../services/api';
 import {MarketItem, fetchMarketItems} from '../services/gamificationService';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 
 type LeaderboardPeriod = 'total' | 'monthly';
 type LeaderboardCategory = 'total' | 'listening' | 'events' | 'games' | 'social' | 'jukebox';
 
-const categories: Array<{value: LeaderboardCategory; label: string}> = [
-  {value: 'total', label: 'Genel'},
-  {value: 'jukebox', label: 'Jukebox'},
-  {value: 'listening', label: 'Dinleme'},
-  {value: 'events', label: 'Etkinlik'},
-  {value: 'games', label: 'Oyun'},
-  {value: 'social', label: 'Sosyal'},
+const categories: Array<{value: LeaderboardCategory; key: string}> = [
+  {value: 'total', key: 'leaderboard.title'},
+  {value: 'jukebox', key: 'tabs.jukebox'},
+  {value: 'listening', key: 'common.listen'},
+  {value: 'events', key: 'events.title'},
+  {value: 'games', key: 'games.title'},
+  {value: 'social', key: 'home.social'},
 ];
 
 const LeaderboardScreen = () => {
   const navigation = useNavigation<any>();
+  const {i18n, t} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [market, setMarket] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,12 +123,12 @@ const LeaderboardScreen = () => {
 
         <View style={styles.infoContainer}>
           <Text style={styles.name}>{item.display_name}</Text>
-          <Text style={styles.songsAdded}>{item.total_songs_added} şarkı · {item.monthly_rank_score || 0} aylık</Text>
+          <Text style={styles.songsAdded}>{item.total_songs_added} {copy('leaderboard.songs')} · {item.monthly_rank_score || 0} {copy('leaderboard.monthly')}</Text>
         </View>
 
         <View style={styles.pointsContainer}>
           <Text style={styles.points}>{item.score ?? item.monthly_rank_score ?? item.rank_score ?? 0}</Text>
-          <Text style={styles.pointsLabel}>Lifetime Gold</Text>
+          <Text style={styles.pointsLabel}>{copy('leaderboard.lifetime')}</Text>
         </View>
       </View>
     );
@@ -135,9 +139,9 @@ const LeaderboardScreen = () => {
       <SafeAreaView style={styles.container}>
         <GlobalHeader />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Sıralama</Text>
+          <Text style={styles.headerTitle}>{copy('leaderboard.title')}</Text>
           <Text style={styles.headerSubtitle}>
-            {category === 'total' ? 'Lifetime Gold sıralaması' : 'Kategori bazlı Gold rekabeti'}
+            {copy('leaderboard.subtitle')}
           </Text>
           <View style={styles.periodToggle}>
             {(['total', 'monthly'] as const).map((value) => (
@@ -153,7 +157,7 @@ const LeaderboardScreen = () => {
                     styles.periodButtonText,
                     period === value && styles.periodButtonTextActive,
                   ]}>
-                  {value === 'monthly' ? 'Aylık' : 'Total'}
+                  {value === 'monthly' ? copy('leaderboard.monthly') : copy('leaderboard.lifetime')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -165,7 +169,7 @@ const LeaderboardScreen = () => {
                 onPress={() => setCategory(item.value)}
                 style={[styles.categoryChip, category === item.value && styles.categoryChipActive]}>
                 <Text style={[styles.categoryChipText, category === item.value && styles.categoryChipTextActive]}>
-                  {item.label}
+                  {item.key.startsWith('leaderboard.') || item.key.startsWith('events.') ? copy(item.key) : t(item.key)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -186,9 +190,9 @@ const LeaderboardScreen = () => {
             ListFooterComponent={
               <View style={styles.marketBlock}>
                 <View style={styles.marketHeader}>
-                  <Text style={styles.marketTitle}>Sıralama marketi</Text>
+                  <Text style={styles.marketTitle}>{copy('leaderboard.market')}</Text>
                   <TouchableOpacity onPress={() => navigation.navigate('Market')}>
-                    <Text style={styles.marketAction}>Market</Text>
+                    <Text style={styles.marketAction}>{copy('market.title')}</Text>
                   </TouchableOpacity>
                 </View>
                 {market.slice(0, 4).map((item) => (

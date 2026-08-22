@@ -41,4 +41,13 @@ describe('Android Auto car bridge source contract', () => {
     expect(serviceSource).not.toContain('GoogleMap');
     expect(serviceSource).not.toContain('Maps SDK');
   });
+
+  it('keeps Lo-Fi song metadata hidden while retaining its station logo on car surfaces', () => {
+    const carBridgeSource = source();
+
+    expect(carBridgeSource).toContain('shouldUseStationOnlyPresentation');
+    expect(carBridgeSource).toContain("title: stationOnly ? 'RadioTEDU Lo-Fi' : r.title");
+    expect(carBridgeSource).toContain("artwork: stationOnly && channel ? channelArtwork(channel) : r.artwork");
+    expect(carBridgeSource).toContain("stationOnly ? 'RadioTEDU Lo-Fi' : track?.title");
+  });
 });

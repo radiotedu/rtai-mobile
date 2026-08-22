@@ -8,29 +8,17 @@ import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
 import {createAnswerGate} from './answerGate';
-
-type Question = {
-  prompt: string;
-  answer: string;
-  options: string[];
-};
-
-const QUESTIONS: Question[] = [
-  {prompt: 'Shape of You şarkısının sanatçısı kim?', answer: 'Ed Sheeran', options: ['Ed Sheeran', 'The Weeknd', 'Dua Lipa', 'Coldplay']},
-  {prompt: 'Blinding Lights kime ait?', answer: 'The Weeknd', options: ['The Weeknd', 'Bruno Mars', 'Daft Punk', 'Adele']},
-  {prompt: 'Levitating şarkısını kim söylüyor?', answer: 'Dua Lipa', options: ['Dua Lipa', 'Billie Eilish', 'Rihanna', 'Sia']},
-  {prompt: 'Bohemian Rhapsody hangi gruba ait?', answer: 'Queen', options: ['Queen', 'Muse', 'Nirvana', 'Radiohead']},
-  {prompt: 'Someone Like You şarkısının sanatçısı kim?', answer: 'Adele', options: ['Adele', 'Lana Del Rey', 'Beyonce', 'Taylor Swift']},
-  {prompt: 'Yellow hangi grubun şarkısı?', answer: 'Coldplay', options: ['Coldplay', 'Oasis', 'U2', 'Imagine Dragons']},
-  {prompt: 'Bad Guy şarkısını kim söylüyor?', answer: 'Billie Eilish', options: ['Billie Eilish', 'Lorde', 'Halsey', 'Miley Cyrus']},
-  {prompt: 'Get Lucky hangi ikili/grup ile bilinir?', answer: 'Daft Punk', options: ['Daft Punk', 'Justice', 'Disclosure', 'Calvin Harris']},
-];
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
+import {getWordGuessQuestions, WordGuessQuestion} from '../../i18n/gameQuestions';
 
 const WordGuessScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
-  const [questions, setQuestions] = useState<Question[]>(() => shuffle(QUESTIONS).slice(0, 6));
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
+  const [questions, setQuestions] = useState<WordGuessQuestion[]>(() => shuffle(getWordGuessQuestions(i18n.language)).slice(0, 6));
   const [index, setIndex] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [streak, setStreak] = useState(1);
@@ -90,11 +78,11 @@ const WordGuessScreen = () => {
     if (isCorrect) {
       nextCorrect += 1;
       nextStreak += 1;
-      setFeedback(`Doğru! Seri x${nextStreak}`);
+      setFeedback(`${copy('games.correct')} x${nextStreak}`);
       Vibration.vibrate(18);
     } else {
       nextStreak = 1;
-      setFeedback('Yanlış cevap');
+      setFeedback(copy('games.wrong'));
     }
     setCorrect(nextCorrect);
     setStreak(nextStreak);
@@ -133,7 +121,7 @@ const WordGuessScreen = () => {
     prepareVerifiedGameRound(game, roundIdRef.current);
     startedAtRef.current = Date.now();
     submittedRef.current = false;
-    setQuestions(shuffle(QUESTIONS).slice(0, 6));
+    setQuestions(shuffle(getWordGuessQuestions(i18n.language)).slice(0, 6));
     setIndex(0);
     setCorrect(0);
     setStreak(1);
@@ -148,14 +136,14 @@ const WordGuessScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <GameShell
-        title="Şarkı Tahmin"
-        subtitle="Artist bilgisi"
+        title={copy('games.word')}
+        subtitle={copy('games.wordSubtitle')}
         score={score}
-        progressLabel={`Soru ${Math.min(index + 1, questions.length)}/${questions.length}`}
-        rightLabel={`${correct} doğru`}
+        progressLabel={`${copy('games.wordQuestion')} ${Math.min(index + 1, questions.length)}/${questions.length}`}
+        rightLabel={`${correct} ${copy('games.wordCorrect')}`}
         onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
-        <ComboMeter label="Bilgi serisi" value={streak} />
+        <ComboMeter label={copy('games.wordStreak')} value={streak} />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {!finished ? (
@@ -183,7 +171,7 @@ const WordGuessScreen = () => {
             </View>
           ) : (
             <View style={styles.waitCard}>
-              <Text style={styles.waitText}>Sonuç kaydediliyor...</Text>
+              <Text style={styles.waitText}>{copy('games.saving')}</Text>
             </View>
           )}
         </ScrollView>

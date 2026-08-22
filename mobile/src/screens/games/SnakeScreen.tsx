@@ -7,6 +7,8 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
 type Point = {x: number; y: number};
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -18,6 +20,8 @@ const SnakeScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
+  const {i18n} = useTranslation();
+  const copy = useCallback((key: string) => appCopy(i18n.language, key), [i18n.language]);
   const [snake, setSnake] = useState<Point[]>(START_SNAKE);
   const [food, setFood] = useState<Point>(() => createFood(START_SNAKE));
   const [direction, setDirection] = useState<Direction>('right');
@@ -71,10 +75,10 @@ const SnakeScreen = () => {
     submittedRef.current = true;
     setRunning(false);
     setGameOver(true);
-    setFeedback('Tur bitti');
+    setFeedback(copy('games.roundFinished'));
     Vibration.vibrate([0, 50, 70, 50]);
     submitFinalScore();
-  }, [submitFinalScore]);
+  }, [copy, submitFinalScore]);
 
   useEffect(() => {
     if (!running || gameOver) {
@@ -108,7 +112,7 @@ const SnakeScreen = () => {
           scoreRef.current = nextScore;
           setCombo(nextCombo);
           setScore(nextScore);
-          setFeedback(`+${gained}  Combo x${nextCombo}`);
+          setFeedback(`+${gained}  x${nextCombo}`);
           Vibration.vibrate(18);
           setFood(createFood(nextSnake));
         }
@@ -160,11 +164,11 @@ const SnakeScreen = () => {
         title="Snake"
         subtitle="Premium Arcade"
         score={score}
-        progressLabel={`${snake.length} blok`}
-        rightLabel={running ? 'Canlı tur' : 'Durdu'}
+        progressLabel={`${snake.length} ${copy('games.snakeLength')}`}
+        rightLabel={running ? copy('games.snakeRight') : copy('games.snakeStopped')}
         onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
-        <ComboMeter label="Yem serisi" value={combo} />
+        <ComboMeter label={copy('games.snakeCombo')} value={combo} />
 
         <View style={styles.board}>
           {Array.from({length: BOARD_SIZE}).map((_, y) => (
@@ -201,7 +205,7 @@ const SnakeScreen = () => {
           <ControlButton icon="arrow-down-bold" onPress={() => setSafeDirection('down')} />
         </View>
 
-        <Text style={styles.helpText}>Yemi yakaladıkça combo artar; hız kademeli yükselir.</Text>
+        <Text style={styles.helpText}>{copy('games.snakeHelp')}</Text>
       </GameShell>
 
       <GameResultModal

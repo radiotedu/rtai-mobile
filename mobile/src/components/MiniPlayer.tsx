@@ -18,6 +18,7 @@ import {useNavigation, useNavigationState} from '@react-navigation/native';
 import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
+import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioChannels';
 
 const MiniPlayer = () => {
   const playbackState = usePlaybackState();
@@ -74,6 +75,8 @@ const MiniPlayer = () => {
 
   // Use active track OR fallback to last known track to prevent flicker
   const displayTrack = track || lastTrack;
+  const displayChannel = RADIO_CHANNELS.find(channel => channel.id === String(displayTrack?.id ?? ''));
+  const stationOnlyPresentation = shouldUseStationOnlyPresentation(displayChannel, (displayTrack as any)?.streamQuality);
 
   // Simplified visibility: Show if we have ANY track info (current or last known)
   // Only hide on specific screens.
@@ -174,23 +177,19 @@ const MiniPlayer = () => {
   };
 
   // Use context metadata if available, fallback to track data (or last known track)
-  const displayTitle = metadata?.title || displayTrack?.title;
-  const displayArtist = metadata?.artist || displayTrack?.artist;
-  const displayArtwork = metadata?.artwork || displayTrack?.artwork;
+  const displayTitle = stationOnlyPresentation ? 'RadioTEDU Lo-Fi' : metadata?.title || displayTrack?.title;
+  const displayArtist = stationOnlyPresentation ? '' : metadata?.artist || displayTrack?.artist;
+  const displayArtwork = stationOnlyPresentation ? displayTrack?.artwork : metadata?.artwork || displayTrack?.artwork;
+  const displayArtworkSource = typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.artworkContainer}>
-          {displayArtwork &&
+          {displayArtworkSource &&
           displayArtwork !== 'https://radiotedu.com/logo.png' ? (
-            <Image source={{uri: displayArtwork}} style={styles.artwork} />
-          ) : (
-            <Image
-              source={{uri: 'https://radiotedu.com/logo.png'}}
-              style={styles.artwork}
-            />
-          )}
+            <Image source={displayArtworkSource} style={styles.artwork} />
+          ) : <View style={styles.placeholderArtwork} />}
         </View>
 
         <TouchableOpacity
@@ -199,9 +198,7 @@ const MiniPlayer = () => {
           <Text style={styles.title} numberOfLines={1}>
             {displayTitle}
           </Text>
-          <Text style={styles.artist} numberOfLines={1}>
-            {displayArtist}
-          </Text>
+          {displayArtist ? <Text style={styles.artist} numberOfLines={1}>{displayArtist}</Text> : null}
         </TouchableOpacity>
 
         <View style={styles.controls}>
@@ -259,6 +256,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   placeholderArtwork: {
+    width: 48,
+    height: 48,
+    borderRadius: 4,
     backgroundColor: '#404040',
     justifyContent: 'center',
     alignItems: 'center',

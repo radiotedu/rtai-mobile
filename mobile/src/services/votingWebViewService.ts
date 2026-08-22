@@ -99,9 +99,45 @@ function serializeForInjection(value: unknown) {
 export function buildVotingAuthInjection(authState: VotingWebViewAuthState) {
   return `
     (function () {
-      if (typeof window.__RADIOTEDU_SET_AUTH__ === 'function') {
-        window.__RADIOTEDU_SET_AUTH__(${serializeForInjection(authState)});
+      var nativeFetch = window.__RADIOTEDU_NATIVE_FETCH__;
+      if (!nativeFetch && typeof window.fetch === 'function') {
+        nativeFetch = window.fetch.bind(window);
+        window.__RADIOTEDU_NATIVE_FETCH__ = nativeFetch;
       }
+      window.__RADIOTEDU_SET_AUTH__ = function (nextAuth) {
+        var nextToken = nextAuth && typeof nextAuth.accessToken === 'string'
+          ? nextAuth.accessToken
+          : '';
+        if (nativeFetch && nextToken) {
+          window.fetch = function (resource, options) {
+            var rawUrl = typeof resource === 'string'
+              ? resource
+              : (resource && resource.url ? resource.url : String(resource));
+            var target;
+            try { target = new URL(rawUrl, window.location.origin); } catch (_) { return nativeFetch(resource, options); }
+            if (target.origin !== window.location.origin ||
+                target.pathname.indexOf('/jukebox/api/v1/') !== 0) {
+              return nativeFetch(resource, options);
+            }
+            var headers = new Headers(
+              resource && typeof resource === 'object' && resource.headers
+                ? resource.headers
+                : undefined,
+            );
+            if (options && options.headers) {
+              new Headers(options.headers).forEach(function (value, name) {
+                headers.set(name, value);
+              });
+            }
+            headers.set('Authorization', 'Bearer ' + nextToken);
+            return nativeFetch(resource, Object.assign({}, options || {}, {headers: headers}));
+          };
+        } else if (nativeFetch) {
+          window.fetch = nativeFetch;
+        }
+        window.dispatchEvent(new Event('radiotedu:native-auth'));
+      };
+      window.__RADIOTEDU_SET_AUTH__(${serializeForInjection(authState)});
       true;
     })();
     true;

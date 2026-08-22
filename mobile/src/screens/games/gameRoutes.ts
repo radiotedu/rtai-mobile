@@ -37,32 +37,32 @@ export interface BuiltinGame {
 export const BUILTIN_GAMES: BuiltinGame[] = [
   {
     slug: 'snake',
-    title: 'Yılan',
-    description: 'Klasik yılan oyunu — büyüdükçe hızlanır.',
+    title: 'Snake',
+    description: 'Classic snake game — speed increases as you grow.',
     daily_point_limit: 100,
   },
   {
     slug: 'memory',
-    title: 'Hafıza',
-    description: 'Kartları eşleştir, hafızanı test et.',
+    title: 'Memory',
+    description: 'Match cards and test your memory.',
     daily_point_limit: 100,
   },
   {
     slug: 'tetris',
-    title: 'Bloklar',
-    description: 'Düşen blokları diz, satırları temizle.',
+    title: 'Blocks',
+    description: 'Arrange falling blocks and clear lines.',
     daily_point_limit: 100,
   },
   {
     slug: 'rhythm-tap',
-    title: 'Ritim',
-    description: 'Ritme göre doğru zamanda dokun.',
+    title: 'Rhythm',
+    description: 'Tap at the right time with the beat.',
     daily_point_limit: 100,
   },
   {
     slug: 'word-guess',
-    title: 'Kelime Tahmini',
-    description: 'İpuçlarıyla gizli kelimeyi bul.',
+    title: 'Word Guess',
+    description: 'Find the hidden word from the clues.',
     daily_point_limit: 100,
   },
 ];

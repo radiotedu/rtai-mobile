@@ -4,7 +4,8 @@
     "radio": "Radio",
     "podcasts": "Podcasts",
     "jukebox": "Jukebox",
-    "leaderboard": "Rangliste"
+    "leaderboard": "Rangliste",
+    "study": "Study"
   },
   "common": {
     "play": "Abspielen",
@@ -42,12 +43,13 @@
   "language": {
     "select": "Sprache",
     "restartNotice": "Die App ändert die Textrichtung. Bitte öffne die App erneut, um abzuschließen.",
+    "system": "Telefonsprache",
     "en": "English",
     "ru": "Русский",
     "ar": "العربية",
     "tr": "Türkçe",
     "de": "Deutsch",
-    "nl": "Nederlands"
+    "fr": "Français"
   },
   "focus": {
     "title": "Fokus",

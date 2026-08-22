@@ -30,6 +30,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
 | `tests/` | Contracts that keep this repository standalone and reproducible |
 | `docs/` | API configuration, signing, release, and source-provenance guides |
 
+Server-side handoff instructions and guarded service/account prompts are in
+[`docs/SERVER_HANDOFF.md`](docs/SERVER_HANDOFF.md).
+
 The mobile app preserves the documented startup-branding contract in
 [`mobile/README.md`](mobile/README.md): every cold launch shows the original
 RadioTEDU and RTAI marks, and the black/red RTAI artwork is displayed on a

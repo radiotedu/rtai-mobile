@@ -1,6 +1,7 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {useTranslation} from 'react-i18next';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -9,20 +10,23 @@ import PageTransition from '../../components/PageTransition';
 import {useAuth} from '../../context/AuthContext';
 import {COLORS, SPACING} from '../../theme/theme';
 import type {StudyLocationId} from '../../services/studyService';
+import {screenCopy} from '../../i18n/screenCopy';
 
 export const STUDY_LOCATION_CARDS: Array<{
   id: StudyLocationId;
-  title: string;
-  subtitle: string;
+  titleKey: string;
+  subtitleKey: string;
   icon: string;
 }> = [
-  {id: 'library', title: 'Library', subtitle: 'Quiet desk rows, focus timer, and classic Study seating.', icon: 'bookshelf'},
-  {id: 'chim-alan', title: 'Çim alan', subtitle: 'Amphitheatre steps, stair paths, Spark, Rock, and open-air focus.', icon: 'stairs'},
+  {id: 'library', titleKey: 'study.library', subtitleKey: 'study.librarySubtitle', icon: 'bookshelf'},
+  {id: 'chim-alan', titleKey: 'study.lawn', subtitleKey: 'study.lawnSubtitle', icon: 'stairs'},
 ];
 
 const StudyHomeScreen = () => {
   const navigation = useNavigation<any>();
   const {user} = useAuth();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => screenCopy(i18n.language, key);
   const locked = !user || user.is_guest;
 
   return (
@@ -32,19 +36,19 @@ const StudyHomeScreen = () => {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Text style={styles.kicker}>Study</Text>
-            <Text style={styles.title}>Choose your focus place</Text>
-            <Text style={styles.subtitle}>Your app login carries into Study automatically. Points and clothes stay server-owned.</Text>
+            <Text style={styles.title}>{copy('study.title')}</Text>
+            <Text style={styles.subtitle}>{copy('study.subtitle')}</Text>
           </View>
 
           {locked ? (
             <View style={styles.lockedCard}>
               <Icon name="lock-outline" size={28} color={COLORS.primary} />
               <View style={styles.lockedBody}>
-                <Text style={styles.lockedTitle}>Login required</Text>
-                <Text style={styles.lockedText}>Study is available only inside the logged-in RadioTEDU app.</Text>
+                <Text style={styles.lockedTitle}>{copy('study.loginRequired')}</Text>
+                <Text style={styles.lockedText}>{copy('study.locked')}</Text>
               </View>
               <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Auth', {screen: 'Login'})}>
-                <Text style={styles.loginText}>Login</Text>
+                <Text style={styles.loginText}>{copy('study.login')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -59,8 +63,8 @@ const StudyHomeScreen = () => {
                 <Icon name={location.icon} size={26} color={COLORS.primary} />
               </View>
               <View style={styles.locationBody}>
-                <Text style={styles.locationTitle}>{location.title}</Text>
-                <Text style={styles.locationSubtitle}>{location.subtitle}</Text>
+                <Text style={styles.locationTitle}>{copy(location.titleKey)}</Text>
+                <Text style={styles.locationSubtitle}>{copy(location.subtitleKey)}</Text>
               </View>
               <Icon name="chevron-right" size={26} color={COLORS.textMuted} />
             </TouchableOpacity>

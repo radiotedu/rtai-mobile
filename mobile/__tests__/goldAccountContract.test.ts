@@ -21,22 +21,22 @@ describe('mobile Account and Gold product contract', () => {
   );
 
   it('labels spendable and earned currency as Gold without renaming API fields', () => {
-    expect(marketSource).toContain('Gold balance');
+    expect(marketSource).toContain('spendable_points');
     expect(marketSource).toContain('{item.cost_points} Gold');
     expect(marketSource).not.toContain('Harcanabilir XP');
-    expect(eventsSource).toContain('Gold earned');
+    expect(eventsSource).toContain('events.goldEarned');
     expect(gamesSource).toContain('Gold');
     expect(homeSource).toContain('Gold balance');
-    expect(leaderboardSource).toContain('Lifetime Gold');
-    expect(marketSource).toContain('spendable_points');
+    expect(leaderboardSource).toContain('leaderboard.lifetime');
     expect(homeSource).toContain('lifetime_points');
   });
 
   it('uses the shared TEDÜ login and GDPR-aware registration contract', () => {
-    expect(loginSource).toContain('TEDÜ ile giriş yap');
-    expect(registerSource).toContain('Yaş (18+)');
-    expect(registerSource).toContain('Kullanım Koşulları');
-    expect(registerSource).toContain('Gizlilik Bildirimi');
+    expect(loginSource).toContain("authCopy(i18n.language, key)");
+    expect(loginSource).toContain("copy('login.tedu')");
+    expect(registerSource).toContain("copy('register.age')");
+    expect(registerSource).toContain("copy('register.terms')");
+    expect(registerSource).toContain("copy('register.privacy')");
   });
 
   it('uses server-timed rotating nonces for radio Gold instead of trusted duration', () => {

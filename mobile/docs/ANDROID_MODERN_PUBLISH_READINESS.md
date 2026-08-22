@@ -106,7 +106,7 @@ RadioTEDU should preserve system-level audio behavior:
 
 ## Localization
 
-- Languages: en, tr, ru, ar, de, nl.
+- Languages: en, tr, ru, ar, de, fr.
 - Arabic is declared as RTL and prompts for restart when layout direction changes.
 - The release audit verifies locale bundles before Android readiness can pass.
 

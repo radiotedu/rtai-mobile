@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS, SPACING } from '../theme/theme';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
+import {authCopy} from '../i18n/screenCopy';
 
 interface AuthGuardProps {
     title?: string;
@@ -13,10 +15,12 @@ interface AuthGuardProps {
 const AuthGuard: React.FC<AuthGuardProps> = (props) => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
+    const {i18n} = useTranslation();
+    const copy = (key: string) => authCopy(i18n.language, key);
 
     // Support both direct props (for tabs) and route params (for stack navigation)
-    const title = props.title || route.params?.title || "Giriş Gerekli";
-    const message = props.message || route.params?.message || "Bu özelliği kullanmak için giriş yapmalısınız.";
+    const title = props.title || route.params?.title || copy('auth.requiredTitle');
+    const message = props.message || route.params?.message || copy('auth.requiredText');
     const icon = props.icon || route.params?.icon || "lock";
 
     return (
@@ -39,14 +43,14 @@ const AuthGuard: React.FC<AuthGuardProps> = (props) => {
                     style={styles.button}
                     onPress={() => navigation.navigate('Login')}
                 >
-                    <Text style={styles.buttonText}>Giriş Yap</Text>
+                    <Text style={styles.buttonText}>{copy('auth.signIn')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.linkButton}
                     onPress={() => navigation.navigate('Register')}
                 >
-                    <Text style={styles.linkText}>Henüz hesabın yok mu? Kayıt Ol</Text>
+                    <Text style={styles.linkText}>{copy('auth.noAccount')}</Text>
                 </TouchableOpacity>
             </View>
         </View>

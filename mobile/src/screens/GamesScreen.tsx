@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
 import {COLORS, SPACING} from '../theme/theme';
@@ -21,9 +22,17 @@ import {
   fetchMarketItems,
 } from '../services/gamificationService';
 import {BUILTIN_GAMES, getGameRouteForSlug} from './games/gameRoutes';
+import {screenCopy} from '../i18n/screenCopy';
+import {gameListCopy} from '../i18n/gameListCopy';
 
 const GamesScreen = () => {
   const navigation = useNavigation<any>();
+  const {i18n} = useTranslation();
+  const copy = useCallback(
+    (key: string, values?: Record<string, string | number>) =>
+      screenCopy(i18n.language, key, values),
+    [i18n.language],
+  );
   const {user} = useAuth();
   const [games, setGames] = useState<ArcadeGame[]>([]);
   const [market, setMarket] = useState<MarketItem[]>([]);
@@ -42,12 +51,12 @@ const GamesScreen = () => {
       setMarket(nextMarket);
     } catch (error) {
       console.error('Failed to load games:', error);
-      Alert.alert('Hata', 'Oyunlar yüklenemedi.');
+      Alert.alert(copy('home.errorTitle'), copy('games.empty'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, [copy, user]);
 
   useEffect(() => {
     load();
@@ -78,13 +87,13 @@ const GamesScreen = () => {
 
   const handlePlay = (game: ArcadeGame) => {
     if (isAccountRequired) {
-      Alert.alert('Hesap gerekli', 'Oyun Gold ödülü kazanmak için giriş yapmalısın.');
+      Alert.alert(copy('study.loginRequired'), copy('games.account'));
       return;
     }
 
     const routeName = getGameRouteForSlug(game.slug);
     if (!routeName) {
-      Alert.alert('Yakında', 'Bu oyun mobil uygulamada henüz aktif değil.');
+      Alert.alert(copy('games.soon'), copy('games.soon'));
       return;
     }
 
@@ -97,7 +106,7 @@ const GamesScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.navbarTitle}>Oyunlar</Text>
+        <Text style={styles.navbarTitle}>{copy('games.title')}</Text>
         <View style={styles.navbarSpacer} />
       </View>
 
@@ -107,24 +116,24 @@ const GamesScreen = () => {
         showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Icon name="gamepad-variant" size={34} color="#111" />
-          <Text style={styles.title}>Skor sadece gerçek oyun bitince gönderilir.</Text>
+          <Text style={styles.title}>{copy('games.heroTitle')}</Text>
           <Text style={styles.subtitle}>
-            Snake, hafıza, bloklar, ritim ve tahmin oyunlarını uygulama içinde oyna. Demo skor ve hızlı tur kaldırıldı.
+            {copy('games.heroSubtitle')}
           </Text>
         </View>
 
         {isAccountRequired ? (
           <View style={styles.accountCard}>
             <Icon name="lock-outline" size={24} color={COLORS.primary} />
-            <Text style={styles.accountText}>Misafirler oyunları görebilir; skor ve ödül için hesap gerekir.</Text>
+            <Text style={styles.accountText}>{copy('games.account')}</Text>
           </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Aktif oyunlar</Text>
+        <Text style={styles.sectionTitle}>{copy('games.active')}</Text>
         {loading && !refreshing ? (
           <ActivityIndicator color={COLORS.primary} style={styles.loader} />
         ) : displayGames.length === 0 ? (
-          <Empty text="Oyunlar şu anda yüklenemedi. Yenilemek için aşağı çekin." />
+          <Empty text={copy('games.empty')} />
         ) : (
           displayGames.map((game) => (
             <View key={game.id} style={styles.gameCard}>
@@ -132,18 +141,28 @@ const GamesScreen = () => {
                 <Icon name={getGameIcon(game.slug)} size={28} color={COLORS.primary} />
               </View>
               <View style={styles.gameBody}>
-                <Text style={styles.gameTitle}>{game.title}</Text>
-                {game.description ? <Text style={styles.gameDescription} numberOfLines={2}>{game.description}</Text> : null}
+                {(() => {
+                  const localized = gameListCopy(game.slug, i18n.language, {
+                    title: game.title,
+                    description: game.description ?? '',
+                  });
+                  return (
+                    <>
+                      <Text style={styles.gameTitle}>{localized.title}</Text>
+                      {localized.description ? <Text style={styles.gameDescription} numberOfLines={2}>{localized.description}</Text> : null}
+                    </>
+                  );
+                })()}
                 <View style={styles.gameMetaRow}>
-                  <Text style={styles.gameMeta}>Günlük limit {game.daily_point_limit || 0} Gold</Text>
-                  <Text style={styles.gameMeta}>Slug {game.slug || 'yok'}</Text>
+                  <Text style={styles.gameMeta}>{copy('games.dailyLimit', {points: game.daily_point_limit || 0})}</Text>
+                  <Text style={styles.gameMeta}>{copy('games.slug', {slug: game.slug || '—'})}</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.playButton, !getGameRouteForSlug(game.slug) && styles.disabledButton]}
                   onPress={() => handlePlay(game)}
                   activeOpacity={0.82}>
                   <Text style={styles.playButtonText}>
-                    {getGameRouteForSlug(game.slug) ? 'Oyna' : 'Yakında'}
+                    {getGameRouteForSlug(game.slug) ? copy('games.play') : copy('games.soon')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -152,9 +171,9 @@ const GamesScreen = () => {
         )}
 
         <View style={styles.marketHeader}>
-          <Text style={styles.sectionTitle}>Oyun marketi</Text>
+          <Text style={styles.sectionTitle}>{copy('games.market')}</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Market')}>
-            <Text style={styles.marketLink}>Tümü</Text>
+            <Text style={styles.marketLink}>{copy('games.all')}</Text>
           </TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>

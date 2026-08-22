@@ -7,6 +7,8 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
 type Cell = {x: number; y: number};
 type Piece = {shape: Cell[]; x: number; y: number; color: string};
@@ -24,6 +26,8 @@ const TetrisScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const [occupied, setOccupied] = useState<Record<string, string>>({});
   const [piece, setPiece] = useState<Piece>(() => createPiece());
   const [nextPiece, setNextPiece] = useState<Piece>(() => createPiece());
@@ -83,7 +87,7 @@ const TetrisScreen = () => {
     submittedRef.current = true;
     setRunning(false);
     setGameOver(true);
-    setFeedback('Bloklar doldu');
+    setFeedback(copy('games.tetrisFull'));
     submitFinalScore(finalScore);
   };
 
@@ -100,7 +104,7 @@ const TetrisScreen = () => {
     setScore(nextScoreValue);
     if (clearedRows > 0) {
       setLines((value) => value + clearedRows);
-      setFeedback(`${clearedRows} satır temizlendi! +${gained}`);
+      setFeedback(`${clearedRows} ${copy('games.tetrisLines')} · +${gained}`);
       Vibration.vibrate(24);
     } else {
       setFeedback(`+${gained}`);
@@ -176,11 +180,11 @@ const TetrisScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <GameShell
-        title="Bloklar"
-        subtitle="Tetris-like"
+        title={copy('games.tetris')}
+        subtitle={copy('games.tetrisSubtitle')}
         score={score}
-        progressLabel={`${lines} satır`}
-        rightLabel={`Hız ${Math.min(9, Math.floor(lines / 2) + 1)}`}
+        progressLabel={`${lines} ${copy('games.tetrisLines')}`}
+        rightLabel={`${copy('games.speed')} ${Math.min(9, Math.floor(lines / 2) + 1)}`}
         onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
         <View style={styles.gameRow}>
@@ -205,7 +209,7 @@ const TetrisScreen = () => {
             ))}
           </View>
           <View style={styles.sidePanel}>
-            <Text style={styles.nextTitle}>Sonraki</Text>
+            <Text style={styles.nextTitle}>{copy('games.next')}</Text>
             <MiniPiece piece={nextPiece} />
             <TouchableOpacity style={styles.pauseButton} onPress={() => setRunning((value) => !value)} disabled={gameOver}>
               <Icon name={running ? 'pause' : 'play'} size={20} color="#fff" />
@@ -218,7 +222,7 @@ const TetrisScreen = () => {
           <ControlButton icon="rotate-right" onPress={rotate} disabled={gameOver} />
           <ControlButton icon="arrow-right-bold" onPress={() => moveHorizontal(1)} disabled={gameOver} />
           <TouchableOpacity style={styles.dropButton} onPress={drop} disabled={gameOver}>
-            <Text style={styles.dropText}>Bırak</Text>
+            <Text style={styles.dropText}>{copy('games.drop')}</Text>
           </TouchableOpacity>
         </View>
       </GameShell>

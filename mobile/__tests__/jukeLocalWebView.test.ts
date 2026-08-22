@@ -1,12 +1,23 @@
 import {describe, expect, it} from '@jest/globals';
 
 import {
+  buildJukeLocalAuthInjection,
   buildJukeLocalControllerUrl,
   isAllowedJukeLocalNavigation,
   normalizeJukeLocalAppPath,
 } from '../src/services/jukeLocalWebViewService';
 
 describe('juke-local app WebView contract', () => {
+  it('seeds the authenticated RadioTEDU account before the controller bundle starts', () => {
+    const script = buildJukeLocalAuthInjection({
+      accessToken: 'access-token',
+      user: {id: 'user-1', display_name: 'Ada', is_guest: false},
+    });
+    expect(script).toContain("localStorage.setItem('token'");
+    expect(script).toContain("localStorage.setItem('user'");
+    expect(script).toContain('window.RadioTEDUAccount');
+  });
+
   it('opens the public phone controller and forwards a scanned device code', () => {
     expect(buildJukeLocalControllerUrl()).toBe(
       'https://radiotedu.com/juke-local/controller/',

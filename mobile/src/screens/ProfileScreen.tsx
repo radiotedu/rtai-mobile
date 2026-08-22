@@ -44,12 +44,14 @@ import {
   updateNotificationPreferences,
   type NotificationPreferences,
 } from '../services/notificationService';
+import {appCopy} from '../i18n/appCopy';
 
 const ACCOUNT_DELETE_CONFIRMATION = { confirmation: 'DELETE' } as const;
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const { user, logout, deleteAccount, refreshSession } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -147,7 +149,7 @@ const ProfileScreen = () => {
 
   const handleSaveFavorites = async () => {
     if (!user || user.is_guest) {
-      Alert.alert('Membership required', 'Sign in to customize your profile.');
+      Alert.alert(copy('common.accountRequired'), copy('profile.customize'));
       return;
     }
 
@@ -157,10 +159,10 @@ const ProfileScreen = () => {
       const nextProfile = result?.profile || favoritesForm;
       setProfileCustomization(nextProfile);
       setFavoritesForm(nextProfile);
-      Alert.alert('Saved', 'Your profile favorites have been updated.');
+      Alert.alert(copy('common.success'), copy('common.save'));
     } catch (error) {
       console.error('Failed to update profile favorites:', error);
-      Alert.alert('Error', 'Profile favorites could not be saved.');
+      Alert.alert(copy('common.error'), copy('common.error'));
     } finally {
       setIsSavingProfile(false);
     }
@@ -184,7 +186,7 @@ const ProfileScreen = () => {
 
   const handleNotificationPreferenceToggle = async (key: keyof NotificationPreferences) => {
     if (!user || user.is_guest) {
-      Alert.alert('Membership required', 'Sign in to save notification preferences.');
+      Alert.alert(copy('common.accountRequired'), copy('common.signIn'));
       return;
     }
 
@@ -200,7 +202,7 @@ const ProfileScreen = () => {
     } catch (error) {
       setNotificationPreferences(notificationPreferences);
       console.error('Notification preferences error:', error);
-      Alert.alert('Error', 'Notification preferences could not be saved.');
+      Alert.alert(copy('common.error'), copy('common.error'));
     } finally {
       setIsSavingNotifications(false);
     }
@@ -388,7 +390,7 @@ const ProfileScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="chevron-left" size={32} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.navbarTitle}>Profile</Text>
+        <Text style={styles.navbarTitle}>{copy('profile.title')}</Text>
         <View style={styles.navbarSpacer} />
       </View>
 
@@ -411,7 +413,7 @@ const ProfileScreen = () => {
             )}
           </TouchableOpacity>
           <View style={styles.userInfo}>
-            <Text style={styles.name}>{user?.display_name || 'Guest'}</Text>
+            <Text style={styles.name}>{user?.display_name || copy('profile.guest')}</Text>
             <Text style={styles.role}>
               {user?.role === 'admin' ? 'ADMIN' : user?.is_guest ? 'GUEST' : 'MEMBER'}
             </Text>
@@ -421,20 +423,20 @@ const ProfileScreen = () => {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{user?.total_songs_added || 0}</Text>
-            <Text style={styles.statLabel}>Contributions</Text>
+            <Text style={styles.statLabel}>{copy('profile.contributions')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{user?.rank_score || 0}</Text>
-            <Text style={styles.statLabel}>Score</Text>
+            <Text style={styles.statLabel}>{copy('profile.score')}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{user?.total_upvotes_received || 0}</Text>
-            <Text style={styles.statLabel}>Likes</Text>
+            <Text style={styles.statLabel}>{copy('profile.likes')}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Profile Showcase</Text>
+          <Text style={styles.sectionLabel}>{copy('profile.showcase')}</Text>
           <View style={styles.showcaseCard}>
             <Text style={styles.showcaseTitle}>
               {profileCustomization.profile_headline || 'Add a headline for your RadioTEDU profile.'}
@@ -442,7 +444,7 @@ const ProfileScreen = () => {
             <View style={styles.favoriteGrid}>
               <FavoriteDisplay
                 icon="music-note"
-                label="Favorite song"
+                label={copy('profile.favoriteSong')}
                 value={[
                   profileCustomization.favorite_song_title,
                   profileCustomization.favorite_song_artist,
@@ -450,19 +452,19 @@ const ProfileScreen = () => {
               />
               <FavoriteDisplay
                 icon="account-music"
-                label="Favorite artist"
+                label={copy('profile.favoriteArtist')}
                 value={profileCustomization.favorite_artist_name || 'Not selected'}
               />
               <FavoriteDisplay
                 icon="podcast"
-                label="Favorite podcast"
+                label={copy('profile.favoritePodcast')}
                 value={profileCustomization.favorite_podcast_title || 'Not selected'}
               />
             </View>
 
-            <Text style={styles.badgesTitle}>Badges</Text>
+            <Text style={styles.badgesTitle}>{copy('profile.badges')}</Text>
             {badges.length === 0 ? (
-              <Text style={styles.emptyText}>No badges yet.</Text>
+              <Text style={styles.emptyText}>{copy('profile.noBadges')}</Text>
             ) : (
               <View style={styles.badgeWrap}>
                 {badges.slice(0, 8).map((item) => (
@@ -476,38 +478,38 @@ const ProfileScreen = () => {
           </View>
 
           <View style={styles.editCard}>
-            <Text style={styles.adminTitle}>Customize favorites</Text>
+            <Text style={styles.adminTitle}>{copy('profile.customize')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Profile headline"
+              placeholder={copy('profile.headline')}
               placeholderTextColor={COLORS.textMuted}
               value={favoritesForm.profile_headline || ''}
               onChangeText={(value) => updateFavoriteField('profile_headline', value)}
             />
             <TextInput
               style={[styles.input, styles.inputSpacing]}
-              placeholder="Favorite song"
+              placeholder={copy('profile.favoriteSong')}
               placeholderTextColor={COLORS.textMuted}
               value={favoritesForm.favorite_song_title || ''}
               onChangeText={(value) => updateFavoriteField('favorite_song_title', value)}
             />
             <TextInput
               style={[styles.input, styles.inputSpacing]}
-              placeholder="Favorite song artist"
+              placeholder={copy('profile.favoriteArtist')}
               placeholderTextColor={COLORS.textMuted}
               value={favoritesForm.favorite_song_artist || ''}
               onChangeText={(value) => updateFavoriteField('favorite_song_artist', value)}
             />
             <TextInput
               style={[styles.input, styles.inputSpacing]}
-              placeholder="Favorite artist"
+              placeholder={copy('profile.favoriteArtist')}
               placeholderTextColor={COLORS.textMuted}
               value={favoritesForm.favorite_artist_name || ''}
               onChangeText={(value) => updateFavoriteField('favorite_artist_name', value)}
             />
             <TextInput
               style={[styles.input, styles.inputSpacing]}
-              placeholder="Favorite podcast"
+              placeholder={copy('profile.favoritePodcast')}
               placeholderTextColor={COLORS.textMuted}
               value={favoritesForm.favorite_podcast_title || ''}
               onChangeText={(value) => updateFavoriteField('favorite_podcast_title', value)}
@@ -518,14 +520,14 @@ const ProfileScreen = () => {
               disabled={isSavingProfile}
             >
               <Text style={styles.saveProfileButtonText}>
-                {isSavingProfile ? 'Saving...' : 'Save profile'}
+                {isSavingProfile ? t('common.loading') : copy('common.save')}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Android System</Text>
+          <Text style={styles.sectionLabel}>{copy('profile.androidSystem')}</Text>
           <View style={styles.readinessCard}>
             <View style={styles.readinessHeader}>
               <Icon name="cellphone-cog" size={22} color={COLORS.primary} />
@@ -561,7 +563,7 @@ const ProfileScreen = () => {
               <Text style={styles.saveProfileButtonText}>Enable notification visibility</Text>
             </TouchableOpacity>
 
-            <Text style={styles.badgesTitle}>Notification channels</Text>
+            <Text style={styles.badgesTitle}>{copy('profile.androidSystem')}</Text>
             <View style={styles.badgeWrap}>
               {(['podcast', 'radio', 'jukebox', 'events'] as Array<keyof NotificationPreferences>).map((key) => (
                 <TouchableOpacity
@@ -588,12 +590,12 @@ const ProfileScreen = () => {
 
         {isAdmin && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Admin</Text>
+            <Text style={styles.sectionLabel}>{copy('profile.admin')}</Text>
             <TouchableOpacity style={styles.menuItem} onPress={() => setShowAdminTab(!showAdminTab)}>
               <View style={[styles.menuIconContainer, styles.adminMenuIconContainer]}>
                 <Icon name="shield-account" size={24} color={COLORS.primary} />
               </View>
-              <Text style={styles.menuText}>Admin Panel</Text>
+              <Text style={styles.menuText}>{copy('profile.admin')}</Text>
               <Icon
                 name={showAdminTab ? 'chevron-up' : 'chevron-right'}
                 size={24}
@@ -688,7 +690,7 @@ const ProfileScreen = () => {
               <View style={styles.menuIconContainer}>
                 <Icon name="login" size={24} color="#fff" />
               </View>
-              <Text style={[styles.menuText, styles.menuTextLight]}>Sign in / Sign up</Text>
+              <Text style={[styles.menuText, styles.menuTextLight]}>{copy('profile.signIn')}</Text>
               <Icon name="chevron-right" size={24} color="#fff" />
             </TouchableOpacity>
           ) : null}
@@ -697,7 +699,7 @@ const ProfileScreen = () => {
             <View style={[styles.menuIconContainer, styles.trophyIconContainer]}>
               <Icon name="trophy-outline" size={24} color="#FFD700" />
             </View>
-            <Text style={styles.menuText}>Leaderboard</Text>
+            <Text style={styles.menuText}>{copy('profile.leaderboard')}</Text>
             <Icon name="chevron-right" size={24} color={COLORS.textMuted} />
           </TouchableOpacity>
 
@@ -721,7 +723,7 @@ const ProfileScreen = () => {
             <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
               <Icon name="logout-variant" size={24} color={COLORS.error} />
             </View>
-            <Text style={[styles.menuText, { color: COLORS.error }]}>Log out</Text>
+            <Text style={[styles.menuText, { color: COLORS.error }]}>{copy('profile.logout')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -729,12 +731,12 @@ const ProfileScreen = () => {
             onPress={() => setShowDeleteAccount((current) => !current)}
             disabled={isDeletingAccount}>
             <Icon name="account-remove-outline" size={22} color={COLORS.error} />
-            <Text style={styles.deleteAccountButtonText}>Delete account</Text>
+            <Text style={styles.deleteAccountButtonText}>{copy('profile.deleteAccount')}</Text>
           </TouchableOpacity>
 
           {showDeleteAccount ? (
             <View style={styles.deleteAccountPanel}>
-              <Text style={styles.deleteAccountTitle}>Permanent account deletion</Text>
+              <Text style={styles.deleteAccountTitle}>{copy('profile.permanentDelete')}</Text>
               <Text style={styles.deleteAccountText}>
                 Account-owned Gold, Study inventory, and personal profile data will be deleted according to server policy.
               </Text>
@@ -743,7 +745,7 @@ const ProfileScreen = () => {
                 value={deleteConfirmation}
                 onChangeText={setDeleteConfirmation}
                 autoCapitalize="characters"
-                placeholder="Type DELETE"
+                placeholder={copy('profile.typeDelete')}
                 placeholderTextColor={COLORS.textMuted}
                 editable={!isDeletingAccount}
               />
@@ -753,7 +755,7 @@ const ProfileScreen = () => {
                   value={deletePassword}
                   onChangeText={setDeletePassword}
                   secureTextEntry
-                  placeholder="Current password"
+                  placeholder={copy('profile.currentPassword')}
                   placeholderTextColor={COLORS.textMuted}
                   editable={!isDeletingAccount}
                 />
@@ -765,7 +767,7 @@ const ProfileScreen = () => {
                 {isDeletingAccount ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.deleteAccountConfirmText}>Delete permanently</Text>
+                  <Text style={styles.deleteAccountConfirmText}>{copy('profile.deletePermanently')}</Text>
                 )}
               </TouchableOpacity>
             </View>

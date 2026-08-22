@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useRef, useState, ReactNode} from 'react';
 import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-player';
-import {RADIO_CHANNELS} from '../data/radioChannels';
+import {RADIO_CHANNELS, shouldUseStationOnlyPresentation} from '../data/radioChannels';
 import {fetchAlbumArtwork} from '../utils/api';
 import {parseTrackPlayerMetadataEvent} from '../services/streamMetadata';
 
@@ -55,6 +55,10 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const channel = RADIO_CHANNELS.find(item => item.id === String(track.id));
+      if (shouldUseStationOnlyPresentation(channel, (track as any).streamQuality)) {
+        clearMetadata();
+        return;
+      }
       const artist = parsed.artist || channel?.name || 'RadioTEDU';
       const key = `${String(track.id)}:${artist}:${parsed.title}`;
       if (key === lastMetadataKey.current) {
@@ -70,8 +74,7 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       const artwork =
         parsed.artwork ||
         fetchedArtwork ||
-        channel?.artwork ||
-        String(track.artwork || 'https://radiotedu.com/logo.png');
+        String(track.artwork || channel?.artwork || 'https://radiotedu.com/logo.png');
       const next = {title: parsed.title, artist, artwork};
       updateMetadata(next);
 

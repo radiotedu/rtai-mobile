@@ -18,11 +18,16 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
+import {screenCopy} from '../i18n/screenCopy';
+import {getChannelCopy} from '../i18n/channelCopy';
 import api from '../services/api';
 import {
   RADIO_CHANNELS,
   RadioChannel,
+  isStationOnlyChannel,
+  shouldUseStationOnlyPresentation,
 } from '../data/radioChannels';
 import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
@@ -38,6 +43,9 @@ import {
 
 const RadioScreen = () => {
   const navigation = useNavigation<any>();
+  const {i18n} = useTranslation();
+  const copy = (key: string, values?: Record<string, string | number>) =>
+    screenCopy(i18n.language, key, values);
   const playbackState = usePlaybackState();
   const activeTrack = useActiveTrack();
   const {metadata, clearMetadata} = useMetadata();
@@ -99,6 +107,12 @@ const RadioScreen = () => {
   }, [selectedChannel.id]);
 
   const fetchHistory = async (channelId: string) => {
+    const channel = RADIO_CHANNELS.find(item => item.id === channelId);
+    if (isStationOnlyChannel(channel)) {
+      setHistory([]);
+      setIsLoadingHistory(false);
+      return;
+    }
     try {
       setIsLoadingHistory(true);
       const response = await api.get(`/radio/history/${channelId}`);
@@ -167,10 +181,16 @@ const RadioScreen = () => {
     setShowHistoryModal(true);
   };
 
-  const displayTitle = metadata?.title || activeTrack?.title || selectedChannel.name;
-  const displayArtist = metadata?.artist || activeTrack?.artist || selectedChannel.description;
+  const selectedCopy = getChannelCopy(selectedChannel.copyKey, i18n.language, {
+    name: selectedChannel.name,
+    description: selectedChannel.description,
+  });
+  const currentQuality = activeTrack?.id === selectedChannel.id ? (activeTrack?.streamQuality as any) : 'normal';
+  const stationOnlyPresentation = shouldUseStationOnlyPresentation(selectedChannel, currentQuality);
+  const displayTitle = stationOnlyPresentation ? selectedCopy.name : metadata?.title || activeTrack?.title || selectedCopy.name;
+  const displayArtist = stationOnlyPresentation ? '' : metadata?.artist || activeTrack?.artist || selectedCopy.description;
   const displayArtwork =
-    metadata?.artwork || activeTrack?.artwork || selectedChannel.logo;
+    stationOnlyPresentation ? activeTrack?.artwork || selectedChannel.logo : metadata?.artwork || activeTrack?.artwork || selectedChannel.logo;
   const displayArtworkSource =
     typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
 
@@ -200,8 +220,8 @@ const RadioScreen = () => {
             <TouchableOpacity
               onPress={() => navigation.navigate('Player')}
               activeOpacity={0.85}
-              accessibilityLabel="Tam ekran oynatıcıyı aç">
-              <Image source={displayArtworkSource} style={styles.nowArtwork} />
+              accessibilityLabel={copy('common.openPlayer')}>
+              {displayArtworkSource ? <Image source={displayArtworkSource} style={styles.nowArtwork} /> : <View style={styles.nowArtworkPlaceholder} />}
             </TouchableOpacity>
             <View style={styles.nowBody}>
               <View style={styles.liveRow}>
@@ -230,7 +250,7 @@ const RadioScreen = () => {
           <View style={styles.transportRow}>
             <TouchableOpacity style={styles.transportButton} onPress={skipToPreviousChannel}>
               <Icon name="skip-previous" size={22} color={COLORS.textMuted} />
-              <Text style={styles.transportText}>Önceki</Text>
+              <Text style={styles.transportText}>{copy('radio.previous')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.votePill, currentVote === 'down' && styles.votePillActive]}
@@ -243,15 +263,15 @@ const RadioScreen = () => {
               <Icon name={currentVote === 'up' ? 'thumb-up' : 'thumb-up-outline'} size={18} color={currentVote === 'up' ? COLORS.success : COLORS.textMuted} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.transportButton} onPress={skipToNextChannel}>
-              <Text style={styles.transportText}>Sonraki</Text>
+              <Text style={styles.transportText}>{copy('radio.next')}</Text>
               <Icon name="skip-next" size={22} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Favoriler</Text>
-              <Text style={styles.sectionMeta}>{orderedChannels.favorites.length} yayın</Text>
+              <Text style={styles.sectionTitle}>{copy('radio.favorites')}</Text>
+              <Text style={styles.sectionMeta}>{copy('radio.count', {count: orderedChannels.favorites.length})}</Text>
             </View>
 
             {orderedChannels.favorites.length > 0 ? (
@@ -270,13 +290,13 @@ const RadioScreen = () => {
             ) : (
               <View style={styles.emptyFavoriteCard}>
                 <Icon name="heart-plus-outline" size={22} color={COLORS.primary} />
-                <Text style={styles.emptyFavoriteText}>Sık dinlediğin yayınları favoriye ekle; burada hızlı erişim olarak kalacak.</Text>
+                <Text style={styles.emptyFavoriteText}>{copy('radio.favoritesHint')}</Text>
               </View>
             )}
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Tüm Yayınlar</Text>
-              <Text style={styles.sectionMeta}>{activeChannels.length} aktif</Text>
+              <Text style={styles.sectionTitle}>{copy('radio.all')}</Text>
+              <Text style={styles.sectionMeta}>{copy('radio.count', {count: activeChannels.length})}</Text>
             </View>
 
             <View style={styles.grid}>
@@ -299,6 +319,7 @@ const RadioScreen = () => {
             channel={selectedChannel}
             history={history}
             isLoading={isLoadingHistory}
+            stationOnlyMetadata={isStationOnlyChannel(selectedChannel)}
             renderItem={renderHistoryItem}
             onClose={() => setShowHistoryModal(false)}
           />
@@ -321,15 +342,20 @@ function FavoriteCard({
   onPress: () => void;
   onToggleFavorite: () => void;
 }) {
+  const {i18n} = useTranslation();
+  const channelCopy = getChannelCopy(channel.copyKey, i18n.language, {
+    name: channel.name,
+    description: channel.description,
+  });
   return (
     <TouchableOpacity
       style={[styles.favoriteCard, isActive && {borderColor: channel.color}]}
       onPress={onPress}
       activeOpacity={0.82}>
       <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" />
-      <Text style={styles.favoriteName} numberOfLines={1}>{channel.name}</Text>
+      <Text style={styles.favoriteName} numberOfLines={1}>{channelCopy.name}</Text>
       {channel.streams.flac ? <Text style={styles.stationFlacText}>FLAC</Text> : null}
-      <Text style={styles.favoriteDesc} numberOfLines={1}>{channel.description}</Text>
+      {!isStationOnlyChannel(channel) ? <Text style={styles.favoriteDesc} numberOfLines={1}>{channelCopy.description}</Text> : null}
       {isPlaying ? <View style={[styles.equalizer, {backgroundColor: channel.color}]} /> : null}
       <TouchableOpacity style={styles.favoriteHeart} onPress={onToggleFavorite}>
         <Icon name="heart" size={18} color={COLORS.primary} />
@@ -353,6 +379,12 @@ function ChannelGridCard({
   onPress: () => void;
   onToggleFavorite: () => void;
 }) {
+  const {i18n} = useTranslation();
+  const copy = (key: string) => screenCopy(i18n.language, key);
+  const channelCopy = getChannelCopy(channel.copyKey, i18n.language, {
+    name: channel.name,
+    description: channel.description,
+  });
   return (
     <TouchableOpacity
       style={[styles.channelCard, isActive && {borderColor: channel.color, backgroundColor: `${channel.color}18`}]}
@@ -365,13 +397,13 @@ function ChannelGridCard({
         </TouchableOpacity>
       </View>
       <View style={styles.channelNameRow}>
-        <Text style={styles.channelName} numberOfLines={1}>{channel.name}</Text>
+        <Text style={styles.channelName} numberOfLines={1}>{channelCopy.name}</Text>
         {channel.streams.flac ? <Text style={styles.stationFlacText}>FLAC</Text> : null}
       </View>
-      <Text style={styles.channelDescription} numberOfLines={1}>{channel.description}</Text>
+      {!isStationOnlyChannel(channel) ? <Text style={styles.channelDescription} numberOfLines={1}>{channelCopy.description}</Text> : null}
       <View style={styles.cardBottomRow}>
         <Text style={[styles.statusText, isPlaying && {color: channel.color}]}>
-          {isPlaying ? 'Çalıyor' : 'Dinle'}
+          {isPlaying ? copy('common.playing') : copy('common.listen')}
         </Text>
         <Icon name={isPlaying ? 'volume-high' : 'play-circle-outline'} size={18} color={isPlaying ? channel.color : COLORS.textMuted} />
       </View>
@@ -384,6 +416,7 @@ function HistoryModal({
   channel,
   history,
   isLoading,
+  stationOnlyMetadata,
   renderItem,
   onClose,
 }: {
@@ -391,9 +424,17 @@ function HistoryModal({
   channel: RadioChannel;
   history: any[];
   isLoading: boolean;
+  stationOnlyMetadata?: boolean;
   renderItem: ({item}: {item: any}) => React.ReactElement;
   onClose: () => void;
 }) {
+  const {i18n} = useTranslation();
+  const copy = (key: string, values?: Record<string, string | number>) =>
+    screenCopy(i18n.language, key, values);
+  const channelCopy = getChannelCopy(channel.copyKey, i18n.language, {
+    name: channel.name,
+    description: channel.description,
+  });
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
@@ -401,15 +442,20 @@ function HistoryModal({
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
             <View style={styles.headerInfo}>
-              <Text style={styles.modalTitle}>Son Çalan Şarkılar</Text>
-              <Text style={styles.modalSubtitle}>{channel.name} · Son 15 Dakika</Text>
+              <Text style={styles.modalTitle}>{copy('radio.historyTitle')}</Text>
+              <Text style={styles.modalSubtitle}>{copy('radio.history', {name: channelCopy.name})}</Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
               <Icon name="close-circle" size={28} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
 
-          {isLoading && history.length === 0 ? (
+          {stationOnlyMetadata ? (
+            <View style={styles.emptyHistoryContainer}>
+              <Icon name="information-outline" size={48} color={COLORS.textMuted} />
+              <Text style={styles.noHistoryText}>{copy('radio.noHistory')}</Text>
+            </View>
+          ) : isLoading && history.length === 0 ? (
             <View style={styles.modalLoading}>
               <ActivityIndicator color={COLORS.primary} size="large" />
             </View>
@@ -424,7 +470,7 @@ function HistoryModal({
           ) : (
             <View style={styles.emptyHistoryContainer}>
               <Icon name="clock-outline" size={48} color={COLORS.textMuted} />
-              <Text style={styles.noHistoryText}>Henüz geçmiş kaydı bulunmuyor.</Text>
+              <Text style={styles.noHistoryText}>{copy('radio.noHistory')}</Text>
             </View>
           )}
         </View>
@@ -658,7 +704,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
   },
+  nowArtworkPlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+  },
   stationLogo: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: '#F4F4F4',
+  },
+  stationLogoPlaceholder: {
     width: 42,
     height: 42,
     borderRadius: 13,

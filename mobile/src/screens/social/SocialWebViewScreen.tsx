@@ -12,6 +12,8 @@ import {
   parseSocialMessage,
 } from '../../services/socialSessionService';
 import {COLORS, SPACING} from '../../theme/theme';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
 const WebView = NativeWebView as any;
 
@@ -25,6 +27,8 @@ function asInjectedJson(value: unknown) {
 const SocialWebViewScreen = () => {
   const webViewRef = useRef<any>(null);
   const {user, refreshSession} = useAuth();
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const isRegisteredUser = Boolean(user && !user.is_guest);
   const [isPreparingSession, setIsPreparingSession] = useState(true);
   const [webViewNonce, setWebViewNonce] = useState(0);
@@ -94,8 +98,8 @@ const SocialWebViewScreen = () => {
   if (!isRegisteredUser) {
     return (
       <AuthGuard
-        title="Now register!"
-        message="Social is only available for registered RadioTEDU accounts."
+        title={copy('social.registerTitle')}
+        message={copy('social.registerText')}
         icon="account-group-outline"
       />
     );
@@ -109,7 +113,7 @@ const SocialWebViewScreen = () => {
         </View>
         <View style={styles.headerCopy}>
           <Text style={styles.kicker}>RadioTEDU</Text>
-          <Text style={styles.title}>Social</Text>
+          <Text style={styles.title}>{copy('social.title')}</Text>
         </View>
         <TouchableOpacity
           style={styles.refreshButton}
@@ -117,7 +121,7 @@ const SocialWebViewScreen = () => {
             setHasLoadError(false);
             setWebViewNonce((value) => value + 1);
           }}
-          accessibilityLabel="Reload Social">
+          accessibilityLabel={copy('social.reload')}>
           <Icon name="refresh" size={20} color={COLORS.text} />
         </TouchableOpacity>
       </View>
@@ -157,15 +161,15 @@ const SocialWebViewScreen = () => {
         {hasLoadError ? (
           <View style={styles.errorPanel}>
             <Icon name="wifi-alert" size={30} color={COLORS.primary} />
-            <Text style={styles.errorTitle}>Social could not load</Text>
-            <Text style={styles.errorText}>The Social connection is not available yet. Your app account remains signed in.</Text>
+            <Text style={styles.errorTitle}>{copy('social.loadError')}</Text>
+            <Text style={styles.errorText}>{copy('social.loadErrorText')}</Text>
             <TouchableOpacity
               style={styles.retryButton}
               onPress={() => {
                 setHasLoadError(false);
                 setWebViewNonce((value) => value + 1);
               }}>
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>{copy('social.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}

@@ -14,6 +14,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation} from '@react-navigation/native';
 import {COLORS, SPACING} from '../theme/theme';
 import {useAuth} from '../context/AuthContext';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 import {
   GamificationPoints,
   MarketItem,
@@ -25,6 +27,8 @@ import {
 const MarketScreen = () => {
   const navigation = useNavigation<any>();
   const {user} = useAuth();
+  const {i18n} = useTranslation();
+  const copy = useCallback((key: string, values: Record<string, string | number> = {}) => appCopy(i18n.language, key, values), [i18n.language]);
   const [items, setItems] = useState<MarketItem[]>([]);
   const [points, setPoints] = useState<GamificationPoints | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,12 +48,12 @@ const MarketScreen = () => {
       setPoints((profile as any)?.points ?? null);
     } catch (error) {
       console.error('Failed to load market:', error);
-      Alert.alert('Hata', 'Market yüklenemedi.');
+      Alert.alert(copy('common.error'), copy('market.error'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, [copy, user]);
 
   useEffect(() => {
     load();
@@ -57,7 +61,7 @@ const MarketScreen = () => {
 
   const handleRedeem = async (item: MarketItem) => {
     if (isAccountRequired) {
-      Alert.alert('Hesap gerekli', 'Market kullanımı için giriş yapmalısın.');
+      Alert.alert(copy('market.required'), copy('market.requiredText'));
       return;
     }
 
@@ -72,10 +76,10 @@ const MarketScreen = () => {
         ...(current ?? {lifetime_points: 0, spendable_points: 0}),
         spendable_points: Number(result?.spendable_points ?? current?.spendable_points ?? 0),
       }));
-      Alert.alert('Talep alındı', 'Ödül talebin admin kontrolüne düştü.');
+      Alert.alert(copy('market.requested'), copy('market.requestedText'));
     } catch (error: any) {
       console.error('Failed to redeem item:', error);
-      Alert.alert('Hata', error?.response?.data?.error || 'Ödül alınamadı.');
+      Alert.alert(copy('common.error'), error?.response?.data?.error || copy('market.error'));
     } finally {
       setRedeemingId(null);
     }
@@ -87,7 +91,7 @@ const MarketScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.navbarTitle}>Market</Text>
+        <Text style={styles.navbarTitle}>{copy('market.title')}</Text>
         <View style={styles.navbarSpacer} />
       </View>
 
@@ -96,16 +100,16 @@ const MarketScreen = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
         showsVerticalScrollIndicator={false}>
         <View style={styles.walletCard}>
-          <Text style={styles.walletLabel}>Gold balance</Text>
+          <Text style={styles.walletLabel}>Gold</Text>
           <Text style={styles.walletValue}>{points?.spendable_points ?? 0}</Text>
-          <Text style={styles.walletText}>Market spending does not reduce Lifetime Gold.</Text>
+          <Text style={styles.walletText}>{copy('leaderboard.lifetime')}</Text>
         </View>
 
         {loading && !refreshing ? (
           <ActivityIndicator color={COLORS.primary} style={styles.loader} />
         ) : items.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>Sunucuda aktif market ürünü yok.</Text>
+            <Text style={styles.emptyText}>{copy('market.empty')}</Text>
           </View>
         ) : (
           items.map((item) => {
@@ -126,7 +130,7 @@ const MarketScreen = () => {
                       disabled={!canAfford || isAccountRequired || isRedeeming}
                       onPress={() => handleRedeem(item)}>
                       <Text style={styles.redeemButtonText}>
-                        {isAccountRequired ? 'Hesap' : isRedeeming ? 'Alınıyor...' : canAfford ? 'Al' : 'Yetersiz'}
+                        {isAccountRequired ? copy('market.required') : isRedeeming ? copy('events.claiming') : canAfford ? copy('events.claim') : copy('market.insufficient')}
                       </Text>
                     </TouchableOpacity>
                   </View>

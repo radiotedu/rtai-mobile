@@ -1,5 +1,7 @@
 # RadioTEDU delivery TODO
 
+Current pass: locale detection/override, French replacement, visible player/stream-quality/Jukebox/Social/Study copy, localized game catalog/playable-game labels, Lo-Fi station-only presentation, and the real-capture gate are implemented. A Windows-connected Android target is now the required capture device.
+
 ## Mobile localization — next mobile release
 
 - Replace current Dutch locale with French; supported locales must be exactly Turkish, English, Arabic, Russian, German, and French.
@@ -18,6 +20,22 @@
 - Export RGB PNG/JPEG assets within Play Console size/file limits; keep source captures and an evidence manifest mapping every marketing claim to a screen/build.
 - Review all screenshots for privacy: no real email addresses, tokens, private account data, or unapproved analytics identifiers.
 - Prepare localized store text and screenshot sets for the six supported languages.
+
+Capture command (real device/emulator only; refuses non-1080×1920 output):
+
+`node scripts/capture-android-store-screenshot.mjs mobile/android/app/build/outputs/apk/release/app-release.apk com.radiotedumobile/.MainActivity artifacts/store-screenshots/radio-en.png radio`
+
+### End-to-end Android feature capture checklist
+
+- [ ] Install current release APK on Windows-connected Android target and verify package/version.
+- [ ] Create/use a disposable test account; capture account/profile/settings and consent screens without personal data.
+- [ ] Capture Home, all visible radio stations, normal/low playback, FLAC on Classic and Cazz, metadata, artwork, and cellular-data warning.
+- [ ] Capture Now Playing, quality menu, Android media notification/lock-screen controls, and back-swipe behavior.
+- [ ] Capture Study landing/content and visible study-minute progress.
+- [ ] Capture Voting, Jukebox, and Juke-local flows using reproducible states.
+- [ ] Capture Games hub and each playable game state; the English Games catalog was verified on the Windows emulator, but account-gated playable states still need a disposable authenticated account.
+- [ ] Verify every capture is real, readable, 1080×1920 portrait, localized, and free of private account identifiers.
+- [ ] Generate evidence manifest mapping each screenshot to APK version, route, state, and feature claim.
 
 ## Release checks
 

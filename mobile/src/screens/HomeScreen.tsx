@@ -16,6 +16,8 @@ import {useNavigation} from '@react-navigation/native';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
+import {screenCopy} from '../i18n/screenCopy';
+import {gameListCopy} from '../i18n/gameListCopy';
 import {useAuth} from '../context/AuthContext';
 import {
   AppEvent,
@@ -38,7 +40,12 @@ const emptyHome: GamificationHome = {
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
+  const copy = useCallback(
+    (key: string, values?: Record<string, string | number>) =>
+      screenCopy(i18n.language, key, values),
+    [i18n.language],
+  );
   const {user} = useAuth();
   const [home, setHome] = useState<GamificationHome>(emptyHome);
   const [loading, setLoading] = useState(false);
@@ -55,12 +62,12 @@ const HomeScreen = () => {
       setHome(await fetchGamificationHome());
     } catch (error) {
       console.error('Failed to fetch gamification home:', error);
-      Alert.alert('Bağlantı hatası', 'Gamification bilgileri yüklenemedi.');
+      Alert.alert(copy('home.errorTitle'), copy('home.errorText'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, [copy, user]);
 
   useEffect(() => {
     loadHome();
@@ -85,10 +92,10 @@ const HomeScreen = () => {
             <View style={styles.heroGlow} />
             <Text style={styles.kicker}>RadioTEDU Gold</Text>
             <Text style={styles.title}>
-              Yayını dinle, etkinliğe katıl ve Gold kazan.
+              {copy('home.heroTitle')}
             </Text>
             <Text style={styles.subtitle}>
-              Jukebox, podcast, oyun ve kampüs etkinlikleri tek Gold sistemine bağlı çalışır.
+              {copy('home.heroSubtitle')}
             </Text>
 
             <View style={styles.pointsRow}>
@@ -102,23 +109,23 @@ const HomeScreen = () => {
             <View style={styles.lockedCard}>
               <Icon name="account-star-outline" size={26} color={COLORS.primary} />
               <View style={styles.lockedBody}>
-                <Text style={styles.lockedTitle}>Gold kazanmak için hesap gerekli</Text>
-                <Text style={styles.lockedText}>Misafirler gezebilir; market, etkinlik, oyun Gold'u ve yorumlar üyelikle açılır.</Text>
+                <Text style={styles.lockedTitle}>{copy('home.accountTitle')}</Text>
+                <Text style={styles.lockedText}>{copy('home.accountText')}</Text>
               </View>
               <TouchableOpacity style={styles.lockedButton} onPress={() => navigation.navigate('Auth', {screen: 'Login'})}>
-                <Text style={styles.lockedButtonText}>Giriş</Text>
+                <Text style={styles.lockedButtonText}>{copy('home.login')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
 
           <View style={styles.quickGrid}>
             <QuickAction icon="timer-outline" label={t('focus.title')} onPress={() => navigation.navigate('Focus')} />
-            <QuickAction icon="vote-outline" label="Oylama" onPress={() => navigation.navigate('NextSongVote')} />
-            <QuickAction icon="account-group-outline" label="Social" onPress={() => navigation.navigate('Social')} />
-            <QuickAction icon="trophy-outline" label="Sıralama" onPress={() => navigation.navigate('Leaderboard')} />
-            <QuickAction icon="calendar-star" label="Etkinlikler" onPress={() => navigation.navigate('Events')} />
-            <QuickAction icon="gamepad-variant" label="Oyunlar" onPress={() => navigation.navigate('Games')} />
-            <QuickAction icon="shopping-outline" label="Market" onPress={() => navigation.navigate('Market')} />
+            <QuickAction icon="vote-outline" label={copy('home.vote')} onPress={() => navigation.navigate('NextSongVote')} />
+            <QuickAction icon="account-group-outline" label={copy('home.social')} onPress={() => navigation.navigate('Social')} />
+            <QuickAction icon="trophy-outline" label={copy('home.rankings')} onPress={() => navigation.navigate('Leaderboard')} />
+            <QuickAction icon="calendar-star" label={copy('home.events')} onPress={() => navigation.navigate('Events')} />
+            <QuickAction icon="gamepad-variant" label={copy('home.games')} onPress={() => navigation.navigate('Games')} />
+            <QuickAction icon="shopping-outline" label={copy('home.market')} onPress={() => navigation.navigate('Market')} />
           </View>
 
           {loading && !refreshing ? (
@@ -127,23 +134,23 @@ const HomeScreen = () => {
             </View>
           ) : (
             <>
-              <SectionHeader title="Yaklaşan etkinlikler" action="Tümü" onPress={() => navigation.navigate('Events')} />
+              <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
               {home.events.length === 0 ? (
-                <EmptyCard text="Henüz aktif etkinlik yok." />
+                <EmptyCard text={copy('home.noEvents')} />
               ) : (
                 home.events.slice(0, 3).map((event) => <EventPreview key={event.id} event={event} />)
               )}
 
-              <SectionHeader title="Arcade oyunları" action="Oyna" onPress={() => navigation.navigate('Games')} />
+              <SectionHeader title={copy('home.arcade')} action={copy('home.play')} onPress={() => navigation.navigate('Games')} />
               {home.games.length === 0 ? (
-                <EmptyCard text="Oyun kataloğu sunucudan eklenecek." />
+                <EmptyCard text={copy('home.noGames')} />
               ) : (
                 home.games.slice(0, 3).map((game) => <GamePreview key={game.id} game={game} />)
               )}
 
-              <SectionHeader title="Market vitrini" action="Market" onPress={() => navigation.navigate('Market')} />
+              <SectionHeader title={copy('home.marketShowcase')} action={copy('home.marketItems')} onPress={() => navigation.navigate('Market')} />
               {home.market.length === 0 ? (
-                <EmptyCard text="Market ürünleri henüz eklenmedi." />
+                <EmptyCard text={copy('home.noMarket')} />
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   {home.market.slice(0, 8).map((item) => <MarketPreview key={item.id} item={item} />)}
@@ -189,24 +196,29 @@ function SectionHeader({title, action, onPress}: {title: string; action: string;
 }
 
 function EventPreview({event}: {event: AppEvent}) {
+  const {i18n} = useTranslation();
+  const copy = (key: string) => screenCopy(i18n.language, key);
   return (
     <View style={styles.previewCard}>
       <Icon name="calendar-heart" size={24} color={COLORS.primary} />
       <View style={styles.previewBody}>
         <Text style={styles.previewTitle}>{event.title}</Text>
-              <Text style={styles.previewMeta}>{event.location || 'Kampüs'} · +{event.check_in_points || 0} Gold</Text>
+              <Text style={styles.previewMeta}>{event.location || copy('home.campus')} · +{event.check_in_points || 0} Gold</Text>
       </View>
     </View>
   );
 }
 
 function GamePreview({game}: {game: ArcadeGame}) {
+  const {i18n} = useTranslation();
+  const copy = (key: string, values?: Record<string, string | number>) => screenCopy(i18n.language, key, values);
+  const localized = gameListCopy(game.slug, i18n.language, {title: game.title, description: game.description ?? ''});
   return (
     <View style={styles.previewCard}>
       <Icon name="controller-classic" size={24} color={COLORS.primary} />
       <View style={styles.previewBody}>
-        <Text style={styles.previewTitle}>{game.title}</Text>
-              <Text style={styles.previewMeta}>Günlük limit {game.daily_point_limit || 0} Gold</Text>
+        <Text style={styles.previewTitle}>{localized.title}</Text>
+              <Text style={styles.previewMeta}>{copy('games.dailyLimit', {points: game.daily_point_limit || 0})}</Text>
       </View>
     </View>
   );

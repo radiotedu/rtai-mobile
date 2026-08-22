@@ -4,7 +4,8 @@
     "radio": "Радио",
     "podcasts": "Подкасты",
     "jukebox": "Jukebox",
-    "leaderboard": "Рейтинг"
+    "leaderboard": "Рейтинг",
+    "study": "Study"
   },
   "common": {
     "play": "Воспроизвести",
@@ -42,12 +43,13 @@
   "language": {
     "select": "Язык",
     "restartNotice": "Приложение изменит направление текста. Перезапустите приложение, чтобы завершить.",
+    "system": "Язык телефона",
     "en": "English",
     "ru": "Русский",
     "ar": "العربية",
     "tr": "Türkçe",
     "de": "Deutsch",
-    "nl": "Nederlands"
+    "fr": "Français"
   },
   "focus": {
     "title": "Фокус",

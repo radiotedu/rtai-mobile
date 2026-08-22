@@ -12,6 +12,8 @@
 import TrackPlayer, {State, Track} from 'react-native-track-player';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
+import {Image} from 'react-native';
+import i18n from '../i18n';
 import {
   buildStreamFallbacks,
   HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -19,9 +21,11 @@ import {
   getRuntimeVisibleChannels,
   RadioChannel,
   resolveStreamQuality,
+  shouldUseStationOnlyPresentation,
   StreamFallback,
   StreamQuality,
 } from '../data/radioChannels';
+import {getChannelCopy} from '../i18n/channelCopy';
 import type {Podcast} from './podcastService';
 import {
   isCellularNetwork,
@@ -91,23 +95,43 @@ export function isPodcastId(id: string | undefined | null): boolean {
 }
 
 export function channelArtwork(channel: RadioChannel): string {
+  if (typeof channel.logo === 'number') {
+    const bundled = Image.resolveAssetSource(channel.logo);
+    if (bundled?.uri) {
+      return bundled.uri;
+    }
+  }
   return channel.artwork || FALLBACK_ARTWORK;
+}
+
+/** Full-resolution bundled square artwork for native media surfaces. */
+export function channelArtworkResource(channel: RadioChannel): number | undefined {
+  if (typeof channel.logo !== 'number') {
+    return undefined;
+  }
+  return channel.logo;
 }
 
 function channelTrackFromStream(
   channel: RadioChannel,
   stream: StreamFallback,
 ): Track {
+  const copy = getChannelCopy(channel.copyKey, i18n.language, {
+    name: channel.name,
+    description: channel.description,
+  });
   return {
     id: channel.id,
     url: stream.url,
-    title: channel.name,
-    artist: channel.description,
+    title: copy.name,
+    artist: shouldUseStationOnlyPresentation(channel, stream.quality) ? '' : copy.description,
+    // TrackPlayer's Android bridge expects artwork as a URI string. Keep the
+    // bundled high-resolution image, but resolve its numeric RN source first.
     artwork: channelArtwork(channel),
     isLiveStream: true,
     streamQuality: stream.quality,
     streamIsLegacy: stream.isLegacy,
-  };
+  } as Track;
 }
 
 export function buildChannelTrack(

@@ -6,6 +6,8 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../../i18n/appCopy';
 
 type MemoryCard = {
   id: string;
@@ -19,6 +21,8 @@ const MemoryGameScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
+  const {i18n} = useTranslation();
+  const copy = (key: string) => appCopy(i18n.language, key);
   const [cards, setCards] = useState<MemoryCard[]>(() => createDeck());
   const [flippedIds, setFlippedIds] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
@@ -85,14 +89,14 @@ const MemoryGameScreen = () => {
         if (isMatch) {
           const nextCombo = combo + 1;
           setCombo(nextCombo);
-          setFeedback(`Eşleşme! Combo x${nextCombo}`);
+          setFeedback(`${copy('games.match')}! x${nextCombo}`);
           Vibration.vibrate(18);
           setCards((current) =>
             current.map((item) => nextFlipped.includes(item.id) ? {...item, matched: true} : item),
           );
         } else {
           setCombo(1);
-          setFeedback('Kaçtı');
+          setFeedback(copy('games.miss'));
         }
         setFlippedIds([]);
         setLocked(false);
@@ -120,14 +124,14 @@ const MemoryGameScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <GameShell
-        title="Hafıza Kartları"
-        subtitle="Kart eşleştirme"
+        title={copy('games.memory')}
+        subtitle={copy('games.memorySubtitle')}
         score={score}
-        progressLabel={`${matchedCount / 2}/${cards.length / 2} eşleşme`}
-        rightLabel={`${moves} hamle`}
+        progressLabel={`${matchedCount / 2}/${cards.length / 2} ${copy('games.memoryProgress')}`}
+        rightLabel={`${moves} ${copy('games.memoryMoves')}`}
         onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
-        <ComboMeter label="Hafıza serisi" value={combo} />
+        <ComboMeter label={copy('games.memoryCombo')} value={combo} />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.grid}>
@@ -144,7 +148,7 @@ const MemoryGameScreen = () => {
               );
             })}
           </View>
-          <Text style={styles.helpText}>Daha az hamle ve üst üste eşleşme daha fazla skor getirir.</Text>
+          <Text style={styles.helpText}>{copy('games.memoryHelp')}</Text>
         </ScrollView>
       </GameShell>
 

@@ -147,7 +147,7 @@ function getTabLabel(t: (key: string) => string, routeName: string) {
     return t('tabs.jukebox');
   }
   if (routeName === 'Study') {
-    return 'Study';
+    return t('tabs.study');
   }
   return t('tabs.leaderboard');
 }

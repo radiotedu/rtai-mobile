@@ -25,6 +25,7 @@ separated: Study opens `radiotedu.com/study`, voting opens
 | --- | --- |
 | `mobile/` | React Native application, native Android/iOS projects, and Android Auto integration |
 | `study-game/` | Vite and Phaser Study experience, avatar tooling, tests, and production build |
+| `terminal/` | Keyboard/mouse terminal player and Study timer for Linux, macOS, and Windows |
 | `scripts/` | Repository-level source and boundary verification |
 | `tests/` | Contracts that keep this repository standalone and reproducible |
 | `docs/` | API configuration, signing, release, and source-provenance guides |
@@ -114,6 +115,23 @@ npm run android
 
 Use `npm run android:auto` for the Android Auto build variant. For iOS setup and
 native dependency notes, follow [`mobile/README.md`](mobile/README.md).
+
+### Terminal application
+
+The terminal client deliberately excludes JukeLocal. It supports interactive
+keyboard/mouse playback, Icecast metadata, account login, and Study elapsed
+minutes:
+
+```powershell
+Set-Location terminal
+npm run check
+npm test
+npm start
+```
+
+Install `mpv` (recommended) or `ffplay` separately. See
+[`terminal/README.md`](terminal/README.md) for controls, account flow, and
+cross-platform configuration.
 
 ## Verification
 

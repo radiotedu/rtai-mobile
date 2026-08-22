@@ -16,6 +16,7 @@ import {
   buildStreamFallbacks,
   HIGH_QUALITY_MOBILE_DATA_WARNING,
   RADIO_CHANNELS,
+  getRuntimeVisibleChannels,
   RadioChannel,
   resolveStreamQuality,
   StreamFallback,
@@ -90,7 +91,7 @@ export function isPodcastId(id: string | undefined | null): boolean {
 }
 
 export function channelArtwork(channel: RadioChannel): string {
-  return channel.artwork || channel.logo || FALLBACK_ARTWORK;
+  return channel.artwork || FALLBACK_ARTWORK;
 }
 
 function channelTrackFromStream(
@@ -134,7 +135,9 @@ export function buildPodcastTrack(podcast: Podcast): Track | null {
 }
 
 export function buildRadioQueue(quality: StreamQuality): Track[] {
-  return RADIO_CHANNELS.map(channel => buildChannelTrack(channel, quality));
+  return getRuntimeVisibleChannels().map(channel =>
+    buildChannelTrack(channel, quality),
+  );
 }
 
 function buildPodcastQueue(podcasts: Podcast[]): Track[] {
@@ -169,7 +172,8 @@ export async function ensureBrowsableQueue(
   quality: StreamQuality,
 ): Promise<void> {
   const queue = await TrackPlayer.getQueue();
-  const hasAllChannels = RADIO_CHANNELS.every((channel, index) => {
+  const visibleChannels = getRuntimeVisibleChannels();
+  const hasAllChannels = visibleChannels.every((channel, index) => {
     return queue[index]?.id === channel.id;
   });
   if (!hasAllChannels) {
@@ -392,8 +396,9 @@ export function findChannelByQuery(query: string): RadioChannel {
 
   const normalized = normalizeVoiceText(query);
   if (normalized.length > 0) {
-    const mainChannel = RADIO_CHANNELS[0];
-    const specificChannels = RADIO_CHANNELS.filter(channel => channel.id !== mainChannel.id);
+    const visibleChannels = getRuntimeVisibleChannels();
+    const mainChannel = visibleChannels[0] || RADIO_CHANNELS[0];
+    const specificChannels = visibleChannels.filter(channel => channel.id !== mainChannel.id);
     const match = specificChannels.find(channel => {
       const terms = [
         channel.name,
@@ -410,5 +415,5 @@ export function findChannelByQuery(query: string): RadioChannel {
       return match;
     }
   }
-  return RADIO_CHANNELS[0];
+  return getRuntimeVisibleChannels()[0] || RADIO_CHANNELS[0];
 }

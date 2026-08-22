@@ -1,165 +1,70 @@
-# RadioTEDU — Privacy, Consent & Anonymized Analytics Plan (GDPR / KVKK)
+# RadioTEDU — Mobile Privacy and Analytics Inventory
 
-Status: **plan / spec** (no implementation yet).
+Status: client controls implemented. This inventory is engineering documentation,
+not a legal certification. Production policies, backend behavior, contracts,
+retention, transfers, Play disclosures, and controller identity require review.
 
-Goal: collect **anonymized** audience insight — *who listens, age range, gender,
-how many minutes, which channels* — while being fully **KVKK (Law 6698)** and
-**GDPR** compliant. Consent is requested **on first launch**, before any data is
-collected, and is part of the Terms.
+## Processing groups
 
----
+### Essential app, account, security, and Gold processing
 
-## 1. Principles (compliance-first)
+These features may process account/profile details and service records as
+described by RadioTEDU's deployed privacy notice. They do not depend on optional
+analytics consent. The controller must document purpose, lawful basis, recipients,
+retention, security, and KVKK/GDPR rights handling.
 
-1. **Opt-in, not opt-out.** No analytics event leaves the device until the user
-   gives **explicit, granular consent**. Default = off.
-2. **Anonymized by design.** No name, email, phone, precise location, advertising
-   ID, or account id is ever attached to analytics. We use a **rotatable
-   pseudonymous install id** only.
-3. **Data minimization & purpose limitation.** Collect only the fields below,
-   only for audience analytics, nothing else.
-4. **Transparency.** Plain-language consent screen + linked Privacy Policy &
-   Terms, available any time in Settings.
-5. **User control.** Withdraw consent, view, and delete data at any time
-   (data-subject rights). Withdrawal stops collection immediately.
-6. **Lawful basis:** *explicit consent* (KVKK Art. 5/1, GDPR Art. 6(1)(a) &,
-   for gender, Art. 9 explicit consent for special-category data).
+### Optional Google Analytics for Firebase
 
----
+Default: off. The Android manifest disables collection before consent. The app
+enables Firebase Analytics only after the user turns on the separate analytics
+switch. Advertising ID collection and ad-personalization signals are disabled.
 
-## 2. What we collect (and what we never collect)
+When enabled, Google Analytics for Firebase may receive:
 
-### Collected (only after consent)
-| Field | Form | Notes |
-| ----- | ---- | ----- |
-| Install id | random UUID, rotatable | pseudonymous; not tied to account |
-| Age range | bucket: `<18, 18-24, 25-34, 35-44, 45-54, 55+` | self-declared, optional |
-| Gender | `female / male / other / prefer-not` | self-declared, **optional**, special-category → separate explicit consent |
-| Listening minutes | per channel/podcast, aggregated | duration, not content |
-| Sessions | count, start hour (coarse), duration | no timestamps to the second |
-| Channel/episode id | which content | no playback position stored server-side |
-| App language | `en/tr/ru/…` | from i18n |
-| Region | **country/city only** (coarse), from IP at ingest, then discarded | never GPS/precise |
-| Platform | OS + app version | for compatibility stats |
+- Firebase app-instance ID;
+- app lifecycle, session, and screen activity;
+- RadioTEDU listening duration and channel/content identifier;
+- app/device/platform/language/version information;
+- approximate location derived by Google from a masked IP address;
+- optional self-declared age range and gender, only with the separate switch.
 
-### Never collected
-Name, email, phone, exact location/GPS, contacts, advertising id, device
-fingerprint, raw IP (used transiently for coarse region then dropped), account
-linkage to analytics.
+The app does not attach account ID, name, email, phone, advertising ID, contacts,
+GPS, or precise location to analytics. Google is a third-party recipient. The UI
+links both RadioTEDU's privacy notice and Google's privacy policy.
 
----
+Withdrawal immediately disables collection, clears demographic user properties,
+and resets local Firebase analytics data/identity. Previously received records
+remain governed by the configured Google Analytics retention and data-subject
+request process; the UI does not promise instant server-side deletion.
 
-## 3. Consent flow (first launch)
+Implementation:
 
-```
-First launch
-   │
-   ▼
-┌──────────────────────────────────────────────┐
-│  Welcome + Privacy summary (localized)         │
-│  • What we collect (plain language)            │
-│  • Links: Privacy Policy · Terms of Use        │
-│                                                │
-│  [ ] Anonymized usage analytics  (toggle)      │
-│  [ ] Demographics (age/gender)   (toggle)      │  ← separate, optional
-│                                                │
-│   (Decline all)            (Accept selected)   │
-└──────────────────────────────────────────────┘
-   │ choice persisted (versioned)
-   ▼
-App proceeds. Collection happens ONLY for toggles set on.
-```
+- `src/privacy/ConsentContext.tsx`: versioned, default-off consent state;
+- `src/screens/ConsentScreen.tsx`: separate notice, terms acceptance, analytics,
+  and demographics controls;
+- `src/screens/PrivacyScreen.tsx`: later withdrawal and legal links;
+- `src/services/analyticsService.ts`: consent-gated native bridge;
+- `android/.../analytics/AnalyticsBridgeModule.kt`: Firebase consent and events;
+- `android/app/google-services.json`: non-secret Firebase app configuration.
 
-- Granular: analytics and demographics are **separate** toggles (special-category
-  data needs its own explicit consent).
-- "Decline all" is a first-class, equally prominent option (no dark patterns).
-- Consent is **versioned**: if the policy changes, re-prompt.
-- Re-accessible & changeable anytime: **Settings → Privacy**.
+No Measurement Protocol API secret is embedded in the client. The Firebase SDK
+uses the Android app configuration supplied by Google.
 
----
+## Release-owner requirements
 
-## 4. Data-subject rights (KVKK Art. 11 / GDPR Ch. III)
-
-Settings → Privacy exposes:
-- **Withdraw consent** (per category) — immediate stop.
-- **Access / export** — request the data tied to the install id.
-- **Delete** — erase server-side data for the install id; rotate the id.
-- Contact channel for requests (KVKK "ilgili kişi başvurusu").
-
-Retention: raw events **≤ 14 months**, then aggregated/irreversibly anonymized.
-Documented retention + deletion job.
-
----
-
-## 5. Technical architecture (infrastructure to build)
-
-```
-CLIENT (mobile)
-  ConsentContext  ──────────► persists versioned consent (AsyncStorage)
-        │  gates everything
-        ▼
-  analyticsService
-    • enabled only if consent.analytics === true
-    • buffers events locally, batches every N / on background
-    • attaches install id + consented demographics only
-    • POST /api/v1/analytics/events  (HTTPS)
-        │
-        ▼
-BACKEND (separate repo)
-  /analytics/events  ── validates, strips raw IP→coarse region, stores
-  aggregation jobs   ── rollups (minutes per channel, age dist, etc.)
-  /analytics/erase   ── data-subject delete by install id
-  retention job      ── purge > 14 months
-```
-
-Client modules to add (when approved):
-- `src/privacy/ConsentContext.tsx` — consent state + versioning + storage.
-- `src/screens/ConsentScreen.tsx` — first-launch gate (localized, 6 languages).
-- `src/screens/PrivacySettingsScreen.tsx` — manage/withdraw/export/delete.
-- `src/services/analyticsService.ts` — buffered, consent-gated event emitter
-  (track: `session_start`, `play_start`, `play_heartbeat` (minutes),
-  `play_stop`, `app_open`). No-op when consent off.
-- `src/privacy/installId.ts` — generate/rotate pseudonymous UUID.
-- `src/services/profileService` — optional age-range/gender capture (buckets).
-- Hook `analyticsService` into `playbackQueue` start/stop for minutes.
-
-Backend endpoints (separate repo, document as contract):
-- `POST /analytics/events` (batch), `POST /analytics/erase`,
-  `GET /analytics/export`. IP used only to derive region at ingest, then dropped.
-
-i18n: all consent/privacy strings localized in the 6 languages (new `privacy.*`
-keys). RTL respected.
-
-Android Auto: **no analytics prompts or PII in the car**. Listening minutes from
-car playback are attributed via the same consent already given in the app; the
-car never shows the consent UI (unsafe + already handled in-app).
-
----
-
-## 6. Terms / Policy artifacts to produce
-
-- **Privacy Policy** (KVKK Aydınlatma Metni + GDPR notice): controller identity,
-  data categories, purpose, lawful basis, retention, rights, contact.
-- **Explicit consent text** ("Açık Rıza Metni") for demographics.
-- **Terms of Use** referencing the above.
-- Hosted URLs + in-app rendered copies (localized).
-
----
-
-## 7. Implementation milestones (when approved to build)
-
-1. `installId` + `ConsentContext` (versioned, persisted, default-off).
-2. First-launch `ConsentScreen` (localized, granular, "decline all").
-3. `analyticsService` (consent-gated, buffered, batched) + playback hooks.
-4. `PrivacySettingsScreen` (withdraw/export/delete) + Settings link.
-5. Backend contract (events / erase / export / retention) — separate repo.
-6. Privacy Policy + consent texts (localized) + hosting.
-7. Verify: nothing emits before consent; withdrawal stops emission; delete works.
-
-## 8. Open questions
-
-- **Controller & contact**: legal entity name + KVKK contact e-mail for the policy?
-- **Age/gender capture point**: during consent, in Profile, or a one-time prompt?
-- **Analytics backend**: extend the existing RadioTEDU backend, or a dedicated
-  service (e.g., self-hosted Matomo/PostHog configured for anonymization)?
-- **Minors**: any users under 18 / parental-consent requirement at the school?
+- Publish a mobile-specific KVKK aydınlatma/privacy notice containing controller
+  identity, purposes, legal bases, recipients/third-country transfers, collection
+  method, retention, security, and rights/contact routes.
+- Keep the notice and optional consent separate. Keep analytics optional and
+  default-off; essential service processing must not be described as consented
+  analytics.
+- Configure the shortest justified GA4 retention, restrict property access,
+  disable Google Signals/advertising features unless separately assessed, and
+  execute applicable Google data-processing/transfer terms.
+- Complete Google Play Data safety from actual release behavior, including
+  Firebase's automatically collected app-instance, device, activity, and coarse
+  location data when analytics is enabled.
+- Provide functioning account and data-rights request/deletion routes. Confirm
+  handling for minors before collecting age information.
+- Obtain Turkish/EU privacy counsel approval before describing the service as
+  KVKK/GDPR compliant.

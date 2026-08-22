@@ -14,7 +14,7 @@
     @{ @"id": @"radiotedu-classic", @"title": @"Classic" },
     @{ @"id": @"radiotedu-jazz", @"title": @"Jazz" },
     @{ @"id": @"radiotedu-lofi", @"title": @"Lo-Fi" },
-    @{ @"id": @"radiotedu-spark", @"title": @"rtAI" },
+    @{ @"id": @"radiotedu-energize", @"title": @"Energize" },
     @{ @"id": @"radiotedu-rock", @"title": @"Rock" },
   ];
 }

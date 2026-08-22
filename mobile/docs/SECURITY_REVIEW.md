@@ -19,12 +19,12 @@ here or is a recommendation requiring your action.
 | - | -------- | ------- | --------------- |
 | 5 | **Medium/High** | **Auth tokens stored in `AsyncStorage` (plaintext)** (`access_token`/`refresh_token` in `AuthContext`). AsyncStorage is unencrypted; readable on a rooted/compromised device or via backup tooling. Not changed automatically (touches the auth flow + needs a native dep + rebuild + testing). | Migrate token storage to **`react-native-keychain`** (Android Keystore / iOS Keychain). Keep only tokens there; leave non-sensitive prefs in AsyncStorage. |
 | 6 | **Info** | **Provide a real release keystore.** Create one and add `android/keystore.properties` (gitignored) with `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. | `keytool -genkeypair -v -keystore radiotedu-release.jks -alias radiotedu -keyalg RSA -keysize 2048 -validity 10000` |
-| 7 | **Info** | **GA4 `api_secret` will ship in the client** (`config.ts`). GA4 Measurement Protocol secrets are low-risk (write-only to your property, no read), but treat as semi-public. Do **not** put higher-privilege Google keys in the app. | Acceptable for GA4 MP. For stricter setups, proxy events through your backend. |
+| 7 | **Resolved** | Firebase Analytics uses `google-services.json`; no Measurement Protocol API secret is embedded in the APK. | Keep API secrets server-side. |
 | 8 | **Low** | `usesCleartextTraffic` for dev relies on the loopback exception — ensure no production traffic ever uses HTTP. | Keep all `radiotedu.com` traffic on HTTPS (already the case). |
 
 ## Checked and found OK
 
-- **No hardcoded secrets/API keys/passwords** in `src/` (only empty GA4 placeholders).
+- **No hardcoded passwords or Measurement Protocol secrets** in `src/`.
 - **No `WebView`, `eval`, `Function()`, or `dangerouslySetInnerHTML`** — no JS injection surface.
 - **No non-TLS URLs** in code except the documented dev loopback.
 - `android:allowBackup="false"` — app data excluded from device backups. ✅
@@ -38,4 +38,5 @@ here or is a recommendation requiring your action.
 ## Suggested next steps (in priority order)
 1. Implement #5 (Keychain token storage).
 2. Create the release keystore (#6) before any production build.
-3. When wiring GA4, keep the api_secret scope minimal (#7).
+3. Keep Firebase/GA4 property access restricted and rotate the disclosed unused
+   Measurement Protocol secret (#7).

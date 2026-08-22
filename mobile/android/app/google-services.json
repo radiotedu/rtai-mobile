@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "298930036454",
+    "project_id": "radiotedumobile",
+    "storage_bucket": "radiotedumobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:298930036454:android:ee3f7c9a95dbc6da676527",
+        "android_client_info": {
+          "package_name": "com.radiotedumobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbaHfGk_dEmy33N6i2wIy7V-QlEPVYqPY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

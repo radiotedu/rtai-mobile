@@ -10,14 +10,14 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 
 - **[you]** Google Play Developer account (a **TED University org account** is
   recommended over a personal one; D-U-N-S may be required for org verification).
-- **[you]** **Privacy Policy URL** hosted at `https://radiotedu.com/privacy`
+- **[you]** **Privacy Policy URL** hosted at `https://radiotedu.com/gizlilik-politikasi/`
   (the in-app consent + Data&Privacy screens link here). Must describe the
-  anonymized analytics + demographics. See `docs/PRIVACY_DATA_PLAN.md`.
+  essential account/Gold processing and optional Firebase Analytics. See
+  `docs/PRIVACY_DATA_PLAN.md`.
 - **[you]** **Data safety form** (Play Console): declare what we collect. Source
-  of truth = `PRIVACY_DATA_PLAN.md`. We collect (only on consent): app activity
-  (listening time), app info, optional coarse demographics; **no** name/email/
-  precise location/ads ID. Mark data as *not* sold, encrypted in transit,
-  deletable on request.
+  of truth = the deployed app/backend inventory. Essential account features
+  process account data. Optional Firebase Analytics processes app-instance ID,
+  app activity/device data, approximate location, and optional demographics.
 - **[you]** **Content rating** questionnaire (IARC) — likely "Everyone".
 - **[you]** Store listing assets: 512×512 icon, feature graphic (1024×500),
   phone + (if Auto) car screenshots, short/full description (localize to the
@@ -49,8 +49,7 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
   rendering on the head unit.
 - **[you]** Square ≥512 px artwork per channel + a Classic-specific asset
   (current logos are landscape; see `ANDROID_AUTO.md`).
-- **[you]** **`JUKEBOX_STREAM_URL`** for the communal listen-only stream; **GA4**
-  creds — both empty placeholders in `config.ts` today.
+- **[you]** **`JUKEBOX_STREAM_URL`** for the communal listen-only stream.
 - **[you]** **Distraction-optimized review**: Google manually reviews car apps;
   follow the Android for Cars **Quality** guidelines before submitting.
 - **[you]** **CarPlay** (iOS) needs Apple's CarPlay-audio **entitlement**
@@ -60,7 +59,8 @@ tagged: **[done]**, **[code]** (I can implement in this repo), or **[you]**
 
 - **[done]** First-launch **consent gate**, granular (analytics + optional
   demographics), default-off, versioned; withdraw/delete in Profile.
-- **[done]** Pseudonymous rotatable install id; no PII; GA4 consent-gated.
+- **[done]** Firebase Analytics default-off, consent-gated, advertising ID
+  removed, ad personalization denied, and analytics identity reset on withdrawal.
 - **[you]** **Aydınlatma Metni** + **Açık Rıza Metni** (KVKK) + Privacy Policy,
   hosted & localized. Name the **data controller** (TED University entity) +
   KVKK contact e-mail.

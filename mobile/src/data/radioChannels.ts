@@ -1,26 +1,32 @@
-// Each channel exposes two images:
-//   logo    - wide banner used inside the app UI
-//   artwork - image used for lock screen, notification and Android Auto /
-//             CarPlay. Car systems center-CROP this to a square, so a true
-//             square export (>=512x512) looks best. The URLs below are the real
-//             RadioTEDU brand images (landscape ~2560x1551) and will be
-//             center-cropped in the car until square versions are provided.
-// Official RadioTEDU station square logos from https://radiotedu.com/radyolar/
-const MAIN_LOGO =
+import type {ImageSourcePropType} from 'react-native';
+
+// Bundled, upscaled copies of the official artwork from /radyolar keep station
+// branding sharp and available offline. Remote URLs remain for system media
+// artwork because TrackPlayer and car surfaces require URI-backed images.
+const MAIN_LOGO = require('../assets/images/stations/radiotedu.png');
+const CLASSIC_LOGO = require('../assets/images/stations/radiotedu-classic.png');
+const JAZZ_LOGO = require('../assets/images/stations/radiotedu-jazz.png');
+const LOFI_LOGO = require('../assets/images/stations/radiotedu-lo-fi.png');
+const ENERGIZE_LOGO = require('../assets/images/stations/radiotedu-energize.png');
+const ROCK_LOGO = require('../assets/images/stations/radiotedu-rock.png');
+const AI_EN_LOGO = require('../assets/images/stations/radiotedu-ai-english.png');
+const AI_FR_LOGO = require('../assets/images/stations/radiotedu-ai-francais.png');
+
+const MAIN_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
-const CLASSIC_LOGO =
+const CLASSIC_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-classic.png';
-const JAZZ_LOGO =
+const JAZZ_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-jazz.png';
-const LOFI_LOGO =
+const LOFI_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-lo-fi.png';
-const ENERGIZE_LOGO =
+const ENERGIZE_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-energize.png';
-const ROCK_LOGO =
+const ROCK_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-rock.png';
-const AI_EN_LOGO =
+const AI_EN_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-ai-english.png';
-const AI_FR_LOGO =
+const AI_FR_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu-ai-francais.png';
 
 const STREAM_ORIGIN = 'https://stream.radiotedu.com';
@@ -46,10 +52,12 @@ export interface RadioChannel {
   codecLabels?: Partial<Record<StreamQuality, string>>;
   icon: string;
   color: string;
-  logo: string;
+  logo: ImageSourcePropType;
   artwork: string;
   role?: 'main' | 'music' | 'ai-host';
   availability?: RadioChannelAvailability;
+  /** Hide until a live mount check succeeds; used for intermittently launched stations. */
+  requiresLiveCheck?: boolean;
   mobileDataWarning?: string;
 }
 
@@ -80,19 +88,22 @@ export function buildStreamUrl(
   return `${STREAM_ORIGIN}/${mount}`;
 }
 
-function buildQualityStreams(mountPath: string): Record<StreamQuality, string> {
+function buildQualityStreams(
+  mountPath: string,
+  hasFlac = false,
+): Partial<Record<StreamQuality, string>> {
   return {
     low: buildStreamUrl(mountPath, 'low'),
     normal: buildStreamUrl(mountPath, 'normal'),
     high: buildStreamUrl(mountPath, 'normal'),
-    flac: buildStreamUrl(mountPath, 'flac'),
+    ...(hasFlac ? {flac: buildStreamUrl(mountPath, 'flac')} : {}),
   };
 }
 
 const STANDARD_CODEC_LABELS: Record<StreamQuality, string> = {
-  low: 'AAC 32k',
-  normal: 'AAC 192k',
-  high: 'AAC 192k',
+  low: 'HE-AAC v1',
+  normal: 'HE-AAC v1',
+  high: 'HE-AAC v1',
   flac: 'FLAC',
 };
 
@@ -109,10 +120,9 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     icon: 'radio-tower',
     color: '#E31E24',
     logo: MAIN_LOGO,
-    artwork: MAIN_LOGO,
+    artwork: MAIN_ARTWORK,
     role: 'main',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
   {
     id: 'radiotedu-classic',
@@ -121,12 +131,12 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     streamUrl: 'https://stream.radiotedu.com/classic',
     legacyStreamUrl: 'https://stream.radiotedu.com/classic',
     mountPath: '/classic',
-    streams: buildQualityStreams('/classic'),
+    streams: buildQualityStreams('/classic', true),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'music-clef-treble',
     color: '#E5A000',
     logo: CLASSIC_LOGO,
-    artwork: CLASSIC_LOGO,
+    artwork: CLASSIC_ARTWORK,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -138,12 +148,12 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     streamUrl: 'https://stream.radiotedu.com/cazz',
     legacyStreamUrl: 'https://stream.radiotedu.com/cazz',
     mountPath: '/cazz',
-    streams: buildQualityStreams('/cazz'),
+    streams: buildQualityStreams('/cazz', true),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'saxophone',
     color: '#9C27B0',
     logo: JAZZ_LOGO,
-    artwork: JAZZ_LOGO,
+    artwork: JAZZ_ARTWORK,
     role: 'music',
     availability: 'live',
     mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
@@ -160,10 +170,9 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     icon: 'headphones',
     color: '#00BCD4',
     logo: LOFI_LOGO,
-    artwork: LOFI_LOGO,
+    artwork: LOFI_ARTWORK,
     role: 'music',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
   {
     id: 'radiotedu-energize',
@@ -177,10 +186,9 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     icon: 'lightning-bolt',
     color: '#F36F21',
     logo: ENERGIZE_LOGO,
-    artwork: ENERGIZE_LOGO,
+    artwork: ENERGIZE_ARTWORK,
     role: 'music',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
   {
     id: 'radiotedu-spark',
@@ -189,20 +197,15 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     streamUrl: 'https://stream.radiotedu.com/spark',
     legacyStreamUrl: 'https://stream.radiotedu.com/spark',
     mountPath: '/spark',
-    streams: {
-      low: 'https://stream.radiotedu.com/spark-low',
-      normal: 'https://stream.radiotedu.com/spark',
-      high: 'https://stream.radiotedu.com/spark',
-      flac: 'https://stream.radiotedu.com/spark-flac',
-    },
+    streams: buildQualityStreams('/spark'),
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'creation',
     color: '#20D6C7',
     logo: ENERGIZE_LOGO,
-    artwork: ENERGIZE_LOGO,
+    artwork: ENERGIZE_ARTWORK,
     role: 'ai-host',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
+    requiresLiveCheck: true,
   },
   {
     id: 'radiotedu-rock',
@@ -216,10 +219,9 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     icon: 'guitar-electric',
     color: '#FF6B2C',
     logo: ROCK_LOGO,
-    artwork: ROCK_LOGO,
+    artwork: ROCK_ARTWORK,
     role: 'music',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
   },
   {
     id: 'radiotedu-en',
@@ -233,10 +235,10 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     icon: 'translate',
     color: '#3578E5',
     logo: AI_EN_LOGO,
-    artwork: AI_EN_LOGO,
+    artwork: AI_EN_ARTWORK,
     role: 'music',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
+    requiresLiveCheck: true,
   },
   {
     id: 'radiotedu-fr',
@@ -250,10 +252,10 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     icon: 'translate',
     color: '#6C63D9',
     logo: AI_FR_LOGO,
-    artwork: AI_FR_LOGO,
+    artwork: AI_FR_ARTWORK,
     role: 'music',
     availability: 'live',
-    mobileDataWarning: HIGH_QUALITY_MOBILE_DATA_WARNING,
+    requiresLiveCheck: true,
   },
 ];
 
@@ -344,7 +346,22 @@ export function isChannelPlayable(channel: RadioChannel): boolean {
 export function buildVisibleChannels(
   checks: RadioChannelCheck[],
 ): RadioChannel[] {
-  return checks
-    .filter(({channel, isAvailable}) => isAvailable || !isChannelPlayable(channel))
-    .map(({channel}) => channel);
+  return checks.filter(({isAvailable}) => isAvailable).map(({channel}) => channel);
+}
+
+/** Safe initial/error fallback: stable stations only, never dead conditional mounts. */
+export function channelsVisibleWithoutLiveCheck(): RadioChannel[] {
+  return RADIO_CHANNELS.filter(channel => !channel.requiresLiveCheck);
+}
+
+let runtimeVisibleChannels = channelsVisibleWithoutLiveCheck();
+
+export function setRuntimeVisibleChannels(channels: RadioChannel[]): void {
+  runtimeVisibleChannels = channels.length
+    ? channels
+    : channelsVisibleWithoutLiveCheck();
+}
+
+export function getRuntimeVisibleChannels(): RadioChannel[] {
+  return runtimeVisibleChannels;
 }

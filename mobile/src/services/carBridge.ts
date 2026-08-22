@@ -16,7 +16,14 @@ import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
 import TrackPlayer, {Event, State} from 'react-native-track-player';
 import i18n from '../i18n';
 import api from './api';
-import {RADIO_CHANNELS, StreamQuality} from '../data/radioChannels';
+import {checkStreamAvailability} from '../utils/api';
+import {
+  buildVisibleChannels,
+  channelsVisibleWithoutLiveCheck,
+  RADIO_CHANNELS,
+  setRuntimeVisibleChannels,
+  StreamQuality,
+} from '../data/radioChannels';
 import {JUKEBOX_STREAM_URL} from './config';
 import type {Podcast} from './podcastService';
 import {
@@ -51,6 +58,7 @@ const TILE = 'android.resource://com.radiotedumobile/drawable/';
 
 let cachedPodcasts: Podcast[] = [];
 let catalogQuality: StreamQuality = 'normal';
+let catalogChannels = channelsVisibleWithoutLiveCheck();
 
 type CarItem = {
   id: string;
@@ -85,7 +93,7 @@ function mainChannelUrl(): string {
 // --- Destination data (best-effort; empty on failure, never throws) ---
 
 function radioItems(): CarItem[] {
-  return RADIO_CHANNELS.map(c => ({
+  return catalogChannels.map(c => ({
     id: c.id,
     title: c.name,
     subtitle: c.description,
@@ -187,7 +195,7 @@ async function recentItems(): Promise<CarItem[]> {
     url?: string;
   }> = recents.length
     ? recents
-    : RADIO_CHANNELS.slice(0, 3).map(c => ({
+    : catalogChannels.slice(0, 3).map(c => ({
         id: c.id,
         title: c.name,
         artist: c.description,
@@ -214,6 +222,19 @@ export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
   if (podcasts) {
     cachedPodcasts = podcasts;
   }
+  const checks = await Promise.all(
+    RADIO_CHANNELS.map(async channel => ({
+      channel,
+      isAvailable: await checkStreamAvailability(channel.streamUrl).catch(
+        () => false,
+      ),
+    })),
+  );
+  catalogChannels = buildVisibleChannels(checks);
+  if (catalogChannels.length === 0) {
+    catalogChannels = channelsVisibleWithoutLiveCheck();
+  }
+  setRuntimeVisibleChannels(catalogChannels);
   catalogQuality = (await resolveCurrentStreamPreferences()).quality;
   const tr = t();
 
@@ -228,7 +249,7 @@ export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
     {
       id: 'cat_radio',
       title: tr('auto.liveRadio'),
-      subtitle: tr('auto.stationsOnAir', {count: RADIO_CHANNELS.length}),
+      subtitle: tr('auto.stationsOnAir', {count: catalogChannels.length}),
       artwork: `${TILE}car_tile_radio`,
       items: radioItems(),
     },

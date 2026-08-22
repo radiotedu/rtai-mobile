@@ -478,14 +478,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = RadioTEDUMobile/RadioTEDUMobile.entitlements;
-				CURRENT_PROJECT_VERSION = 11000;
+				CURRENT_PROJECT_VERSION = 12030;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = RadioTEDUMobile/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -507,13 +507,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = RadioTEDUMobile/RadioTEDUMobile.entitlements;
-				CURRENT_PROJECT_VERSION = 11000;
+				CURRENT_PROJECT_VERSION = 12030;
 				INFOPLIST_FILE = RadioTEDUMobile/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

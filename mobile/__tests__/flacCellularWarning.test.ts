@@ -63,7 +63,7 @@ describe('FLAC cellular playback protection', () => {
     );
 
     await expect(
-      playChannelById('radiotedu-main', 'flac'),
+      playChannelById('radiotedu-jazz', 'flac'),
     ).resolves.toEqual({
       played: false,
       cancelled: true,

@@ -12,6 +12,7 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import com.radiotedumobile.car.CarBridgePackage
+import com.radiotedumobile.analytics.AnalyticsBridgePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -21,6 +22,7 @@ class MainApplication : Application(), ReactApplication {
           val packages = PackageList(this).packages
           // Custom Android Auto / Automotive media browser bridge.
           packages.add(CarBridgePackage())
+          packages.add(AnalyticsBridgePackage())
           return packages
         }
 

@@ -8,9 +8,10 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {rotateInstallId} from './installId';
+import {REGISTRATION_TERMS_VERSION} from '../services/registrationPolicy';
 
 // Bump when the privacy policy / consent terms materially change → re-prompts.
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 const STORAGE_KEY = '@radiotedu/consent';
 
 export type AgeRange =
@@ -25,10 +26,13 @@ export type Gender = 'female' | 'male' | 'other' | 'na';
 export interface ConsentState {
   decided: boolean; // has the user answered the first-launch prompt?
   version: number;
-  analytics: boolean; // anonymized usage analytics
-  demographics: boolean; // age / gender (special-category → separate consent)
+  analytics: boolean; // optional pseudonymous usage analytics
+  demographics: boolean; // optional age range / gender, separately consented
   ageRange: AgeRange | null;
   gender: Gender | null;
+  termsAccepted: boolean;
+  termsVersion: string | null;
+  decidedAt: string | null;
 }
 
 const DEFAULT_STATE: ConsentState = {
@@ -38,6 +42,9 @@ const DEFAULT_STATE: ConsentState = {
   demographics: false,
   ageRange: null,
   gender: null,
+  termsAccepted: false,
+  termsVersion: null,
+  decidedAt: null,
 };
 const CONSENT_READY_TIMEOUT_MS = 2000;
 
@@ -88,8 +95,9 @@ export const ConsentProvider: React.FC<{children: ReactNode}> = ({children}) => 
       const merged: ConsentState = {
         ...consent,
         ...next,
-        decided: true,
+        decided: Boolean(next.termsAccepted ?? consent.termsAccepted),
         version: CONSENT_VERSION,
+        decidedAt: new Date().toISOString(),
       };
       // If demographics consent is off, never keep demographic values.
       if (!merged.demographics) {
@@ -105,9 +113,12 @@ export const ConsentProvider: React.FC<{children: ReactNode}> = ({children}) => 
     await rotateInstallId();
     await persist({
       ...DEFAULT_STATE,
-      decided: true, // they've decided: opt out of everything
+      decided: consent.termsAccepted,
+      termsAccepted: consent.termsAccepted,
+      termsVersion: consent.termsVersion ?? REGISTRATION_TERMS_VERSION,
+      decidedAt: new Date().toISOString(),
     });
-  }, [persist]);
+  }, [consent.termsAccepted, consent.termsVersion, persist]);
 
   return (
     <ConsentContext.Provider value={{consent, ready, saveConsent, withdrawAll}}>

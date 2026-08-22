@@ -19,6 +19,7 @@ import androidx.media.MediaBrowserServiceCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -95,6 +96,9 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
      * MediaSession callbacks and Player.Listener callbacks already run there.
      */
     private var player: ExoPlayer? = null
+
+    /** Catalog fallback used when a live stream omits artist/title fields. */
+    private var activeCatalogItem: CatalogItem? = null
 
     /** Tracks whether we currently hold the mediaPlayback foreground service. */
     private var isForeground = false
@@ -231,6 +235,44 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
             setErrorState(error.localizedMessage ?: "Playback error")
             updateForeground(false)
         }
+
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            val rawTitle = mediaMetadata.title?.toString()?.trim().orEmpty()
+            if (rawTitle.isEmpty()) return
+
+            var title = rawTitle
+            var artist = mediaMetadata.artist?.toString()?.trim().orEmpty()
+            if (artist.isEmpty()) {
+                val separator = rawTitle.indexOf(" - ")
+                if (separator > 0 && separator < rawTitle.length - 3) {
+                    artist = rawTitle.substring(0, separator).trim()
+                    title = rawTitle.substring(separator + 3).trim()
+                }
+            }
+            setSessionMetadata(title, artist)
+        }
+    }
+
+    /** Publish Icecast/ICY metadata to Android Auto and system media surfaces. */
+    private fun setSessionMetadata(title: String, artist: String) {
+        val fallback = activeCatalogItem
+        session.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+                .putString(
+                    MediaMetadataCompat.METADATA_KEY_ARTIST,
+                    artist.ifEmpty { fallback?.artist.orEmpty() },
+                )
+                .putString(
+                    MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
+                    fallback?.artwork.orEmpty(),
+                )
+                .putString(
+                    MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI,
+                    fallback?.artwork.orEmpty(),
+                )
+                .build(),
+        )
     }
 
     /** Set the car session into STATE_ERROR with a user-facing message. */
@@ -669,14 +711,8 @@ class RadioTeduCarService : MediaBrowserServiceCompat() {
 
     /** Set metadata + buffering state, then prepare and play the stream. */
     private fun playItem(item: CatalogItem) {
-        session.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, item.title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, item.artist)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, item.artwork)
-                .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, item.artwork)
-                .build(),
-        )
+        activeCatalogItem = item
+        setSessionMetadata(item.title, item.artist)
         // Show buffering immediately so the car never sits on a dead spinner.
         session.setPlaybackState(buildState(PlaybackStateCompat.STATE_BUFFERING))
         // Arm the watchdog so a stream that connects but never delivers data

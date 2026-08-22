@@ -8,7 +8,7 @@ object RadioChannels {
         RadioChannel("radiotedu-classic", "Classic", "https://stream.radiotedu.com/classic"),
         RadioChannel("radiotedu-jazz", "Jazz", "https://stream.radiotedu.com/cazz"),
         RadioChannel("radiotedu-lofi", "Lo-Fi", "https://stream.radiotedu.com/lofi"),
-        RadioChannel("radiotedu-spark", "rtAI", "https://stream.radiotedu.com/spark"),
+        RadioChannel("radiotedu-energize", "Energize", "https://stream.radiotedu.com/energize"),
         RadioChannel("radiotedu-rock", "Rock", "https://stream.radiotedu.com/rock"),
     )
 }

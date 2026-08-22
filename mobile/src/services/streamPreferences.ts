@@ -21,7 +21,7 @@ export const STREAM_PREFERENCES_STORAGE_KEY =
   '@radiotedu/stream-preferences-v2';
 
 export const DEFAULT_STREAM_PREFERENCES: StreamPreferences = {
-  quality: 'normal',
+  quality: 'automatic',
 };
 
 const QUALITY_VALUES = new Set<StreamQualityPreference>([

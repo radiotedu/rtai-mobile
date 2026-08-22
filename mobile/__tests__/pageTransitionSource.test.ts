@@ -10,4 +10,15 @@ describe('page transition visibility', () => {
     expect(source).not.toContain('fadeAnim.setValue(0)');
     expect(source).not.toContain('scaleAnim.setValue(0.97)');
   });
+
+  it('keeps the previous screen visible behind the swipe-down player', () => {
+    const source = fs.readFileSync(
+      path.join(__dirname, '../src/navigation/RootNavigator.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain("presentation: 'transparentModal'");
+    expect(source).toContain("contentStyle: {backgroundColor: 'transparent'}");
+    expect(source).toContain('gestureEnabled: false');
+  });
 });

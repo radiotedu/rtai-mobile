@@ -53,6 +53,9 @@ export const checkStreamAvailability = async (
         contentType.includes('application/vnd.apple.mpegurl')
       : false;
 
+    // We only need response headers. Close the endless radio body immediately.
+    controller.abort();
+
     // Strict check: Must be 200/206 AND be an audio/playlist type
     const isValid = isStatusValid && isAudio;
 

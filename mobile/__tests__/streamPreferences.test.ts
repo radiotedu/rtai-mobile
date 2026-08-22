@@ -29,13 +29,14 @@ describe('stream preferences', () => {
     resetStreamPreferencesCacheForTests();
   });
 
-  it('defaults to recommended normal quality and migrates legacy medium', () => {
+  it('defaults to automatic quality and migrates legacy medium', () => {
     expect(normalizeStreamPreferences(null)).toEqual(
       DEFAULT_STREAM_PREFERENCES,
     );
     expect(
       normalizeStreamPreferences({quality: 'medium', language: 'fr'}),
     ).toEqual({quality: 'normal'});
+    expect(DEFAULT_STREAM_PREFERENCES).toEqual({quality: 'automatic'});
   });
 
   it('selects a conservative quality automatically without choosing FLAC', () => {

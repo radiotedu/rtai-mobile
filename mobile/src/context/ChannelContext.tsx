@@ -5,7 +5,14 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import {RADIO_CHANNELS, RadioChannel} from '../data/radioChannels';
+import {AppState} from 'react-native';
+import {
+  buildVisibleChannels,
+  channelsVisibleWithoutLiveCheck,
+  RADIO_CHANNELS,
+  RadioChannel,
+  setRuntimeVisibleChannels,
+} from '../data/radioChannels';
 import {checkStreamAvailability} from '../utils/api';
 
 interface ChannelContextType {
@@ -21,7 +28,7 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
   children,
 }) => {
   const [activeChannels, setActiveChannels] =
-    useState<RadioChannel[]>(RADIO_CHANNELS);
+    useState<RadioChannel[]>(channelsVisibleWithoutLiveCheck());
   const [isChecking, setIsChecking] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
 
@@ -43,7 +50,7 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
         ),
       ]);
 
-      const active = checks.filter(c => c.isAvailable).map(c => c.channel);
+      const active = buildVisibleChannels(checks);
       console.log(
         `[ChannelContext] Active Channels Found: ${active.length} / ${RADIO_CHANNELS.length}`,
       );
@@ -52,13 +59,18 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
         console.log(
           '[ChannelContext] No active channels found. Fallback to all.',
         );
-        setActiveChannels(RADIO_CHANNELS);
+        const fallback = channelsVisibleWithoutLiveCheck();
+        setRuntimeVisibleChannels(fallback);
+        setActiveChannels(fallback);
       } else {
+        setRuntimeVisibleChannels(active);
         setActiveChannels(active);
       }
     } catch (error) {
       console.error('[ChannelContext] Error checking streams:', error);
-      setActiveChannels(RADIO_CHANNELS); // Fallback on error
+      const fallback = channelsVisibleWithoutLiveCheck();
+      setRuntimeVisibleChannels(fallback);
+      setActiveChannels(fallback);
     } finally {
       setIsChecking(false);
       setHasChecked(true);
@@ -67,6 +79,12 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
 
   useEffect(() => {
     checkAllStreams();
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        checkAllStreams();
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   return (

@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const INSTALL_ID_KEY = '@radiotedu/install_id';
 
 // Pseudonymous, rotatable id. Not linked to the user account; used only to
-// de-duplicate anonymized analytics. Rotating it fully anonymizes prior data.
+// de-duplicate pseudonymous analytics. Rotation prevents future events from
+// being linked to the previous identifier; server-side retention still applies.
 function uuidv4(): string {
   // Sufficient for a pseudonymous analytics id (not a security token).
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {

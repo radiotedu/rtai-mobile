@@ -17,9 +17,11 @@ describe('language and FLAC readiness', () => {
   });
 
   it('warns before FLAC playback on mobile data while allowing wifi playback', () => {
+    const jazz = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-jazz')!;
     const main = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-main')!;
 
-    expect(shouldShowFlacMobileDataWarning(main, 'flac', 'mobile-data')).toBe(true);
-    expect(shouldShowFlacMobileDataWarning(main, 'flac', 'wifi')).toBe(false);
+    expect(shouldShowFlacMobileDataWarning(jazz, 'flac', 'mobile-data')).toBe(true);
+    expect(shouldShowFlacMobileDataWarning(jazz, 'flac', 'wifi')).toBe(false);
+    expect(shouldShowFlacMobileDataWarning(main, 'flac', 'mobile-data')).toBe(false);
   });
 });

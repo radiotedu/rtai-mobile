@@ -11,7 +11,8 @@ RadioTEDU supports all applicable Android beta/preview readiness surfaces throug
 - **Android Auto / Automotive:** `RadioTeduCarService` is the app media browser service; the single APK keeps automotive hardware optional while exposing car media declarations.
 - **Study safety:** Study, Çim alan, avatar clothes, Spark, and Rock are phone-only app surfaces and must not appear in Android Auto browse trees, voice actions, playback queues, or car templates.
 - **Live Updates readiness:** Android 16+ is detected in the readiness matrix. Live radio, active podcast playback, jukebox queue state, and event countdowns use a media notification fallback below API 36.
-- **Google Analytics:** GA4 Measurement Protocol remains consent-gated and disabled until credentials are configured.
+- **Google Analytics:** Firebase Analytics is configured for Android, disabled by
+  default, enabled only after opt-in, and built without advertising-ID collection.
 - **Push notifications:** backend `/api/v1/notifications/*` routes handle device token registration, preference updates, dry runs, and admin sends.
 - **Admin sending panel:** the web controller includes a production notification composer with dry-run default, audience targeting, deep links, and delivery counts.
 

@@ -15,18 +15,21 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
 import {useConsent} from '../privacy/ConsentContext';
 import {setAnalyticsConsent} from '../services/analyticsService';
+import {PRIVACY_URL, TERMS_URL} from '../services/registrationPolicy';
 
-const POLICY_URL = 'https://radiotedu.com/privacy';
 // Google Play requires a way to request account/data deletion.
 const DELETE_ACCOUNT_URL = 'https://radiotedu.com/delete-account';
+const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
 
 const PrivacyScreen = ({navigation}: any) => {
   const {t} = useTranslation();
   const {consent, saveConsent, withdrawAll} = useConsent();
 
   const update = async (next: {analytics?: boolean; demographics?: boolean}) => {
-    const merged = {...consent, ...next};
-    await saveConsent(next);
+    const normalized =
+      next.analytics === false ? {...next, demographics: false} : next;
+    const merged = {...consent, ...normalized};
+    await saveConsent(normalized);
     setAnalyticsConsent(merged.analytics, {
       ageRange: merged.demographics ? consent.ageRange : null,
       gender: merged.demographics ? consent.gender : null,
@@ -77,8 +80,9 @@ const PrivacyScreen = ({navigation}: any) => {
             <Text style={styles.rowDesc}>{t('privacy.demographicsDesc')}</Text>
           </View>
           <Switch
-            value={consent.demographics}
+            value={consent.analytics && consent.demographics}
             onValueChange={v => update({demographics: v})}
+            disabled={!consent.analytics}
             trackColor={{true: COLORS.primary, false: '#555'}}
             thumbColor={consent.demographics ? '#FFFFFF' : '#f4f3f4'}
             ios_backgroundColor="#555"
@@ -87,10 +91,24 @@ const PrivacyScreen = ({navigation}: any) => {
         </View>
 
         <TouchableOpacity
-          onPress={() => Linking.openURL(POLICY_URL)}
+          onPress={() => Linking.openURL(PRIVACY_URL)}
           accessibilityRole="link"
           accessibilityLabel={t('privacy.viewPolicy')}>
           <Text style={styles.policyLink}>{t('privacy.viewPolicy')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => Linking.openURL(TERMS_URL)}
+          accessibilityRole="link"
+          accessibilityLabel={t('privacy.viewTerms')}>
+          <Text style={styles.policyLink}>{t('privacy.viewTerms')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => Linking.openURL(GOOGLE_PRIVACY_URL)}
+          accessibilityRole="link"
+          accessibilityLabel={t('privacy.googlePrivacy')}>
+          <Text style={styles.policyLink}>{t('privacy.googlePrivacy')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

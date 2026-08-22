@@ -717,16 +717,6 @@ const ProfileScreen = () => {
             <Icon name="chevron-right" size={24} color={COLORS.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('StreamSettings')}>
-            <View style={[styles.menuIconContainer, styles.settingsIconContainer]}>
-              <Icon name="tune-variant" size={24} color={COLORS.text} />
-            </View>
-            <Text style={styles.menuText}>Streaming quality</Text>
-            <Icon name="chevron-right" size={24} color={COLORS.textMuted} />
-          </TouchableOpacity>
-
           <TouchableOpacity style={[styles.menuItem, { marginTop: SPACING.md }]} onPress={logout}>
             <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
               <Icon name="logout-variant" size={24} color={COLORS.error} />

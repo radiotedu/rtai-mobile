@@ -11,14 +11,10 @@ import TrackPlayer, {
   usePlaybackState,
   State,
   useActiveTrack,
-  useTrackPlayerEvents,
-  Event,
 } from 'react-native-track-player';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS} from '../theme/theme';
 import {useNavigation, useNavigationState} from '@react-navigation/native';
-import {fetchAlbumArtwork} from '../utils/api';
-import {RADIO_CHANNELS} from '../data/radioChannels';
 import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
@@ -27,7 +23,7 @@ const MiniPlayer = () => {
   const playbackState = usePlaybackState();
   const track = useActiveTrack();
   const navigation = useNavigation<any>();
-  const {metadata, updateMetadata} = useMetadata();
+  const {metadata} = useMetadata();
   const {activeChannels} = useChannels();
   const [isChangingChannel, setIsChangingChannel] = React.useState(false);
 
@@ -66,68 +62,6 @@ const MiniPlayer = () => {
 
   const state = playbackState?.state;
   const isPlaying = state === State.Playing;
-
-  // --- Metadata Management Logic ---
-  useTrackPlayerEvents([Event.PlaybackMetadataReceived], async event => {
-    console.log(
-      '[MiniPlayer] PlaybackMetadataReceived event:',
-      JSON.stringify(event),
-    );
-    if (event.type === Event.PlaybackMetadataReceived) {
-      const {title, artist} = event;
-      const currentTrackData = await TrackPlayer.getActiveTrack();
-      console.log(
-        '[MiniPlayer] Parsed metadata - title:',
-        title,
-        'artist:',
-        artist,
-      );
-
-      if (currentTrackData?.id && title) {
-        const channel = RADIO_CHANNELS.find(c => c.id === currentTrackData.id);
-        const stationName = channel?.name || 'RadioTEDU';
-
-        let songTitle = title;
-        let songArtist = artist || stationName;
-        let artworkUrl = 'https://radiotedu.com/logo.png';
-
-        // Parse "Artist - Title"
-        if (!artist && title.includes(' - ')) {
-          const parts = title.split(' - ');
-          if (parts.length >= 2) {
-            songArtist = parts[0].trim();
-            songTitle = parts[1].trim();
-          }
-        }
-
-        // Fetch artwork
-        const fetchedArtwork = await fetchAlbumArtwork(
-          `${songArtist} ${songTitle}`,
-        );
-        if (fetchedArtwork) {
-          artworkUrl = fetchedArtwork;
-        }
-
-        // Update Context State (triggers re-render)
-        updateMetadata({
-          title: songTitle,
-          artist: songArtist,
-          artwork: artworkUrl,
-        });
-
-        // Update TrackPlayer for notification/lock screen
-        const currentTrackIndex = await TrackPlayer.getActiveTrackIndex();
-        if (currentTrackIndex !== undefined) {
-          await TrackPlayer.updateMetadataForTrack(currentTrackIndex, {
-            title: songTitle,
-            artist: songArtist,
-            artwork: artworkUrl,
-          });
-        }
-      }
-    }
-  });
-  // --------------------------------
 
   const [lastTrack, setLastTrack] = React.useState<any>(null);
 

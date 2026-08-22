@@ -21,4 +21,24 @@ describe('consent gate startup fallback', () => {
     expect(consentSource).toContain('const CONSENT_READY_TIMEOUT_MS = 2000;');
     expect(consentSource).toContain('setTimeout(() => setReady(true), CONSENT_READY_TIMEOUT_MS)');
   });
+
+  it('uses explicit terms acceptance and privacy-safe optional analytics defaults', () => {
+    const consentSource = fs.readFileSync(
+      path.join(__dirname, '../src/privacy/ConsentContext.tsx'),
+      'utf8',
+    );
+    const screenSource = fs.readFileSync(
+      path.join(__dirname, '../src/screens/ConsentScreen.tsx'),
+      'utf8',
+    );
+
+    expect(consentSource).toContain('CONSENT_VERSION = 2');
+    expect(consentSource).toContain('termsAccepted: false');
+    expect(consentSource).toContain('decidedAt: null');
+    expect(screenSource).toContain('useState(false)');
+    expect(screenSource).toContain('disabled={!termsAccepted}');
+    expect(screenSource).toContain('REGISTRATION_TERMS_VERSION');
+    expect(screenSource).toContain('Linking.openURL(PRIVACY_URL)');
+    expect(screenSource).toContain('Linking.openURL(TERMS_URL)');
+  });
 });

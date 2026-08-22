@@ -31,7 +31,6 @@ import LanguageScreen from '../screens/LanguageScreen';
 import FocusScreen from '../screens/FocusScreen';
 import PrivacyScreen from '../screens/PrivacyScreen';
 import PlayerScreen from '../screens/PlayerScreen';
-import StreamSettingsScreen from '../screens/StreamSettingsScreen';
 import {COLORS} from '../theme/theme';
 
 const Tab = createBottomTabNavigator();
@@ -170,11 +169,15 @@ export function RootNavigator() {
       <Stack.Screen
         name="Player"
         component={PlayerScreen}
-        options={{presentation: 'modal', animation: 'slide_from_bottom'}}
+        options={{
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+          gestureEnabled: false,
+          contentStyle: {backgroundColor: 'transparent'},
+        }}
       />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Language" component={LanguageScreen} />
-      <Stack.Screen name="StreamSettings" component={StreamSettingsScreen} />
       <Stack.Screen name="Focus" component={FocusScreen} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
       <Stack.Screen name="Events" component={EventsScreen} />

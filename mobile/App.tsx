@@ -47,7 +47,6 @@ const linking: any = {
       Profile: 'profile',
       Focus: 'focus',
       Language: 'language',
-      StreamSettings: 'streaming',
       Auth: 'auth',
     },
   },
@@ -75,6 +74,7 @@ function App(): React.JSX.Element {
 
       try {
         await TrackPlayer.updateOptions({
+          icon: require('./src/assets/images/notification-icon.png'),
           // @ts-ignore - Property exists at runtime
           stopWithApp: true, // Stop playback when app is closed from background
           capabilities: [

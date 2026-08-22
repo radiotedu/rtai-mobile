@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
 
 // Load release signing credentials from a gitignored keystore.properties file
 // (never commit real keystores or passwords). If absent, release falls back to
@@ -99,8 +100,8 @@ android {
         applicationId "com.radiotedumobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 11000
-        versionName "1.1.0"
+        versionCode 12030
+        versionName "1.2.3"
     }
     // Single APK distribution: the same package installs on phones/tablets and
     // exposes optional Android Auto / Automotive media surfaces through the
@@ -147,6 +148,9 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // RN 0.76 uses Kotlin 1.9; newer Analytics 23.x artifacts require Kotlin 2.2.
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

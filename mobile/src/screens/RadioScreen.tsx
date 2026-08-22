@@ -23,7 +23,6 @@ import api from '../services/api';
 import {
   RADIO_CHANNELS,
   RadioChannel,
-  StreamQuality,
 } from '../data/radioChannels';
 import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
@@ -36,7 +35,6 @@ import {
   saveFavoriteChannelIds,
   toggleFavoriteChannelId,
 } from '../services/radioFavorites';
-import {useStreamPreferences} from '../hooks/useStreamPreferences';
 
 const RadioScreen = () => {
   const navigation = useNavigation<any>();
@@ -44,7 +42,6 @@ const RadioScreen = () => {
   const activeTrack = useActiveTrack();
   const {metadata, clearMetadata} = useMetadata();
   const {activeChannels, isChecking} = useChannels();
-  const {preferences: streamPreferences} = useStreamPreferences();
   const [selectedChannel, setSelectedChannel] = useState<RadioChannel>(RADIO_CHANNELS[0]);
   const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
@@ -58,11 +55,6 @@ const RadioScreen = () => {
   const isBuffering =
     (state === State.Buffering || state === State.Loading) &&
     currentPlayingId === selectedChannel.id;
-  const activeStreamQuality =
-    (activeTrack?.streamQuality as StreamQuality | undefined) ||
-    (streamPreferences.quality === 'automatic'
-      ? 'normal'
-      : streamPreferences.quality);
 
   const orderedChannels = useMemo(
     () => buildFavoriteChannelOrder(activeChannels, favoriteIds),
@@ -177,11 +169,10 @@ const RadioScreen = () => {
 
   const displayTitle = metadata?.title || activeTrack?.title || selectedChannel.name;
   const displayArtist = metadata?.artist || activeTrack?.artist || selectedChannel.description;
-  const displayArtwork = metadata?.artwork || activeTrack?.artwork || selectedChannel.logo || 'https://radiotedu.com/logo.png';
-  const qProps = getQualityProps(
-    activeStreamQuality,
-    streamPreferences.quality === 'automatic',
-  );
+  const displayArtwork =
+    metadata?.artwork || activeTrack?.artwork || selectedChannel.logo;
+  const displayArtworkSource =
+    typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
 
   const renderHistoryItem = ({item}: {item: any}) => (
     <View style={styles.historyItem}>
@@ -210,7 +201,7 @@ const RadioScreen = () => {
               onPress={() => navigation.navigate('Player')}
               activeOpacity={0.85}
               accessibilityLabel="Tam ekran oynatıcıyı aç">
-              <Image source={{uri: displayArtwork}} style={styles.nowArtwork} />
+              <Image source={displayArtworkSource} style={styles.nowArtwork} />
             </TouchableOpacity>
             <View style={styles.nowBody}>
               <View style={styles.liveRow}>
@@ -218,13 +209,6 @@ const RadioScreen = () => {
                   <View style={styles.liveDot} />
                   <Text style={styles.liveText}>LIVE</Text>
                 </View>
-                <TouchableOpacity
-                  style={[styles.qualityBadge, {borderColor: qProps.borderColor}]}
-                  onPress={() => navigation.navigate('StreamSettings')}
-                  accessibilityLabel="Streaming quality settings">
-                  <Icon name={qProps.icon} size={13} color={qProps.color} />
-                  <Text style={[styles.qualityText, {color: qProps.color}]}>{qProps.text}</Text>
-                </TouchableOpacity>
               </View>
               <Text style={styles.trackTitle} numberOfLines={1}>{displayTitle}</Text>
               <Text style={styles.trackArtist} numberOfLines={1}>{displayArtist}</Text>
@@ -342,10 +326,9 @@ function FavoriteCard({
       style={[styles.favoriteCard, isActive && {borderColor: channel.color}]}
       onPress={onPress}
       activeOpacity={0.82}>
-      <View style={[styles.favoriteIcon, {backgroundColor: `${channel.color}22`}]}>
-        <Icon name={channel.icon || 'radio-tower'} size={22} color={channel.color} />
-      </View>
+      <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" />
       <Text style={styles.favoriteName} numberOfLines={1}>{channel.name}</Text>
+      {channel.streams.flac ? <Text style={styles.stationFlacText}>FLAC</Text> : null}
       <Text style={styles.favoriteDesc} numberOfLines={1}>{channel.description}</Text>
       {isPlaying ? <View style={[styles.equalizer, {backgroundColor: channel.color}]} /> : null}
       <TouchableOpacity style={styles.favoriteHeart} onPress={onToggleFavorite}>
@@ -376,14 +359,15 @@ function ChannelGridCard({
       onPress={onPress}
       activeOpacity={0.84}>
       <View style={styles.cardTopRow}>
-        <View style={[styles.channelIcon, {backgroundColor: `${channel.color}22`}]}>
-          <Icon name={channel.icon || 'radio-tower'} size={20} color={channel.color} />
-        </View>
+        <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" />
         <TouchableOpacity onPress={onToggleFavorite} hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}>
           <Icon name={isFavorite ? 'heart' : 'heart-outline'} size={19} color={isFavorite ? COLORS.primary : COLORS.textMuted} />
         </TouchableOpacity>
       </View>
-      <Text style={styles.channelName} numberOfLines={1}>{channel.name}</Text>
+      <View style={styles.channelNameRow}>
+        <Text style={styles.channelName} numberOfLines={1}>{channel.name}</Text>
+        {channel.streams.flac ? <Text style={styles.stationFlacText}>FLAC</Text> : null}
+      </View>
       <Text style={styles.channelDescription} numberOfLines={1}>{channel.description}</Text>
       <View style={styles.cardBottomRow}>
         <Text style={[styles.statusText, isPlaying && {color: channel.color}]}>
@@ -449,25 +433,6 @@ function HistoryModal({
   );
 }
 
-function getQualityProps(streamQuality: StreamQuality, automatic: boolean) {
-  const prefix = automatic ? 'AUTO · ' : '';
-  if (streamQuality === 'flac') {
-    return {
-      text: `${prefix}FLAC`,
-      color: '#FF9F43',
-      borderColor: 'rgba(255, 159, 67, 0.55)',
-      icon: 'waveform',
-    };
-  }
-  if (streamQuality === 'high') {
-    return {text: `${prefix}HIGH`, color: '#FFD700', borderColor: 'rgba(255, 215, 0, 0.5)', icon: 'signal-cellular-3'};
-  }
-  if (streamQuality === 'normal') {
-    return {text: `${prefix}NORMAL`, color: '#00BCD4', borderColor: 'rgba(0, 188, 212, 0.5)', icon: 'signal-cellular-2'};
-  }
-  return {text: `${prefix}LOW`, color: '#B0BEC5', borderColor: 'rgba(176, 190, 197, 0.5)', icon: 'signal-cellular-1'};
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -523,19 +488,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.8,
-  },
-  qualityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  qualityText: {
-    fontSize: 9,
-    fontWeight: '900',
   },
   trackTitle: {
     color: COLORS.text,
@@ -641,13 +593,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     marginRight: SPACING.sm,
   },
-  favoriteIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   favoriteName: {
     color: COLORS.text,
     fontSize: 15,
@@ -708,18 +653,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  channelIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   channelName: {
     color: COLORS.text,
     fontSize: 15,
     fontWeight: '900',
+  },
+  stationLogo: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: '#F4F4F4',
+  },
+  channelNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: SPACING.sm,
+  },
+  stationFlacText: {
+    color: '#FFD700',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   channelDescription: {
     color: COLORS.textMuted,

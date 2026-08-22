@@ -1,19 +1,16 @@
+import {Platform} from 'react-native';
 import type {StreamQuality} from '../data/radioChannels';
 
 // Default stream quality used by remote/car/voice playback (where the user
 // hasn't picked a quality in the app UI).
 export const DEFAULT_STREAM_QUALITY: StreamQuality = 'normal';
 
-// Google Analytics 4 (Measurement Protocol) credentials. Create a GA4 property,
-// then Admin ? Data Streams ? Measurement Protocol API secrets.
-// Grant only RadioTEDU managers access to the GA4 property to view the data.
-// Leave blank to disable analytics entirely (the app then never sends events).
-export const GA4_MEASUREMENT_ID = ''; // e.g. 'G-XXXXXXXXXX'
-export const GA4_API_SECRET = ''; // e.g. 'abcdEf12...'
-export const GA4_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
+// Firebase/GA4 is configured by android/app/google-services.json. Never embed
+// a Measurement Protocol API secret in a distributed client.
+export const GA4_PROPERTY_ID = '547255730';
 
 export function isAnalyticsConfigured(): boolean {
-  return GA4_MEASUREMENT_ID.length > 0 && GA4_API_SECRET.length > 0;
+  return Platform.OS === 'android';
 }
 
 // Audio stream of the restaurant Jukebox (the communal selection). When set,

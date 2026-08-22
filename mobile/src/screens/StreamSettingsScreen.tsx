@@ -38,19 +38,19 @@ const QUALITY_OPTIONS: Array<{
   {
     value: 'low',
     title: 'Low (32 kbit)',
-    description: 'Uses the least data and starts fastest on weak connections (/radio-low).',
+    description: 'HE-AAC v1. Uses the least data and starts fastest on weak connections.',
     icon: 'signal-cellular-1',
   },
   {
     value: 'normal',
     title: 'Normal (192 kbit)',
-    description: 'Standard crystal-clear RadioTEDU stream (/radio).',
+    description: 'HE-AAC v1. Standard RadioTEDU stream.',
     icon: 'signal-cellular-2',
   },
   {
     value: 'flac',
     title: 'FLAC (Lossless)',
-    description: 'Uncompressed studio master audio (/radio-flac). Uses considerably more data.',
+    description: 'Available only on Classic and Jazz. Uses considerably more data.',
     icon: 'waveform',
   },
 ];
@@ -188,7 +188,7 @@ const StreamSettingsScreen = () => {
                 <View style={styles.optionBody}>
                   <View style={styles.optionTitleRow}>
                     <Text style={styles.optionTitle}>{option.title}</Text>
-                    {option.value === 'normal' ? (
+                    {option.value === 'automatic' ? (
                       <Text style={styles.recommended}>RECOMMENDED</Text>
                     ) : null}
                   </View>
@@ -216,7 +216,7 @@ const StreamSettingsScreen = () => {
         <View style={styles.channelNote}>
           <Icon name="translate" size={22} color="#8CB4FF" />
           <Text style={styles.channelNoteText}>
-            RadioTEDU English and RadioTEDU Français are separate stations. This quality choice applies to them too.
+            Quality changes apply to every currently available station.
           </Text>
         </View>
 

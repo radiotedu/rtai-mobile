@@ -15,6 +15,7 @@ import {
     type TeduLoginSession,
 } from '../services/erpIdentity';
 import {buildRegistrationPolicy} from '../services/registrationPolicy';
+import api, {isDefinitiveAuthRejection} from '../services/api';
 import {
     clearAuthTokens,
     getAccessToken,
@@ -30,6 +31,7 @@ export interface User {
     avatar_url?: string;
     rank_score: number;
     monthly_rank_score?: number;
+    gold_balance: number;
     role: string;
     is_guest: boolean;
     total_songs_added: number;
@@ -58,13 +60,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const normalizeUser = (user: Partial<User> & Record<string, any>): User => ({
+export const normalizeUser = (user: Partial<User> & Record<string, any>): User => ({
     id: String(user.id ?? ''),
     email: String(user.email ?? ''),
     display_name: String(user.display_name ?? ''),
     avatar_url: user.avatar_url,
     rank_score: Number(user.rank_score ?? 0),
     monthly_rank_score: Number(user.monthly_rank_score ?? 0),
+    gold_balance: Number(user.gold_balance ?? 0),
     role: String(user.role ?? 'guest'),
     is_guest: Boolean(user.is_guest),
     total_songs_added: Number(user.total_songs_added ?? 0),
@@ -81,14 +84,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const clearSessionState = useCallback(async () => {
         await clearAuthTokens();
         notifyAuthSessionChanged();
-        delete axios.defaults.headers.common['Authorization'];
         setUser(null);
     }, []);
 
     const persistSession = useCallback(async (session: TeduLoginSession) => {
         await setAuthTokens(session.access_token, session.refresh_token);
         notifyAuthSessionChanged();
-        axios.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
         setUser(normalizeUser(session.user));
     }, []);
 
@@ -100,13 +101,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 return null;
             }
 
-            axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-            const response = await axios.get(`${API_URL}/auth/me`);
+            const response = await api.get('/auth/me');
             const nextUser = normalizeUser(response.data.data);
             setUser(nextUser);
             return nextUser;
         } catch (error) {
-            await clearSessionState();
+            if (isDefinitiveAuthRejection(error)) {
+                await clearSessionState();
+            }
             throw error;
         }
     }, [clearSessionState]);
@@ -118,7 +120,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const completeTeduLogin = useCallback(async (url: string) => {
         const callback = parseTeduLoginCallback(url);
-        if (!callback.matched) return;
+        if (!callback.matched) {
+            return;
+        }
 
         setIsTeduLoginLoading(true);
         setTeduLoginError(null);
@@ -141,11 +145,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const subscription = Linking.addEventListener('url', ({url}) => {
-            void completeTeduLogin(url);
+            completeTeduLogin(url).catch(() => undefined);
         });
-        void Linking.getInitialURL().then((url) => {
-            if (url) void completeTeduLogin(url);
-        });
+        Linking.getInitialURL()
+            .then((url) => {
+                if (url) {
+                    return completeTeduLogin(url);
+                }
+                return undefined;
+            })
+            .catch(() => undefined);
         return () => subscription.remove();
     }, [completeTeduLogin]);
 
@@ -153,8 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             await refreshSession();
         } catch (error) {
-            console.log('[AuthContext] No valid session found');
-            await logout();
+            console.log('[AuthContext] Session verification deferred');
         } finally {
             setIsLoading(false);
         }
@@ -207,7 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const guestLogin = async (displayName: string) => {
         try {
             const response = await axios.post(`${API_URL}/auth/guest`, {
-                display_name: displayName
+                display_name: displayName,
             });
             await persistSession(response.data.data);
         } catch (error: any) {

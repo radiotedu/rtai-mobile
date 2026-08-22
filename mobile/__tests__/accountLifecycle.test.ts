@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import axios from 'axios';
 
+import api from '../src/services/api';
 import {BASE_API} from '../src/services/config';
 import {
   buildDeleteAccountPayload,
@@ -31,6 +32,13 @@ jest.mock('axios', () => ({
   },
 }));
 
+jest.mock('../src/services/api', () => ({
+  __esModule: true,
+  default: {
+    delete: jest.fn(),
+  },
+}));
+
 describe('mobile account lifecycle service', () => {
   const getRefreshTokenMock = getRefreshToken as jest.MockedFunction<
     typeof getRefreshToken
@@ -39,7 +47,7 @@ describe('mobile account lifecycle service', () => {
     typeof clearAuthTokens
   >;
   const postMock = axios.post as jest.MockedFunction<typeof axios.post>;
-  const deleteMock = axios.delete as jest.MockedFunction<typeof axios.delete>;
+  const deleteMock = api.delete as jest.MockedFunction<typeof api.delete>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -85,7 +93,7 @@ describe('mobile account lifecycle service', () => {
 
     await deleteAccountAndClearSession('correct-password');
 
-    expect(deleteMock).toHaveBeenCalledWith(`${BASE_API}/auth/account`, {
+    expect(deleteMock).toHaveBeenCalledWith('/auth/account', {
       data: {
         confirmation: 'DELETE',
         password: 'correct-password',

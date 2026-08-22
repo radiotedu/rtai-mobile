@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+import api from './api';
 import {BASE_API} from './config';
 import {clearAuthTokens, getRefreshToken} from './authTokenStorage';
 
@@ -38,7 +39,7 @@ export async function logoutAccountSession(): Promise<void> {
 export async function deleteAccountAndClearSession(
   password?: string,
 ): Promise<void> {
-  await axios.delete(`${BASE_API}/auth/account`, {
+  await api.delete('/auth/account', {
     data: buildDeleteAccountPayload(password),
   });
   await clearStoredAuthSession();

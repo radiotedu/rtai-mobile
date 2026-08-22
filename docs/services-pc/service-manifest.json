@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-22T19:10:00+03:00",
+  "api_contract_changed": false,
+  "services": [
+    {
+      "name": "RadioTEDUVotingRadio",
+      "display_name": "RadioTEDU Voting Radio",
+      "kind": "windows-service",
+      "start": "automatic-immediate",
+      "account": "LocalSystem",
+      "local_health": "http://127.0.0.1:4317/api/health",
+      "music_roots": ["F:\\RadioTEDU Songs\\Voting"],
+      "scan_interval_ms": 10000,
+      "source": "https://github.com/radiotedu/votertai"
+    },
+    {
+      "name": "RadioTEDU.JukeLocalMediaAgent",
+      "display_name": "RadioTEDU JukeLocal Media Agent",
+      "kind": "windows-service",
+      "start": "automatic-immediate",
+      "account": "LocalSystem",
+      "local_health": "http://127.0.0.1:3210/v1/health",
+      "music_roots": ["F:\\RadioTEDU Songs"],
+      "scan_interval_ms": 10000,
+      "source": "https://github.com/akgularda/juke-local"
+    },
+    {
+      "name": "RadioTEDU.AIStreams",
+      "display_name": "RadioTEDU AI Streams",
+      "kind": "windows-service",
+      "start": "automatic-immediate",
+      "account": "LocalSystem",
+      "local_health": ["http://127.0.0.1:8765/health", "http://127.0.0.1:8766/health"],
+      "music_roots": [
+        "F:\\RadioTEDU Songs\\AI\\rights-cleared\\radiotedu-en",
+        "F:\\RadioTEDU Songs\\AI\\rights-cleared\\radiotedu-fr"
+      ],
+      "source": "https://github.com/akgularda/RadioTEDU"
+    },
+    {
+      "name": "RadioTEDU.SharedAI",
+      "display_name": "RadioTEDU Shared AI",
+      "kind": "windows-service",
+      "start": "automatic-immediate",
+      "account": "LocalSystem",
+      "local_health": "http://127.0.0.1:11434/api/tags",
+      "source": "https://github.com/akgularda/RadioTEDU"
+    },
+    {
+      "name": "RadioTEDU YouTube Focus Stream V4",
+      "kind": "system-boot-task",
+      "watchdog": "RadioTEDU Stream Watchdog",
+      "music_roots": ["F:\\RadioTEDU Songs\\Juke Local\\All PC Songs\\Legacy Libraries\\RadioTEDU-LoFi-Library\\tracks"],
+      "source": "https://github.com/akgularda/radiotedu-focus-stream"
+    },
+    {
+      "name": "RadioTEDU YouTube Classical Stream",
+      "kind": "system-boot-task",
+      "watchdog": "RadioTEDU Stream Watchdog",
+      "music_roots": ["F:\\RadioTEDU Songs\\Juke Local\\All PC Songs\\Legacy Libraries\\RadioTEDU-Classical-Library\\tracks"],
+      "source": "https://github.com/akgularda/radiotedu-focus-stream"
+    }
+  ],
+  "recovery": {
+    "scm_restart_delays_ms": [5000, 15000, 30000],
+    "semantic_watchdog_task": "RadioTEDU-Autonomous-Watchdog",
+    "semantic_watchdog_interval_minutes": 2,
+    "startup_task": "RadioTEDU-Autonomous-Start",
+    "youtube_watchdog_task": "RadioTEDU Stream Watchdog"
+  },
+  "excluded_from_source_control": [
+    "secrets",
+    "*.env",
+    "credentials",
+    "logs",
+    "pid files",
+    "media libraries",
+    "queue and guest test data"
+  ]
+}
+

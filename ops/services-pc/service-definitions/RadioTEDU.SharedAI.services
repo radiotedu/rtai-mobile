@@ -1,0 +1,5 @@
+﻿# name|executable|arguments|working directory|restart
+Ollama-Shared-AI|C:\Users\tedu\AppData\Local\Programs\Ollama\ollama.exe|serve|C:\Users\tedu\AppData\Local\Programs\Ollama|true
+env|OLLAMA_HOST|127.0.0.1:11434
+env|OLLAMA_MODELS|C:\Users\tedu\.ollama\models
+env|RADIOTEDU_PROCESS_PRIORITY|below_normal

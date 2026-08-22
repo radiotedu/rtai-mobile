@@ -1,0 +1,2 @@
+﻿# name|executable|arguments|working directory|restart
+RadioTEDU-AI-Streams|C:\Users\tedu\AppData\Local\Programs\Python\Python312\python.exe|-u "C:\Users\tedu\Desktop\Services\payload\ai-host\scripts\run_ai_quality_supervisor.py" --config "C:\ProgramData\RadioTEDU\ServicesCompanion\services\RadioTEDU.AIStreams.json"|C:\Users\tedu\Desktop\Services\payload\ai-host|true

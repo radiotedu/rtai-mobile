@@ -1,0 +1,64 @@
+{
+    "version":  1,
+    "icecast_host":  "10.98.98.75",
+    "icecast_port":  11154,
+    "icecast_user":  "source",
+    "credential_store":  "C:\\ProgramData\\RadioTEDU\\OnAir\\secrets\\station-credentials.json",
+    "credential_reference":  "credential://user/station/2/icecast",
+    "credential_env_file":  "C:\\ProgramData\\RadioTEDU\\ServicesCompanion\\secrets\\ai-streams.env",
+    "onair_source_root":  "C:\\Users\\tedu\\Documents\\RadioTEDU-OnAir-Radio",
+    "ffmpeg":  "C:\\Users\\tedu\\AppData\\Local\\RadioTEDU Broadcast Wall\\tools\\bin\\ffmpeg.exe",
+    "state_file":  "C:\\ProgramData\\RadioTEDU\\ai-radio\\state\\ffmpeg-supervisor.json",
+    "bitrate_kbps":  192,
+    "stations":  [
+                     {
+                         "station_id":  "radiotedu-en",
+                         "mount":  "/en",
+                         "health_port":  8765,
+                         "music_roots":  [
+                                             "F:\\RadioTEDU Songs\\AI\\rights-cleared\\radiotedu-en"
+                                         ],
+                         "preferred_extensions":  [
+
+                                                  ],
+                         "dynamic_host_enabled":  true,
+                         "host_lead_songs_min":  3,
+                         "host_lead_songs_max":  4,
+                         "host_queue_target":  10,
+                         "host_ollama_url":  "http://127.0.0.1:11434",
+                         "host_model":  "qwen2.5:0.5b",
+                         "host_voice":  "en-US-AriaNeural",
+                         "playout_seed":  20260813,
+                         "name":  "RadioTEDU English",
+                         "public_stream_url":  "https://stream.radiotedu.com/en",
+                         "public_mount":  "/en"
+                     },
+                     {
+                         "station_id":  "radiotedu-fr",
+                         "mount":  "/fr",
+                         "health_port":  8766,
+                         "music_roots":  [
+                                             "F:\\RadioTEDU Songs\\AI\\rights-cleared\\radiotedu-fr"
+                                         ],
+                         "preferred_extensions":  [
+
+                                                  ],
+                         "dynamic_host_enabled":  true,
+                         "host_lead_songs_min":  3,
+                         "host_lead_songs_max":  4,
+                         "host_queue_target":  10,
+                         "host_ollama_url":  "http://127.0.0.1:11434",
+                         "host_model":  "qwen2.5:0.5b",
+                         "host_voice":  "fr-FR-DeniseNeural",
+                         "playout_seed":  20260814,
+                         "name":  "RadioTEDU Français",
+                         "public_stream_url":  "https://stream.radiotedu.com/fr",
+                         "public_mount":  "/fr"
+                     }
+                 ],
+    "quality_outputs_path":  "C:\\Users\\tedu\\Documents\\RadioTEDU-OnAir-Radio\\run\\new-program\\data\\integrations\\quality-outputs.json",
+    "playout_mode":  "deterministic",
+    "public_api_base_url":  "https://radiotedu.com",
+    "public_agent_id":  "school-radio-pc",
+    "public_sync_interval_seconds":  10
+}

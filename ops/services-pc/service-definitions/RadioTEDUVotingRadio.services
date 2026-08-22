@@ -1,0 +1,2 @@
+﻿# name|executable|arguments|working directory|restart
+Voting-Radio-Agent|C:\Program Files\nodejs\node.exe|"C:\Users\tedu\Desktop\Services\payload\voting-agent\node_modules\tsx\dist\cli.mjs" --env-file="C:\ProgramData\RadioTEDU\ServicesCompanion\secrets\voting.env" "C:\Users\tedu\Desktop\Services\payload\voting-agent\src\server\index.ts"|C:\Users\tedu\Desktop\Services\payload\voting-agent|true

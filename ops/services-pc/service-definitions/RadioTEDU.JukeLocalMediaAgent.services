@@ -1,0 +1,2 @@
+﻿# name|executable|arguments|working directory|restart
+Juke-Local-Media-Agent|C:\Program Files\nodejs\node.exe|--env-file="C:\ProgramData\RadioTEDU\ServicesCompanion\secrets\juke-local.env" "C:\Users\tedu\Desktop\Services\payload\juke-local\server.js"|C:\Users\tedu\Desktop\Services\payload\juke-local|true

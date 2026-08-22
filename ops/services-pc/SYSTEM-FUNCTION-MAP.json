@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "canonical_guide": "AI-MAINTAINER-GUIDE.md",
+  "operator_ui": "http://127.0.0.1:4317",
+  "invariants": [
+    "automatic_start_and_recovery_without_login_or_codex",
+    "same_catalog_and_seed_produce_same_decisions",
+    "genre_only_voting",
+    "ai_catalogs_cc0_only",
+    "juke_all_operator_approved_local_files_are_candidates_unless_excluded",
+    "one_ephemeral_host_clip_prepared_three_to_four_songs_ahead",
+    "secrets_never_exposed_by_ui_or_logs"
+  ],
+  "functions": {
+    "ai_playout": {
+      "owners": ["payload/ai-host/scripts/run_ai_stream_supervisor.py", "payload/RadioTEDU.AIStreams.json"],
+      "tests": ["payload/ai-host/tests/backend/test_ai_stream_supervisor.py"],
+      "ui": "System > Deterministic broadcast settings > station playout seed",
+      "service": "RadioTEDU.AIStreams"
+    },
+    "dynamic_host": {
+      "owners": ["payload/ai-host/scripts/dynamic_host_queue.py", "payload/ai-host/scripts/run_ai_quality_supervisor.py"],
+      "tests": ["payload/ai-host/tests/backend/test_dynamic_host_queue.py", "payload/ai-host/tests/backend/test_ai_quality_supervisor_unittest.py"],
+      "ui": "System > Deterministic broadcast settings > host enabled and lead range",
+      "service": "RadioTEDU.AIStreams"
+    },
+    "voting": {
+      "owners": ["payload/voting-agent/src/server/app.ts", "payload/voting-agent/src/agent/candidateSelection.ts", "payload/voting-agent/src/agent/deterministicRng.ts", "payload/voting-agent/src/agent/backendClient.ts"],
+      "tests": ["payload/voting-agent/src/agent/candidateSelection.test.ts", "payload/voting-agent/src/agent/deterministicRng.test.ts", "payload/voting-agent/src/server/app.test.ts"],
+      "ui": "Voting; System > Public genre-voting backend",
+      "service": "RadioTEDUVotingRadio",
+      "fixed_mode": "genre",
+      "public_contract": ["POST /api/v1/next-song-voting/agent/rounds", "GET /api/v1/next-song-voting/rounds/active"]
+    },
+    "juke_library": {
+      "owners": ["payload/juke-local/server.js", "payload/juke-local/libraryScanner.js"],
+      "tests": ["payload/juke-local/server.test.js", "payload/juke-local/libraryScanner.test.js", "payload/juke-local/playLedger.test.js"],
+      "ui": "System > Juke-Local API and library",
+      "remote_api": ["https://radiotedu.com/juke-local/api/v1/media-agent/heartbeat", "wss://radiotedu.com/juke-local/api/v1/media-agent/connect"],
+      "service": "RadioTEDU.JukeLocalMediaAgent"
+    },
+    "operator_control": {
+      "owners": ["payload/voting-agent/src/server/operatorControl.ts", "payload/voting-agent/src/web/App.tsx", "payload/voting-agent/src/web/styles.css"],
+      "tests": ["payload/voting-agent/src/server/operatorControl.test.ts"],
+      "ui": "System > service start/restart/repair, deterministic settings, public connections, and Juke library management",
+      "network_scope": "loopback_only",
+      "secrets_returned": false
+    },
+    "public_connections": {
+      "owners": ["payload/ai-host/scripts/run_ai_quality_supervisor.py", "payload/ai-host/scripts/run_ai_stream_supervisor.py", "payload/voting-agent/src/agent/backendClient.ts", "payload/voting-agent/src/server/operatorControl.ts", "payload/voting-agent/src/web/App.tsx"],
+      "tests": ["payload/ai-host/tests/backend/test_ai_quality_supervisor_unittest.py", "payload/ai-host/tests/backend/test_ai_stream_supervisor.py", "payload/voting-agent/src/server/operatorControl.test.ts", "payload/voting-agent/src/server/app.test.ts"],
+      "ui": "System > Public website and Icecast; System > Public genre-voting backend",
+      "write_only_fields": ["Icecast source password", "EN station HMAC secret", "FR station HMAC secret", "Voting backend agent token", "Juke request secret", "Juke heartbeat secret", "Juke tunnel secret"],
+      "service_restart_policy": "restart_only_when_that_service_configuration_changes"
+    },
+    "autonomy": {
+      "owners": ["Install-On-Another-PC.ps1", "Install-RadioTEDU-Autonomy.ps1", "Ensure-RadioTEDU-Autonomous.ps1", "Test-RadioTEDU-Autonomy.ps1", "Restart-RadioTEDU-Voting.ps1", "payload/service-host/radiotedu_service_host.py"],
+      "services": ["RadioTEDU.AIStreams", "RadioTEDU.JukeLocalMediaAgent", "RadioTEDU.SharedAI", "RadioTEDUVotingRadio"],
+      "boot_contract": "immediate_automatic_before_login_plus_system_boot_task",
+      "health_contract": "semantic_health_then_targeted_restart_then_recheck",
+      "destructive_evidence": "C:\\ProgramData\\RadioTEDU\\ServicesCompanion\\autonomy-verification.json"
+    }
+  },
+  "validation": {
+    "voting": "cd payload/voting-agent && npm.cmd test && npm.cmd run build",
+    "ai": "cd payload/ai-host && python -m pytest -q tests/backend/test_ai_stream_supervisor.py tests/backend/test_dynamic_host_queue.py tests/backend/test_ai_quality_supervisor_unittest.py",
+    "juke": "cd payload/juke-local && node --test server.test.js playLedger.test.js libraryScanner.test.js",
+    "autonomy": "powershell.exe -ExecutionPolicy Bypass -File .\\Test-RadioTEDU-Autonomy.ps1"
+  }
+}

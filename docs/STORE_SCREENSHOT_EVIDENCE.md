@@ -36,7 +36,7 @@ The evidence manifests record raw/final hashes, Git SHA, exact input and install
 Required reproducible states before a release asset set is complete:
 
 - Radio station with live Icecast metadata and normal quality.
-- Low quality and Classic/Cazz FLAC quality, including the cellular-data warning state.
+- Low quality and Classic/Jazz FLAC quality, including the cellular-data warning state.
 - Voting round with real candidates and vote controls.
 - Jukebox with a connected device, now playing, queue, and search results.
 - Study authenticated room with elapsed minutes visible.

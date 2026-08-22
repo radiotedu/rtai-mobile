@@ -26,6 +26,7 @@ describe('six-language source audit fixes', () => {
       'player.play',
       'player.pause',
       'player.next',
+      'player.flacDescription',
       'votePanel.seconds',
     ];
     const authKeys = ['login.requestError', 'login.resetSubject', 'register.requestError'];
@@ -33,7 +34,9 @@ describe('six-language source audit fixes', () => {
 
     for (const language of languages) {
       for (const key of appKeys) {
-        expect(appCopy(language, key, {name: 'Alex', points: 10, seconds: 9})).not.toBe(key);
+        const value = appCopy(language, key, {name: 'Alex', points: 10, seconds: 9});
+        expect(value).not.toBe(key);
+        expect(value).not.toContain('Cazz');
       }
       for (const key of authKeys) {
         expect(authCopy(language, key)).not.toBe(key);

@@ -71,7 +71,7 @@ This is preserved as machine output, including likely recognition errors. It is 
 - Car browse root: Live Radio + Podcasts only.
 - Artwork: car-compatible local resource/content URIs; no blank bitmap tiles.
 - Live radio: station name plus Icecast song/artist metadata; quality choice stays in playback UI.
-- FLAC: Classic and Cazz only; warn or block on metered mobile data.
+- FLAC: Classic and Jazz only; warn or block on metered mobile data.
 - Podcasts: grouped by feed/series; Next/Previous remains in the active series.
 - Driving safety: no rankings, voting, games, Study, account, or Jukebox-control UI in the car browse tree.
 

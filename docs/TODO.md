@@ -29,7 +29,7 @@ Capture command (real device/emulator only; refuses non-1080×1920 output):
 
 - [ ] Install current release APK on Windows-connected Android target and verify package/version.
 - [ ] Create/use a disposable test account; capture account/profile/settings and consent screens without personal data.
-- [ ] Capture Home, all visible radio stations, normal/low playback, FLAC on Classic and Cazz, metadata, artwork, and cellular-data warning.
+- [ ] Capture Home, all visible radio stations, normal/low playback, FLAC on Classic and Jazz, metadata, artwork, and cellular-data warning.
 - [ ] Capture Now Playing, quality menu, Android media notification/lock-screen controls, and back-swipe behavior.
 - [ ] Capture Study landing/content and visible study-minute progress.
 - [ ] Capture Voting, Jukebox, and Juke-local flows using reproducible states.

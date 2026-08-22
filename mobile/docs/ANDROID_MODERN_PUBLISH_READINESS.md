@@ -37,7 +37,7 @@ The admin sender is production-facing:
 
 ## Android Auto and Car QA
 
-- Voice playback resolves RadioTEDU, Jazz/Cazz, Classic, Lo-Fi, other currently available stations, and the latest podcast through Media3 request metadata.
+- Voice playback resolves RadioTEDU, Jazz, Classic, Lo-Fi, other currently available stations, and the latest podcast through Media3 request metadata.
 - The manifest declares both `androidx.media3.session.MediaLibraryService` and the legacy `android.media.browse.MediaBrowserService` action; RNTP also retains `MEDIA_PLAY_FROM_SEARCH`.
 - The native car tree exposes only Live Radio and Podcasts. Suggested requests return up to ten available stations and one recent episode per series.
 - The phone APK is also the car-capable APK. RadioTEDU does not ship a separate Automotive APK; car surfaces are optional media declarations in the main manifest.

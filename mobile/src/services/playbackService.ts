@@ -1,5 +1,6 @@
-import TrackPlayer, {Event} from 'react-native-track-player';
+import TrackPlayer, {Event, State} from 'react-native-track-player';
 import {
+  clearConnectionWatchdog,
   ensureBrowsableQueue,
   fallbackActiveChannelStream,
   findChannelByQuery,
@@ -149,6 +150,12 @@ export const PlaybackService = async function () {
       await handleRemotePlaySearch(query ?? '');
     } catch (error) {
       logSafeError('playback.remoteSearch', error);
+    }
+  });
+
+  TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
+    if (state === State.Playing) {
+      clearConnectionWatchdog();
     }
   });
 

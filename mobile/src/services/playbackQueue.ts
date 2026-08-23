@@ -281,6 +281,7 @@ function confirmFlacOnCellular(channel: RadioChannel): Promise<boolean> {
 }
 
 export const NORMAL_CONNECT_TIMEOUT_MS = 5000;
+export const FLAC_CONNECT_TIMEOUT_MS = 12000;
 let connectionWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function clearConnectionWatchdog(): void {
@@ -293,9 +294,12 @@ export function clearConnectionWatchdog(): void {
 export function startConnectionWatchdog(
   channel: RadioChannel,
   quality: StreamQuality,
-  timeoutMs: number = NORMAL_CONNECT_TIMEOUT_MS,
+  timeoutMs?: number,
 ): void {
   clearConnectionWatchdog();
+
+  const effectiveTimeout =
+    timeoutMs ?? (quality === 'flac' ? FLAC_CONNECT_TIMEOUT_MS : NORMAL_CONNECT_TIMEOUT_MS);
 
   connectionWatchdogTimer = setTimeout(async () => {
     try {
@@ -307,14 +311,14 @@ export function startConnectionWatchdog(
         state !== State.Playing
       ) {
         console.log(
-          `[playbackQueue] Connection to stream timed out after ${timeoutMs}ms. Cascading fallback.`,
+          `[playbackQueue] Connection to stream timed out after ${effectiveTimeout}ms. Cascading fallback.`,
         );
         await fallbackActiveChannelStream();
       }
     } catch (error) {
       logSafeError('playback.connectionWatchdog', error);
     }
-  }, timeoutMs);
+  }, effectiveTimeout);
 }
 
 /** Resolve the saved quality, update the queue item, then play it. */

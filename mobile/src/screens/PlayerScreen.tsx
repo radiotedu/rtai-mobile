@@ -98,7 +98,15 @@ const PlayerScreen = () => {
   const isPlaying = state === State.Playing;
   const isBuffering = state === State.Buffering || state === State.Loading;
 
-  const currentQuality: StreamQuality = (activeTrack?.streamQuality as StreamQuality) || (preferences.quality === 'automatic' ? 'normal' : preferences.quality) || 'normal';
+  const currentQuality: StreamQuality = useMemo(() => {
+    const url = String(activeTrack?.url ?? '');
+    if (url.includes('-flac')) return 'flac';
+    if (url.includes('-low')) return 'low';
+    if (activeTrack?.streamQuality) return activeTrack.streamQuality as StreamQuality;
+    if (preferences.quality === 'flac' && currentChannel?.streams.flac) return 'flac';
+    if (preferences.quality === 'low') return 'low';
+    return 'normal';
+  }, [activeTrack?.url, activeTrack?.streamQuality, preferences.quality, currentChannel]);
   const stationOnlyPresentation = shouldUseStationOnlyPresentation(currentChannel, currentQuality);
   const displayArtwork = stationOnlyPresentation
     ? activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK

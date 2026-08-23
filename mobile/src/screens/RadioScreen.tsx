@@ -186,7 +186,13 @@ const RadioScreen = () => {
     name: selectedChannel.name,
     description: selectedChannel.description,
   });
-  const currentQuality = activeTrack?.id === selectedChannel.id ? (activeTrack?.streamQuality as any) : 'normal';
+  const currentQuality = useMemo(() => {
+    if (activeTrack?.id !== selectedChannel.id) return 'normal';
+    const url = String(activeTrack?.url ?? '');
+    if (url.includes('-flac')) return 'flac';
+    if (url.includes('-low')) return 'low';
+    return (activeTrack?.streamQuality as any) || 'normal';
+  }, [activeTrack?.id, activeTrack?.url, activeTrack?.streamQuality, selectedChannel.id]);
   const stationOnlyPresentation = shouldUseStationOnlyPresentation(selectedChannel, currentQuality);
   const displayTitle = stationOnlyPresentation ? selectedCopy.name : metadata?.title || activeTrack?.title || selectedCopy.name;
   const displayArtist = stationOnlyPresentation ? '' : metadata?.artist || activeTrack?.artist || selectedCopy.description;

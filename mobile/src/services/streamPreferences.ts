@@ -106,9 +106,6 @@ export function automaticQualityForNetwork(
     if (generation === '2g' || generation === '3g') {
       return 'low';
     }
-    if (generation === '5g') {
-      return 'high';
-    }
     return 'normal';
   }
 
@@ -121,7 +118,7 @@ export function automaticQualityForNetwork(
     network.type === 'ethernet' ||
     network.type === 'vpn'
   ) {
-    return 'high';
+    return 'flac';
   }
 
   return 'normal';

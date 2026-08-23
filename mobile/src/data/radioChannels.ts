@@ -122,9 +122,9 @@ export function shouldUseStationOnlyPresentation(
 export const shouldSuppressArtworkAndMetadata = shouldUseStationOnlyPresentation;
 
 const STANDARD_CODEC_LABELS: Record<StreamQuality, string> = {
-  low: 'HE-AAC v1',
-  normal: 'HE-AAC v1',
-  high: 'HE-AAC v1',
+  low: 'HE-AAC v2',
+  normal: 'AAC-LC',
+  high: 'AAC-LC',
   flac: 'FLAC',
 };
 
@@ -261,15 +261,20 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     streamUrl: 'https://stream.radiotedu.com/en',
     legacyStreamUrl: 'https://stream.radiotedu.com/en',
     mountPath: '/en',
-    streams: buildQualityStreams('/en'),
-    codecLabels: STANDARD_CODEC_LABELS,
+    streams: {
+      normal: 'https://stream.radiotedu.com/en',
+      high: 'https://stream.radiotedu.com/en',
+    },
+    codecLabels: {
+      normal: 'MP3 192',
+      high: 'MP3 192',
+    },
     icon: 'translate',
     color: '#3578E5',
     logo: AI_EN_LOGO,
     artwork: AI_EN_ARTWORK,
-    role: 'music',
+    role: 'ai-host',
     availability: 'live',
-    requiresLiveCheck: true,
   },
   {
     id: 'radiotedu-fr',
@@ -279,15 +284,20 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     streamUrl: 'https://stream.radiotedu.com/fr',
     legacyStreamUrl: 'https://stream.radiotedu.com/fr',
     mountPath: '/fr',
-    streams: buildQualityStreams('/fr'),
-    codecLabels: STANDARD_CODEC_LABELS,
+    streams: {
+      normal: 'https://stream.radiotedu.com/fr',
+      high: 'https://stream.radiotedu.com/fr',
+    },
+    codecLabels: {
+      normal: 'MP3 192',
+      high: 'MP3 192',
+    },
     icon: 'translate',
     color: '#6C63D9',
     logo: AI_FR_LOGO,
     artwork: AI_FR_ARTWORK,
-    role: 'music',
+    role: 'ai-host',
     availability: 'live',
-    requiresLiveCheck: true,
   },
 ];
 

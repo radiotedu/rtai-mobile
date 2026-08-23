@@ -16,6 +16,8 @@
     @{ @"id": @"radiotedu-lofi", @"title": @"Lo-Fi" },
     @{ @"id": @"radiotedu-energize", @"title": @"Energize" },
     @{ @"id": @"radiotedu-rock", @"title": @"Rock" },
+    @{ @"id": @"radiotedu-en", @"title": @"English" },
+    @{ @"id": @"radiotedu-fr", @"title": @"Français" },
   ];
 }
 

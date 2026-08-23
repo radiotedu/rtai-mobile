@@ -39,7 +39,7 @@ describe('stream preferences', () => {
     expect(DEFAULT_STREAM_PREFERENCES).toEqual({quality: 'automatic'});
   });
 
-  it('selects a conservative quality automatically without choosing FLAC', () => {
+  it('selects quality automatically: Normal on cellular and FLAC on WiFi', () => {
     expect(
       automaticQualityForNetwork({
         type: 'cellular',
@@ -60,10 +60,10 @@ describe('stream preferences', () => {
         isConnected: true,
         details: {cellularGeneration: '5g'},
       }),
-    ).toBe('high');
+    ).toBe('normal');
     expect(
       automaticQualityForNetwork({type: 'wifi', isConnected: true}),
-    ).toBe('high');
+    ).toBe('flac');
     expect(
       automaticQualityForNetwork({type: 'none', isConnected: false}),
     ).toBe('low');

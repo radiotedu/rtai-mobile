@@ -45,12 +45,13 @@ import {
 import {buildVoiceActionMap} from '../src/services/androidSystemCapabilities';
 
 describe('radio channel catalog', () => {
-  it('configures future stations but requires a successful live check', () => {
-    for (const id of ['radiotedu-spark', 'radiotedu-en', 'radiotedu-fr']) {
-      expect(RADIO_CHANNELS.find(channel => channel.id === id)).toEqual(
-        expect.objectContaining({requiresLiveCheck: true}),
-      );
-    }
+  it('configures Spark to require a successful live check', () => {
+    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-spark')).toEqual(
+      expect.objectContaining({requiresLiveCheck: true}),
+    );
+    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-en')?.requiresLiveCheck).toBeFalsy();
+    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-fr')?.requiresLiveCheck).toBeFalsy();
+
     const spark = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-spark')!;
     expect(buildVisibleChannels([{channel: spark, isAvailable: false}])).toEqual([]);
     expect(buildVisibleChannels([{channel: spark, isAvailable: true}])).toEqual([
@@ -83,7 +84,7 @@ describe('radio channel catalog', () => {
     expect(rock?.streams.flac).toBeUndefined();
   });
 
-  it('exposes low and normal HE-AAC mounts for every public RadioTEDU channel', () => {
+  it('exposes low (HE-AAC v2) and normal (AAC-LC) mounts for public music channels and MP3 192 for AI channels', () => {
     const publicMounts = {
       'radiotedu-main': 'radio',
       'radiotedu-classic': 'classic',
@@ -91,8 +92,6 @@ describe('radio channel catalog', () => {
       'radiotedu-lofi': 'lofi',
       'radiotedu-energize': 'energize',
       'radiotedu-rock': 'rock',
-      'radiotedu-en': 'en',
-      'radiotedu-fr': 'fr',
     };
 
     for (const [id, mount] of Object.entries(publicMounts)) {
@@ -113,9 +112,16 @@ describe('radio channel catalog', () => {
       expect(resolveStreamUrl(channel, 'normal')).toBe(
         `https://stream.radiotedu.com/${mount}`,
       );
-      expect(channel.codecLabels?.low).toBe('HE-AAC v1');
-      expect(channel.codecLabels?.normal).toBe('HE-AAC v1');
+      expect(channel.codecLabels?.low).toBe('HE-AAC v2');
+      expect(channel.codecLabels?.normal).toBe('AAC-LC');
     }
+
+    const en = RADIO_CHANNELS.find(c => c.id === 'radiotedu-en')!;
+    const fr = RADIO_CHANNELS.find(c => c.id === 'radiotedu-fr')!;
+    expect(en.streamUrl).toBe('https://stream.radiotedu.com/en');
+    expect(en.codecLabels?.normal).toBe('MP3 192');
+    expect(fr.streamUrl).toBe('https://stream.radiotedu.com/fr');
+    expect(fr.codecLabels?.normal).toBe('MP3 192');
   });
 
   it('offers FLAC only on Classic and Jazz', () => {
@@ -207,12 +213,11 @@ describe('radio channel catalog', () => {
   it('matches Gemini and assistant-style voice queries to available stations', () => {
     expect(findChannelByQuery('Hey Gemini, play RadioTEDU Rock').id).toBe('radiotedu-rock');
     expect(findChannelByQuery('Hey Gemini, Radio TEDU cal').id).toBe('radiotedu-main');
-    expect(findChannelByQuery('Play RadioTEDU English').id).toBe('radiotedu-main');
+    expect(findChannelByQuery('Play RadioTEDU English').id).toBe('radiotedu-en');
+    expect(findChannelByQuery('Play RadioTEDU Français').id).toBe('radiotedu-fr');
 
     setRuntimeVisibleChannels(RADIO_CHANNELS);
     expect(findChannelByQuery('Hey Gemini, play Spark on RadioTEDU').id).toBe('radiotedu-spark');
-    expect(findChannelByQuery('Play RadioTEDU English').id).toBe('radiotedu-en');
-    expect(findChannelByQuery('Play RadioTEDU Français').id).toBe('radiotedu-fr');
     setRuntimeVisibleChannels(
       RADIO_CHANNELS.filter(channel => !channel.requiresLiveCheck),
     );
@@ -243,14 +248,14 @@ describe('radio channel catalog', () => {
     ).toEqual(['radiotedu-main']);
   });
 
-  it('includes only available stations in the playable TrackPlayer queue', () => {
+  it('includes available stations in the playable TrackPlayer queue', () => {
     const queue = buildRadioQueue('high');
 
     expect(queue.map(track => track.id)).toContain('radiotedu-main');
     expect(queue.map(track => track.id)).toContain('radiotedu-energize');
     expect(queue.map(track => track.id)).toContain('radiotedu-rock');
+    expect(queue.map(track => track.id)).toContain('radiotedu-en');
+    expect(queue.map(track => track.id)).toContain('radiotedu-fr');
     expect(queue.map(track => track.id)).not.toContain('radiotedu-spark');
-    expect(queue.map(track => track.id)).not.toContain('radiotedu-en');
-    expect(queue.map(track => track.id)).not.toContain('radiotedu-fr');
   });
 });

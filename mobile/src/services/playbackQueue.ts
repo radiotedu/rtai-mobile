@@ -296,9 +296,6 @@ export function startConnectionWatchdog(
   timeoutMs: number = NORMAL_CONNECT_TIMEOUT_MS,
 ): void {
   clearConnectionWatchdog();
-  if (quality !== 'normal') {
-    return;
-  }
 
   connectionWatchdogTimer = setTimeout(async () => {
     try {
@@ -310,10 +307,9 @@ export function startConnectionWatchdog(
         state !== State.Playing
       ) {
         console.log(
-          `[playbackQueue] Connection to normal stream timed out after ${timeoutMs}ms. Falling back to low quality.`,
+          `[playbackQueue] Connection to stream timed out after ${timeoutMs}ms. Cascading fallback.`,
         );
-        await replaceChannelTrack(channel, 'low');
-        await playTrackById(channel.id);
+        await fallbackActiveChannelStream();
       }
     } catch (error) {
       logSafeError('playback.connectionWatchdog', error);
@@ -354,7 +350,7 @@ export async function playChannelById(
     played = await playTrackById(channelId);
   }
 
-  if (played && quality === 'normal') {
+  if (played) {
     startConnectionWatchdog(channel, quality);
   }
 
@@ -381,9 +377,10 @@ export async function replaceChannelTrack(
 
 /**
  * Move a failed quality stream to the next safe candidate:
- * selected quality -> normal -> legacy mount.
+ * selected quality -> normal -> low -> legacy mount -> next available station.
  */
 export async function fallbackActiveChannelStream(): Promise<boolean> {
+  clearConnectionWatchdog();
   const track = await TrackPlayer.getActiveTrack();
   const channelId = String(track?.id ?? '');
   const channel = RADIO_CHANNELS.find(item => item.id === channelId);
@@ -396,6 +393,18 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
   const currentIndex = fallbacks.findIndex(item => item.url === currentUrl);
   const next = fallbacks[currentIndex + 1];
   if (!next) {
+    const visible = getRuntimeVisibleChannels();
+    const currentIdx = visible.findIndex(c => c.id === channelId);
+    const nextStation =
+      visible.find((c, idx) => idx !== currentIdx && isChannelPlayable(c)) ||
+      visible[0];
+    if (nextStation && nextStation.id !== channelId) {
+      console.log(
+        `[playbackQueue] All fallbacks exhausted for ${channelId}. Switching to ${nextStation.id}`,
+      );
+      const res = await playChannelById(nextStation.id);
+      return res.played;
+    }
     return false;
   }
 
@@ -405,10 +414,14 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
     return false;
   }
 
+  console.log(
+    `[playbackQueue] Fallback for ${channelId}: switching to ${next.quality} (${next.url})`,
+  );
   await TrackPlayer.remove(queueIndex);
   await TrackPlayer.add(channelTrackFromStream(channel, next), queueIndex);
   await TrackPlayer.skip(queueIndex);
   await TrackPlayer.play();
+  startConnectionWatchdog(channel, next.quality);
   return true;
 }
 
@@ -429,7 +442,9 @@ export function findChannelByQuery(query: string): RadioChannel {
   if (normalized.length > 0) {
     const visibleChannels = getRuntimeVisibleChannels();
     const mainChannel = visibleChannels[0] || RADIO_CHANNELS[0];
-    const specificChannels = visibleChannels.filter(channel => channel.id !== mainChannel.id);
+    const specificChannels = visibleChannels.filter(
+      channel => channel.id !== mainChannel.id,
+    );
     const match = specificChannels.find(channel => {
       const terms = [
         channel.name,

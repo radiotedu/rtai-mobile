@@ -80,15 +80,14 @@ type CarItem = {
   subtitle: string;
   artwork: string;
   playable: boolean;
-  // Direct stream/audio URL the NATIVE car service plays headlessly with
+
   // ExoPlayer (no dependency on the RN JS runtime). Empty for non-playable
   // items (e.g. jukebox:none). channelStreamUrl(...) is not exported from
   // playbackQueue, so we derive radio URLs via buildChannelTrack(...).url,
   // which is exactly channel.streams?.[quality] || channel.streamUrl.
   url: string;
   quality?: StreamQuality;
-  /** Machine-readable codec/format hint for Media3 car metadata. */
-  audioFormat?: 'HE-AAC v1' | 'FLAC' | 'Podcast audio';
+  audioFormat?: 'HE-AAC v2' | 'AAC-LC' | 'FLAC' | 'MP3 192' | 'Podcast audio' | string;
   /** Podcast series identifier; used by native Android Auto Next/Previous. */
   seriesId?: string;
 };
@@ -104,7 +103,11 @@ function radioItems(): CarItem[] {
       description: c.description,
     });
     const track = buildChannelTrack(c, catalogQuality);
-    const audioFormat = track.streamQuality === 'flac' ? 'FLAC' : 'HE-AAC v1';
+    const audioFormat =
+      track.streamQuality === 'flac'
+        ? 'FLAC'
+        : c.codecLabels?.[track.streamQuality as StreamQuality] ||
+          (track.streamQuality === 'low' ? 'HE-AAC v2' : 'AAC-LC');
     const stationOnly = shouldUseStationOnlyPresentation(c, track.streamQuality);
     const description = stationOnly ? '' : copy.description;
     return {

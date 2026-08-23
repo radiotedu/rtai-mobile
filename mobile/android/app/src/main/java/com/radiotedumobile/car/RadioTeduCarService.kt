@@ -950,7 +950,8 @@ class RadioTeduCarService : MediaLibraryService() {
             audioFormat = json.optString("audioFormat", "").ifEmpty {
                 when (quality) {
                     "flac" -> "FLAC"
-                    "low", "normal" -> "HE-AAC v1"
+                    "low" -> "HE-AAC v2"
+                    "normal", "high" -> "AAC-LC"
                     else -> if (seriesId != null) localizedString(R.string.car_podcast_audio) else null
                 }
             },
@@ -1007,7 +1008,7 @@ class RadioTeduCarService : MediaLibraryService() {
         artist = localizedString(R.string.car_live_radio),
         artwork = FALLBACK_RADIO_ARTWORK,
         quality = "normal",
-        audioFormat = "HE-AAC v1",
+        audioFormat = "AAC-LC",
     )
 
     private fun MediaMetadata.Builder.applyArtwork(artwork: String): MediaMetadata.Builder = apply {

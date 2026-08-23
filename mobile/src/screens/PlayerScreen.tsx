@@ -380,11 +380,19 @@ const PlayerScreen = () => {
             <View style={styles.menuHandle} />
             <Text style={styles.menuTitle}>{copy('player.quality')}</Text>
             <Text style={styles.menuSubtitle}>{copy('player.adapts')}</Text>
-            {QUALITY_OPTIONS.filter(
-              option => option.quality !== 'flac' || Boolean(currentChannel?.streams.flac),
-            ).map(option => {
+            {QUALITY_OPTIONS.filter(option => {
+              if (option.quality === 'automatic') return true;
+              if (option.quality === 'flac') return Boolean(currentChannel?.streams.flac);
+              if (option.quality === 'low') return Boolean(currentChannel?.streams.low && currentChannel?.streams.low !== currentChannel?.streams.normal);
+              if (option.quality === 'normal') return Boolean(currentChannel?.streams.normal);
+              return true;
+            }).map(option => {
               const selected = preferences.quality === option.quality;
               const gold = option.quality === 'flac';
+              const customCodec = option.quality !== 'automatic' ? currentChannel?.codecLabels?.[option.quality] : null;
+              const description = customCodec && customCodec.startsWith('MP3')
+                ? `${customCodec} · ${copy('player.normalDescription').split('·')[1]?.trim() || copy(option.descriptionKey)}`
+                : copy(option.descriptionKey);
               return (
                 <TouchableOpacity
                   key={option.quality}
@@ -394,7 +402,7 @@ const PlayerScreen = () => {
                   <Icon name={option.icon} size={22} color={gold ? '#FFD700' : selected ? COLORS.primary : COLORS.textMuted} />
                   <View style={styles.menuOptionText}>
                     <Text style={[styles.menuOptionTitle, gold && styles.menuOptionGold]}>{copy(option.labelKey)}</Text>
-                    <Text style={styles.menuOptionDescription}>{copy(option.descriptionKey)}</Text>
+                    <Text style={styles.menuOptionDescription}>{description}</Text>
                   </View>
                   {isSwitchingQuality && selected ? (
                     <ActivityIndicator size="small" color={COLORS.primary} />

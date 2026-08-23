@@ -10,5 +10,7 @@ object RadioChannels {
         RadioChannel("radiotedu-lofi", "Lo-Fi", "https://stream.radiotedu.com/lofi"),
         RadioChannel("radiotedu-energize", "Energize", "https://stream.radiotedu.com/energize"),
         RadioChannel("radiotedu-rock", "Rock", "https://stream.radiotedu.com/rock"),
+        RadioChannel("radiotedu-en", "English", "https://stream.radiotedu.com/en"),
+        RadioChannel("radiotedu-fr", "Français", "https://stream.radiotedu.com/fr"),
     )
 }

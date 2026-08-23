@@ -34,8 +34,12 @@ async function applyNetworkChange(network: StreamNetworkSnapshot) {
   }
 
   const preferences = await loadStreamPreferences();
-  const currentQuality =
-    (track?.streamQuality as StreamQuality | undefined) || 'normal';
+  const trackUrl = String(track?.url ?? '');
+  const currentQuality: StreamQuality = trackUrl.includes('-flac')
+    ? 'flac'
+    : trackUrl.includes('-low')
+      ? 'low'
+      : 'normal';
 
   if (
     preferences.quality === 'flac' &&

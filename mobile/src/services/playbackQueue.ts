@@ -212,15 +212,19 @@ export async function ensureBrowsableQueue(
   }
 }
 
-/** Skip to a track already in the queue by its id, then play. */
 export async function playTrackById(id: string): Promise<boolean> {
   const queue = await TrackPlayer.getQueue();
   const index = queue.findIndex(track => track.id === id);
   if (index === -1) {
     return false;
   }
-  await TrackPlayer.skip(index);
-  await TrackPlayer.play();
+  const activeTrack = await TrackPlayer.getActiveTrack();
+  if (activeTrack?.id === id && activeTrack?.url === queue[index]?.url) {
+    await TrackPlayer.play();
+  } else {
+    await TrackPlayer.skip(index);
+    await TrackPlayer.play();
+  }
   recordRecent(queue[index]).catch(() => {});
   return true;
 }
@@ -335,7 +339,7 @@ export async function playChannelById(
   const selection = await resolveCurrentStreamPreferences({
     ...(qualityOverride ? {quality: qualityOverride} : {}),
   });
-  const quality = resolveStreamQuality(channel, selection.quality);
+  const quality = resolveStreamQuality(channel, qualityOverride || selection.quality);
 
   if (
     quality === 'flac' &&
@@ -375,8 +379,17 @@ export async function replaceChannelTrack(
     await rebuildBrowsableQueue(quality);
     return;
   }
+  const newTrack = buildChannelTrack(channel, quality);
+  if (queue[index]?.url === newTrack.url) {
+    return;
+  }
+  const activeIndex = await TrackPlayer.getActiveTrackIndex();
   await TrackPlayer.remove(index);
-  await TrackPlayer.add(buildChannelTrack(channel, quality), index);
+  await TrackPlayer.add(newTrack, index);
+  if (activeIndex === index) {
+    await TrackPlayer.skip(index);
+    await TrackPlayer.play();
+  }
 }
 
 /**

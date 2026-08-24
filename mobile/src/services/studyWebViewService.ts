@@ -1,7 +1,7 @@
 import {parseHttpUrl} from './safeHttpUrlService';
 import {normalizeWebViewLocale} from './webViewLocale';
 
-export const STUDY_REMOTE_ROOT = 'https://radiotedu.com/study/';
+export const STUDY_REMOTE_ROOT = 'https://radiotedu.com/social/';
 
 export type StudyRoomId = 'library' | 'chim-alan';
 
@@ -29,7 +29,7 @@ const asInjectedJson = (value: unknown) =>
 
 export const buildStudyEntryUrl = (roomId: StudyRoomId, locale?: unknown) => {
   return `${STUDY_REMOTE_ROOT}index.html?embedded=mobile&room=${encodeURIComponent(roomId)}&lang=${normalizeWebViewLocale(locale)}`
-    .replace('/study/index.html?', '/study/?');
+    .replace('/social/index.html?', '/social/?');
 };
 
 export const isAllowedStudyNavigation = (url: string) => {
@@ -44,7 +44,10 @@ export const isAllowedStudyNavigation = (url: string) => {
       parsed.hostname === 'radiotedu.com' &&
       parsed.port === '' &&
       !parsed.hasCredentials &&
-      (parsed.pathname === '/study' || parsed.pathname.startsWith('/study/')),
+      (parsed.pathname === '/social' ||
+        parsed.pathname.startsWith('/social/') ||
+        parsed.pathname === '/study' ||
+        parsed.pathname.startsWith('/study/')),
   );
 };
 

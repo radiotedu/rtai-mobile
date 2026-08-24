@@ -87,12 +87,12 @@ const VOTE_PANEL_COPY: Record<AppLanguage, Record<string, string>> = {
 };
 
 const STUDY_COPY: Record<AppLanguage, Record<string, string>> = {
-  en: {'study.errorTitle': 'Study could not open', 'study.retry': 'Retry'},
-  tr: {'study.errorTitle': 'Study açılamadı', 'study.retry': 'Tekrar dene'},
-  ru: {'study.errorTitle': 'Study не открылся', 'study.retry': 'Повторить'},
-  ar: {'study.errorTitle': 'تعذر فتح Study', 'study.retry': 'إعادة المحاولة'},
-  de: {'study.errorTitle': 'Study konnte nicht geöffnet werden', 'study.retry': 'Erneut versuchen'},
-  fr: {'study.errorTitle': 'Study n’a pas pu s’ouvrir', 'study.retry': 'Réessayer'},
+  en: {'study.errorTitle': 'Social could not open', 'study.retry': 'Retry'},
+  tr: {'study.errorTitle': 'Social açılamadı', 'study.retry': 'Tekrar dene'},
+  ru: {'study.errorTitle': 'Social не открылся', 'study.retry': 'Повторить'},
+  ar: {'study.errorTitle': 'تعذر فتح Social', 'study.retry': 'إعادة المحاولة'},
+  de: {'study.errorTitle': 'Social konnte nicht geöffnet werden', 'study.retry': 'Erneut versuchen'},
+  fr: {'study.errorTitle': 'Social n’a pas pu s’ouvrir', 'study.retry': 'Réessayer'},
 };
 
 const GAME_COPY: Record<AppLanguage, Record<string, string>> = {

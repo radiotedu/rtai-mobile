@@ -9,18 +9,23 @@ import {
   isAllowedStudyNavigation,
 } from '../src/services/studyWebViewService';
 
-describe('Study WebView service', () => {
-  it('builds the separate app-only Study website URL', () => {
-    expect(STUDY_REMOTE_ROOT).toBe('https://radiotedu.com/study/');
+describe('Social WebView service', () => {
+  it('builds the separate app-only Social website URL', () => {
+    expect(STUDY_REMOTE_ROOT).toBe('https://radiotedu.com/social/');
     expect(buildStudyEntryUrl('chim-alan', 'ru-RU')).toBe(
-      'https://radiotedu.com/study/?embedded=mobile&room=chim-alan&lang=ru',
+      'https://radiotedu.com/social/?embedded=mobile&room=chim-alan&lang=ru',
     );
     expect(buildStudyEntryUrl('library', 'not-supported&room=evil')).toBe(
-      'https://radiotedu.com/study/?embedded=mobile&room=library&lang=en',
+      'https://radiotedu.com/social/?embedded=mobile&room=library&lang=en',
     );
   });
 
-  it('allows only the remote Study website', () => {
+  it('allows Social plus the legacy Study compatibility route', () => {
+    expect(
+      isAllowedStudyNavigation(
+        'https://radiotedu.com/social/?embedded=mobile&room=library',
+      ),
+    ).toBe(true);
     expect(
       isAllowedStudyNavigation(
         'https://radiotedu.com/study/?embedded=mobile&room=library',
@@ -36,6 +41,9 @@ describe('Study WebView service', () => {
     ).toBe(false);
     expect(
       isAllowedStudyNavigation('https://radiotedu.com.evil.example/study/'),
+    ).toBe(false);
+    expect(
+      isAllowedStudyNavigation('https://radiotedu.com.evil.example/social/'),
     ).toBe(false);
   });
 

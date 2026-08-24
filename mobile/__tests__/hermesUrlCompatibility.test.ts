@@ -52,6 +52,9 @@ describe('Hermes URL compatibility', () => {
       isAllowedStudyNavigation('https://radiotedu.com/study/?room=library'),
     ).toBe(true);
     expect(
+      isAllowedStudyNavigation('https://radiotedu.com/social/?room=library'),
+    ).toBe(true);
+    expect(
       isAllowedJukeLocalNavigation(
         'https://radiotedu.com/juke-local/controller/?code=TEDU01',
       ),

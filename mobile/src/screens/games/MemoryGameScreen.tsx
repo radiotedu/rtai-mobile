@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ScrollView, StyleSheet, Text, TouchableOpacity, Vibration, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
@@ -17,7 +18,16 @@ type MemoryCard = {
   matched: boolean;
 };
 
-const SYMBOLS = ['MIC', 'DJ', 'FM', 'XP', 'POP', 'ROCK', 'LIVE', 'TEDU'];
+const SYMBOLS = [
+  'microphone-variant',
+  'headphones',
+  'radio-fm',
+  'star-four-points',
+  'music-note-eighth',
+  'guitar-electric',
+  'access-point',
+  'school-outline',
+];
 
 const MemoryGameScreen = () => {
   const navigation = useNavigation<any>();
@@ -128,6 +138,8 @@ const MemoryGameScreen = () => {
       <GameShell
         title={copy('games.memory')}
         subtitle={copy('games.memorySubtitle')}
+        icon="cards-playing-outline"
+        accentColor="#A78BFA"
         score={score}
         progressLabel={`${matchedCount / 2}/${cards.length / 2} ${copy('games.memoryProgress')}`}
         rightLabel={`${moves} ${copy('games.memoryMoves')}`}
@@ -145,7 +157,13 @@ const MemoryGameScreen = () => {
                   style={[styles.card, isVisible && styles.cardVisible, card.matched && styles.cardMatched]}
                   onPress={() => handleFlip(card)}
                   activeOpacity={0.82}>
-                  <Text style={styles.cardText}>{isVisible ? card.symbol : '?'}</Text>
+                  {isVisible ? (
+                    <Icon name={card.symbol} size={30} color={card.matched ? '#48E08A' : '#C4B5FD'} />
+                  ) : (
+                    <View style={styles.cardBack}>
+                      <Icon name="radio-tower" size={22} color="rgba(255,255,255,0.38)" />
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -191,10 +209,10 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   content: {paddingBottom: SPACING.xl},
   grid: {flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.lg, justifyContent: 'center'},
-  card: {width: '22%', aspectRatio: 0.82, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
-  cardVisible: {backgroundColor: '#2A0709', borderColor: COLORS.primary},
-  cardMatched: {backgroundColor: 'rgba(52,199,89,0.16)', borderColor: COLORS.success},
-  cardText: {fontSize: 18, color: COLORS.text, fontWeight: '900'},
+  card: {width: '22%', aspectRatio: 0.82, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B1822', borderWidth: 1, borderColor: '#34303D', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 8, elevation: 4},
+  cardVisible: {backgroundColor: '#211936', borderColor: '#8B5CF6', transform: [{scale: 1.03}]},
+  cardMatched: {backgroundColor: 'rgba(72,224,138,0.13)', borderColor: '#48E08A', opacity: 0.82},
+  cardBack: {width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(167,139,250,0.08)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.16)'},
   helpText: {color: COLORS.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 19, marginTop: SPACING.lg},
 });
 

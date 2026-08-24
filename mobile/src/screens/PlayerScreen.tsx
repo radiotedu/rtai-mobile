@@ -115,7 +115,7 @@ const PlayerScreen = () => {
   const displayArtworkSource =
     typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
   const displayTitle = stationOnlyPresentation
-    ? currentChannel?.name || 'RadioTEDU Lo-Fi'
+    ? currentChannel?.name || 'Lo-Fi'
     : metadata?.title || activeTrack?.title || currentChannel?.name || 'RadioTEDU';
   const displayArtist =
     stationOnlyPresentation ? '' : metadata?.artist || (activeTrack?.artist as string) || currentChannel?.description || 'RadioTEDU';

@@ -6,6 +6,16 @@ type ChannelLike = {
   id: string;
 };
 
+const VOTING_CHANNEL_ID = 'radiotedu-spark';
+
+/** Voting is a special interactive station and always closes the mobile list. */
+export function orderVotingChannelLast<T extends ChannelLike>(channels: T[]): T[] {
+  return [
+    ...channels.filter(channel => channel.id !== VOTING_CHANNEL_ID),
+    ...channels.filter(channel => channel.id === VOTING_CHANNEL_ID),
+  ];
+}
+
 export function toggleFavoriteChannelId(favoriteIds: string[], channelId: string): string[] {
   if (favoriteIds.includes(channelId)) {
     return favoriteIds.filter((id) => id !== channelId);

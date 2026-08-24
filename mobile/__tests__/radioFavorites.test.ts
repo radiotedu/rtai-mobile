@@ -7,6 +7,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 import {
   buildFavoriteChannelOrder,
+  orderVotingChannelLast,
   toggleFavoriteChannelId,
 } from '../src/services/radioFavorites';
 
@@ -31,5 +32,19 @@ describe('radioFavorites helpers', () => {
         {id: 'jazz', name: 'Jazz'},
       ],
     });
+  });
+
+  it('keeps Voting at the bottom of the mobile station list', () => {
+    const channels = [
+      {id: 'radiotedu-spark', name: 'Voting'},
+      {id: 'radiotedu-main', name: 'RadioTEDU'},
+      {id: 'radiotedu-rock', name: 'Rock'},
+    ];
+
+    expect(orderVotingChannelLast(channels).map(channel => channel.id)).toEqual([
+      'radiotedu-main',
+      'radiotedu-rock',
+      'radiotedu-spark',
+    ]);
   });
 });

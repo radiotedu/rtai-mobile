@@ -186,7 +186,7 @@ const MiniPlayer = () => {
   };
 
   // Use context metadata if available, fallback to track data (or last known track)
-  const displayTitle = stationOnlyPresentation ? 'RadioTEDU Lo-Fi' : metadata?.title || displayTrack?.title;
+  const displayTitle = stationOnlyPresentation ? 'Lo-Fi' : metadata?.title || displayTrack?.title;
   const displayArtist = stationOnlyPresentation ? '' : metadata?.artist || displayTrack?.artist;
   const displayArtwork = stationOnlyPresentation ? displayTrack?.artwork : metadata?.artwork || displayTrack?.artwork;
   const displayArtworkSource = typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;

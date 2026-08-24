@@ -13,6 +13,7 @@ import {isPracticeGame} from './gameRoutes';
 import {logSafeError} from '../../utils/safeLog';
 
 const TOTAL_BEATS = 28;
+const LANE_COLORS = ['#46C8FF', '#FFD54A', '#FF6B8A'];
 
 const RhythmTapScreen = () => {
   const navigation = useNavigation<any>();
@@ -155,6 +156,8 @@ const RhythmTapScreen = () => {
       <GameShell
         title={copy('games.rhythm')}
         subtitle={copy('games.rhythmSubtitle')}
+        icon="music-circle-outline"
+        accentColor="#FFD54A"
         score={score}
         progressLabel={`${beat}/${TOTAL_BEATS}`}
         rightLabel={`${misses} ${copy('games.rhythmMisses')}`}
@@ -166,11 +169,17 @@ const RhythmTapScreen = () => {
           {lanes.map((lane, index) => (
             <TouchableOpacity
               key={lane}
-              style={[styles.lane, activeLane === index && styles.activeLane]}
+              style={[
+                styles.lane,
+                {borderColor: `${LANE_COLORS[index]}55`, backgroundColor: `${LANE_COLORS[index]}12`},
+                activeLane === index && {backgroundColor: LANE_COLORS[index], borderColor: '#FFFFFF'},
+              ]}
               onPress={() => handleTap(index)}
               activeOpacity={0.78}>
-              <Icon name="music-note-eighth" size={32} color={activeLane === index ? '#111' : COLORS.textMuted} />
+              <View style={[styles.laneRail, {backgroundColor: `${LANE_COLORS[index]}44`}]} />
+              <Icon name={activeLane === index ? 'music-note-eighth' : 'circle-outline'} size={38} color={activeLane === index ? '#111' : LANE_COLORS[index]} />
               <Text style={[styles.laneText, activeLane === index && styles.activeLaneText]}>{lane}</Text>
+              <View style={[styles.targetRing, {borderColor: activeLane === index ? '#111' : LANE_COLORS[index]}]} />
             </TouchableOpacity>
           ))}
         </View>
@@ -198,11 +207,12 @@ const RhythmTapScreen = () => {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   laneRow: {flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.xl},
-  lane: {flex: 1, height: 230, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
-  activeLane: {backgroundColor: '#F4C542', borderColor: '#F4C542'},
+  lane: {flex: 1, height: 250, borderRadius: 28, alignItems: 'center', justifyContent: 'center', borderWidth: 1, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5},
+  laneRail: {position: 'absolute', width: 3, top: 24, bottom: 24, borderRadius: 2},
+  targetRing: {position: 'absolute', bottom: 24, width: 28, height: 28, borderRadius: 14, borderWidth: 3, backgroundColor: 'rgba(0,0,0,0.18)'},
   laneText: {color: COLORS.textMuted, fontSize: 15, fontWeight: '900', marginTop: SPACING.sm},
   activeLaneText: {color: '#111'},
-  pauseButton: {height: 48, borderRadius: 16, flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, marginTop: SPACING.lg},
+  pauseButton: {height: 52, borderRadius: 18, flexDirection: 'row', gap: SPACING.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: '#B69012', marginTop: SPACING.lg, shadowColor: '#FFD54A', shadowOpacity: 0.25, shadowRadius: 10, elevation: 5},
   pauseText: {color: '#fff', fontSize: 14, fontWeight: '900'},
 });
 

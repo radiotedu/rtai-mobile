@@ -184,6 +184,8 @@ const TetrisScreen = () => {
       <GameShell
         title={copy('games.tetris')}
         subtitle={copy('games.tetrisSubtitle')}
+        icon="view-grid-plus-outline"
+        accentColor="#46C8FF"
         score={score}
         progressLabel={`${lines} ${copy('games.tetrisLines')}`}
         rightLabel={`${copy('games.speed')} ${Math.min(9, Math.floor(lines / 2) + 1)}`}
@@ -317,18 +319,18 @@ function keyOf(cell: Cell) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   gameRow: {flexDirection: 'row', justifyContent: 'center', gap: SPACING.md, marginTop: SPACING.lg},
-  board: {borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border},
+  board: {padding: 6, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(70,200,255,0.48)', backgroundColor: '#0C151B', shadowColor: '#46C8FF', shadowOpacity: 0.18, shadowRadius: 16, elevation: 7},
   row: {flexDirection: 'row'},
-  cell: {width: 25, height: 25, backgroundColor: '#171717', borderWidth: 0.5, borderColor: '#252525'},
-  sidePanel: {width: 82, alignItems: 'center', gap: SPACING.md},
+  cell: {width: 23, height: 23, margin: 1, borderRadius: 5, backgroundColor: '#111E26', borderWidth: 1, borderColor: '#1B303D'},
+  sidePanel: {width: 86, alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.md, borderRadius: 22, backgroundColor: 'rgba(70,200,255,0.07)', borderWidth: 1, borderColor: 'rgba(70,200,255,0.22)'},
   nextTitle: {color: COLORS.textMuted, fontSize: 11, fontWeight: '900', textTransform: 'uppercase'},
-  miniBoard: {padding: SPACING.xs, borderRadius: 14, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
+  miniBoard: {padding: SPACING.xs, borderRadius: 14, backgroundColor: '#0E1B22', borderWidth: 1, borderColor: 'rgba(70,200,255,0.34)'},
   miniRow: {flexDirection: 'row'},
-  miniCell: {width: 14, height: 14, margin: 1, borderRadius: 3, backgroundColor: '#252525'},
-  pauseButton: {width: 54, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary},
+  miniCell: {width: 14, height: 14, margin: 1, borderRadius: 4, backgroundColor: '#1B303D'},
+  pauseButton: {width: 54, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1479A3'},
   controls: {flexDirection: 'row', justifyContent: 'center', gap: SPACING.sm, marginTop: SPACING.lg},
-  controlButton: {width: 52, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
-  dropButton: {height: 48, paddingHorizontal: SPACING.lg, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary},
+  controlButton: {width: 52, height: 50, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#13232C', borderWidth: 1, borderColor: 'rgba(70,200,255,0.28)'},
+  dropButton: {height: 50, paddingHorizontal: SPACING.lg, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1479A3', shadowColor: '#46C8FF', shadowOpacity: 0.3, shadowRadius: 9, elevation: 5},
   dropText: {color: '#fff', fontSize: 14, fontWeight: '900'},
   disabled: {opacity: 0.5},
 });

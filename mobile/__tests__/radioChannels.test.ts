@@ -160,7 +160,7 @@ describe('radio channel catalog', () => {
   it('keeps Lo-Fi low and normal presentation to the station logo and name only', () => {
     const lofi = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-lofi')!;
 
-    expect(lofi.name).toBe('RadioTEDU Lo-Fi');
+    expect(lofi.name).toBe('Lo-Fi');
     expect(lofi.stationOnlyMetadata).toBe(true);
     expect(shouldUseStationOnlyPresentation(lofi, 'low')).toBe(true);
     expect(shouldUseStationOnlyPresentation(lofi, 'normal')).toBe(true);
@@ -168,7 +168,7 @@ describe('radio channel catalog', () => {
     expect(shouldUseStationOnlyPresentation(lofi, 'flac')).toBe(false);
     expect(buildChannelTrack(lofi, 'low')).toEqual(
       expect.objectContaining({
-        title: 'RadioTEDU Lo-Fi',
+        title: 'Lo-Fi',
         artist: '',
         artwork: expect.anything(),
         streamQuality: 'low',
@@ -176,7 +176,7 @@ describe('radio channel catalog', () => {
     );
     expect(buildChannelTrack(lofi, 'normal')).toEqual(
       expect.objectContaining({
-        title: 'RadioTEDU Lo-Fi',
+        title: 'Lo-Fi',
         artist: '',
         artwork: expect.anything(),
         streamQuality: 'normal',

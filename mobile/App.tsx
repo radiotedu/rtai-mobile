@@ -2,11 +2,16 @@ import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
   AppState,
+  BackHandler,
   InteractionManager,
   StatusBar,
   View,
 } from 'react-native';
-import { NavigationContainer, getStateFromPath } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+  getStateFromPath,
+} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TrackPlayer, { Capability } from 'react-native-track-player';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -51,6 +56,8 @@ const linking: any = {
     },
   },
 };
+
+export const navigationRef = createNavigationContainerRef<any>();
 
 function App(): React.JSX.Element {
   const [showSplash, setShowSplash] = React.useState(true);
@@ -215,6 +222,32 @@ function ConsentGate({
   onSplashFinish: () => void;
 }): React.JSX.Element | null {
   const { consent, ready } = useConsent();
+  const routeNameRef = React.useRef<string | undefined>();
+
+  useEffect(() => {
+    if (!consent.decided) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (navigationRef.isReady() && navigationRef.canGoBack()) {
+        navigationRef.goBack();
+        return true;
+      }
+
+      if (navigationRef.isReady()) {
+        const rootState = navigationRef.getRootState();
+        const rootRoute = rootState.routes[rootState.index ?? 0];
+        const tabState = rootRoute?.state;
+        const activeTab = tabState?.routes?.[tabState.index ?? 0]?.name;
+        if (rootRoute?.name === 'MainTabs' && activeTab !== 'Home') {
+          navigationRef.navigate('MainTabs', {screen: 'Home'});
+        }
+      }
+      // Keep RadioTEDU open at its root instead of unexpectedly terminating.
+      return true;
+    });
+    return () => subscription.remove();
+  }, [consent.decided]);
 
   useEffect(() => {
     if (!ready) {
@@ -252,7 +285,22 @@ function ConsentGate({
     content = <ConsentScreen />;
   } else {
     content = (
-      <NavigationContainer linking={linking}>
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        onReady={() => {
+          routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+          if (routeNameRef.current) {
+            Analytics.screenView(routeNameRef.current);
+          }
+        }}
+        onStateChange={() => {
+          const routeName = navigationRef.getCurrentRoute()?.name;
+          if (routeName && routeName !== routeNameRef.current) {
+            routeNameRef.current = routeName;
+            Analytics.screenView(routeName);
+          }
+        }}>
         <RootNavigator />
         <MiniPlayer />
       </NavigationContainer>

@@ -148,7 +148,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
   },
   {
     id: 'radiotedu-classic',
-    name: 'Classic',
+    name: 'Classical',
     description: 'Klasik Muzik',
     copyKey: 'classic',
     streamUrl: 'https://stream.radiotedu.com/classic',
@@ -184,7 +184,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
   },
   {
     id: 'radiotedu-lofi',
-    name: 'RadioTEDU Lo-Fi',
+    name: 'Lo-Fi',
     description: 'Lo-Fi Beats',
     copyKey: 'lofi',
     streamUrl: 'https://stream.radiotedu.com/lofi',
@@ -220,7 +220,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
   },
   {
     id: 'radiotedu-spark',
-    name: 'RadioTEDU Voting',
+    name: 'Voting',
     description: 'Interactive voting radio',
     copyKey: 'spark',
     streamUrl: 'https://stream.radiotedu.com/spark',
@@ -259,7 +259,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
   },
   {
     id: 'radiotedu-en',
-    name: 'RadioTEDU English',
+    name: 'English',
     description: 'English Broadcast',
     copyKey: 'english',
     streamUrl: 'https://stream.radiotedu.com/en',
@@ -283,7 +283,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
   },
   {
     id: 'radiotedu-fr',
-    name: 'RadioTEDU Français',
+    name: 'Français',
     description: 'Diffusion française',
     copyKey: 'french',
     streamUrl: 'https://stream.radiotedu.com/fr',

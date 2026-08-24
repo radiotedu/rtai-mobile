@@ -38,6 +38,7 @@ import PageTransition from '../components/PageTransition';
 import {
   buildFavoriteChannelOrder,
   loadFavoriteChannelIds,
+  orderVotingChannelLast,
   saveFavoriteChannelIds,
   toggleFavoriteChannelId,
 } from '../services/radioFavorites';
@@ -68,6 +69,13 @@ const RadioScreen = () => {
   const orderedChannels = useMemo(
     () => buildFavoriteChannelOrder(activeChannels, favoriteIds),
     [activeChannels, favoriteIds],
+  );
+  const allChannels = useMemo(
+    () => orderVotingChannelLast([
+      ...orderedChannels.favorites,
+      ...orderedChannels.remaining,
+    ]),
+    [orderedChannels],
   );
 
   useEffect(() => {
@@ -239,6 +247,12 @@ const RadioScreen = () => {
                   <View style={styles.liveDot} />
                   <Text style={styles.liveText}>{copy('radio.live')}</Text>
                 </View>
+                {currentQuality === 'flac' ? (
+                  <View style={styles.hifiBadge}>
+                    <Icon name="star-four-points" size={12} color="#FFD54A" />
+                    <Text style={styles.hifiText}>Hi-Fi</Text>
+                  </View>
+                ) : null}
               </View>
               <Text style={styles.trackTitle} numberOfLines={1}>{displayTitle}</Text>
               <Text style={styles.trackArtist} numberOfLines={1}>{displayArtist}</Text>
@@ -310,7 +324,7 @@ const RadioScreen = () => {
             </View>
 
             <View style={styles.grid}>
-              {[...orderedChannels.favorites, ...orderedChannels.remaining].map((channel) => (
+              {allChannels.map((channel) => (
                 <ChannelGridCard
                   key={channel.id}
                   channel={channel}
@@ -713,6 +727,23 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 15,
     fontWeight: '900',
+  },
+  hifiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,213,74,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,213,74,0.48)',
+  },
+  hifiText: {
+    color: '#FFD54A',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.4,
   },
   nowArtworkPlaceholder: {
     width: 58,

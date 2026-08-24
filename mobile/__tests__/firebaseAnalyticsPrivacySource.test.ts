@@ -35,6 +35,8 @@ describe('Firebase Analytics privacy configuration', () => {
     expect(application).toContain('AnalyticsBridgeModule.revokeStaleConsent(this)');
     expect(app).toContain('if (!consent.decided)');
     expect(app).toContain('setAnalyticsConsent(false)');
+    expect(app).toContain('Analytics.screenView(routeName)');
+    expect(app).toContain('onStateChange={() =>');
     expect(bridge).toContain('ConsentType.AD_PERSONALIZATION');
     expect(bridge).toContain('resetAnalyticsData()');
     expect(config).not.toContain('GA4_API_SECRET');

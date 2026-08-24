@@ -174,6 +174,8 @@ const SnakeScreen = () => {
       <GameShell
         title={localizedGame.title}
         subtitle={localizedGame.description}
+        icon="snake"
+        accentColor="#48E08A"
         score={score}
         progressLabel={`${snake.length} ${copy('games.snakeLength')}`}
         rightLabel={running ? copy('games.snakeRight') : copy('games.snakeStopped')}
@@ -196,8 +198,10 @@ const SnakeScreen = () => {
                       isSnake && styles.snakeCell,
                       isHead && styles.snakeHead,
                       isFood && styles.foodCell,
-                    ]}
-                  />
+                    ]}>
+                    {isHead ? <View style={styles.snakeEye} /> : null}
+                    {isFood ? <Icon name="music-note-eighth" size={13} color="#07150C" /> : null}
+                  </View>
                 );
               })}
             </View>
@@ -281,15 +285,16 @@ function createFood(snake: Point[]): Point {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
-  board: {alignSelf: 'center', marginTop: SPACING.lg, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border},
+  board: {alignSelf: 'center', marginTop: SPACING.lg, padding: 6, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(72,224,138,0.48)', backgroundColor: '#0D1511', shadowColor: '#48E08A', shadowOpacity: 0.2, shadowRadius: 18, elevation: 8},
   row: {flexDirection: 'row'},
-  cell: {width: 22, height: 22, backgroundColor: '#171717', borderWidth: 0.5, borderColor: '#242424'},
-  snakeCell: {backgroundColor: COLORS.primary},
-  snakeHead: {backgroundColor: '#FFB020'},
-  foodCell: {backgroundColor: '#34C759'},
+  cell: {width: 22, height: 22, margin: 0.5, borderRadius: 5, backgroundColor: '#111C16', borderWidth: 0.5, borderColor: '#1B2A21', alignItems: 'center', justifyContent: 'center'},
+  snakeCell: {backgroundColor: '#26B96B', borderColor: '#67F0A4'},
+  snakeHead: {backgroundColor: '#B8FF74', borderColor: '#E4FFC8'},
+  snakeEye: {width: 5, height: 5, borderRadius: 3, backgroundColor: '#0B2B18'},
+  foodCell: {backgroundColor: '#FFD54A', borderColor: '#FFF0A3', transform: [{scale: 0.86}]},
   controls: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg, gap: 6},
-  controlButton: {width: 54, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
-  pauseButton: {width: 54, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary},
+  controlButton: {width: 54, height: 50, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17221B', borderWidth: 1, borderColor: 'rgba(72,224,138,0.28)'},
+  pauseButton: {width: 56, height: 52, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#26B96B', shadowColor: '#48E08A', shadowOpacity: 0.32, shadowRadius: 10, elevation: 6},
   helpText: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginTop: SPACING.md},
 });
 

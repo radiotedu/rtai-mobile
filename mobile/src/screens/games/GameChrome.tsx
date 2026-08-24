@@ -17,6 +17,8 @@ import {screenCopy} from '../../i18n/screenCopy';
 interface GameShellProps {
   title: string;
   subtitle?: string;
+  icon?: string;
+  accentColor?: string;
   score: number;
   progressLabel?: string;
   rightLabel?: string;
@@ -27,6 +29,8 @@ interface GameShellProps {
 export function GameShell({
   title,
   subtitle,
+  icon = 'controller-classic',
+  accentColor = COLORS.primary,
   score,
   progressLabel,
   rightLabel,
@@ -37,24 +41,32 @@ export function GameShell({
   const copy = (key: string) => appCopy(i18n.language, key);
   return (
     <View style={styles.shell}>
+      <View pointerEvents="none" style={[styles.ambientOrb, {backgroundColor: accentColor}]} />
+      <View pointerEvents="none" style={[styles.ambientOrbSmall, {borderColor: accentColor}]} />
       <View style={styles.navbar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.navbarTitle}>{title}</Text>
+          <View style={styles.titleRow}>
+            <View style={[styles.titleIcon, {backgroundColor: `${accentColor}22`, borderColor: `${accentColor}66`}]}>
+              <Icon name={icon} size={19} color={accentColor} />
+            </View>
+            <Text style={styles.navbarTitle}>{title}</Text>
+          </View>
           {subtitle ? <Text style={styles.navbarSubtitle}>{subtitle}</Text> : null}
         </View>
         <View style={styles.navbarSpacer} />
       </View>
 
-      <View style={styles.scoreCard}>
+      <View style={[styles.scoreCard, {borderColor: `${accentColor}66`}]}>
+        <View pointerEvents="none" style={[styles.scoreGlow, {backgroundColor: `${accentColor}18`}]} />
         <View>
           <Text style={styles.scoreLabel}>{copy('games.score')}</Text>
-          <Text style={styles.scoreValue}>{score}</Text>
+          <Text style={[styles.scoreValue, {color: accentColor}]}>{score}</Text>
         </View>
         <View style={styles.scoreMeta}>
-          {progressLabel ? <Text style={styles.progressLabel}>{progressLabel}</Text> : null}
+          {progressLabel ? <Text style={[styles.progressLabel, {borderColor: `${accentColor}55`}]}>{progressLabel}</Text> : null}
           {rightLabel ? <Text style={styles.rightLabel}>{rightLabel}</Text> : null}
         </View>
       </View>
@@ -188,6 +200,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
     paddingHorizontal: SPACING.lg,
+    overflow: 'hidden',
+  },
+  ambientOrb: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    opacity: 0.08,
+    right: -120,
+    top: 100,
+  },
+  ambientOrbSmall: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 18,
+    opacity: 0.08,
+    left: -55,
+    bottom: 70,
   },
   navbar: {
     flexDirection: 'row',
@@ -205,6 +237,20 @@ const styles = StyleSheet.create({
   },
   headerText: {
     alignItems: 'center',
+    flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  titleIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   navbarTitle: {
     color: COLORS.text,
@@ -226,9 +272,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: SPACING.md,
     borderRadius: 24,
-    backgroundColor: '#211113',
+    backgroundColor: '#171719',
     borderWidth: 1,
-    borderColor: 'rgba(227,30,36,0.28)',
+    overflow: 'hidden',
+  },
+  scoreGlow: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    left: -65,
+    top: -88,
   },
   scoreLabel: {
     color: COLORS.textMuted,
@@ -248,6 +302,11 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 13,
     fontWeight: '900',
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   rightLabel: {
     color: COLORS.textMuted,

@@ -136,11 +136,19 @@ const GamesScreen = () => {
         ) : displayGames.length === 0 ? (
           <Empty text={copy('games.empty')} />
         ) : (
-          displayGames.map((game) => (
-            <View key={game.id} style={styles.gameCard}>
-              <View style={styles.gameAccent} />
-              <View style={styles.gameIcon}>
-                <Icon name={getGameIcon(game.slug)} size={28} color={COLORS.primary} />
+          displayGames.map((game, index) => {
+            const accent = getGameAccent(game.slug);
+            return (
+            <View key={game.id} style={[styles.gameCard, {borderColor: `${accent}48`}]}>
+              <View style={[styles.gameAccent, {backgroundColor: accent}]} />
+              <Icon name={getGameIcon(game.slug)} size={92} color={`${accent}0D`} style={styles.gameWatermark} />
+              <View style={styles.gameVisual}>
+                <View style={[styles.gameNumber, {borderColor: `${accent}66`}]}>
+                  <Text style={[styles.gameNumberText, {color: accent}]}>{String(index + 1).padStart(2, '0')}</Text>
+                </View>
+                <View style={[styles.gameIcon, {backgroundColor: `${accent}18`, borderColor: `${accent}55`}]}>
+                  <Icon name={getGameIcon(game.slug)} size={32} color={accent} />
+                </View>
               </View>
               <View style={styles.gameBody}>
                 {(() => {
@@ -164,16 +172,17 @@ const GamesScreen = () => {
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={[styles.playButton, !getGameRouteForSlug(game.slug) && styles.disabledButton]}
+                  style={[styles.playButton, {backgroundColor: accent}, !getGameRouteForSlug(game.slug) && styles.disabledButton]}
                   onPress={() => handlePlay(game)}
                   activeOpacity={0.82}>
+                  <Icon name="play" size={17} color="#111" />
                   <Text style={styles.playButtonText}>
                     {getGameRouteForSlug(game.slug) ? copy('games.play') : copy('games.soon')}
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-          ))
+          );})
         )}
 
         <View style={styles.marketHeader}>
@@ -214,6 +223,15 @@ function getGameIcon(slug?: string) {
   return 'controller-classic';
 }
 
+function getGameAccent(slug?: string) {
+  if (slug === 'snake') return '#48E08A';
+  if (slug === 'memory') return '#A78BFA';
+  if (slug === 'tetris') return '#46C8FF';
+  if (slug === 'rhythm-tap') return '#FFD54A';
+  if (slug === 'word-guess') return '#FF8A4C';
+  return '#FF6B73';
+}
+
 function Empty({text}: {text: string}) {
   return (
     <View style={styles.empty}>
@@ -236,16 +254,20 @@ const styles = StyleSheet.create({
   accountText: {flex: 1, color: COLORS.textMuted, fontSize: 13, lineHeight: 18},
   sectionTitle: {color: COLORS.text, fontSize: 19, fontWeight: '900', marginTop: SPACING.xl, marginBottom: SPACING.sm},
   loader: {paddingVertical: SPACING.lg},
-  gameCard: {flexDirection: 'row', gap: SPACING.md, padding: SPACING.md, paddingLeft: SPACING.lg, borderRadius: 22, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.sm, overflow: 'hidden'},
+  gameCard: {flexDirection: 'row', gap: SPACING.md, padding: SPACING.md, paddingLeft: SPACING.lg, borderRadius: 26, backgroundColor: '#171719', borderWidth: 1, marginBottom: SPACING.md, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, elevation: 5},
   gameAccent: {position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: COLORS.primary},
-  gameIcon: {width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(227,30,36,0.12)'},
+  gameWatermark: {position: 'absolute', right: -18, top: -14},
+  gameVisual: {alignItems: 'center', gap: SPACING.sm},
+  gameNumber: {height: 25, minWidth: 38, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.03)'},
+  gameNumberText: {fontSize: 10, fontWeight: '900', letterSpacing: 1},
+  gameIcon: {width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1},
   gameBody: {flex: 1},
   gameTitle: {color: COLORS.text, fontSize: 17, fontWeight: '900'},
   gameDescription: {color: COLORS.textMuted, fontSize: 13, lineHeight: 19, marginTop: 4},
   gameMetaRow: {alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: SPACING.sm, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(244,197,66,0.10)'},
   rewardMeta: {color: '#F4C542', fontSize: 11, fontWeight: '800'},
-  playButton: {height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, marginTop: SPACING.md},
-  playButtonText: {color: '#fff', fontSize: 13, fontWeight: '900'},
+  playButton: {height: 44, borderRadius: 15, flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.md},
+  playButtonText: {color: '#111', fontSize: 13, fontWeight: '900'},
   disabledButton: {opacity: 0.6},
   marketHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   marketLink: {color: COLORS.primary, fontSize: 13, fontWeight: '900', marginTop: SPACING.xl, marginBottom: SPACING.sm},

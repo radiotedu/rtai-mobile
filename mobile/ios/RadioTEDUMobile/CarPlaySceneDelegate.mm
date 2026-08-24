@@ -11,13 +11,14 @@
 {
   return @[
     @{ @"id": @"radiotedu-main", @"title": @"RadioTEDU" },
-    @{ @"id": @"radiotedu-classic", @"title": @"Classic" },
-    @{ @"id": @"radiotedu-jazz", @"title": @"Jazz" },
-    @{ @"id": @"radiotedu-lofi", @"title": @"Lo-Fi" },
-    @{ @"id": @"radiotedu-energize", @"title": @"Energize" },
-    @{ @"id": @"radiotedu-rock", @"title": @"Rock" },
-    @{ @"id": @"radiotedu-en", @"title": @"English" },
-    @{ @"id": @"radiotedu-fr", @"title": @"Français" },
+    @{ @"id": @"radiotedu-classic", @"title": @"RadioTEDU Classical" },
+    @{ @"id": @"radiotedu-jazz", @"title": @"RadioTEDU Jazz" },
+    @{ @"id": @"radiotedu-lofi", @"title": @"RadioTEDU Lo-Fi" },
+    @{ @"id": @"radiotedu-energize", @"title": @"RadioTEDU Energize" },
+    @{ @"id": @"radiotedu-rock", @"title": @"RadioTEDU Rock" },
+    @{ @"id": @"radiotedu-en", @"title": @"RadioTEDU English" },
+    @{ @"id": @"radiotedu-fr", @"title": @"RadioTEDU Français" },
+    @{ @"id": @"radiotedu-spark", @"title": @"RadioTEDU Voting" },
   ];
 }
 

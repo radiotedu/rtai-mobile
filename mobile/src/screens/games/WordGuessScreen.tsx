@@ -140,6 +140,8 @@ const WordGuessScreen = () => {
       <GameShell
         title={copy('games.word')}
         subtitle={copy('games.wordSubtitle')}
+        icon="head-question-outline"
+        accentColor="#FF8A4C"
         score={score}
         progressLabel={`${copy('games.wordQuestion')} ${Math.min(index + 1, questions.length)}/${questions.length}`}
         rightLabel={`${correct} ${copy('games.wordCorrect')}`}
@@ -150,9 +152,19 @@ const WordGuessScreen = () => {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {!finished ? (
             <View style={styles.questionCard}>
-              <Icon name="head-question-outline" size={34} color={COLORS.primary} />
+              <View style={styles.progressDots}>
+                {questions.map((question, questionIndex) => (
+                  <View
+                    key={`${question.prompt}-${questionIndex}`}
+                    style={[styles.progressDot, questionIndex <= index && styles.progressDotActive]}
+                  />
+                ))}
+              </View>
+              <View style={styles.questionIcon}>
+                <Icon name="head-question-outline" size={34} color="#FF8A4C" />
+              </View>
               <Text style={styles.prompt}>{currentQuestion.prompt}</Text>
-              {currentQuestion.options.map((option) => {
+              {currentQuestion.options.map((option, optionIndex) => {
                 const isSelected = selected === option;
                 const isAnswer = option === currentQuestion.answer;
                 return (
@@ -166,6 +178,9 @@ const WordGuessScreen = () => {
                     onPress={() => answer(option)}
                     disabled={selected !== null || finished}
                     activeOpacity={0.82}>
+                    <View style={styles.optionLetter}>
+                      <Text style={styles.optionLetterText}>{String.fromCharCode(65 + optionIndex)}</Text>
+                    </View>
                     <Text style={styles.optionText}>{option}</Text>
                   </TouchableOpacity>
                 );
@@ -206,12 +221,18 @@ function shuffle<T>(items: T[]): T[] {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   content: {paddingBottom: SPACING.xl},
-  questionCard: {marginTop: SPACING.lg, padding: SPACING.md, borderRadius: 24, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border},
-  prompt: {color: COLORS.text, fontSize: 22, fontWeight: '900', lineHeight: 29, marginVertical: SPACING.lg},
-  option: {minHeight: 52, borderRadius: 16, justifyContent: 'center', paddingHorizontal: SPACING.md, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.sm},
+  questionCard: {marginTop: SPACING.lg, padding: SPACING.md, borderRadius: 28, backgroundColor: '#1C1715', borderWidth: 1, borderColor: 'rgba(255,138,76,0.32)', shadowColor: '#FF8A4C', shadowOpacity: 0.12, shadowRadius: 16, elevation: 6},
+  progressDots: {flexDirection: 'row', gap: 6, marginBottom: SPACING.md},
+  progressDot: {flex: 1, height: 4, borderRadius: 2, backgroundColor: '#3A302B'},
+  progressDotActive: {backgroundColor: '#FF8A4C'},
+  questionIcon: {width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,138,76,0.10)', borderWidth: 1, borderColor: 'rgba(255,138,76,0.28)'},
+  prompt: {color: COLORS.text, fontSize: 23, fontWeight: '900', lineHeight: 30, marginVertical: SPACING.lg},
+  option: {minHeight: 56, borderRadius: 18, flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, backgroundColor: '#231F1D', borderWidth: 1, borderColor: '#3A332F', marginBottom: SPACING.sm},
+  optionLetter: {width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,138,76,0.10)', marginRight: SPACING.sm},
+  optionLetterText: {color: '#FFAA7C', fontSize: 13, fontWeight: '900'},
   correctOption: {borderColor: COLORS.success, backgroundColor: 'rgba(52,199,89,0.16)'},
   wrongOption: {borderColor: COLORS.error, backgroundColor: 'rgba(255,59,48,0.14)'},
-  optionText: {color: COLORS.text, fontSize: 15, fontWeight: '800'},
+  optionText: {flex: 1, color: COLORS.text, fontSize: 15, fontWeight: '800'},
   waitCard: {padding: SPACING.lg, borderRadius: 24, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, marginTop: SPACING.lg},
   waitText: {color: COLORS.textMuted, textAlign: 'center', fontWeight: '800'},
 });

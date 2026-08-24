@@ -31,6 +31,31 @@ interface PodcastApiResponse {
   total_pages?: number;
 }
 
+interface OfficialPodcastShow {
+  id: string;
+  title?: string;
+  description?: string;
+  url?: string;
+  image?: string;
+}
+
+interface OfficialPodcastEpisode {
+  id: string;
+  title?: string;
+  excerpt?: string;
+  url?: string;
+  image?: string;
+  audio_url?: string;
+  external_url?: string;
+  published_at?: string;
+}
+
+interface OfficialEpisodePage {
+  items?: OfficialPodcastEpisode[];
+  page?: number;
+  pages?: number;
+}
+
 type ParsedRssItem = Record<string, unknown>;
 
 interface ParsedRssChannel extends Record<string, unknown> {
@@ -49,6 +74,8 @@ interface ParsedRssDocument {
 const PODCAST_DATE_LOCALE = 'tr-TR';
 const PODCAST_DESCRIPTION_LIMIT = 180;
 const PODCAST_PAGE_SIZE = 15;
+const OFFICIAL_PODCAST_API =
+  'https://radiotedu.com/wp-json/radiotedu/v1/podcasts';
 const RSS_XML_PARSER = new XMLParser({
   attributeNamePrefix: '@_',
   ignoreAttributes: false,
@@ -76,9 +103,10 @@ export async function fetchPodcasts(page: number = 1): Promise<{
   total: number;
   totalPages: number;
 }> {
-  // Primary source: the real RadioTEDU shows from radiotedu.com (anchor.fm RSS).
+  // Primary source: RadioTEDU's complete public catalog (all series), not the
+  // three legacy feeds previously hardcoded in the client.
   if (page <= 1 || !cachedFeedEpisodes) {
-    const episodes = await fetchRadioteduFeedEpisodes();
+    const episodes = await fetchOfficialPodcastEpisodes();
     if (episodes.length > 0) {
       cachedFeedEpisodes = episodes;
     }
@@ -88,8 +116,26 @@ export async function fetchPodcasts(page: number = 1): Promise<{
     return paginatePodcasts(cachedFeedEpisodes, page);
   }
 
-  // Fallback: backend-managed podcast registry.
-  return fetchPodcastsFromBackend(page);
+  // Fallback: backend-managed registry, then the three historical RSS feeds.
+  try {
+    const backend = await fetchPodcastsFromBackend(page);
+    if (backend.items.length > 0) {
+      return backend;
+    }
+  } catch {
+    // Continue to RSS fallback.
+  }
+
+  const rssEpisodes = await fetchRadioteduFeedEpisodes();
+  return paginatePodcasts(rssEpisodes, page);
+}
+
+export async function fetchAllPodcasts(): Promise<Podcast[]> {
+  if (cachedFeedEpisodes) {
+    return [...cachedFeedEpisodes];
+  }
+  const firstPage = await fetchPodcasts(1);
+  return cachedFeedEpisodes ? [...cachedFeedEpisodes] : firstPage.items;
 }
 
 export function resolvePodcastLaunchUrl(
@@ -121,6 +167,80 @@ async function fetchRadioteduFeedEpisodes(): Promise<Podcast[]> {
   } catch {
     return [];
   }
+}
+
+async function fetchOfficialPodcastEpisodes(): Promise<Podcast[]> {
+  try {
+    const response = await fetch(OFFICIAL_PODCAST_API);
+    if (!response.ok) {
+      return [];
+    }
+    const shows = (await response.json()) as OfficialPodcastShow[];
+    if (!Array.isArray(shows)) {
+      return [];
+    }
+    const perShow = await Promise.all(shows.map(fetchOfficialShowEpisodes));
+    return perShow
+      .flat()
+      .sort((a, b) => b.ts - a.ts)
+      .map(entry => entry.podcast);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchOfficialShowEpisodes(
+  show: OfficialPodcastShow,
+): Promise<Array<{podcast: Podcast; ts: number}>> {
+  const firstPage = await fetchOfficialEpisodePage(show.id, 1);
+  if (!firstPage) {
+    return [];
+  }
+  const pageCount = Math.max(1, Number(firstPage.pages) || 1);
+  const remaining = await Promise.all(
+    Array.from({length: pageCount - 1}, (_, index) =>
+      fetchOfficialEpisodePage(show.id, index + 2),
+    ),
+  );
+  return [firstPage, ...remaining.filter((page): page is OfficialEpisodePage => !!page)]
+    .flatMap(page => (Array.isArray(page.items) ? page.items : []))
+    .map(item => mapOfficialEpisode(item, show))
+    .filter((entry): entry is {podcast: Podcast; ts: number} => entry !== null);
+}
+
+async function fetchOfficialEpisodePage(
+  showId: string,
+  page: number,
+): Promise<OfficialEpisodePage | null> {
+  try {
+    const response = await fetch(
+      `${OFFICIAL_PODCAST_API}/${encodeURIComponent(showId)}/episodes?page=${page}`,
+    );
+    return response.ok ? ((await response.json()) as OfficialEpisodePage) : null;
+  } catch {
+    return null;
+  }
+}
+
+function mapOfficialEpisode(
+  item: OfficialPodcastEpisode,
+  show: OfficialPodcastShow,
+): {podcast: Podcast; ts: number} | null {
+  if (!item.audio_url) {
+    return null;
+  }
+  const published = item.published_at ?? '';
+  const podcast: Podcast = {
+    id: item.id,
+    title: normalizePodcastTitle(decodeHtmlEntities(item.title ?? '')),
+    date: formatPodcastDate(published),
+    description: shapePodcastDescription(item.excerpt),
+    audioUrl: item.audio_url,
+    externalUrl: item.external_url || item.url || show.url,
+    imageUrl: item.image || show.image,
+    feedTitle: decodeHtmlEntities(show.title ?? 'RadioTEDU Podcasts'),
+  };
+  return {podcast, ts: Date.parse(published) || 0};
 }
 
 async function fetchFeedEpisodes(
@@ -364,5 +484,9 @@ function decodeHtmlEntities(value: string): string {
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
     .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
+    .replace(/&gt;/gi, '>')
+    .replace(/&#(\d+);/g, (_match, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code) =>
+      String.fromCodePoint(Number.parseInt(code, 16)),
+    );
 }

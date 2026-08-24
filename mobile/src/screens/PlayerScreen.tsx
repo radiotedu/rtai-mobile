@@ -74,6 +74,7 @@ const PlayerScreen = () => {
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isSwitchingQuality, setIsSwitchingQuality] = useState(false);
+  const [pendingQuality, setPendingQuality] = useState<StreamQualityPreference | null>(null);
   const [qualityMenuVisible, setQualityMenuVisible] = useState(false);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
@@ -221,6 +222,7 @@ const PlayerScreen = () => {
       return;
     }
     setIsSwitchingQuality(true);
+    setPendingQuality(quality);
     try {
       if (quality === 'automatic') {
         await setPreferences({quality});
@@ -241,6 +243,7 @@ const PlayerScreen = () => {
     } catch (err) {
       logSafeError('player.qualityChange', err);
     } finally {
+      setPendingQuality(null);
       setIsSwitchingQuality(false);
     }
   };
@@ -329,7 +332,7 @@ const PlayerScreen = () => {
               {isFlacActive ? (
                 <View style={styles.goldFlacBadge}>
                   <Icon name="star-four-points" size={14} color="#FFD700" />
-                  <Text style={styles.goldFlacText}>FLAC</Text>
+                  <Text style={styles.goldFlacText}>Hi-Fi</Text>
                 </View>
               ) : null}
 
@@ -395,7 +398,7 @@ const PlayerScreen = () => {
               if (option.quality === 'normal') return Boolean(currentChannel?.streams.normal);
               return true;
             }).map(option => {
-              const selected = preferences.quality === option.quality;
+              const selected = (pendingQuality ?? preferences.quality) === option.quality;
               const gold = option.quality === 'flac';
               const customCodec = option.quality !== 'automatic' ? currentChannel?.codecLabels?.[option.quality] : null;
               const description = customCodec && customCodec.startsWith('MP3')

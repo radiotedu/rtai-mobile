@@ -21,11 +21,14 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Metadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
@@ -90,6 +93,10 @@ class RadioTeduCarService : MediaLibraryService() {
         private const val HTTP_CONNECT_TIMEOUT_MS = 15_000
         private const val HTTP_READ_TIMEOUT_MS = 15_000
         private const val BUFFERING_WATCHDOG_MS = 20_000L
+        private const val MIN_BUFFER_MS = 5_000
+        private const val MAX_BUFFER_MS = 30_000
+        private const val PLAY_BUFFER_MS = 4_000
+        private const val REBUFFER_MS = 5_000
         private const val PROGRESS_SAVE_INTERVAL_MS = 15_000L
         private const val CAR_TILE_SIZE_PX = 128
         private const val CAR_TILE_MAX_BYTES = 64 * 1024
@@ -125,8 +132,18 @@ class RadioTeduCarService : MediaLibraryService() {
             .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
             .setAllowCrossProtocolRedirects(true)
 
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                MIN_BUFFER_MS,
+                MAX_BUFFER_MS,
+                PLAY_BUFFER_MS,
+                REBUFFER_MS,
+            )
+            .build()
+
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
+            .setLoadControl(loadControl)
             .build()
             .apply {
                 setAudioAttributes(
@@ -232,6 +249,18 @@ class RadioTeduCarService : MediaLibraryService() {
 
         override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
             normalizeIcyMetadata(mediaMetadata)
+        }
+
+        override fun onMetadata(metadata: Metadata) {
+            for (index in 0 until metadata.length()) {
+                val title = (metadata[index] as? IcyInfo)?.title?.trim().orEmpty()
+                if (title.isNotEmpty()) {
+                    // Raw ICY is the authoritative timed source. Some Auto hosts
+                    // do not surface Media3's synthesized metadata callback.
+                    normalizeIcyMetadata(MediaMetadata.Builder().setTitle(title).build())
+                    return
+                }
+            }
         }
     }
 
@@ -477,7 +506,7 @@ class RadioTeduCarService : MediaLibraryService() {
             }
             val pageItems = paginate(children, page, pageSize)
                 ?: return Futures.immediateFuture(
-                    LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE),
+                    LibraryResult.ofError(SessionError.ERROR_BAD_VALUE),
                 )
             return Futures.immediateFuture(
                 LibraryResult.ofItemList(pageItems, responseLibraryParams(params)),
@@ -498,7 +527,7 @@ class RadioTeduCarService : MediaLibraryService() {
             return if (item != null) {
                 Futures.immediateFuture(LibraryResult.ofItem(item, null))
             } else {
-                Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+                Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_BAD_VALUE))
             }
         }
 
@@ -525,7 +554,7 @@ class RadioTeduCarService : MediaLibraryService() {
             val results = searchItems(query).map { it.toMediaItem(playable = false) }
             val pageItems = paginate(results, page, pageSize)
                 ?: return Futures.immediateFuture(
-                    LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE),
+                    LibraryResult.ofError(SessionError.ERROR_BAD_VALUE),
                 )
             return Futures.immediateFuture(
                 LibraryResult.ofItemList(pageItems, responseLibraryParams(params)),
@@ -937,11 +966,22 @@ class RadioTeduCarService : MediaLibraryService() {
     }
 
     private fun itemFromJson(json: JSONObject): CatalogItem {
-        val quality = json.optString("quality", "").ifEmpty { null }
+        val rawQuality = json.optString("quality", "").ifEmpty { null }
         val seriesId = json.optString("seriesId", "").ifEmpty { null }
+        val quality = if (seriesId == null) {
+            if (rawQuality == "low") "low" else "normal"
+        } else {
+            rawQuality
+        }
+        val rawUrl = json.optString("url", "")
+        val url = if (seriesId == null && rawQuality == "flac") {
+            rawUrl.removeSuffix("-flac")
+        } else {
+            rawUrl
+        }
         return CatalogItem(
             id = json.optString("id", ""),
-            url = json.optString("url", ""),
+            url = url,
             title = json.optString("title", localizedString(R.string.app_name)),
             artist = json.optString("subtitle", ""),
             artwork = json.optString("artwork", ""),
@@ -1161,7 +1201,7 @@ internal object CarVoiceQueryPolicy {
         "radiotedu-energize" -> setOf(
             "energize", "energy", "enerji", "энергия", "طاقة", "energie",
         )
-        "radiotedu-spark" -> setOf("spark")
+        "radiotedu-spark" -> setOf("voting", "oylama")
         "radiotedu-rock" -> setOf("rock", "рок", "روك")
         "radiotedu-en" -> setOf(
             "english", "ingilizce", "radio tedu english", "английский", "انجليزي",

@@ -1,10 +1,50 @@
 {
-  "en-home-account": {"locale":"fr","eyebrow":"RADIO, STUDY ET GOLD","headline":"Un compte. Toutes les fonctions.","altText":"Accueil RadioTEDU avec compte connecté, Gold et navigation des fonctions.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-radio-live": {"locale":"fr","eyebrow":"RADIO EN DIRECT","headline":"Métadonnées en direct. Votre qualité.","altText":"RadioTEDU en direct avec station réelle, métadonnées et réglages de qualité.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-radio-flac-warning": {"locale":"fr","eyebrow":"AUDIO SANS PERTE","headline":"FLAC avec protection des données mobiles.","altText":"Sélection FLAC RadioTEDU avec le véritable avertissement de données mobiles.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-podcast-series": {"locale":"fr","eyebrow":"PODCASTS","headline":"Reprenez au sein de chaque série.","altText":"Série RadioTEDU avec épisodes réels regroupés et lecture active.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-study-timer": {"locale":"fr","eyebrow":"STUDY","headline":"Suivez chaque minute de concentration.","altText":"RadioTEDU Study avec minuteur réel actif et minutes écoulées.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-voting": {"locale":"fr","eyebrow":"VOTING","headline":"Votez avec votre compte RadioTEDU.","altText":"RadioTEDU Voting connecté avec candidats réels et commandes de vote.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-jukebox": {"locale":"fr","eyebrow":"JUKEBOX","headline":"Pilotez la salle depuis votre téléphone.","altText":"RadioTEDU Jukebox connecté avec lecture, file et recherche réelles.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"},
-  "en-games-gold": {"locale":"fr","eyebrow":"JEUX ET GOLD","headline":"Jouez. Marquez. Vérifiez les gains.","altText":"Résultat RadioTEDU réel avec score terminé et changement Gold vérifié.","proofLabel":"ÉCRAN RÉEL DE L’APP • AUCUNE MAQUETTE"}
+  "en-home-account": {
+    "locale": "fr",
+    "eyebrow": "RADIO, STUDY ET GOLD",
+    "headline": "Un compte. Toutes les fonctions.",
+    "altText": "Accueil RadioTEDU avec compte connecté, Gold et navigation des fonctions."
+  },
+  "en-radio-live": {
+    "locale": "fr",
+    "eyebrow": "RADIO EN DIRECT",
+    "headline": "Métadonnées en direct. Votre qualité.",
+    "altText": "RadioTEDU en direct avec station réelle, métadonnées et réglages de qualité."
+  },
+  "en-radio-flac-warning": {
+    "locale": "fr",
+    "eyebrow": "AUDIO SANS PERTE",
+    "headline": "FLAC avec protection des données mobiles.",
+    "altText": "Sélection FLAC RadioTEDU avec le véritable avertissement de données mobiles."
+  },
+  "en-podcast-series": {
+    "locale": "fr",
+    "eyebrow": "PODCASTS",
+    "headline": "Reprenez au sein de chaque série.",
+    "altText": "Série RadioTEDU avec épisodes réels regroupés et lecture active."
+  },
+  "en-study-timer": {
+    "locale": "fr",
+    "eyebrow": "STUDY",
+    "headline": "Suivez chaque minute de concentration.",
+    "altText": "RadioTEDU Study avec minuteur réel actif et minutes écoulées."
+  },
+  "en-voting": {
+    "locale": "fr",
+    "eyebrow": "VOTING",
+    "headline": "Votez avec votre compte RadioTEDU.",
+    "altText": "RadioTEDU Voting connecté avec candidats réels et commandes de vote."
+  },
+  "en-jukebox": {
+    "locale": "fr",
+    "eyebrow": "JUKEBOX",
+    "headline": "Pilotez la salle depuis votre téléphone.",
+    "altText": "RadioTEDU Jukebox connecté avec lecture, file et recherche réelles."
+  },
+  "en-games-gold": {
+    "locale": "fr",
+    "eyebrow": "JEUX ET GOLD",
+    "headline": "Jouez. Marquez. Vérifiez les gains.",
+    "altText": "Résultat RadioTEDU réel avec score terminé et changement Gold vérifié."
+  }
 }

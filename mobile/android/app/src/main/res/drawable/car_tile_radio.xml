@@ -3,14 +3,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Live Radios — RadioTEDU red, broadcast mark -->
-    <path android:fillColor="#ED4B3E" android:pathData="M0,0h108v108h-108z" />
+    <!-- Toolbar hosts tint media-tab artwork. Keep the background transparent
+         so the broadcast mark remains visible instead of becoming a solid tile. -->
     <path
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#FFFFFFFF"
         android:strokeWidth="6"
         android:fillColor="#00000000"
         android:pathData="M54,54 m-22,0 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0" />
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M54,54 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
 </vector>

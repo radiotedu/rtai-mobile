@@ -23,6 +23,7 @@ import {
   REGISTRATION_TERMS_VERSION,
   TERMS_URL,
 } from '../services/registrationPolicy';
+import {requestAndroidNotificationPermission} from '../services/notificationService';
 
 const GENDERS: Gender[] = ['female', 'male', 'other', 'na'];
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
@@ -80,6 +81,7 @@ const ConsentScreen = () => {
       ageRange: selected.demographics ? selected.ageRange : null,
       gender: selected.demographics ? selected.gender : null,
     });
+    await requestAndroidNotificationPermission().catch(() => 'unavailable');
   };
 
   const declineAll = async () => {
@@ -95,6 +97,7 @@ const ConsentScreen = () => {
       termsVersion: REGISTRATION_TERMS_VERSION,
     });
     setAnalyticsConsent(false);
+    await requestAndroidNotificationPermission().catch(() => 'unavailable');
   };
 
   return (

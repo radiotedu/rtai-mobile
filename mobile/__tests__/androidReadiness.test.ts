@@ -175,7 +175,7 @@ describe('androidReadinessService', () => {
         'Play latest podcast': {action: 'play-latest-podcast', mediaId: 'podcast:latest'},
         'Radio TEDU cal': {action: 'play-radio', mediaId: 'radiotedu-main'},
         'son podcasti cal': {action: 'play-latest-podcast', mediaId: 'podcast:latest'},
-        'Spark cal': {action: 'play-radio', mediaId: 'radiotedu-spark'},
+        'RadioTEDU Voting cal': {action: 'play-radio', mediaId: 'radiotedu-spark'},
         'Rock cal': {action: 'play-radio', mediaId: 'radiotedu-rock'},
         'Open jukebox': {action: 'open-jukebox', mediaId: 'cat_jukebox'},
       }),

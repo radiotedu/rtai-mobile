@@ -364,7 +364,7 @@ function FavoriteCard({
       activeOpacity={0.82}>
       <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" />
       <Text style={styles.favoriteName} numberOfLines={1}>{channelCopy.name}</Text>
-      {channel.streams.flac ? <Text style={styles.stationFlacText}>FLAC</Text> : null}
+      {channel.streams.flac ? <Text style={styles.stationFlacText}>Hi-Fi</Text> : null}
       {!isStationOnlyChannel(channel) ? <Text style={styles.favoriteDesc} numberOfLines={1}>{channelCopy.description}</Text> : null}
       {isPlaying ? <View style={[styles.equalizer, {backgroundColor: channel.color}]} /> : null}
       <TouchableOpacity style={styles.favoriteHeart} onPress={onToggleFavorite}>
@@ -408,7 +408,7 @@ function ChannelGridCard({
       </View>
       <View style={styles.channelNameRow}>
         <Text style={styles.channelName} numberOfLines={1}>{channelCopy.name}</Text>
-        {channel.streams.flac ? <Text style={styles.stationFlacText}>FLAC</Text> : null}
+        {channel.streams.flac ? <Text style={styles.stationFlacText}>Hi-Fi</Text> : null}
       </View>
       {!isStationOnlyChannel(channel) ? <Text style={styles.channelDescription} numberOfLines={1}>{channelCopy.description}</Text> : null}
       <View style={styles.cardBottomRow}>

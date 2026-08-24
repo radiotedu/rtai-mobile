@@ -25,10 +25,10 @@ Insets are read from Android. If the device does not expose stable insets, revie
 node scripts/capture-android-store-screenshot.mjs seal --session artifacts/store-evidence/<git-sha>/session.json
 ```
 
-Compose a deterministic 1080×1920 RGB Play image with a neutral RadioTEDU phone frame. This removes only recorded OS status/navigation insets; the real app UI and its bottom navigation remain unchanged:
+Compose a deterministic 1080×1920 RGB Play image in the restrained editorial system: flat burgundy, one short headline, and a large real UI crop with rounded top corners. No logo banner, mock phone shell, glow, slogan stack, or defensive “real UI” label is added. Only recorded OS status/navigation insets are removed; app pixels remain unchanged:
 
 ```powershell
-python scripts/compose-radiotedu-store-portrait.py --manifest artifacts/store-evidence/<git-sha>/raw-manifest.json --capture en-radio-live --copy mobile/android/store-assets/copy/en.json --font C:\Windows\Fonts\arialbd.ttf --output artifacts/store-evidence/<git-sha>/final/en/02-radio-live.png
+python scripts/compose-radiotedu-store-portrait.py --manifest artifacts/store-evidence/<git-sha>/raw-manifest.json --capture en-radio-live --copy mobile/android/store-assets/copy/en.json --font C:\Windows\Fonts\bahnschrift.ttf --output artifacts/store-evidence/<git-sha>/final/en/02-radio-live.png
 ```
 
 The evidence manifests record raw/final hashes, Git SHA, exact input and installed APK hashes, package/component/version, available signer-certificate fingerprints, observed device/application locales, crop, scale, logo/font/copy hashes, and alt text. Raw files and sealed manifests are never overwritten.

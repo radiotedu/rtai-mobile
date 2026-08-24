@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Linking,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import { COLORS, SPACING } from '../theme/theme';
 import {logSafeError} from '../utils/safeLog';
 import {
   fetchPodcasts,
+  fetchAllPodcasts,
   resolvePodcastLaunchUrl,
   Podcast,
 } from '../services/podcastService';
@@ -82,7 +84,8 @@ const PodcastScreen = () => {
       // first page is enough to seed the car catalog; later pages still play
       // via the add-and-play fallback in handlePodcastPress.
       if (!append) {
-        setCachedPodcasts(items);
+        const completeCatalog = await fetchAllPodcasts();
+        setCachedPodcasts(completeCatalog.length > 0 ? completeCatalog : items);
       }
       setPage(pageToLoad);
     } catch (e) {
@@ -184,9 +187,17 @@ const PodcastScreen = () => {
       onPress={() => handlePodcastPress(item)}
       activeOpacity={0.7}
       disabled={playingId === item.id}>
-      <View style={styles.podcastIcon}>
-        <Icon name="microphone-variant" size={24} color={COLORS.primary} />
-      </View>
+      {item.imageUrl ? (
+        <Image
+          source={{uri: item.imageUrl}}
+          style={styles.podcastCover}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.podcastIcon}>
+          <Icon name="microphone-variant" size={24} color={COLORS.primary} />
+        </View>
+      )}
       <View style={styles.podcastInfo}>
         <Text style={styles.podcastTitle} numberOfLines={2}>
           {item.title}
@@ -277,6 +288,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  podcastCover: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: COLORS.background,
     marginRight: SPACING.md,
   },
   podcastInfo: { flex: 1, marginRight: SPACING.sm },

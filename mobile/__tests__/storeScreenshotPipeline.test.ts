@@ -57,7 +57,7 @@ describe('Google Play screenshot evidence pipeline', () => {
     expect(docs).toContain('embedded build Git SHA equals the clean checked-out SHA');
   });
 
-  it('composes only sealed real pixels into a portrait RGB phone frame', () => {
+  it('composes only sealed real pixels into a restrained editorial portrait', () => {
     const source = read('scripts/compose-radiotedu-store-portrait.py');
 
     expect(source).toContain('WIDTH = 1080');
@@ -65,36 +65,38 @@ describe('Google Play screenshot evidence pipeline', () => {
     expect(source).toContain('verify_seal');
     expect(source).toContain('sessionSha256');
     expect(source).toContain('color type 2 (24-bit RGB, no alpha)');
-    expect(source).toContain('min(target_width / screen.width, target_height / screen.height, 1.0)');
+    expect(source).toContain('LAYOUT_VERSION = "editorial-v1"');
+    expect(source).toContain('scale = target_width / screen.width');
+    expect(source).not.toContain('proofLabel');
   });
 
-  it('has eight English feature images with bounded alt text and real-screen labels', () => {
+  it('has eight English feature images with bounded alt text and no defensive labels', () => {
     const copy = JSON.parse(
       read('mobile/android/store-assets/copy/en.json'),
-    ) as Record<string, {altText: string; proofLabel: string}>;
+    ) as Record<string, {altText: string; proofLabel?: string}>;
 
     expect(Object.keys(copy)).toHaveLength(8);
     for (const item of Object.values(copy)) {
       expect(item.altText.length).toBeLessThanOrEqual(140);
-      expect(item.proofLabel).toContain('REAL APP SCREEN');
+      expect(item.proofLabel).toBeUndefined();
     }
   });
 
   it('ships key-complete store copy for all six app locales', () => {
     const english = JSON.parse(
       read('mobile/android/store-assets/copy/en.json'),
-    ) as Record<string, {altText: string; locale: string; proofLabel: string}>;
+    ) as Record<string, {altText: string; locale: string; proofLabel?: string}>;
     const expectedKeys = Object.keys(english).sort();
 
     for (const locale of ['en', 'tr', 'ar', 'ru', 'de', 'fr']) {
       const copy = JSON.parse(
         read(`mobile/android/store-assets/copy/${locale}.json`),
-      ) as Record<string, {altText: string; locale: string; proofLabel: string}>;
+      ) as Record<string, {altText: string; locale: string; proofLabel?: string}>;
       expect(Object.keys(copy).sort()).toEqual(expectedKeys);
       for (const item of Object.values(copy)) {
         expect(item.locale).toBe(locale);
         expect(item.altText.length).toBeLessThanOrEqual(140);
-        expect(item.proofLabel.length).toBeGreaterThan(10);
+        expect(item.proofLabel).toBeUndefined();
       }
     }
   });

@@ -60,7 +60,7 @@ const CAR_STATION_ARTWORK: Record<string, string> = {
   'radiotedu-jazz': `${TILE}car_station_cazz`,
   'radiotedu-lofi': `${TILE}car_station_lofi`,
   'radiotedu-energize': `${TILE}car_station_energize`,
-  'radiotedu-spark': `${TILE}car_station_energize`,
+  'radiotedu-spark': `${TILE}car_station_radiotedu`,
   'radiotedu-rock': `${TILE}car_station_rock`,
   'radiotedu-en': `${TILE}car_station_en`,
   'radiotedu-fr': `${TILE}car_station_fr`,
@@ -73,6 +73,25 @@ function carStationArtwork(channelId: string): string {
 let cachedPodcasts: Podcast[] = [];
 let catalogQuality: StreamQuality = 'normal';
 let catalogChannels = channelsVisibleWithoutLiveCheck();
+
+/** Driving surfaces never select lossless/high mounts. */
+export function carSafeQuality(quality: StreamQuality): StreamQuality {
+  return quality === 'low' ? 'low' : 'normal';
+}
+
+function carStationTitle(channelId: string): string {
+  return ({
+    'radiotedu-main': 'RadioTEDU',
+    'radiotedu-classic': 'RadioTEDU Classical',
+    'radiotedu-jazz': 'RadioTEDU Jazz',
+    'radiotedu-lofi': 'RadioTEDU Lo-Fi',
+    'radiotedu-energize': 'RadioTEDU Energize',
+    'radiotedu-spark': 'RadioTEDU Voting',
+    'radiotedu-rock': 'RadioTEDU Rock',
+    'radiotedu-en': 'RadioTEDU English',
+    'radiotedu-fr': 'RadioTEDU Français',
+  } as Record<string, string>)[channelId] ?? 'RadioTEDU';
+}
 
 type CarItem = {
   id: string;
@@ -112,7 +131,7 @@ function radioItems(): CarItem[] {
     const description = stationOnly ? '' : copy.description;
     return {
       id: c.id,
-      title: copy.name,
+      title: carStationTitle(c.id),
       // Make lossless playback explicit on distraction-safe car surfaces. The
       // mount path stays private; low/normal remain visually uncluttered.
       subtitle:
@@ -131,7 +150,6 @@ function radioItems(): CarItem[] {
 function podcastItems(): CarItem[] {
   return cachedPodcasts
     .filter(p => !!p.audioUrl)
-    .slice(0, 12)
     .map(p => {
       const seriesTitle = p.feedTitle?.trim() || 'RadioTEDU Podcasts';
       return {
@@ -230,7 +248,7 @@ export async function pushCarCatalog(podcasts?: Podcast[]): Promise<void> {
     catalogChannels = channelsVisibleWithoutLiveCheck();
   }
   setRuntimeVisibleChannels(catalogChannels);
-  catalogQuality = (await resolveCurrentStreamPreferences()).quality;
+  catalogQuality = carSafeQuality((await resolveCurrentStreamPreferences()).quality);
   writeCachedCarCatalog();
 }
 
@@ -247,7 +265,8 @@ function syncCarLanguagePreference(): void {
 async function handlePlayId(mediaId: string) {
   const radioChannel = RADIO_CHANNELS.find(channel => channel.id === mediaId);
   if (radioChannel) {
-    await playChannelById(radioChannel.id);
+    const selection = await resolveCurrentStreamPreferences();
+    await playChannelById(radioChannel.id, carSafeQuality(selection.quality));
     return;
   }
   const streamSelection = await resolveCurrentStreamPreferences();
@@ -283,7 +302,8 @@ async function handleCommand(action: string, mediaId: string | null) {
         break;
       case 'search': {
         const channel = findChannelByQuery(mediaId ?? '');
-        await playChannelById(channel.id);
+        const selection = await resolveCurrentStreamPreferences();
+        await playChannelById(channel.id, carSafeQuality(selection.quality));
         break;
       }
     }

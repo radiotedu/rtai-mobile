@@ -1,58 +1,50 @@
 {
   "en-home-account": {
     "locale": "en",
-    "eyebrow": "RADIO, STUDY AND GOLD",
-    "headline": "Your RadioTEDU home.",
-    "altText": "RadioTEDU home screen showing signed-in Gold and feature navigation.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "eyebrow": "ALL OF RADIOTEDU",
+    "headline": "All of RadioTEDU in one place.",
+    "altText": "RadioTEDU home screen showing signed-in Gold and feature navigation."
   },
   "en-radio-live": {
     "locale": "en",
     "eyebrow": "LIVE RADIO",
-    "headline": "Live metadata. Your quality.",
-    "altText": "RadioTEDU live radio screen showing a real station, song metadata and quality controls.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "headline": "Listen to live radio.",
+    "altText": "RadioTEDU live radio screen showing a real station, song metadata and quality controls."
   },
   "en-radio-flac-warning": {
     "locale": "en",
     "eyebrow": "LOSSLESS AUDIO",
-    "headline": "FLAC, with mobile-data safety.",
-    "altText": "RadioTEDU FLAC selection with the real mobile-data consumption warning visible.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "headline": "Choose your listening quality.",
+    "altText": "RadioTEDU FLAC selection with the real mobile-data consumption warning visible."
   },
   "en-podcast-series": {
     "locale": "en",
     "eyebrow": "PODCASTS",
-    "headline": "Play real RadioTEDU podcasts.",
-    "altText": "RadioTEDU podcast screen showing real episodes and active playback controls.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "headline": "Discover every RadioTEDU podcast.",
+    "altText": "RadioTEDU podcast screen showing real episodes and active playback controls."
   },
   "en-study-timer": {
     "locale": "en",
     "eyebrow": "STUDY",
     "headline": "Focus for 25 minutes.",
-    "altText": "RadioTEDU Focus screen showing a real active 25-minute countdown and focus sounds.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "altText": "RadioTEDU Focus screen showing a real active 25-minute countdown and focus sounds."
   },
   "en-voting": {
     "locale": "en",
     "eyebrow": "VOTING",
-    "headline": "See the current voting status.",
-    "altText": "RadioTEDU Voting screen showing the real current closed-round status and next-round notice.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "headline": "Vote for what plays next.",
+    "altText": "RadioTEDU Voting screen showing the real current closed-round status and next-round notice."
   },
   "en-jukebox": {
     "locale": "en",
     "eyebrow": "JUKEBOX",
     "headline": "Control the room from your phone.",
-    "altText": "Connected RadioTEDU Jukebox controller showing real now-playing, queue and search controls.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "altText": "Connected RadioTEDU Jukebox controller showing real now-playing, queue and search controls."
   },
   "en-games-gold": {
     "locale": "en",
-    "eyebrow": "GAMES AND GOLD",
-    "headline": "Play. Score. Track verified rewards.",
-    "altText": "RadioTEDU game result showing a real completed score and verified Gold change.",
-    "proofLabel": "REAL APP SCREEN • NO MOCK UI"
+    "eyebrow": "GAMES",
+    "headline": "Five games. One more reason to play.",
+    "altText": "RadioTEDU game result showing a real completed score and verified Gold change."
   }
 }

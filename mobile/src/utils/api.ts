@@ -43,13 +43,14 @@ export const checkStreamAvailability = async (
     console.log(`Checking stream: ${streamUrl}`);
     const controller = new AbortController();
     // A live mount should return headers immediately. A timeout is not proof
-    // that a station is on air: treating it as live made dormant mounts such
-    // as Spark appear in the station list.
+    // that a station is on air: treating it as live made dormant mounts appear
+    // in the station list.
     timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    // Use GET with immediate abort to validate connection & status
+    // HEAD validates headers without opening the endless audio body. Android's
+    // fetch can wait for GET body bytes and hide a healthy live mount on timeout.
     const response = await fetch(streamUrl, {
-      method: 'GET',
+      method: 'HEAD',
       headers: {'Cache-Control': 'no-cache'},
       cache: 'no-store', // Don't use cached responses
       signal: controller.signal,
@@ -69,9 +70,6 @@ export const checkStreamAvailability = async (
         contentType.includes('application/x-mpegURL') ||
         contentType.includes('application/vnd.apple.mpegurl')
       : false;
-
-    // We only need response headers. Close the endless radio body immediately.
-    controller.abort();
 
     // Strict check: Must be 200/206 AND be an audio/playlist type
     const isValid = isStatusValid && isAudio;

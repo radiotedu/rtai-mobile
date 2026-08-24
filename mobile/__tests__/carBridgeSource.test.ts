@@ -136,6 +136,9 @@ describe('Android Auto car bridge source contract', () => {
     expect(carBridgeSource).toContain("parentId: 'cat_podcasts'");
     expect(carBridgeSource).toContain('quality: track.streamQuality');
     expect(carBridgeSource).toContain('audioFormat');
+    expect(carBridgeSource).not.toContain('.slice(0, 12)');
+    expect(carBridgeSource).toContain("quality === 'low' ? 'low' : 'normal'");
+    expect(carBridgeSource).toContain("'radiotedu-classic': 'RadioTEDU Classical'");
     expect(nativeSourceText).toContain('meteredSafeQueueFor(resolved)');
     expect(nativeSourceText).toContain('queue.filterNot { it.quality == "flac" }');
     expect(nativeSourceText).toContain('remembered.quality == "flac"');
@@ -228,7 +231,9 @@ describe('Android Auto car bridge source contract', () => {
         expect(strings).toContain(`name="${key}"`);
       }
     }
-    expect(androidStringsSource()).toContain('<string name="app_name">RadioTEDU</string>');
+    expect(androidStringsSource()).toContain(
+      '<string name="app_name" translatable="false">RadioTEDU</string>',
+    );
   });
 
   it('synchronizes in-app language changes with cached JS and native Media3 copy', () => {

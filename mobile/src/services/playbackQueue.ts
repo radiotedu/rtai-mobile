@@ -284,8 +284,11 @@ function confirmFlacOnCellular(channel: RadioChannel): Promise<boolean> {
   });
 }
 
-export const NORMAL_CONNECT_TIMEOUT_MS = 5000;
-export const FLAC_CONNECT_TIMEOUT_MS = 12000;
+// The player intentionally fills a five-second start buffer. Leave enough
+// headroom for that buffer plus slower mobile/TLS startup before treating a
+// healthy stream as unavailable. PlaybackError still triggers immediately.
+export const NORMAL_CONNECT_TIMEOUT_MS = 20000;
+export const FLAC_CONNECT_TIMEOUT_MS = 45000;
 let connectionWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function clearConnectionWatchdog(): void {
@@ -384,17 +387,22 @@ export async function replaceChannelTrack(
     return;
   }
   const activeIndex = await TrackPlayer.getActiveTrackIndex();
+  if (activeIndex === index) {
+    // load() atomically replaces the active item. remove/add briefly activates
+    // the neighbouring station, producing the visible/audio quality rebound.
+    await TrackPlayer.load(newTrack);
+    await TrackPlayer.play();
+    return;
+  }
   await TrackPlayer.remove(index);
   await TrackPlayer.add(newTrack, index);
-  if (activeIndex === index) {
-    await TrackPlayer.skip(index);
-    await TrackPlayer.play();
-  }
 }
 
 /**
  * Move a failed quality stream to the next safe candidate:
- * selected quality -> normal -> low -> legacy mount -> next available station.
+ * selected quality -> normal -> low -> legacy mount. Never change stations:
+ * a failed mount must not make a quality selection appear to rebound through
+ * a neighbouring channel.
  */
 export async function fallbackActiveChannelStream(): Promise<boolean> {
   clearConnectionWatchdog();
@@ -410,18 +418,6 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
   const currentIndex = fallbacks.findIndex(item => item.url === currentUrl);
   const next = fallbacks[currentIndex + 1];
   if (!next) {
-    const visible = getRuntimeVisibleChannels();
-    const currentIdx = visible.findIndex(c => c.id === channelId);
-    const nextStation =
-      visible.find((c, idx) => idx !== currentIdx && isChannelPlayable(c)) ||
-      visible[0];
-    if (nextStation && nextStation.id !== channelId) {
-      console.log(
-        `[playbackQueue] All fallbacks exhausted for ${channelId}. Switching to ${nextStation.id}`,
-      );
-      const res = await playChannelById(nextStation.id);
-      return res.played;
-    }
     return false;
   }
 
@@ -434,9 +430,7 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
   console.log(
     `[playbackQueue] Fallback for ${channelId}: switching to ${next.quality} (${next.url})`,
   );
-  await TrackPlayer.remove(queueIndex);
-  await TrackPlayer.add(channelTrackFromStream(channel, next), queueIndex);
-  await TrackPlayer.skip(queueIndex);
+  await TrackPlayer.load(channelTrackFromStream(channel, next));
   await TrackPlayer.play();
   startConnectionWatchdog(channel, next.quality);
   return true;

@@ -44,4 +44,16 @@ describe('language and FLAC readiness', () => {
     expect(shouldShowFlacMobileDataWarning(jazz, 'flac', 'wifi')).toBe(false);
     expect(shouldShowFlacMobileDataWarning(main, 'flac', 'mobile-data')).toBe(false);
   });
+
+  it('keeps the Android stream buffer valid for KotlinAudio rebuffering', () => {
+    const source = fs.readFileSync(path.join(__dirname, '../App.tsx'), 'utf8');
+    expect(source).toMatch(/minBuffer:\s*10/);
+    expect(source).toMatch(/maxBuffer:\s*30/);
+    expect(source).toMatch(/playBuffer:\s*5/);
+    expect(source).toMatch(/backBuffer:\s*5/);
+
+    const queueSource = fs.readFileSync(path.join(__dirname, '../src/services/playbackQueue.ts'), 'utf8');
+    expect(queueSource).toMatch(/NORMAL_CONNECT_TIMEOUT_MS = 20000/);
+    expect(queueSource).toMatch(/FLAC_CONNECT_TIMEOUT_MS = 45000/);
+  });
 });

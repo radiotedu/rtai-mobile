@@ -138,6 +138,7 @@ const GamesScreen = () => {
         ) : (
           displayGames.map((game) => (
             <View key={game.id} style={styles.gameCard}>
+              <View style={styles.gameAccent} />
               <View style={styles.gameIcon}>
                 <Icon name={getGameIcon(game.slug)} size={28} color={COLORS.primary} />
               </View>
@@ -155,12 +156,12 @@ const GamesScreen = () => {
                   );
                 })()}
                 <View style={styles.gameMetaRow}>
-                  <Text style={styles.gameMeta}>
+                  <Icon name="circle-multiple" size={15} color="#F4C542" />
+                  <Text style={styles.rewardMeta}>
                     {isPracticeGame(game)
                       ? copy('games.practiceNoRewards')
                       : copy('games.dailyLimit', {points: game.daily_point_limit ?? 0})}
                   </Text>
-                  <Text style={styles.gameMeta}>{copy('games.slug', {slug: game.slug || '—'})}</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.playButton, !getGameRouteForSlug(game.slug) && styles.disabledButton]}
@@ -235,13 +236,14 @@ const styles = StyleSheet.create({
   accountText: {flex: 1, color: COLORS.textMuted, fontSize: 13, lineHeight: 18},
   sectionTitle: {color: COLORS.text, fontSize: 19, fontWeight: '900', marginTop: SPACING.xl, marginBottom: SPACING.sm},
   loader: {paddingVertical: SPACING.lg},
-  gameCard: {flexDirection: 'row', gap: SPACING.md, padding: SPACING.md, borderRadius: 22, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.sm},
+  gameCard: {flexDirection: 'row', gap: SPACING.md, padding: SPACING.md, paddingLeft: SPACING.lg, borderRadius: 22, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.sm, overflow: 'hidden'},
+  gameAccent: {position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: COLORS.primary},
   gameIcon: {width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(227,30,36,0.12)'},
   gameBody: {flex: 1},
   gameTitle: {color: COLORS.text, fontSize: 17, fontWeight: '900'},
   gameDescription: {color: COLORS.textMuted, fontSize: 13, lineHeight: 19, marginTop: 4},
-  gameMetaRow: {flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.sm},
-  gameMeta: {color: COLORS.textMuted, fontSize: 11, fontWeight: '700'},
+  gameMetaRow: {alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: SPACING.sm, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(244,197,66,0.10)'},
+  rewardMeta: {color: '#F4C542', fontSize: 11, fontWeight: '800'},
   playButton: {height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, marginTop: SPACING.md},
   playButtonText: {color: '#fff', fontSize: 13, fontWeight: '900'},
   disabledButton: {opacity: 0.6},

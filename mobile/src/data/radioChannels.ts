@@ -220,19 +220,23 @@ export const RADIO_CHANNELS: RadioChannel[] = [
   },
   {
     id: 'radiotedu-spark',
-    name: 'Spark',
-    description: 'rtAI - Radio AI Host',
+    name: 'RadioTEDU Voting',
+    description: 'Interactive voting radio',
     copyKey: 'spark',
     streamUrl: 'https://stream.radiotedu.com/spark',
     legacyStreamUrl: 'https://stream.radiotedu.com/spark',
     mountPath: '/spark',
-    streams: buildQualityStreams('/spark'),
+    // Voting currently publishes one Ogg mount at the legacy /spark path.
+    streams: {
+      normal: 'https://stream.radiotedu.com/spark',
+      high: 'https://stream.radiotedu.com/spark',
+    },
     codecLabels: STANDARD_CODEC_LABELS,
     icon: 'creation',
     color: '#20D6C7',
-    logo: ENERGIZE_LOGO,
-    artwork: ENERGIZE_ARTWORK,
-    role: 'ai-host',
+    logo: MAIN_LOGO,
+    artwork: MAIN_ARTWORK,
+    role: 'music',
     availability: 'live',
     requiresLiveCheck: true,
   },
@@ -275,6 +279,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     artwork: AI_EN_ARTWORK,
     role: 'ai-host',
     availability: 'live',
+    requiresLiveCheck: true,
   },
   {
     id: 'radiotedu-fr',
@@ -298,6 +303,7 @@ export const RADIO_CHANNELS: RadioChannel[] = [
     artwork: AI_FR_ARTWORK,
     role: 'ai-host',
     availability: 'live',
+    requiresLiveCheck: true,
   },
 ];
 

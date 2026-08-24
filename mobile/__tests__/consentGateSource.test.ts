@@ -44,5 +44,7 @@ describe('consent gate startup fallback', () => {
     expect(screenSource).toContain('REGISTRATION_TERMS_VERSION');
     expect(screenSource).toContain('Linking.openURL(PRIVACY_URL)');
     expect(screenSource).toContain('Linking.openURL(TERMS_URL)');
+    expect(screenSource).toContain('requestAndroidNotificationPermission');
+    expect(screenSource.match(/await requestAndroidNotificationPermission/g)).toHaveLength(2);
   });
 });

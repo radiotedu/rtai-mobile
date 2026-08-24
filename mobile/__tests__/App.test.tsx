@@ -105,7 +105,7 @@ jest.mock('../src/privacy/ConsentContext', () => ({
 // Startup side-effects → no-ops (no network, native modules or timers).
 jest.mock('../src/i18n', () => ({initI18n: jest.fn(async () => undefined)}));
 jest.mock('../src/services/podcastService', () => ({
-  fetchPodcasts: jest.fn(async () => ({items: []})),
+  fetchAllPodcasts: jest.fn(async () => []),
 }));
 jest.mock('../src/services/playbackQueue', () => ({
   ensureBrowsableQueue: jest.fn(async () => undefined),

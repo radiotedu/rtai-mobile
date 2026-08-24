@@ -45,18 +45,19 @@ import {
 import {buildVoiceActionMap} from '../src/services/androidSystemCapabilities';
 
 describe('radio channel catalog', () => {
-  it('configures Spark to require a successful live check', () => {
+  it('requires a successful live check for intermittent mounts', () => {
     expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-spark')).toEqual(
       expect.objectContaining({requiresLiveCheck: true}),
     );
-    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-en')?.requiresLiveCheck).toBeFalsy();
-    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-fr')?.requiresLiveCheck).toBeFalsy();
+    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-en')?.requiresLiveCheck).toBe(true);
+    expect(RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-fr')?.requiresLiveCheck).toBe(true);
 
     const spark = RADIO_CHANNELS.find(channel => channel.id === 'radiotedu-spark')!;
     expect(buildVisibleChannels([{channel: spark, isAvailable: false}])).toEqual([]);
     expect(buildVisibleChannels([{channel: spark, isAvailable: true}])).toEqual([
       spark,
     ]);
+    expect(spark.streams.low).toBeUndefined();
   });
 
   it('adds Energize and Rock with their recommended normal mounts (no suffix)', () => {
@@ -211,13 +212,13 @@ describe('radio channel catalog', () => {
   });
 
   it('matches Gemini and assistant-style voice queries to available stations', () => {
+    setRuntimeVisibleChannels(RADIO_CHANNELS);
     expect(findChannelByQuery('Hey Gemini, play RadioTEDU Rock').id).toBe('radiotedu-rock');
     expect(findChannelByQuery('Hey Gemini, Radio TEDU cal').id).toBe('radiotedu-main');
     expect(findChannelByQuery('Play RadioTEDU English').id).toBe('radiotedu-en');
     expect(findChannelByQuery('Play RadioTEDU Français').id).toBe('radiotedu-fr');
 
-    setRuntimeVisibleChannels(RADIO_CHANNELS);
-    expect(findChannelByQuery('Hey Gemini, play Spark on RadioTEDU').id).toBe('radiotedu-spark');
+    expect(findChannelByQuery('Hey Gemini, play RadioTEDU Voting').id).toBe('radiotedu-spark');
     setRuntimeVisibleChannels(
       RADIO_CHANNELS.filter(channel => !channel.requiresLiveCheck),
     );
@@ -248,14 +249,23 @@ describe('radio channel catalog', () => {
     ).toEqual(['radiotedu-main']);
   });
 
-  it('includes available stations in the playable TrackPlayer queue', () => {
-    const queue = buildRadioQueue('high');
+  it('includes only runtime-visible stations in the playable TrackPlayer queue', () => {
+    const stableQueue = buildRadioQueue('high');
 
-    expect(queue.map(track => track.id)).toContain('radiotedu-main');
-    expect(queue.map(track => track.id)).toContain('radiotedu-energize');
-    expect(queue.map(track => track.id)).toContain('radiotedu-rock');
-    expect(queue.map(track => track.id)).toContain('radiotedu-en');
-    expect(queue.map(track => track.id)).toContain('radiotedu-fr');
-    expect(queue.map(track => track.id)).not.toContain('radiotedu-spark');
+    expect(stableQueue.map(track => track.id)).toContain('radiotedu-main');
+    expect(stableQueue.map(track => track.id)).toContain('radiotedu-energize');
+    expect(stableQueue.map(track => track.id)).toContain('radiotedu-rock');
+    expect(stableQueue.map(track => track.id)).not.toContain('radiotedu-en');
+    expect(stableQueue.map(track => track.id)).not.toContain('radiotedu-fr');
+    expect(stableQueue.map(track => track.id)).not.toContain('radiotedu-spark');
+
+    setRuntimeVisibleChannels(RADIO_CHANNELS);
+    const liveQueue = buildRadioQueue('high');
+    expect(liveQueue.map(track => track.id)).toEqual(
+      expect.arrayContaining(['radiotedu-en', 'radiotedu-fr', 'radiotedu-spark']),
+    );
+    setRuntimeVisibleChannels(
+      RADIO_CHANNELS.filter(channel => !channel.requiresLiveCheck),
+    );
   });
 });

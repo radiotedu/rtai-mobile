@@ -21,6 +21,7 @@
       android:label="@string/app_name"
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
+      android:appCategory="audio"
       android:allowBackup="false"
       android:networkSecurityConfig="@xml/network_security_config"
       android:theme="@style/AppTheme">
@@ -77,6 +78,11 @@
       <meta-data
         android:name="com.google.android.gms.car.application"
         android:resource="@xml/automotive_app_desc" />
+      <!-- Android Auto reads the Google key; native Android Automotive OS
+           reads the platform key. A single APK needs both declarations. -->
+      <meta-data
+        android:name="com.android.automotive"
+        android:resource="@xml/automotive_app_desc" />
 
       <!-- TrackPlayer Music Service — owns the actual audio playback +
            notification/lock-screen MediaSession. RNTP v4 has no media browser,
@@ -107,13 +113,11 @@
           <action android:name="androidx.media3.session.MediaLibraryService" />
           <action android:name="android.media.browse.MediaBrowserService" />
         </intent-filter>
-        <!-- AAOS reads the media-app opt-in from the MediaBrowserService
-             component itself ("No opt-in info found for Component <service>"),
-             so the automotive_app_desc (<uses name="media"/>) is declared here
-             on the service in addition to the application. -->
+        <!-- Newer AAOS launchers require an explicit service opt-in when the
+             single APK also exposes a phone launcher activity. -->
         <meta-data
-          android:name="com.google.android.gms.car.application"
-          android:resource="@xml/automotive_app_desc" />
+          android:name="androidx.car.app.launchable"
+          android:value="true" />
       </service>
     </application>
 </manifest>

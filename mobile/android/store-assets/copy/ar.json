@@ -1,10 +1,50 @@
 {
-  "en-home-account": {"locale":"ar","eyebrow":"الراديو وSTUDY وGOLD","headline":"حساب واحد. كل الميزات.","altText":"شاشة RadioTEDU الرئيسية بعد تسجيل الدخول مع Gold والتنقل بين الميزات.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-radio-live": {"locale":"ar","eyebrow":"راديو مباشر","headline":"بيانات مباشرة. الجودة التي تختارها.","altText":"راديو RadioTEDU المباشر مع محطة حقيقية وبيانات الأغنية وخيارات الجودة.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-radio-flac-warning": {"locale":"ar","eyebrow":"صوت بلا فقد","headline":"FLAC مع حماية بيانات الهاتف.","altText":"اختيار FLAC في RadioTEDU مع تحذير حقيقي من استهلاك بيانات الهاتف.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-podcast-series": {"locale":"ar","eyebrow":"البودكاست","headline":"تابع داخل كل سلسلة.","altText":"سلسلة بودكاست RadioTEDU مع حلقات حقيقية مجمعة وتشغيل فعلي.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-study-timer": {"locale":"ar","eyebrow":"STUDY","headline":"شاهد كل دقيقة تركيز.","altText":"شاشة RadioTEDU Study مع مؤقت تركيز حقيقي نشط والدقائق المنقضية.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-voting": {"locale":"ar","eyebrow":"VOTING","headline":"صوّت بحساب RadioTEDU.","altText":"شاشة RadioTEDU Voting بعد تسجيل الدخول مع مرشحين حقيقيين وأزرار التصويت.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-jukebox": {"locale":"ar","eyebrow":"JUKEBOX","headline":"تحكم بالمكان من هاتفك.","altText":"RadioTEDU Jukebox متصل يعرض التشغيل والطابور والبحث الحقيقي.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"},
-  "en-games-gold": {"locale":"ar","eyebrow":"الألعاب وGOLD","headline":"العب. سجل. تحقق من المكافآت.","altText":"نتيجة لعبة RadioTEDU حقيقية مع نتيجة نهائية وتغير Gold موثق.","proofLabel":"شاشة حقيقية من التطبيق • ليست نموذجاً"}
+  "en-home-account": {
+    "locale": "ar",
+    "eyebrow": "الراديو وSTUDY وGOLD",
+    "headline": "حساب واحد. كل الميزات.",
+    "altText": "شاشة RadioTEDU الرئيسية بعد تسجيل الدخول مع Gold والتنقل بين الميزات."
+  },
+  "en-radio-live": {
+    "locale": "ar",
+    "eyebrow": "راديو مباشر",
+    "headline": "بيانات مباشرة. الجودة التي تختارها.",
+    "altText": "راديو RadioTEDU المباشر مع محطة حقيقية وبيانات الأغنية وخيارات الجودة."
+  },
+  "en-radio-flac-warning": {
+    "locale": "ar",
+    "eyebrow": "صوت بلا فقد",
+    "headline": "FLAC مع حماية بيانات الهاتف.",
+    "altText": "اختيار FLAC في RadioTEDU مع تحذير حقيقي من استهلاك بيانات الهاتف."
+  },
+  "en-podcast-series": {
+    "locale": "ar",
+    "eyebrow": "البودكاست",
+    "headline": "تابع داخل كل سلسلة.",
+    "altText": "سلسلة بودكاست RadioTEDU مع حلقات حقيقية مجمعة وتشغيل فعلي."
+  },
+  "en-study-timer": {
+    "locale": "ar",
+    "eyebrow": "STUDY",
+    "headline": "شاهد كل دقيقة تركيز.",
+    "altText": "شاشة RadioTEDU Study مع مؤقت تركيز حقيقي نشط والدقائق المنقضية."
+  },
+  "en-voting": {
+    "locale": "ar",
+    "eyebrow": "VOTING",
+    "headline": "صوّت بحساب RadioTEDU.",
+    "altText": "شاشة RadioTEDU Voting بعد تسجيل الدخول مع مرشحين حقيقيين وأزرار التصويت."
+  },
+  "en-jukebox": {
+    "locale": "ar",
+    "eyebrow": "JUKEBOX",
+    "headline": "تحكم بالمكان من هاتفك.",
+    "altText": "RadioTEDU Jukebox متصل يعرض التشغيل والطابور والبحث الحقيقي."
+  },
+  "en-games-gold": {
+    "locale": "ar",
+    "eyebrow": "الألعاب وGOLD",
+    "headline": "العب. سجل. تحقق من المكافآت.",
+    "altText": "نتيجة لعبة RadioTEDU حقيقية مع نتيجة نهائية وتغير Gold موثق."
+  }
 }

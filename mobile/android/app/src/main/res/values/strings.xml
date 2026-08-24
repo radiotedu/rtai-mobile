@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RadioTEDU</string>
+    <string name="app_name" translatable="false">RadioTEDU</string>
     <string name="car_live_radio">Live Radio</string>
     <string name="car_playback_error">Playback error</string>
     <string name="car_stream_connect_error">Unable to connect to the stream</string>

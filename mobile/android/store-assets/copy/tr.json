@@ -1,10 +1,50 @@
 {
-  "en-home-account": {"locale":"tr","eyebrow":"RADYO, STUDY VE GOLD","headline":"RadioTEDU ana sayfan.","altText":"RadioTEDU ana ekranında oturum açılmış Gold bilgileri ve özellik menüsü.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-radio-live": {"locale":"tr","eyebrow":"CANLI RADYO","headline":"Canlı metadata. Senin kaliten.","altText":"Gerçek istasyon, şarkı metadatası ve kalite kontrolleri gösteren RadioTEDU canlı radyo ekranı.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-radio-flac-warning": {"locale":"tr","eyebrow":"KAYIPSIZ SES","headline":"Mobil veri güvenliğiyle FLAC.","altText":"Gerçek mobil veri tüketimi uyarısı açıkken RadioTEDU FLAC seçimi.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-podcast-series": {"locale":"tr","eyebrow":"PODCASTLER","headline":"Gerçek RadioTEDU podcastlerini dinle.","altText":"Gerçek bölümleri ve etkin oynatma kontrollerini gösteren RadioTEDU podcast ekranı.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-study-timer": {"locale":"tr","eyebrow":"STUDY","headline":"25 dakika odaklan.","altText":"Etkin 25 dakikalık geri sayım ve odak seslerini gösteren RadioTEDU Focus ekranı.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-voting": {"locale":"tr","eyebrow":"VOTING","headline":"Güncel oylama durumunu gör.","altText":"Gerçek kapalı tur durumunu ve sonraki tur bildirimini gösteren RadioTEDU Voting ekranı.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-jukebox": {"locale":"tr","eyebrow":"JUKEBOX","headline":"Jukebox'a telefonundan bağlan.","altText":"Gerçek RadioTEDU Jukebox bağlantı ekranı.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"},
-  "en-games-gold": {"locale":"tr","eyebrow":"OYUNLAR","headline":"Beş oyunu tek uygulamada oyna.","altText":"Oynanabilir oyun listesini gösteren gerçek RadioTEDU Games ekranı.","proofLabel":"GERÇEK UYGULAMA EKRANI • MOCK UI DEĞİL"}
+  "en-home-account": {
+    "locale": "tr",
+    "eyebrow": "TÜM RADIOTEDU",
+    "headline": "Sevdiğin her şey tek yerde.",
+    "altText": "RadioTEDU ana ekranında oturum açılmış Gold bilgileri ve özellik menüsü."
+  },
+  "en-radio-live": {
+    "locale": "tr",
+    "eyebrow": "CANLI RADYO",
+    "headline": "Senin müziğin. Senin sesin.",
+    "altText": "Gerçek istasyon, şarkı metadatası ve kalite kontrolleri gösteren RadioTEDU canlı radyo ekranı."
+  },
+  "en-radio-flac-warning": {
+    "locale": "tr",
+    "eyebrow": "KAYIPSIZ SES",
+    "headline": "Mobil veri kontrolüyle Hi-Fi.",
+    "altText": "Gerçek mobil veri tüketimi uyarısı açıkken RadioTEDU FLAC seçimi."
+  },
+  "en-podcast-series": {
+    "locale": "tr",
+    "eyebrow": "PODCASTLER",
+    "headline": "Yeni sesler. Tüm bölümler.",
+    "altText": "Gerçek bölümleri ve etkin oynatma kontrollerini gösteren RadioTEDU podcast ekranı."
+  },
+  "en-study-timer": {
+    "locale": "tr",
+    "eyebrow": "STUDY",
+    "headline": "25 dakika odaklan.",
+    "altText": "Etkin 25 dakikalık geri sayım ve odak seslerini gösteren RadioTEDU Focus ekranı."
+  },
+  "en-voting": {
+    "locale": "tr",
+    "eyebrow": "VOTING",
+    "headline": "Güncel oylama durumunu gör.",
+    "altText": "Gerçek kapalı tur durumunu ve sonraki tur bildirimini gösteren RadioTEDU Voting ekranı."
+  },
+  "en-jukebox": {
+    "locale": "tr",
+    "eyebrow": "JUKEBOX",
+    "headline": "Jukebox'a telefonundan bağlan.",
+    "altText": "Gerçek RadioTEDU Jukebox bağlantı ekranı."
+  },
+  "en-games-gold": {
+    "locale": "tr",
+    "eyebrow": "OYUNLAR",
+    "headline": "Beş oyun. Oynamak için bir neden daha.",
+    "altText": "Oynanabilir oyun listesini gösteren gerçek RadioTEDU Games ekranı."
+  }
 }

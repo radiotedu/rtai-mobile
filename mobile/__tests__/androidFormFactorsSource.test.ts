@@ -10,8 +10,20 @@ describe('Android form-factor delivery', () => {
   it('keeps Android Auto inside the phone package', () => {
     const manifest = read('app/src/main/AndroidManifest.xml');
     expect(manifest).toContain('com.google.android.gms.car.application');
+    expect(manifest).toContain('com.android.automotive');
+    expect(manifest).toContain('android:appCategory="audio"');
+    expect(manifest).toContain('androidx.car.app.launchable');
     expect(manifest).toContain('android.media.browse.MediaBrowserService');
     expect(manifest).toContain('.car.RadioTeduCarService');
+  });
+
+  it('keeps car toolbar category icons transparent for host tinting', () => {
+    const radioIcon = read('app/src/main/res/drawable/car_tile_radio.xml');
+    const podcastIcon = read('app/src/main/res/drawable/car_tile_podcasts.xml');
+    expect(radioIcon).not.toContain('M0,0h108v108h-108z');
+    expect(podcastIcon).not.toContain('M0,0h108v108h-108z');
+    expect(radioIcon).toContain('a22,22');
+    expect(podcastIcon).toContain('a10,10');
   });
 
   it('publishes TV under the same package with TV-only targeting', () => {

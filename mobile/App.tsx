@@ -20,7 +20,7 @@ import {
   ensureBrowsableQueue,
   setCachedPodcasts,
 } from './src/services/playbackQueue';
-import { fetchPodcasts } from './src/services/podcastService';
+import { fetchAllPodcasts } from './src/services/podcastService';
 import {createRunOnceWhenActive} from './src/services/playerForegroundBootstrap';
 import { initI18n } from './src/i18n';
 import { ConsentProvider, useConsent } from './src/privacy/ConsentContext';
@@ -68,7 +68,14 @@ function App(): React.JSX.Element {
     let stopStreamQualityController: (() => void) | null = null;
     const setupPlayer = async () => {
       if (!playerReady) {
-        await TrackPlayer.setupPlayer();
+        await TrackPlayer.setupPlayer({
+          // KotlinAudio uses playBuffer * 2 as its rebuffer threshold, so
+          // minBuffer must be at least twice playBuffer on Android.
+          minBuffer: 10,
+          maxBuffer: 30,
+          playBuffer: 5,
+          backBuffer: 5,
+        });
         playerReady = true;
       }
 
@@ -113,7 +120,7 @@ function App(): React.JSX.Element {
         // browse list alongside the live channels (best-effort - never blocks
         // radio from loading if the podcast API is unavailable).
         try {
-          const {items} = await fetchPodcasts(1);
+          const items = await fetchAllPodcasts();
           setCachedPodcasts(items);
           pushCarCatalog(items); // include podcasts in the car browse tree
         } catch (podcastError) {

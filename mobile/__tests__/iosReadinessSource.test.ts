@@ -19,8 +19,8 @@ describe('iOS release readiness', () => {
 
   it('uses the current cross-platform release version', () => {
     const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
-    expect(project).toContain('MARKETING_VERSION = 1.2.4;');
-    expect(project).toContain('CURRENT_PROJECT_VERSION = 12040;');
+    expect(project).toContain('MARKETING_VERSION = 1.2.5;');
+    expect(project).toContain('CURRENT_PROJECT_VERSION = 12050;');
   });
 
   it('uses secure transport, required permissions, audio, and deep links', () => {

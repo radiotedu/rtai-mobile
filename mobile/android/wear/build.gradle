@@ -16,8 +16,8 @@ android {
         applicationId "com.radiotedumobile"
         minSdkVersion 30
         targetSdkVersion 35
-        versionCode 12042
-        versionName "1.2.4"
+        versionCode 12052
+        versionName "1.2.5"
     }
 
     signingConfigs {

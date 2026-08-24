@@ -48,6 +48,7 @@ describe('MiniPlayer route visibility', () => {
     expect(routeName).toBe('Jukebox');
     expect(shouldHideMiniPlayerForRoute(routeName)).toBe(true);
     expect(shouldHideMiniPlayerForRoute('Player')).toBe(true);
+    expect(shouldHideMiniPlayerForRoute('Games')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('SnakeGame')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('MemoryGame')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('TetrisGame')).toBe(true);

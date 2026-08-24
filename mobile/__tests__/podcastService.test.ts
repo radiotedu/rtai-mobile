@@ -118,6 +118,13 @@ describe('podcastService', () => {
             url: 'https://example.com/feed-episode',
             image: 'https://cdn.example.com/episode.jpg',
             audio_url: 'https://cdn.example.com/feed.mp3',
+          }, {
+            id: 'episode-with-show-cover',
+            title: 'Show Cover Episode',
+            published_at: '2026-04-02T10:00:00Z',
+            url: 'https://example.com/show-cover-episode',
+            image: null,
+            audio_url: 'https://cdn.example.com/show-cover.mp3',
           }],
         }),
       });
@@ -125,6 +132,16 @@ describe('podcastService', () => {
 
     await expect(fetchPodcasts()).resolves.toEqual({
       items: [
+        {
+          id: 'episode-with-show-cover',
+          title: 'Show Cover Episode',
+          date: '02.04.2026',
+          description: '',
+          audioUrl: 'https://cdn.example.com/show-cover.mp3',
+          externalUrl: 'https://example.com/show-cover-episode',
+          imageUrl: 'https://cdn.example.com/show.jpg',
+          feedTitle: 'RadioTEDU & Friends',
+        },
         {
           id: 'episode-guid',
           title: 'Feed Episode',
@@ -136,7 +153,7 @@ describe('podcastService', () => {
           feedTitle: 'RadioTEDU & Friends',
         },
       ],
-      total: 1,
+      total: 2,
       totalPages: 1,
     });
   });

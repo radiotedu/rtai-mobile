@@ -42,24 +42,24 @@ const CURATED_OVERRIDES: Readonly<Record<string, SeatOverride>> = Object.freeze(
     hitArea: rectangle({ x: 69.5, y: 48.5 }, 6.2, 5.2),
   },
   'learning-lab:window-chair': {
-    approach: { x: 21, y: 56, z: 0 }, actorAnchor: { x: 17, y: 51, z: 0 },
-    hitArea: rectangle({ x: 17, y: 51 }, 5.2, 7),
+    approach: { x: 22, y: 67, z: 0 }, actorAnchor: { x: 22, y: 62, z: 0 },
+    hitArea: rectangle({ x: 22, y: 62 }, 4.8, 6.2),
   },
   'learning-lab:blue-floor-cushion': {
-    approach: { x: 40, y: 59, z: 0 }, actorAnchor: { x: 40, y: 54, z: 0 },
-    hitArea: rectangle({ x: 40, y: 53 }, 6.2, 5.6),
+    approach: { x: 40, y: 58, z: 0 }, actorAnchor: { x: 40, y: 53, z: 0 },
+    hitArea: rectangle({ x: 40, y: 53 }, 4.8, 6.2),
   },
   'learning-lab:gray-floor-cushion': {
-    approach: { x: 52, y: 60, z: 0 }, actorAnchor: { x: 52, y: 55, z: 0 },
-    hitArea: rectangle({ x: 52, y: 54 }, 6.2, 5.6),
+    approach: { x: 56.5, y: 74, z: 0 }, actorAnchor: { x: 56.5, y: 69, z: 0 },
+    hitArea: rectangle({ x: 56.5, y: 69 }, 4.8, 6.2),
   },
   'learning-lab:right-floor-cushion': {
-    approach: { x: 82, y: 59, z: 0 }, actorAnchor: { x: 82, y: 54, z: 0 },
-    hitArea: rectangle({ x: 82, y: 53 }, 7, 5.6),
+    approach: { x: 75, y: 66, z: 0 }, actorAnchor: { x: 75, y: 61, z: 0 },
+    hitArea: rectangle({ x: 75, y: 61 }, 4.8, 6.2),
   },
   'learning-lab:activity-table-seat': {
-    approach: { x: 60, y: 47, z: 0 }, actorAnchor: { x: 53, y: 38.5, z: 0 },
-    hitArea: rectangle({ x: 53, y: 37.5 }, 5.2, 6.5),
+    approach: { x: 51, y: 45.5, z: 0 }, actorAnchor: { x: 50, y: 44, z: 0 },
+    hitArea: rectangle({ x: 50, y: 44 }, 4.8, 6.2),
   },
 })
 

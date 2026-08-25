@@ -48,7 +48,7 @@ export function resolveStudyEntry(
   config: StudyEntryConfig | null | undefined,
   location: EntryLocation,
 ): ResolvedStudyEntry {
-  const returnTo = `${location.pathname}${location.search}${location.hash}` || '/study/'
+  const returnTo = `${location.pathname}${location.search}${location.hash}` || '/social/'
   const login = withReturnTo(sameOriginPath(config?.loginUrl, '/?hesap=giris&account_popup=1', location), returnTo)
   const register = withReturnTo(sameOriginPath(config?.registerUrl, '/?hesap=kayit&account_popup=1', location), returnTo)
   const logout = withReturnTo(sameOriginPath(config?.logoutUrl, '/logout/', location), '/')

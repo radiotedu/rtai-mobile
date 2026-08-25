@@ -66,8 +66,8 @@
         },
         {
           "id": "lower-right-aisle",
-          "x": 74,
-          "y": 74,
+          "x": 75.35885167464114,
+          "y": 81.1902231668438,
           "z": 0
         },
         {
@@ -108,8 +108,8 @@
         },
         {
           "id": "upper-right-aisle",
-          "x": 76,
-          "y": 40,
+          "x": 67.70334928229666,
+          "y": 46.3336875664187,
           "z": 0
         },
         {
@@ -186,14 +186,14 @@
         },
         {
           "id": "seat-front-desk-stand",
-          "x": 55,
-          "y": 45.2,
+          "x": 52.87081339712919,
+          "y": 49.73432518597237,
           "z": 0
         },
         {
           "id": "seat-front-right-stand",
-          "x": 67,
-          "y": 45.7,
+          "x": 67.22,
+          "y": 46.33,
           "z": 0
         },
         {
@@ -210,8 +210,8 @@
         },
         {
           "id": "seat-lamp-right-stand",
-          "x": 45,
-          "y": 56.8,
+          "x": 47.12918660287082,
+          "y": 61.6365568544102,
           "z": 0
         },
         {
@@ -850,7 +850,7 @@
         },
         {
           "from": "approach:front-desk",
-          "to": "seat-front-desk-stand",
+          "to": "upper-center-aisle",
           "kind": "walk"
         },
         {
@@ -875,7 +875,7 @@
         },
         {
           "from": "approach:middle-left",
-          "to": "lower-center-aisle",
+          "to": "seat-lamp-right-stand",
           "kind": "walk"
         },
         {
@@ -930,7 +930,7 @@
         },
         {
           "from": "approach:upper-near-right",
-          "to": "seat-front-right-stand",
+          "to": "upper-right-aisle",
           "kind": "walk"
         },
         {
@@ -945,7 +945,7 @@
         },
         {
           "from": "approach:middle-back-mid-right",
-          "to": "seat-lamp-right-stand",
+          "to": "middle-center-aisle",
           "kind": "walk"
         },
         {
@@ -3568,10 +3568,10 @@
         }
       },
       "image": {
-        "url": "assets/rooms/chim-alan-wide.png",
+        "url": "assets/rooms/chim-alan-wide-360-restaurant-r3.png",
         "width": 1672,
         "height": 941,
-        "sha256": "abb1df4376645a611549a2a95fb698cab9ccb4d192805779b5e31047ea378abe"
+        "sha256": "1875557012c754fd8f8e3a346dc31b5d8d003e530697bec6674ce08becc12310"
       }
     }
   }

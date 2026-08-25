@@ -163,8 +163,8 @@ async function risingFrame(frame) {
 }
 
 async function actionFrames(action, direction, standing, seated) {
-  if (action === 'idle') return [standing[direction]]
-  if (action === 'sit') return [seated[direction]]
+  if (action === 'idle') return [standing[direction], standing[direction], standing[direction], standing[direction]]
+  if (action === 'sit') return [seated[direction], seated[direction], seated[direction], seated[direction]]
   if (action === 'walk') {
     return Promise.all([0, 1, 2, 3].map((phase) => strideFrame(standing[direction], phase)))
   }

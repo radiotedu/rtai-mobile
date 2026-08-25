@@ -52,7 +52,7 @@ test('generates layered widescreen Library and Chim Alan navigation data', async
 
     assert.equal(chim.image.width, 1672)
     assert.equal(chim.image.height, 941)
-    assert.equal(chim.image.sha256, 'abb1df4376645a611549a2a95fb698cab9ccb4d192805779b5e31047ea378abe')
+  assert.equal(chim.image.sha256, '1875557012c754fd8f8e3a346dc31b5d8d003e530697bec6674ce08becc12310')
     assert.equal(chim.seats.length, 9)
     assert.ok(chim.occluders.length >= 3)
     assert.ok(chim.seats.every((seat) => seat.foregroundAsset?.url))

@@ -153,6 +153,7 @@ function buildDefaultWearables(): Record<WearableSlot, readonly WearableDefiniti
     ]),
     top: freezeReadonly([
       createWearable('radio-hoodie', 'top', REQUIRED_BODY_TYPES, { anchor: { x: 1, y: 4 } }),
+      createWearable('radiotedu-tee', 'top', REQUIRED_BODY_TYPES, { anchor: { x: 1, y: 4 } }),
       createWearable('varsity-jacket', 'top', REQUIRED_BODY_TYPES, { anchor: { x: 1, y: 4 } }),
       createWearable('fem-dress-top', 'top', ['fem'], { anchor: { x: 1, y: 4 } }),
     ]),

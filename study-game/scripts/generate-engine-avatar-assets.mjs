@@ -12,9 +12,9 @@ export const FRAME_WIDTH = 64
 export const FRAME_HEIGHT = 96
 export const DIRECTIONS = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
 export const LAYERS = ['body', 'skin', 'hair', 'top', 'bottom', 'shoes', 'hat']
-export const ACTION_FRAMES = { idle: 1, walk: 4, sit: 1, stand: 3 }
+export const ACTION_FRAMES = { idle: 4, walk: 4, sit: 4, stand: 3 }
 export const WEARABLE_VARIANTS = Object.freeze({
-  top: Object.freeze(['radio-hoodie', 'varsity-jacket']),
+  top: Object.freeze(['radio-hoodie', 'radiotedu-tee', 'varsity-jacket']),
   bottom: Object.freeze(['jeans', 'black-cargos']),
   shoes: Object.freeze(['sneakers', 'boots']),
   hat: Object.freeze(['bucket-hat', 'beanie']),
@@ -33,6 +33,9 @@ const DIRECTION_VECTOR = {
 
 const WALK_SWING = [-2, 0, 2, 0]
 const WALK_BOB = [0, -1, 0, -1]
+const IDLE_BOB = [0, 0, -1, 0]
+const SIT_BOB = [0, -1, -1, 0]
+const TYPE_PHASE = [-1, 0, 1, 0]
 
 function n(value) {
   return Math.round(value * 10) / 10
@@ -57,10 +60,17 @@ function pose(direction, action, frame) {
   const [dx, dy] = DIRECTION_VECTOR[direction]
   const seated = seatedAmount(action, frame)
   const swing = action === 'walk' ? WALK_SWING[frame] : 0
-  const bob = action === 'walk' ? WALK_BOB[frame] : 0
+  const bob = action === 'walk'
+    ? WALK_BOB[frame]
+    : action === 'idle'
+    ? IDLE_BOB[frame]
+    : action === 'sit'
+    ? SIT_BOB[frame]
+    : 0
 
   return {
     action,
+    blink: (action === 'idle' && frame === 2) || (action === 'sit' && frame === 3),
     bob,
     dx,
     dy,
@@ -70,6 +80,7 @@ function pose(direction, action, frame) {
     seated,
     swing,
     torsoY: 38 + seated * 8 + bob,
+    typing: action === 'sit' ? TYPE_PHASE[frame] : 0,
   }
 }
 
@@ -109,19 +120,32 @@ function skinLayer(p) {
   const showFace = p.dy >= -0.05
   const eyeShift = p.dx * 2
 
+  const arms = p.seated > 0.75
+    ? [
+        polygon([[23, armY], [28, armY + 1], [29, armY + 9], [32 + p.dx * 2, armY + 14 + p.typing]], skin, shade, 1),
+        polygon([[36, armY + 1], [41, armY], [40, armY + 9], [35 + p.dx * 2, armY + 14 - p.typing]], skin, shade, 1),
+        rect(29 + p.dx * 2, armY + 12 + p.typing, 6, 5, skin, shade, 1),
+        rect(33 + p.dx * 2, armY + 12 - p.typing, 6, 5, skin, shade, 1),
+      ]
+    : [
+        polygon([[23, armY], [28, armY + 1], [25, armY + 22 + armSwing], [20, armY + 21 + armSwing]], skin, shade, 1),
+        polygon([[36, armY + 1], [41, armY], [44, armY + 21 - armSwing], [39, armY + 22 - armSwing]], skin, shade, 1),
+        rect(20, armY + 20 + armSwing, 6, 5, skin, shade, 1),
+        rect(39, armY + 20 - armSwing, 6, 5, skin, shade, 1),
+      ]
+
   const shapes = [
     rect(headX, p.headY, 20, 21, skin, shade, 1),
     rect(headX - 2, p.headY + 8, 3, 7, skin),
     rect(headX + 19, p.headY + 8, 3, 7, skin),
-    polygon([[23, armY], [28, armY + 1], [25, armY + 22 + armSwing], [20, armY + 21 + armSwing]], skin, shade, 1),
-    polygon([[36, armY + 1], [41, armY], [44, armY + 21 - armSwing], [39, armY + 22 - armSwing]], skin, shade, 1),
-    rect(20, armY + 20 + armSwing, 6, 5, skin, shade, 1),
-    rect(39, armY + 20 - armSwing, 6, 5, skin, shade, 1),
+    ...arms,
   ]
 
   if (showFace) {
-    shapes.push(rect(headX + 5 + eyeShift, p.headY + 9, 2, 3, eye))
-    shapes.push(rect(headX + 13 + eyeShift, p.headY + 9, 2, 3, eye))
+    const eyeY = p.headY + (p.blink ? 10 : 9)
+    const eyeHeight = p.blink ? 1 : 3
+    shapes.push(rect(headX + 5 + eyeShift, eyeY, 2, eyeHeight, eye))
+    shapes.push(rect(headX + 13 + eyeShift, eyeY, 2, eyeHeight, eye))
     if (p.dy > 0.4) shapes.push(rect(headX + 9 + eyeShift, p.headY + 16, 4, 1.5, shade))
   }
 
@@ -144,17 +168,34 @@ function hairLayer(p) {
 
 function topLayer(p, variant = 'radio-hoodie') {
   const varsity = variant === 'varsity-jacket'
-  const top = varsity ? '#9e3f4f' : '#2f8f8a'
-  const dark = varsity ? '#5f2735' : '#1f5c62'
-  const trim = varsity ? '#f2dfbd' : '#f0e9d2'
+  const tee = variant === 'radiotedu-tee'
+  const top = varsity ? '#9e3f4f' : tee ? '#f3eee4' : '#2f8f8a'
+  const dark = varsity ? '#5f2735' : tee ? '#b9202c' : '#1f5c62'
+  const trim = varsity ? '#f2dfbd' : tee ? '#ed1c2d' : '#f0e9d2'
   const bottom = p.hipY + 2
+  const sleeves = p.seated > 0.75
+    ? [
+        polygon([[23, p.torsoY + 1], [28, p.torsoY + 2], [29, p.torsoY + 11], [32 + p.dx * 2, p.torsoY + 15 + p.typing]], varsity ? trim : top, dark, 1),
+        polygon([[36, p.torsoY + 2], [41, p.torsoY + 1], [40, p.torsoY + 11], [35 + p.dx * 2, p.torsoY + 15 - p.typing]], varsity ? trim : top, dark, 1),
+      ]
+    : tee
+    ? [
+        polygon([[23, p.torsoY + 1], [28, p.torsoY + 2], [27, p.torsoY + 9], [21, p.torsoY + 8]], top, dark, 1),
+        polygon([[36, p.torsoY + 2], [41, p.torsoY + 1], [43, p.torsoY + 8], [37, p.torsoY + 9]], top, dark, 1),
+      ]
+    : [
+        polygon([[23, p.torsoY + 1], [28, p.torsoY + 2], [26, p.torsoY + 15], [21, p.torsoY + 14]], varsity ? trim : top, dark, 1),
+        polygon([[36, p.torsoY + 2], [41, p.torsoY + 1], [43, p.torsoY + 14], [38, p.torsoY + 15]], varsity ? trim : top, dark, 1),
+      ]
   return [
     polygon([[24, p.torsoY], [40, p.torsoY], [43, bottom], [21, bottom]], top, dark, 1),
-    polygon([[23, p.torsoY + 1], [28, p.torsoY + 2], [26, p.torsoY + 15], [21, p.torsoY + 14]], varsity ? trim : top, dark, 1),
-    polygon([[36, p.torsoY + 2], [41, p.torsoY + 1], [43, p.torsoY + 14], [38, p.torsoY + 15]], varsity ? trim : top, dark, 1),
+    ...sleeves,
     polygon([[28, p.torsoY], [32, p.torsoY + 5], [36, p.torsoY]], trim),
     rect(31, p.torsoY + 5, 2, Math.max(3, bottom - p.torsoY - 7), dark),
     varsity ? rect(25, bottom - 4, 14, 2, trim) : '',
+    tee ? rect(28, p.torsoY + 8, 8, 6, trim, dark, 1) : '',
+    tee ? rect(30, p.torsoY + 9, 2, 4, '#f3eee4') : '',
+    tee ? rect(33, p.torsoY + 9, 2, 4, '#f3eee4') : '',
   ].join('')
 }
 

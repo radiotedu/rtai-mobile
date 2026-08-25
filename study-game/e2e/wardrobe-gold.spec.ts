@@ -10,6 +10,7 @@ test.setTimeout(90_000)
 const wardrobeItems = [
   { id: 'beanie', slot: 'hat', price: '35 Gold' },
   { id: 'radio-hoodie', slot: 'top', price: 'Included' },
+  { id: 'radiotedu-tee', slot: 'top', price: '45 Gold' },
   { id: 'varsity-jacket', slot: 'top', price: '80 Gold' },
   { id: 'jeans', slot: 'bottom', price: 'Included' },
   { id: 'black-cargos', slot: 'bottom', price: '60 Gold' },
@@ -67,11 +68,12 @@ test('server-authoritative Gold purchases are deduplicated and update all paid w
     const owned = new Set(['short-hair', 'radio-hoodie', 'jeans', 'sneakers', 'bucket-hat'])
     const prices: Record<string, number> = {
       'varsity-jacket': 80,
+      'radiotedu-tee': 45,
       'black-cargos': 60,
       boots: 50,
       beanie: 35,
     }
-    let gold = 240
+    let gold = 285
     const state = { purchaseCalls: 0, equipCalls: 0, lastIdempotencyKey: '' }
     Object.defineProperty(window, '__GOLD_E2E_STATE__', { value: state })
     const success = (data: unknown, status = 200) => new Response(JSON.stringify({ success: true, data }), {
@@ -122,13 +124,13 @@ test('server-authoritative Gold purchases are deduplicated and update all paid w
 
   await page.goto('/?room=library')
   await page.locator('html[data-study-ready="true"]').waitFor({ timeout: 30_000 })
-  await expect(page.locator('#point-balance')).toHaveText('240')
+  await expect(page.locator('#point-balance')).toHaveText('285')
   await page.getByRole('button', { name: 'Campus Shop' }).click()
   await expect(page.getByTestId('gold-store-grid')).toBeVisible()
-  await expect(page.locator('[data-store-item]')).toHaveCount(4)
+  await expect(page.locator('[data-store-item]')).toHaveCount(5)
   await page.screenshot({ path: path.join(artifactDir, `${testInfo.project.name}-gold-store.png`) })
   expect(await page.locator('[data-store-item]').evaluateAll((cards) => cards.map((card) => (card as HTMLElement).dataset.storeItem))).toEqual([
-    'beanie', 'boots', 'black-cargos', 'varsity-jacket',
+    'beanie', 'boots', 'black-cargos', 'radiotedu-tee', 'varsity-jacket',
   ])
   await page.locator('[data-store-item-id="varsity-jacket"]').click()
   await expect(page.locator('#wardrobe-panel')).toBeVisible()
@@ -137,11 +139,11 @@ test('server-authoritative Gold purchases are deduplicated and update all paid w
   await expect(varsity).toBeFocused()
   await expect(varsity).toHaveAttribute('data-state', 'locked')
   await varsity.dblclick({ delay: 5 })
-  await expect(page.locator('#point-balance')).toHaveText('160')
+  await expect(page.locator('#point-balance')).toHaveText('205')
   await expect(varsity).toHaveAttribute('data-state', 'equipped')
   expect(await page.evaluate(() => window.__GOLD_E2E_STATE__.purchaseCalls)).toBe(1)
 
-  for (const [id, expectedGold] of [['black-cargos', '100'], ['boots', '50'], ['beanie', '15']] as const) {
+  for (const [id, expectedGold] of [['black-cargos', '145'], ['boots', '95'], ['beanie', '60'], ['radiotedu-tee', '15']] as const) {
     const button = page.getByTestId(`wearable-${id}`)
     await expect(button).toHaveAttribute('data-state', 'locked')
     await button.click()
@@ -153,8 +155,8 @@ test('server-authoritative Gold purchases are deduplicated and update all paid w
   await varsity.click()
   await expect(page.locator('#point-balance')).toHaveText('15')
   const purchaseState = await page.evaluate(() => window.__GOLD_E2E_STATE__)
-  expect(purchaseState.purchaseCalls).toBe(4)
-  expect(purchaseState.equipCalls).toBeGreaterThanOrEqual(6)
+  expect(purchaseState.purchaseCalls).toBe(5)
+  expect(purchaseState.equipCalls).toBeGreaterThanOrEqual(7)
   expect(purchaseState.lastIdempotencyKey).toMatch(/\S+/)
 })
 

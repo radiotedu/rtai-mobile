@@ -20,7 +20,7 @@ const field = new RoomNavigationField({
 })
 
 describe('Çim Alan amphitheatre calibration', () => {
-  it('binds the calibration to the unchanged source artwork', () => {
+  it('binds the calibration to the current TEDU-grounded source artwork', () => {
     expect(layout.image).toEqual({
       width: room.image.width,
       height: room.image.height,
@@ -66,6 +66,18 @@ describe('Çim Alan amphitheatre calibration', () => {
       )), `${seat.id} front`).toBe(true)
     }
     expect(field.isWalkable({ x: 790, y: 560 }, 0), 'freestanding bench').toBe(false)
+  })
+
+  it('does not expose a walkable route through the removed upper-right path', () => {
+    const removedPath = [
+      { x: 1_450, y: 300 },
+      { x: 1_525, y: 405 },
+      { x: 1_600, y: 520 },
+    ]
+    for (const point of removedPath) {
+      expect(field.layerAt(point), `${point.x},${point.y}`).toBeNull()
+    }
+    expect(field.layerAt({ x: 900, y: 285 }), 'restaurant courtyard').not.toBeNull()
   })
 
   it('ships transparent source-pixel foreground assets for every calibrated seat', async () => {

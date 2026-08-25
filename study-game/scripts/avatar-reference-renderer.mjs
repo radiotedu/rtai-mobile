@@ -49,6 +49,9 @@ function palette(variant) {
   if (variant === 'varsity-jacket') {
     return { base: '#8f2438', light: '#b83b50', shade: '#631a2b', accent: '#f2dfc4' }
   }
+  if (variant === 'radiotedu-tee') {
+    return { base: '#f3eee4', light: '#ffffff', shade: '#c9c0b2', accent: '#ed1c2d' }
+  }
   return { base: '#168c91', light: '#32afb0', shade: '#0a6068', accent: '#eefaf8' }
 }
 
@@ -94,19 +97,31 @@ function skinLayer(p) {
   if (!g.rear) {
     const look = g.side ? g.sign * 4.5 : g.diagonal ? g.sign * 2.5 : 0
     if (g.side) {
-      face += ellipse(g.headCenter + look, p.headY + 11, 1.4, 1.8, '#17262b')
+      face += p.blink
+        ? line(g.headCenter + look - 1.4, p.headY + 12, g.headCenter + look + 1.4, p.headY + 12, '#17262b', 1)
+        : ellipse(g.headCenter + look, p.headY + 11, 1.4, 1.8, '#17262b')
       face += line(g.headCenter + look, p.headY + 17, g.headCenter + look + g.sign * 2.5, p.headY + 16.4, '#8a3f3a', 1)
     } else {
-      face += ellipse(g.headCenter - 4.3 + look, p.headY + 11, 1.3, 1.7, '#17262b')
-      face += ellipse(g.headCenter + 4.3 + look, p.headY + 11, 1.3, 1.7, '#17262b')
+      face += p.blink
+        ? `${line(g.headCenter - 5.6 + look, p.headY + 12, g.headCenter - 3 + look, p.headY + 12, '#17262b', 1)}${line(g.headCenter + 3 + look, p.headY + 12, g.headCenter + 5.6 + look, p.headY + 12, '#17262b', 1)}`
+        : `${ellipse(g.headCenter - 4.3 + look, p.headY + 11, 1.3, 1.7, '#17262b')}${ellipse(g.headCenter + 4.3 + look, p.headY + 11, 1.3, 1.7, '#17262b')}`
       face += line(g.headCenter - 2 + look, p.headY + 18, g.headCenter + 2 + look, p.headY + 18, '#8a3f3a', 1)
     }
   }
 
   const armSwing = p.action === 'walk' ? p.swing * 0.8 : 0
-  const handY = p.seated > 0.5 ? p.hipY + 3 : p.hipY - 4
+  if (p.seated > 0.5) {
+    const handY = p.torsoY + 18
+    const spread = g.side ? 3 : 7
+    const forward = p.dx * 3
+    const arms = `${polygon([[g.torsoLeft + 3, p.torsoY + 5], [g.torsoLeft - 1, p.torsoY + 12], [g.center - spread + forward, handY + p.typing], [g.center - spread + 4 + forward, handY + 3 + p.typing]], SKIN, INK, 1)}${polygon([[g.torsoLeft + g.torsoWidth - 3, p.torsoY + 5], [g.torsoLeft + g.torsoWidth + 1, p.torsoY + 12], [g.center + spread + forward, handY - p.typing], [g.center + spread - 4 + forward, handY + 3 - p.typing]], SKIN, INK, 1)}`
+    const hands = `${ellipse(g.center - spread + 2 + forward, handY + 2 + p.typing, 3, 3, SKIN, INK, 1)}${ellipse(g.center + spread - 2 + forward, handY + 2 - p.typing, 3, 3, SKIN, INK, 1)}`
+    return `${head}${ears}${face}${arms}${hands}`
+  }
+  const handY = p.hipY - 4
+  const arms = `${polygon([[g.torsoLeft + 3, p.torsoY + 5], [g.torsoLeft - 3, p.torsoY + 10], [g.torsoLeft - 2, handY - armSwing], [g.torsoLeft + 3, handY - armSwing]], SKIN, INK, 1)}${polygon([[g.torsoLeft + g.torsoWidth - 3, p.torsoY + 5], [g.torsoLeft + g.torsoWidth + 3, p.torsoY + 10], [g.torsoLeft + g.torsoWidth + 2, handY + armSwing], [g.torsoLeft + g.torsoWidth - 3, handY + armSwing]], SKIN, INK, 1)}`
   const hands = `${ellipse(g.torsoLeft - 2, handY - armSwing, 3, 4, SKIN, INK, 1)}${ellipse(g.torsoLeft + g.torsoWidth + 2, handY + armSwing, 3, 4, SKIN, INK, 1)}`
-  return `${head}${ears}${face}${hands}`
+  return `${head}${ears}${face}${arms}${hands}`
 }
 
 function hairLayer(p) {
@@ -131,21 +146,36 @@ function hairLayer(p) {
 function topLayer(p, variant = 'radio-hoodie') {
   const g = geometry(p)
   const colors = palette(variant)
+  const tee = variant === 'radiotedu-tee'
   const bodyColor = g.rear ? colors.shade : colors.base
   const farColor = g.side || g.diagonal ? colors.shade : colors.base
   const armSwing = p.action === 'walk' ? p.swing : 0
   const armBottom = p.seated > 0.5 ? p.hipY + 1 : p.hipY - 2
   const body = rect(g.torsoLeft, g.torsoTop, g.torsoWidth, g.torsoBottom - g.torsoTop, bodyColor, INK, 1.5, 5)
-  const farArm = polygon([
-    [g.torsoLeft + 2, g.torsoTop + 4], [g.torsoLeft - 5, g.torsoTop + 10],
-    [g.torsoLeft - 4, armBottom - armSwing], [g.torsoLeft + 2, armBottom - armSwing],
-    [g.torsoLeft + 7, g.torsoTop + 12],
-  ], farColor, INK, 1)
-  const nearArm = polygon([
-    [g.torsoLeft + g.torsoWidth - 2, g.torsoTop + 4], [g.torsoLeft + g.torsoWidth + 5, g.torsoTop + 10],
-    [g.torsoLeft + g.torsoWidth + 4, armBottom + armSwing], [g.torsoLeft + g.torsoWidth - 2, armBottom + armSwing],
-    [g.torsoLeft + g.torsoWidth - 7, g.torsoTop + 12],
-  ], colors.base, INK, 1)
+  const sleeveBottom = tee && p.seated <= 0.5 ? g.torsoTop + 12 : armBottom
+  const sleeveInset = tee && p.seated <= 0.5 ? 2 : 0
+  const farArm = p.seated > 0.5
+    ? polygon([
+        [g.torsoLeft + 2, g.torsoTop + 4], [g.torsoLeft - 4, g.torsoTop + 10],
+        [g.center - 8 + p.dx * 3, g.torsoTop + 20 + p.typing], [g.center - 3 + p.dx * 3, g.torsoTop + 22 + p.typing],
+        [g.torsoLeft + 7, g.torsoTop + 12],
+      ], farColor, INK, 1)
+    : polygon([
+        [g.torsoLeft + 2, g.torsoTop + 4], [g.torsoLeft - 5, g.torsoTop + 10],
+        [g.torsoLeft - 4 + sleeveInset, sleeveBottom - armSwing], [g.torsoLeft + 2, sleeveBottom - armSwing],
+        [g.torsoLeft + 7, g.torsoTop + 12],
+      ], farColor, INK, 1)
+  const nearArm = p.seated > 0.5
+    ? polygon([
+        [g.torsoLeft + g.torsoWidth - 2, g.torsoTop + 4], [g.torsoLeft + g.torsoWidth + 4, g.torsoTop + 10],
+        [g.center + 8 + p.dx * 3, g.torsoTop + 20 - p.typing], [g.center + 3 + p.dx * 3, g.torsoTop + 22 - p.typing],
+        [g.torsoLeft + g.torsoWidth - 7, g.torsoTop + 12],
+      ], colors.base, INK, 1)
+    : polygon([
+        [g.torsoLeft + g.torsoWidth - 2, g.torsoTop + 4], [g.torsoLeft + g.torsoWidth + 5, g.torsoTop + 10],
+        [g.torsoLeft + g.torsoWidth + 4 - sleeveInset, sleeveBottom + armSwing], [g.torsoLeft + g.torsoWidth - 2, sleeveBottom + armSwing],
+        [g.torsoLeft + g.torsoWidth - 7, g.torsoTop + 12],
+      ], colors.base, INK, 1)
 
   let detail = ''
   if (g.rear) {
@@ -153,7 +183,7 @@ function topLayer(p, variant = 'radio-hoodie') {
     detail += line(g.center, g.torsoTop + 11, g.center, g.torsoBottom - 2, colors.light, 1)
   } else {
     const zipX = g.center + (g.side ? g.sign * 4 : g.diagonal ? g.sign * 2 : 0)
-    detail += line(zipX, g.torsoTop + 3, zipX, g.torsoBottom - 2, colors.accent, 1.5)
+    if (!tee) detail += line(zipX, g.torsoTop + 3, zipX, g.torsoBottom - 2, colors.accent, 1.5)
     if (!g.side && variant === 'radio-hoodie') {
       const badgeX = zipX + (g.sign > 0 ? 5 : -9)
       detail += rect(badgeX, g.torsoTop + 9, 6, 5, colors.accent, 'none', 0, 1)
@@ -162,6 +192,12 @@ function topLayer(p, variant = 'radio-hoodie') {
     }
     if (variant === 'varsity-jacket') {
       detail += rect(g.torsoLeft + 1, g.torsoBottom - 4, g.torsoWidth - 2, 3, colors.accent)
+    }
+    if (tee && !g.side) {
+      const badgeX = zipX + (g.sign > 0 ? 4 : -9)
+      detail += rect(badgeX, g.torsoTop + 8, 7, 7, colors.accent, INK, 1, 1)
+      detail += rect(badgeX + 1.5, g.torsoTop + 9.5, 1.5, 4, colors.light)
+      detail += rect(badgeX + 4.2, g.torsoTop + 9.5, 1.5, 4, colors.light)
     }
   }
 

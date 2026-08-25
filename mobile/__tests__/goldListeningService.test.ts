@@ -3,6 +3,7 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import api from '../src/services/api';
 import {
   createListeningClientSessionId,
+  extractServerGoldBalance,
   heartbeatVerifiedListening,
   radioChannelForTrack,
   startVerifiedListening,
@@ -19,16 +20,27 @@ describe('verified Gold listening service', () => {
   });
 
   it('maps only RadioTEDU live streams to server-approved channel ids', () => {
-    expect(radioChannelForTrack({id: 'radiotedu-main'})).toBe('radio');
-    expect(radioChannelForTrack({id: 'radiotedu-jazz'})).toBe('jazz');
-    expect(radioChannelForTrack({id: 'radiotedu-energize'})).toBe('energize');
-    expect(radioChannelForTrack({id: 'radiotedu-rock'})).toBe('rock');
+    expect(radioChannelForTrack({id: 'radiotedu-main', url: 'https://stream.radiotedu.com/radio'})).toBe('radio');
+    expect(radioChannelForTrack({id: 'radiotedu-jazz', url: 'https://stream.radiotedu.com/cazz'})).toBe('jazz');
+    expect(radioChannelForTrack({id: 'radiotedu-energize', url: 'https://stream.radiotedu.com/energize'})).toBe('energize');
+    expect(radioChannelForTrack({id: 'radiotedu-rock', url: 'https://stream.radiotedu.com/rock'})).toBe('rock');
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/cazz-flac'})).toBe('jazz');
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/radio-high'})).toBe('radio');
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/en-high'})).toBe('en');
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/fr-flac'})).toBe('fr');
     expect(radioChannelForTrack({url: 'https://example.com/radio'})).toBeNull();
+    expect(radioChannelForTrack({url: 'http://stream.radiotedu.com/radio'})).toBeNull();
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com.evil.example/radio'})).toBeNull();
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/radio/other'})).toBeNull();
+    expect(radioChannelForTrack({id: 'radiotedu-main', url: 'https://stream.radiotedu.com/rock'})).toBeNull();
     expect(radioChannelForTrack({id: 'podcast-1'})).toBeNull();
+  });
+
+  it('accepts a displayed balance only from a valid server reward response', () => {
+    expect(extractServerGoldBalance({spendablePoints: 125})).toBe(125);
+    expect(extractServerGoldBalance({spendablePoints: -1})).toBeNull();
+    expect(extractServerGoldBalance({spendablePoints: 1.5})).toBeNull();
+    expect(extractServerGoldBalance(null)).toBeNull();
   });
 
   it('creates server-safe, per-playback client session ids', () => {

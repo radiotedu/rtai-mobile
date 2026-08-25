@@ -4,10 +4,7 @@ This is a living release-notice file. The exact machine-readable record is `THIR
 
 ## Project-Supplied Room Art
 
-The Library artwork is project-supplied and owner-approved. The current Çim Alan artwork is an original, project-directed illustration created on 2026-08-20 after visual inspection of TEDÜ's public 360-degree tour; it does not embed tour screenshots. Both are project assets rather than third-party dependency art.
-
-- `public/assets/rooms/library-wide.png`: SHA-256 `50d1b58448c156cc6c47b823b450ffb26c43815ff6f346f27b6f1705b2d8c993`.
-- `public/assets/rooms/chim-alan-wide.png`: SHA-256 `abb1df4376645a611549a2a95fb698cab9ccb4d192805779b5e31047ea378abe`.
+The canonical Library and Chim Alan room images were supplied and explicitly approved by the project owner on 2026-07-10. Their exact hashes and generated-cutout lineage are recorded in `docs/study-game/ASSET-PROVENANCE.md`; they are project assets, not third-party dependency art.
 
 ## Selected Software
 
@@ -41,4 +38,4 @@ The Library artwork is project-supplied and owner-approved. The current Çim Ala
 2. Publish corresponding source and modification records for every GPL-derived module that is distributed.
 3. Expose selected art credits from an accessible in-app credits surface and preserve the same data in machine-readable form.
 4. Record the origin, pin/hash, copied path, notices, and modifications before importing any third-party file.
-5. Review `THIRD_PARTY.yml`, then run `npm test` and `npm run build` before release.
+5. Run `node scripts/verify-third-party.mjs` before release.

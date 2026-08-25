@@ -30,9 +30,9 @@
     "hat"
   ],
   "actionFrames": {
-    "idle": 1,
+    "idle": 4,
     "walk": 4,
-    "sit": 1,
+    "sit": 4,
     "stand": 3
   },
   "sheets": {
@@ -81,45 +81,45 @@
   },
   "sha256": {
     "body": {
-      "idle": "37cc3e28caf347410ff2b8261e978fd05741a12325ba90c70e0114bd244c033c",
+      "idle": "d3627180546223f206903eb05b1f3e345a11a3ceb680d82cd1019f17e1f9e118",
       "walk": "184d5d57b36a4d3a2996a2db15643504ec253677c18f0662f34942a518284c7e",
-      "sit": "919d900f39c57e4b33f3513ffdd7543dcaf83e92cfa8988152c0c197464b6439",
+      "sit": "3af7bfca866b28d4e35ecc941bc2abd87f458cfb48246320031c3795e48daaa5",
       "stand": "bfdac3ea438a3364c898888d72d3a2555ba93220eb6f6b5f9c5d04330caadb90"
     },
     "skin": {
-      "idle": "dab0c1eb8ff0fff3165a133c729b05a4b048741b6d2ca5a86da2ffc03c6d261a",
-      "walk": "2e9cf787cc2b8182fee00a1c127dd7e09ff19cb35372799cc2d7fbdcfc5d56ca",
-      "sit": "56fd95bf180e4c8b8fc1fe7223f700e551107e62ed55f71f08f3b8fd4e06a6dd",
-      "stand": "1cacab140ec1f52e55bd028faf668367ebadeb5ee00b81bba0bd752aac91c510"
+      "idle": "efc6f7310f562e529bdd2a73ff0fc7db5d628541c9aa4d7005c7c08ffc6e46c1",
+      "walk": "d8f31a79a313f26c093fe170b8ca82d28836f8b25e1ce6d3795bdfa490cc42e8",
+      "sit": "2f63de0eae0bccdc41c7c4d86a946faf8fe0828d5aa40919c43768f927e1ec03",
+      "stand": "cad8b68a30497d3e78a4c75619aeb796b7eb418f4457ea9088b719aa831aa5b1"
     },
     "hair": {
-      "idle": "148266cd10418499a8181c988750e182c08a0bd05b7401b56dc37ceba551fc62",
+      "idle": "ce37ecb5370b620e45d9be4165c2276cb063ecb211ad16e8d5ae2544822d5955",
       "walk": "d48845d0d5b093805768d4873f4ff725394c80a31cb8d9a62c877aca33102823",
-      "sit": "5a9fca567060a98a312218809eb246b3ab96c644f73ff0d0b5201c7ccb18a0a5",
+      "sit": "22773a79f6da109a346509db42e78a7da28b337307bb5315450d3c80afe07672",
       "stand": "b5ad97fae06de2bd40013c7459ba2fa49b6a50e21d0dbb91cf4c58f80a278e03"
     },
     "top": {
-      "idle": "a0e21eebdbac67935762e8788e99302bc51ce4dc113eb860b0922bf2e0d0f691",
+      "idle": "301438b43466c1e8abab3b86b4b2087f12d72f8fb2145598d21cb11d16992684",
       "walk": "8287f96e49f3ded92289bf15ec52c1d20d5dd7d3ec3dd7352f375ce9798b272b",
-      "sit": "f9a2f964e382a996a5daf2f456d1fc31e0b7cafef87559311771f68a2062789f",
-      "stand": "456d488a55c8064df34273e6ed6fbb2d8e59cf3877f75e689fc96a0aa30fdc49"
+      "sit": "e033e8503d2d839bf2911a4468a746377374639940cd14f0c55b86451f45f280",
+      "stand": "8fc7db2e0e4c2b2c0a89badde351db76b3b45de5e61df3112c40a8d676f1b0c8"
     },
     "bottom": {
-      "idle": "c0b3391281758e8406f6dea888df94d88fed0c255c80bc5b19900e682194a22d",
+      "idle": "2175140f505c7e0bc769f41eefcce75c1002966e597cb17f70730bc679b50973",
       "walk": "cd685013f08f4141a64b02a130c94ae6526c9432f0e92c97472066436fec11f7",
-      "sit": "2f9d1c439eb01cf226b0c1afbfb922d0eeb6c760c6fc3c84e1de3afea211b435",
+      "sit": "25ee2d9292fce50402ef734a419b9907b93a48524c07bc89ed95cbd76718e08c",
       "stand": "895ca4e6d33aad4990b497caca425a73a764a67d99656bf9d65bf0ccd3db71d6"
     },
     "shoes": {
-      "idle": "6b8ffb6592d6e092b3fc2bb72e954c27e8d99185e652c5f1993842d8ce3f5405",
+      "idle": "8f44254c98702c597d35413f3852a033640b1a2fbd34ea0ee47d19be5d707901",
       "walk": "35f00900c2f281382fab402dd744f9718d50f8017951fc54588bd5c801977a0f",
-      "sit": "da7d4069eefcc0b677b6b9b8315d88784c206a82b08ae1940d8a020de3e24820",
+      "sit": "244a6921cb6b3d7e86990d238f295f751762df127a03ffc1b73f99b75e449dc8",
       "stand": "f30b9cbbb61ce3fa0cdf20c20fd20c00a1c949765d6310fbdc51ffc02a3d94f0"
     },
     "hat": {
-      "idle": "a396518103ea35ad795630ab1c545ba8e5602e5634dced15858682423ab76e23",
+      "idle": "48746efc9a31642ba084d961e6daa6cd3d0e3e6c9f991ad9fd25567495e1b04f",
       "walk": "f20a5bd485d29ee76c819458464569cd9892cbf3f09a78c39165ee596e0a3985",
-      "sit": "37fe54c52d940a22ed314527182e6abf90bab6557918d70040e1a2beb561423a",
+      "sit": "3d934c4bba7377a58ea14dd59eed2251f788ac5aed3bfa990e92a2a2b1328c2b",
       "stand": "056c81c5e52b9fe11adb60cd1662a27982d79c5dea9dcade5d3a859a0455e346"
     }
   },
@@ -130,6 +130,12 @@
         "walk": "top-radio-hoodie-walk.png",
         "sit": "top-radio-hoodie-sit.png",
         "stand": "top-radio-hoodie-stand.png"
+      },
+      "radiotedu-tee": {
+        "idle": "top-radiotedu-tee-idle.png",
+        "walk": "top-radiotedu-tee-walk.png",
+        "sit": "top-radiotedu-tee-sit.png",
+        "stand": "top-radiotedu-tee-stand.png"
       },
       "varsity-jacket": {
         "idle": "top-varsity-jacket-idle.png",
@@ -184,57 +190,63 @@
   "wearableSha256": {
     "top": {
       "radio-hoodie": {
-        "idle": "a0e21eebdbac67935762e8788e99302bc51ce4dc113eb860b0922bf2e0d0f691",
+        "idle": "301438b43466c1e8abab3b86b4b2087f12d72f8fb2145598d21cb11d16992684",
         "walk": "8287f96e49f3ded92289bf15ec52c1d20d5dd7d3ec3dd7352f375ce9798b272b",
-        "sit": "f9a2f964e382a996a5daf2f456d1fc31e0b7cafef87559311771f68a2062789f",
-        "stand": "456d488a55c8064df34273e6ed6fbb2d8e59cf3877f75e689fc96a0aa30fdc49"
+        "sit": "e033e8503d2d839bf2911a4468a746377374639940cd14f0c55b86451f45f280",
+        "stand": "8fc7db2e0e4c2b2c0a89badde351db76b3b45de5e61df3112c40a8d676f1b0c8"
+      },
+      "radiotedu-tee": {
+        "idle": "b4f79485eccb089e5c65bcbab44da87afb55e1dfb576b3797eec1dedd26ccba0",
+        "walk": "2120a76777a81443f35f407d89d3b562090dd887aeab22223d11c840dc212a8b",
+        "sit": "547b353980aae5896bc55f989958c271452417d7cd434d53020466950edd7acb",
+        "stand": "5704363226f6782c6fa38e7968f934b33c03ba158a312ee53bd4a9ae013d8534"
       },
       "varsity-jacket": {
-        "idle": "4c438cb05b448e3c75784a4c99c76ffaadccfac6ccc8803043bfaae77779640f",
+        "idle": "0a6310a20fca6721a70299df2d0832044611efdbe6986dfc90a710a232f15b1f",
         "walk": "5d4605e8564953fbda0d4614f9bd1d1bfbb6269eedea04f78e07e60a46120682",
-        "sit": "500e373a95f72abcc22e6dca2fb3c7bc46bffe080b6c8de23a05d36653ba2928",
-        "stand": "024cff6482643678d1244304a6fa1d51b053826bb825993e2532472285afa215"
+        "sit": "a7b34861dd1612313eb9fe8896e5f525f594c8e7d9971d1130793f16edcba31c",
+        "stand": "707275582950dd6c2ac021d8681992149f866a7323d2a3f2d0867a3b03478b01"
       }
     },
     "bottom": {
       "jeans": {
-        "idle": "c0b3391281758e8406f6dea888df94d88fed0c255c80bc5b19900e682194a22d",
+        "idle": "2175140f505c7e0bc769f41eefcce75c1002966e597cb17f70730bc679b50973",
         "walk": "cd685013f08f4141a64b02a130c94ae6526c9432f0e92c97472066436fec11f7",
-        "sit": "2f9d1c439eb01cf226b0c1afbfb922d0eeb6c760c6fc3c84e1de3afea211b435",
+        "sit": "25ee2d9292fce50402ef734a419b9907b93a48524c07bc89ed95cbd76718e08c",
         "stand": "895ca4e6d33aad4990b497caca425a73a764a67d99656bf9d65bf0ccd3db71d6"
       },
       "black-cargos": {
-        "idle": "65ac45157dfb3f438e04a054b2aaa5cdc5753554227defaceb1d4836233fe7c0",
+        "idle": "e18b66ca6eb67d0b71588536467846f2a3f67c1b0cdd99559e028bd75dfdf192",
         "walk": "3be09c81d1a483156775f7566cb780317310ddd645a4afa2408f6efa1578f7a3",
-        "sit": "1f3fd21eb24a53a1699c0d6ef5eaa6c2de852b15c3446b73b4cdba2af912a9be",
+        "sit": "68cfd61b70a01c5157a27b1f52c719d51c9fbe215c6eff6c9698f305fa94f161",
         "stand": "16b1171b8d5d3e2f0442e242ffca6d20032c5fc72cf9a1d6912b4783788d5c63"
       }
     },
     "shoes": {
       "sneakers": {
-        "idle": "6b8ffb6592d6e092b3fc2bb72e954c27e8d99185e652c5f1993842d8ce3f5405",
+        "idle": "8f44254c98702c597d35413f3852a033640b1a2fbd34ea0ee47d19be5d707901",
         "walk": "35f00900c2f281382fab402dd744f9718d50f8017951fc54588bd5c801977a0f",
-        "sit": "da7d4069eefcc0b677b6b9b8315d88784c206a82b08ae1940d8a020de3e24820",
+        "sit": "244a6921cb6b3d7e86990d238f295f751762df127a03ffc1b73f99b75e449dc8",
         "stand": "f30b9cbbb61ce3fa0cdf20c20fd20c00a1c949765d6310fbdc51ffc02a3d94f0"
       },
       "boots": {
-        "idle": "f9a598b355d857f235f6a06fe79a10f046dd3b76f10e8ac24de33ac1a9d19723",
+        "idle": "f2aae8ba1ab5ec012013fcee81fd78fa1a42aa5a9fdedd7e491f357c7960b8b5",
         "walk": "8055a312a4ed298f9b2e0cae54028e1a83cbc6833f97c61ca4e958e7f3b4eb89",
-        "sit": "8a2cec12b67d482e48f3b920ca062234bca1c47e434d7884b42ab56bd4454d78",
+        "sit": "bdb3ec6e12a6130635182002b8e20e19b4c1c5e243906e16905da4d45d880137",
         "stand": "bc6c03d2e7a4d512906c7477d75aa77a61416617f7e8f6f0dc1e0d4b961a253f"
       }
     },
     "hat": {
       "bucket-hat": {
-        "idle": "a396518103ea35ad795630ab1c545ba8e5602e5634dced15858682423ab76e23",
+        "idle": "48746efc9a31642ba084d961e6daa6cd3d0e3e6c9f991ad9fd25567495e1b04f",
         "walk": "f20a5bd485d29ee76c819458464569cd9892cbf3f09a78c39165ee596e0a3985",
-        "sit": "37fe54c52d940a22ed314527182e6abf90bab6557918d70040e1a2beb561423a",
+        "sit": "3d934c4bba7377a58ea14dd59eed2251f788ac5aed3bfa990e92a2a2b1328c2b",
         "stand": "056c81c5e52b9fe11adb60cd1662a27982d79c5dea9dcade5d3a859a0455e346"
       },
       "beanie": {
-        "idle": "bb29c9050609872ca61e3f29454bf691c78c8d927980d57c3c03e0034ff04cd3",
+        "idle": "a6c7b643274b67d65ab413a30ac684eb41ead2bc491fdbd360c7544a56ff8eab",
         "walk": "bce3c9c8e97b3893c5d68d813aa55a899f548e5d1b9849ea4fb947e0a3851734",
-        "sit": "30e2f8a63db69a88f230ac1c4e14ca402884e0f75a05fcfa874e2a755d1552cd",
+        "sit": "4ec157010354118745233e70b05f489ee085177def8c0042dda40e122e255814",
         "stand": "a55ef4b8fc89d3d64d715e13836a57df85d3f79928e3b19cda34765c444edf05"
       }
     }
@@ -246,9 +258,9 @@
     "stand": "canonical-stand.png"
   },
   "canonicalSha256": {
-    "idle": "be8d92db4e0274ab1defe0cd2c634a80174823d29123d71d72f72e0a4572a8bf",
+    "idle": "61e107a2dafa73fa9e56331b56aa613b50b1087a1a5c5b79c7946f2a001ae308",
     "walk": "262655a026a512e4c55e307e8d7e49f13b3b3bc65f626be5730363f54d80a2ac",
-    "sit": "2c256d220192a5ddacfabb55e38e570e5356d43c22e16ea7355d7e5305f13d4c",
+    "sit": "da73e4ba83e0a8904c727ea83a6d4c2a86a6ece5fdca0878ad81b434f0f88b7a",
     "stand": "7a49823aaf7a6c499e58e6813644bc7b4cf1b0ed20f645f6f0e8b81dfc665f04"
   }
 }

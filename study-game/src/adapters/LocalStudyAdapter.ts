@@ -13,10 +13,12 @@ import {
   type StudySession,
   type StudyTimeSummary,
   type StudyWorldEvent,
+  type SocialArcadeChoice,
+  type SocialArcadeSnapshot,
 } from './StudyAdapter'
 
 const OWNED = Object.freeze([
-  'short-hair', 'radio-hoodie', 'varsity-jacket', 'jeans', 'black-cargos',
+  'short-hair', 'radio-hoodie', 'radiotedu-tee', 'varsity-jacket', 'jeans', 'black-cargos',
   'sneakers', 'boots', 'bucket-hat', 'beanie',
 ])
 
@@ -30,6 +32,7 @@ const CHAT_UNSAFE_CONTROLS = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u2
 const LOCAL_WEARABLE_SLOTS: Readonly<Record<string, string>> = Object.freeze({
   'short-hair': 'hair',
   'radio-hoodie': 'top',
+  'radiotedu-tee': 'top',
   'varsity-jacket': 'top',
   jeans: 'bottom',
   'black-cargos': 'bottom',
@@ -94,6 +97,7 @@ export class LocalStudyAdapter implements StudyAdapter {
   readonly #chatTimestamps: number[] = []
   readonly #messages = new Map<StudyRoomId, StudyChatMessage[]>()
   readonly #registeredEvents = new Set<string>()
+  #poolDive: { id: string; round: number; score: number; prompt: SocialArcadeChoice; nonce: string } | null = null
   #activeSeat: StudySeatReservation | null = null
   #activeRoom: StudyRoomId = 'library'
   #activeNodeId = 'spawn'
@@ -261,5 +265,65 @@ export class LocalStudyAdapter implements StudyAdapter {
     if (!event) throw new StudyAdapterError('EVENT_NOT_FOUND')
     this.#registeredEvents.add(eventId)
     return { ...event, registered: true }
+  }
+
+  async startPoolDive(): Promise<SocialArcadeSnapshot> {
+    this.#poolDive = {
+      id: globalThis.crypto.randomUUID(),
+      round: 1,
+      score: 0,
+      prompt: 'center',
+      nonce: globalThis.crypto.randomUUID().replaceAll('-', ''),
+    }
+    return {
+      session: {
+        ...this.#poolDive,
+        status: 'active',
+        totalRounds: 8,
+        promptExpiresAt: new Date(this.#now() + 4_000).toISOString(),
+        expiresAt: new Date(this.#now() + 120_000).toISOString(),
+        final: false,
+      },
+      verification: 'local-preview',
+    }
+  }
+
+  async playPoolDiveRound(
+    sessionId: string,
+    nonce: string,
+    choice: SocialArcadeChoice,
+  ): Promise<SocialArcadeSnapshot> {
+    const session = this.#poolDive
+    if (!session || session.id !== sessionId || session.nonce !== nonce) {
+      throw new StudyAdapterError('SOCIAL_ARCADE_NONCE_INVALID')
+    }
+    const correct = choice === session.prompt
+    const roundScore = correct ? 75 : 0
+    session.score += roundScore
+    const completedRound = session.round
+    const final = completedRound >= 8
+    if (!final) {
+      session.round += 1
+      session.prompt = session.prompt === 'left' ? 'center' : session.prompt === 'center' ? 'right' : 'left'
+      session.nonce = globalThis.crypto.randomUUID().replaceAll('-', '')
+    }
+    return {
+      result: { correct, validTiming: true, roundScore, elapsedMs: 500, completedRound },
+      session: {
+        id: session.id,
+        status: final ? 'completed' : 'active',
+        round: final ? 8 : session.round,
+        totalRounds: 8,
+        score: session.score,
+        prompt: final ? null : session.prompt,
+        nonce: final ? null : session.nonce,
+        promptExpiresAt: final ? null : new Date(this.#now() + 4_000).toISOString(),
+        expiresAt: final ? null : new Date(this.#now() + 120_000).toISOString(),
+        final,
+      },
+      pointsAwarded: 0,
+      spendablePoints: this.#globalPoints,
+      verification: 'local-preview',
+    }
   }
 }

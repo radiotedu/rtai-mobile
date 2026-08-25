@@ -43,8 +43,8 @@ export function libraryDeviceSocket(seatId: string): Readonly<{ side: 'far' | 'n
   const [x1, y1, x2, y2] = seat.hit
   const centerX = (x1 + x2) / 2
   return seat.side === 'far'
-    ? Object.freeze({ side: 'far', x: centerX + 19, y: y2 + 26 })
-    : Object.freeze({ side: 'near', x: centerX + 26, y: y1 - 2 })
+    ? Object.freeze({ side: 'far', x: centerX + 19, y: y2 + 34 })
+    : Object.freeze({ side: 'near', x: centerX + 26, y: y1 + 18 })
 }
 
 export function calibratedLibrarySeat(seatId: string): ResolvedSeatGeometry | null {

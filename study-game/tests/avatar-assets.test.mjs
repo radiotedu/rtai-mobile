@@ -26,6 +26,16 @@ async function directionFrameHash(file, direction) {
   return Buffer.from(pixels).toString('base64')
 }
 
+async function actionFrameHash(file, direction, frame) {
+  const row = DIRECTIONS.indexOf(direction)
+  assert.notEqual(row, -1, `unknown direction ${direction}`)
+  const pixels = await sharp(file)
+    .extract({ left: frame * FRAME_WIDTH, top: row * FRAME_HEIGHT, width: FRAME_WIDTH, height: FRAME_HEIGHT })
+    .raw()
+    .toBuffer()
+  return Buffer.from(pixels).toString('base64')
+}
+
 async function visibleMagentaPixelCount(file) {
   const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   let count = 0
@@ -101,6 +111,7 @@ test('generates independent layered sprite sheets for every engine-proof action'
     }
 
     assert.ok(WEARABLE_VARIANTS.top.length >= 2)
+    assert.ok(WEARABLE_VARIANTS.top.includes('radiotedu-tee'))
     assert.ok(WEARABLE_VARIANTS.bottom.length >= 2)
     assert.ok(WEARABLE_VARIANTS.shoes.length >= 2)
     assert.ok(WEARABLE_VARIANTS.hat.length >= 2)
@@ -133,6 +144,15 @@ test('generates independent layered sprite sheets for every engine-proof action'
       const back = await directionFrameHash(file, 'n')
       const front = await directionFrameHash(file, 's')
       assert.notEqual(back, front, `${fileName} must render distinct front and rear artwork`)
+    }
+
+    for (const fileName of ['skin-idle.png', 'skin-sit.png', 'top-radiotedu-tee-sit.png']) {
+      const file = path.join(outputDir, fileName)
+      const action = fileName.includes('-sit') ? 'sit' : 'idle'
+      const hashes = await Promise.all(
+        Array.from({ length: ACTION_FRAMES[action] }, (_, frame) => actionFrameHash(file, 'se', frame)),
+      )
+      assert.ok(new Set(hashes).size >= 2, `${fileName} must contain visible ambient animation`)
     }
   } finally {
     await rm(outputDir, { recursive: true, force: true })

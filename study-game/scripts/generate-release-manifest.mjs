@@ -34,8 +34,8 @@ for (const absolute of files) {
 const manifest = {
   format: 1,
   generatedAt: new Date().toISOString(),
-  package: 'RadioTEDU Study',
-  publicPath: 'https://radiotedu.com/study/',
+  package: 'RadioTEDU Social',
+  publicPath: 'https://radiotedu.com/social/',
   secretsIncluded: false,
   files: entries,
 }

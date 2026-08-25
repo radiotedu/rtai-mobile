@@ -15,6 +15,8 @@ import {
   type StudySession,
   type StudyTimeSummary,
   type StudyWorldEvent,
+  type SocialArcadeChoice,
+  type SocialArcadeSnapshot,
 } from './StudyAdapter'
 import { getOrCreateStudyClientSessionId, normalizeStudyClientSessionId } from './StudyClientSession'
 
@@ -53,6 +55,7 @@ interface ApiResponse<T> {
   data?: T
   message?: string
   error?: string
+  code?: string
 }
 
 interface ActiveRemoteSession {
@@ -61,8 +64,8 @@ interface ActiveRemoteSession {
 }
 
 class RemoteStudyRequestError extends StudyAdapterError {
-  constructor(readonly status: number, message: string, readonly retryable: boolean) {
-    super('REMOTE_REQUEST_FAILED', message)
+  constructor(readonly status: number, message: string, readonly retryable: boolean, code = 'REMOTE_REQUEST_FAILED') {
+    super(/^[A-Z][A-Z0-9_]{2,63}$/.test(code) ? code : 'REMOTE_REQUEST_FAILED', message)
   }
 }
 
@@ -447,6 +450,28 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
     return (Array.isArray(data.events) ? data.events : []).flatMap((event) => mapWorldEvent(event, this.#now()))
   }
 
+  async startPoolDive(): Promise<SocialArcadeSnapshot> {
+    const data = await this.#requestFrom<Record<string, unknown>>(
+      this.#gamificationBase,
+      '/social-arcade/pool-dive/start',
+      { method: 'POST', body: {} },
+    )
+    return mapSocialArcadeSnapshot(data)
+  }
+
+  async playPoolDiveRound(
+    sessionId: string,
+    nonce: string,
+    choice: SocialArcadeChoice,
+  ): Promise<SocialArcadeSnapshot> {
+    const data = await this.#requestFrom<Record<string, unknown>>(
+      this.#gamificationBase,
+      `/social-arcade/pool-dive/sessions/${encodeURIComponent(sessionId)}/action`,
+      { method: 'POST', body: { nonce, choice } },
+    )
+    return mapSocialArcadeSnapshot(data)
+  }
+
   async registerEvent(eventId: string): Promise<StudyWorldEvent> {
     await this.#requestFrom(this.#gamificationBase, `/events/${encodeURIComponent(eventId)}/register`, {
       method: 'POST',
@@ -543,6 +568,7 @@ export class RadioTEDUStudyAdapter implements StudyAdapter {
             response.status,
             payload.message ?? payload.error ?? `HTTP ${response.status}`,
             RETRYABLE_HTTP_STATUSES.has(response.status),
+            payload.code,
           )
         }
         return payload.data
@@ -705,7 +731,12 @@ function mapWorldEvent(value: unknown, now: number): StudyWorldEvent[] {
   const endsAt = typeof row.ends_at === 'string' ? row.ends_at : null
   const starts = startsAt ? Date.parse(startsAt) : Number.NaN
   const ends = endsAt ? Date.parse(endsAt) : Number.NaN
-  const status: StudyWorldEvent['status'] = Number.isFinite(ends) && ends < now
+  const metadata = row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+    ? row.metadata as Record<string, unknown>
+    : {}
+  const status: StudyWorldEvent['status'] = metadata.always_open === true
+    ? 'active'
+    : Number.isFinite(ends) && ends < now
     ? 'completed'
     : Number.isFinite(starts) && starts <= now
       ? 'active'
@@ -721,6 +752,61 @@ function mapWorldEvent(value: unknown, now: number): StudyWorldEvent[] {
     registered: row.registered === true,
     status,
   })]
+}
+
+function mapSocialArcadeSnapshot(value: unknown): SocialArcadeSnapshot {
+  const row = value as Record<string, unknown> | null
+  const session = row?.session as Record<string, unknown> | null
+  if (!row || !session || typeof session.id !== 'string') {
+    throw new StudyAdapterError('INVALID_SOCIAL_ARCADE_RESPONSE')
+  }
+  const status = session.status
+  const final = session.final === true
+  const round = nonNegativeInteger(session.round)
+  const totalRounds = nonNegativeInteger(session.totalRounds)
+  const score = nonNegativeInteger(session.score)
+  const prompt = session.prompt
+  const nonce = session.nonce
+  if (
+    !['active', 'completed'].includes(String(status))
+    || totalRounds !== 8 || round < 1 || round > totalRounds || score > 800
+    || (final && (status !== 'completed' || prompt !== null || nonce !== null))
+    || (!final && (
+      status !== 'active'
+      || !['left', 'center', 'right'].includes(String(prompt))
+      || typeof nonce !== 'string' || !/^[A-Za-z0-9_-]{32,180}$/.test(nonce)
+    ))
+  ) throw new StudyAdapterError('INVALID_SOCIAL_ARCADE_RESPONSE')
+
+  const resultRow = row.result as Record<string, unknown> | null
+  const result = resultRow ? {
+    correct: resultRow.correct === true,
+    validTiming: resultRow.validTiming === true,
+    roundScore: nonNegativeInteger(resultRow.roundScore),
+    elapsedMs: nonNegativeInteger(resultRow.elapsedMs),
+    completedRound: nonNegativeInteger(resultRow.completedRound),
+  } : undefined
+  if (result && (result.roundScore > 100 || result.completedRound < 1 || result.completedRound > totalRounds)) {
+    throw new StudyAdapterError('INVALID_SOCIAL_ARCADE_RESPONSE')
+  }
+  return Object.freeze({
+    session: Object.freeze({
+      id: session.id,
+      status: status as 'active' | 'completed',
+      round,
+      totalRounds,
+      score,
+      prompt: final ? null : prompt as SocialArcadeChoice,
+      nonce: final ? null : nonce as string,
+      promptExpiresAt: typeof session.promptExpiresAt === 'string' ? session.promptExpiresAt : null,
+      expiresAt: typeof session.expiresAt === 'string' ? session.expiresAt : null,
+      final,
+    }),
+    ...(result ? { result: Object.freeze(result) } : {}),
+    ...(row.pointsAwarded !== undefined ? { pointsAwarded: nonNegativeInteger(row.pointsAwarded) } : {}),
+    ...(row.spendablePoints !== undefined ? { spendablePoints: nonNegativeInteger(row.spendablePoints) } : {}),
+    ...(row.verification === 'server-authoritative' ? { verification: 'server-authoritative' as const } : {}),
+  })
 }
 
 function mapRoomInstance(value: unknown, expectedRoomId: StudyRoomId): StudyRoomInstance {

@@ -3,16 +3,16 @@ import { resolveStudyEntry } from '../src/account/StudyEntry'
 
 const location = {
   origin: 'https://radiotedu.com',
-  pathname: '/study/',
+  pathname: '/social/',
   search: '?room=library',
   hash: '',
 }
 
-describe('Study account entry', () => {
+describe('Social account entry', () => {
   it('builds same-origin account routes with a return target', () => {
     const entry = resolveStudyEntry(undefined, location)
-    expect(entry.loginUrl).toBe('/?hesap=giris&account_popup=1&return_to=%2Fstudy%2F%3Froom%3Dlibrary')
-    expect(entry.registerUrl).toBe('/?hesap=kayit&account_popup=1&return_to=%2Fstudy%2F%3Froom%3Dlibrary')
+    expect(entry.loginUrl).toBe('/?hesap=giris&account_popup=1&return_to=%2Fsocial%2F%3Froom%3Dlibrary')
+    expect(entry.registerUrl).toBe('/?hesap=kayit&account_popup=1&return_to=%2Fsocial%2F%3Froom%3Dlibrary')
     expect(entry.accountUrl).toBe('/account/')
     expect(entry.logoutUrl).toBe('/logout/?return_to=%2F')
   })

@@ -98,6 +98,37 @@ export interface StudyWorldEvent {
   status: 'upcoming' | 'active' | 'completed'
 }
 
+export type SocialArcadeChoice = 'left' | 'center' | 'right'
+
+export interface SocialArcadeRoundResult {
+  correct: boolean
+  validTiming: boolean
+  roundScore: number
+  elapsedMs: number
+  completedRound: number
+}
+
+export interface SocialArcadeSession {
+  id: string
+  status: 'active' | 'completed'
+  round: number
+  totalRounds: number
+  score: number
+  prompt: SocialArcadeChoice | null
+  nonce: string | null
+  promptExpiresAt: string | null
+  expiresAt: string | null
+  final: boolean
+}
+
+export interface SocialArcadeSnapshot {
+  session: SocialArcadeSession
+  result?: SocialArcadeRoundResult
+  pointsAwarded?: number
+  spendablePoints?: number
+  verification?: 'server-authoritative' | 'local-preview'
+}
+
 export type StudyPlayerReportReason = 'harassment' | 'spam' | 'unsafe-profile' | 'other'
 
 export interface StudyHeartbeatInput {
@@ -127,6 +158,8 @@ export interface StudyAdapter {
   reportPlayer?(targetUserId: string, roomId: StudyRoomId, reason: StudyPlayerReportReason): Promise<void>
   listEvents?(): Promise<readonly StudyWorldEvent[]>
   registerEvent?(eventId: string): Promise<StudyWorldEvent>
+  startPoolDive?(): Promise<SocialArcadeSnapshot>
+  playPoolDiveRound?(sessionId: string, nonce: string, choice: SocialArcadeChoice): Promise<SocialArcadeSnapshot>
   initialize?(): Promise<void>
   refreshPresence?(roomId: StudyRoomId): Promise<readonly StudyPresence[]>
   refreshChat?(roomId: StudyRoomId): Promise<readonly StudyChatMessage[]>

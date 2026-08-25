@@ -12,6 +12,7 @@ import { WearableCatalog, type WardrobeItem, type WardrobeSlot } from '../invent
 import { WardrobeController } from '../inventory/WardrobeController'
 import { NavigationGraph } from '../pathfinding/NavigationGraph'
 import { pointInPolygon, RoomNavigationField, type WorldPoint } from '../pathfinding/RoomNavigationField'
+import { STUDY_RADIO_CHANNELS, type StudyRadioChannelId } from '../radio/StudyRadioChannels'
 import { IMAGE_ROOMS, roomPointToPixel, type ImageRoomDefinition, type ImageRoomId, type ImageRoomSeat } from '../rooms/ImageRoomDefinition'
 import { AUDITORIUM_EVENT_SCREEN_BOUNDS } from '../rooms/AuditoriumPresentation'
 import { libraryDeviceSocket } from '../rooms/LibrarySeatCalibration'
@@ -23,25 +24,27 @@ import type { StudySessionTracker } from '../session/StudySessionTracker'
 import { StudyPresenceLoop } from '../session/StudyPresenceLoop'
 import { AvatarController } from './AvatarController'
 import { AvatarActivityMachine, type ActivityToken } from './AvatarActivityMachine'
-import { calculateOverviewZoom, calculatePlayableZoom } from './CameraFraming'
+import { calculateOverviewZoom, calculatePlayableZoom, cameraFramingMode } from './CameraFraming'
 import { imageRoomActorDepth } from './ImageRoomDepth'
 import { buildMotionPath, sampleMotionPathAtTime, walkFrameAtDistance } from './PathMotion'
 import { ROOM_AMBIENCE } from './RoomAmbience'
 import { SeatReservationBook } from './SeatReservationBook'
-import { resolveTouchIntent, type TouchWorldPoint } from './TouchIntentResolver'
+import { resolveSeatHitTarget, resolveTouchIntent, type TouchWorldPoint } from './TouchIntentResolver'
 
-const ACTION_FRAMES: Record<AvatarAction, number> = { idle: 1, walk: 4, sit: 1, stand: 3 }
+const ACTION_FRAMES: Record<AvatarAction, number> = { idle: 4, walk: 4, sit: 4, stand: 3 }
 const RENDERED_LAYERS: AvatarLayerSlot[] = ['body', 'skin', 'hair', 'top', 'bottom', 'shoes', 'hat']
 const ASSET_BASE = `${import.meta.env.BASE_URL}assets/avatars/engine-proof`
 const CAMPUS_CAT_ASSETS = ['campus-cat-tarcin-walk.png', 'campus-cat-benek-walk.png', 'campus-cat-komur-walk.png'] as const
 const ROOM_BASE = import.meta.env.BASE_URL
-const SUPPORTED_ITEMS = ['short-hair', 'radio-hoodie', 'varsity-jacket', 'jeans', 'black-cargos', 'sneakers', 'boots', 'bucket-hat', 'beanie'] as const
+const SUPPORTED_ITEMS = ['short-hair', 'radio-hoodie', 'radiotedu-tee', 'varsity-jacket', 'jeans', 'black-cargos', 'sneakers', 'boots', 'bucket-hat', 'beanie'] as const
 const AVATAR_WALK_SPEED = 280
 const AVATAR_WALK_STRIDE = 18
 const CAMPUS_CAT_PAW_BASELINE = 184 / 192
 const CAMPUS_CAT_SCALE = 0.21
 const CAMPUS_CAT_SHADOW = Object.freeze({ width: 28, height: 8 })
 const CAMPUS_CAT_NAMES = ['Tarçın', 'Benek', 'Kömür'] as const
+const MOUSE_SEAT_HIT_SLOP_PX = 10
+const TOUCH_SEAT_HIT_SLOP_PX = 18
 const CAMPUS_CAT_ROSTERS: Readonly<Record<ImageRoomId, readonly (typeof CAMPUS_CAT_NAMES)[number][]>> = Object.freeze({
   library: [CAMPUS_CAT_NAMES[0]],
   'chim-alan': [CAMPUS_CAT_NAMES[1], CAMPUS_CAT_NAMES[2]],
@@ -89,14 +92,11 @@ type RoomStructuralForeground = Readonly<{
 const ROOM_STRUCTURAL_FOREGROUNDS: Readonly<Partial<Record<ImageRoomId, readonly RoomStructuralForeground[]>>> = Object.freeze({
   'chim-alan': Object.freeze([
     Object.freeze({
-      id: 'cafe-front-facade',
-      depthY: 39.5,
+      id: 'restaurant-front-facade',
+      depthY: 44.5,
       polygons: Object.freeze([
-        // The cafe is recessed behind the public terrace. Masking its two glass
-        // facades lets an avatar pass behind the building while terrace walkers
-        // remain in front, without changing any navigation or seating anchors.
-        Object.freeze([{ x: 1044, y: 222 }, { x: 1362, y: 302 }, { x: 1362, y: 390 }, { x: 1044, y: 310 }]),
-        Object.freeze([{ x: 1362, y: 302 }, { x: 1402, y: 281 }, { x: 1402, y: 369 }, { x: 1362, y: 390 }]),
+        Object.freeze([{ x: 1010, y: 157 }, { x: 1488, y: 276 }, { x: 1488, y: 431 }, { x: 1010, y: 311 }]),
+        Object.freeze([{ x: 1488, y: 276 }, { x: 1570, y: 231 }, { x: 1570, y: 388 }, { x: 1488, y: 431 }]),
       ]),
     }),
   ]),
@@ -129,7 +129,7 @@ function appearanceForPresence(presence: StudyPresence): AvatarAppearance {
   const appearance = { ...DEFAULT_APPEARANCE }
   for (const id of presence.equippedWearableIds ?? []) {
     if (['short-hair'].includes(id)) appearance.hairId = id
-    if (['radio-hoodie', 'varsity-jacket'].includes(id)) appearance.topId = id
+    if (['radio-hoodie', 'radiotedu-tee', 'varsity-jacket'].includes(id)) appearance.topId = id
     if (['jeans', 'black-cargos'].includes(id)) appearance.bottomId = id
     if (['sneakers', 'boots'].includes(id)) appearance.shoesId = id
     if (['bucket-hat', 'beanie'].includes(id)) appearance.hatId = id
@@ -178,12 +178,15 @@ export class ImageRoomScene extends Phaser.Scene {
   #seatForegroundObjects: Phaser.GameObjects.GameObject[] = []
   #seatActorMaskSource: Phaser.GameObjects.Graphics | null = null
   #studyDevice: Phaser.GameObjects.Image | null = null
+  #studyDeviceGlow: Phaser.GameObjects.Ellipse | null = null
+  #avatarAnimationEvent: Phaser.Time.TimerEvent | null = null
+  #avatarAnimationFrame = 0
   #socialObjects: Phaser.GameObjects.GameObject[] = []
   #campusCats: CampusCat[] = []
   #chatBubbles = new Map<string, Phaser.GameObjects.Container>()
   #auditoriumScreenEvent: Phaser.Time.TimerEvent | null = null
   #intentMarker: Phaser.GameObjects.GameObject | null = null
-  #pendingPointerIntent: Readonly<{ world: TouchWorldPoint; uiConsumed: boolean }> | null = null
+  #pendingPointerIntent: Readonly<{ world: TouchWorldPoint; uiConsumed: boolean; seatHitSlop: number }> | null = null
   #pointerIntentFrame: number | null = null
   #lastWalkTarget: WorldPoint | null = null
   #keyboardHandler = (event: KeyboardEvent): void => {
@@ -275,7 +278,7 @@ export class ImageRoomScene extends Phaser.Scene {
         })
       }
       for (const [slot, ids] of Object.entries({
-        top: ['radio-hoodie', 'varsity-jacket'],
+        top: ['radio-hoodie', 'radiotedu-tee', 'varsity-jacket'],
         bottom: ['jeans', 'black-cargos'],
         shoes: ['sneakers', 'boots'],
         hat: ['bucket-hat', 'beanie'],
@@ -310,6 +313,7 @@ export class ImageRoomScene extends Phaser.Scene {
     this.#avatarController = new AvatarController(DEFAULT_AVATAR_ASSET_MANIFEST, this.#wardrobe.appearance)
 
     this.#createAvatar()
+    this.#startAvatarAnimationLoop()
     this.#renderRoom(this.#initialRoom)
     this.#bindPointerMovement()
     this.#bindKeyboardMovement()
@@ -330,6 +334,8 @@ export class ImageRoomScene extends Phaser.Scene {
       this.#clearIntentMarker()
       this.#presenceLoop?.stop()
       this.#presenceLoop = null
+      this.#avatarAnimationEvent?.remove(false)
+      this.#avatarAnimationEvent = null
       const ownerId = this.#adapter.session().account.id
       if (this.#seatReservations.releaseOwner(ownerId) > 0) void this.#adapter.releaseSeat()
       void this.#sessionTracker?.stood().catch(() => undefined)
@@ -359,6 +365,36 @@ export class ImageRoomScene extends Phaser.Scene {
     this.#updateAvatarFrame(0)
   }
 
+  #startAvatarAnimationLoop(): void {
+    this.#avatarAnimationEvent?.remove(false)
+    this.#avatarAnimationFrame = 0
+    this.#avatarAnimationEvent = this.time.addEvent({
+      delay: 280,
+      loop: true,
+      callback: () => {
+        this.#avatarAnimationFrame += 1
+        if (this.#state === 'ready' && this.#avatarController.action === 'idle') {
+          this.#updateAvatarFrame(this.#avatarAnimationFrame)
+        } else if (this.#state === 'seated' && this.#avatarController.action === 'sit') {
+          this.#updateAvatarFrame(this.#avatarAnimationFrame)
+        }
+
+        for (const object of this.#socialObjects) {
+          if (!(object instanceof Phaser.GameObjects.Container)) continue
+          const action = object.getData('avatarAction') as AvatarAction | undefined
+          const directionIndex = object.getData('avatarDirectionIndex') as number | undefined
+          if ((action !== 'idle' && action !== 'sit') || typeof directionIndex !== 'number') continue
+          const frameCount = ACTION_FRAMES[action]
+          const sheetFrame = directionIndex * frameCount + (this.#avatarAnimationFrame % frameCount)
+          for (const child of object.list) {
+            if (child instanceof Phaser.GameObjects.Sprite) child.setFrame(sheetFrame)
+          }
+        }
+      },
+    })
+    document.documentElement.dataset.avatarAnimation = 'idle-sit-four-frame'
+  }
+
   #clearRoomObjects(): void {
     this.#auditoriumScreenEvent?.remove(false)
     this.#auditoriumScreenEvent = null
@@ -369,8 +405,11 @@ export class ImageRoomScene extends Phaser.Scene {
     this.#seatForegroundObjects = []
     this.#socialObjects = []
     this.#campusCats = []
+    if (this.#studyDeviceGlow) this.tweens.killTweensOf(this.#studyDeviceGlow)
     this.#studyDevice?.destroy()
     this.#studyDevice = null
+    this.#studyDeviceGlow?.destroy()
+    this.#studyDeviceGlow = null
     this.#chatBubbles.clear()
     delete document.documentElement.dataset.campusCats
     delete document.documentElement.dataset.lastCampusCat
@@ -510,14 +549,14 @@ export class ImageRoomScene extends Phaser.Scene {
 
   #fitCamera(): void {
     const viewport = this.scale.gameSize
-    const desktopStage = viewport.width / viewport.height >= 1.45
-    const zoom = desktopStage
+    const framing = cameraFramingMode(viewport, this.#room.image)
+    const zoom = framing === 'overview'
       ? calculateOverviewZoom(viewport, this.#room.image)
       : calculatePlayableZoom(viewport, this.#room.image)
     const camera = this.cameras.main
     camera.stopFollow()
     camera.removeBounds()
-    if (!desktopStage) {
+    if (framing === 'follow') {
       camera.setBounds(0, 0, this.#room.image.width, this.#room.image.height)
       camera.setZoom(zoom)
       camera.startFollow(this.#avatar, true, 0.12, 0.12)
@@ -662,11 +701,13 @@ export class ImageRoomScene extends Phaser.Scene {
       const cat: CampusCat = { name, nodeId: node.id, roomId: this.#roomId, sprite, shadow, z: node.z, walking: false, frame: 0 }
       sprite.setData('campusCatName', name)
       sprite.on('pointerdown', (
-        _pointer: Phaser.Input.Pointer,
+        pointer: Phaser.Input.Pointer,
         _localX: number,
         _localY: number,
         event: Phaser.Types.Input.EventData,
       ) => {
+        const target = pointer.event.target
+        if (target instanceof Element && target.closest('[data-study-ui]')) return
         event.stopPropagation()
         this.#showCampusCatGreeting(cat)
       })
@@ -761,6 +802,8 @@ export class ImageRoomScene extends Phaser.Scene {
   #createWorldActors(): void {
     for (const [actorId, actor] of Object.entries(this.#room.actors)) {
       if (!actor) continue
+      const radioChannelId: StudyRadioChannelId | null = actorId === 'spark' || actorId === 'rock' ? actorId : null
+      const radioChannel = radioChannelId ? STUDY_RADIO_CHANNELS[radioChannelId] : null
       const node = this.#graph.node(actor.nodeId)
       if (!node) continue
       const pixel = roomPointToPixel(this.#room, node)
@@ -778,13 +821,23 @@ export class ImageRoomScene extends Phaser.Scene {
         badge.lineStyle(2, 0x272728, 1).strokeRoundedRect(-17, -13, 34, 26, 7)
       }
       const name = this.add.text(26, -19, actor.name, { color: '#ffffff', fontFamily: 'Segoe UI, sans-serif', fontSize: '15px', fontStyle: 'bold' })
-      const label = this.add.text(26, 1, actor.label, {
+      const label = this.add.text(26, 1, radioChannel ? `${radioChannel.title} · Play` : actor.label, {
         color: '#d3efea', fontFamily: 'Segoe UI, sans-serif', fontSize: '10px',
         backgroundColor: '#10242ddd', padding: { x: 3, y: 1 },
       })
-      container.add([badge, name, label]).setSize(170, 48).setInteractive({ useHandCursor: true })
+      // Keep roadside stations touchable while the follow camera is still
+      // easing after a previous station tap. The actors are far apart, so this
+      // larger mobile-safe target cannot overlap another world interaction.
+      container.add([badge, name, label]).setSize(210, 120).setInteractive({ useHandCursor: true })
       container.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        const target = pointer.event.target
+        if (target instanceof Element && target.closest('[data-study-ui]')) return
         pointer.event.stopPropagation()
+        if (radioChannelId) {
+          window.dispatchEvent(new CustomEvent('radiotedu:study-radio-select', {
+            detail: { channelId: radioChannelId },
+          }))
+        }
         void this.#walkToNode(actor.nodeId).then(() => this.#setState(actorId === 'spark' ? 'spark' : 'rock'))
       })
       this.#roomObjects.push(container)
@@ -808,7 +861,9 @@ export class ImageRoomScene extends Phaser.Scene {
       const depth = seat ? anchor.y * 100 + 12 : imageRoomActorDepth({ y: anchor.y, z: node?.z ?? 0 }, 12)
       const container = this.add.container(pixel.x, pixel.y)
         .setDepth(depth)
-        .setScale(roomAvatarScale(this.#roomId, anchor.y, Boolean(seat)))
+        .setScale(roomAvatarScale(this.#roomId, anchor.y, Boolean(seat), seat?.id ?? null))
+        .setData('avatarAction', action)
+        .setData('avatarDirectionIndex', DIRECTIONS.indexOf(direction))
       const shadow = this.add.ellipse(0, 5, 34, 11, 0x020609, 0.35)
       shadow.setVisible(!seat)
       const layers: Phaser.GameObjects.Sprite[] = []
@@ -830,6 +885,8 @@ export class ImageRoomScene extends Phaser.Scene {
       }).setOrigin(0.5)
       container.add([shadow, ...layers, name]).setSize(72, 100).setInteractive({ useHandCursor: true })
       container.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        const target = pointer.event.target
+        if (target instanceof Element && target.closest('[data-study-ui]')) return
         pointer.event.stopPropagation()
         window.dispatchEvent(new CustomEvent('radiotedu:study-player-selected', { detail: { presence } }))
       })
@@ -941,11 +998,14 @@ export class ImageRoomScene extends Phaser.Scene {
       return
     }
 
-    if (this.#roomId === 'learning-lab' && seat.id === 'activity-table-seat') {
+    if (this.#roomId === 'learning-lab') {
       const geometry = resolveSeatGeometry(this.#room, seat)
       const anchor = roomPointToPixel(this.#room, geometry.actorAnchor)
       const maskSource = this.make.graphics({ x: 0, y: 0, add: false } as never)
-      maskSource.fillStyle(0xffffff).fillRect(anchor.x - 38, anchor.y - 18, 76, 32)
+      // Every Pedagogy Lab chair is tucked under a real laboratory desk. Draw
+      // only the desk-front band over the legs; head, shoulders, bent arms and
+      // hands remain visible so the avatar reads as genuinely seated.
+      maskSource.fillStyle(0xffffff).fillRect(anchor.x - 43, anchor.y - 24, 86, 39)
       const image = this.add.image(0, 0, `room:${this.#roomId}`)
         .setOrigin(0)
         .setDepth(imageRoomActorDepth(geometry.actorAnchor, 20))
@@ -963,8 +1023,11 @@ export class ImageRoomScene extends Phaser.Scene {
   }
 
   #syncStudyDevice(): void {
+    if (this.#studyDeviceGlow) this.tweens.killTweensOf(this.#studyDeviceGlow)
     this.#studyDevice?.destroy()
     this.#studyDevice = null
+    this.#studyDeviceGlow?.destroy()
+    this.#studyDeviceGlow = null
     const seat = this.#seatedSeat
     const laptop = studyGear.snapshot().equipped.laptop
     const socket = seat ? libraryDeviceSocket(seat.id) : null
@@ -973,15 +1036,35 @@ export class ImageRoomScene extends Phaser.Scene {
     const depth = imageRoomActorDepth(geometry.actorAnchor, socket.side === 'far' ? 32 : -4)
     this.#studyDevice = this.add.image(socket.x, socket.y, `study-device:${laptop}:${socket.side}`)
       .setOrigin(0.5, 1)
-      .setDisplaySize(34, 20.4)
+      .setDisplaySize(26, 15.6)
       .setDepth(depth)
+      .setData('studyGearId', laptop)
+    const glowColor = laptop === 'laptop-gold' ? 0xf2c94c : laptop === 'laptop-pro' ? 0x79d9e8 : 0x8ed9bd
+    this.#studyDeviceGlow = this.add.ellipse(socket.x, socket.y - 10.5, 11, 4, glowColor, 0.18)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(depth + 1)
+      .setData('studyGearId', laptop)
+    this.tweens.add({
+      targets: this.#studyDeviceGlow,
+      alpha: { from: 0.14, to: 0.42 },
+      scaleX: { from: 0.92, to: 1.06 },
+      duration: 760,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    })
   }
 
   #updateAvatarFrame(frameIndex: number): void {
     const action = this.#avatarController.action
     const direction = this.#avatarController.direction
     const seated = action === 'sit'
-    const scale = roomAvatarScale(this.#roomId, (this.#avatar.y / this.#room.image.height) * 100, seated)
+    const scale = roomAvatarScale(
+      this.#roomId,
+      (this.#avatar.y / this.#room.image.height) * 100,
+      seated,
+      this.#seatedSeat?.id ?? null,
+    )
     this.#avatar.setScale(scale)
     this.#seatedUpperAvatar.setScale(scale)
     const frameCount = ACTION_FRAMES[action]
@@ -1532,21 +1615,29 @@ export class ImageRoomScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       const world = { x: pointer.worldX, y: pointer.worldY }
       const target = pointer.event.target
+      const pointerType = 'pointerType' in pointer.event ? String(pointer.event.pointerType) : 'mouse'
+      const canvasBounds = this.game.canvas.getBoundingClientRect()
+      const screenSlop = pointerType === 'touch' ? TOUCH_SEAT_HIT_SLOP_PX : MOUSE_SEAT_HIT_SLOP_PX
+      const seatHitSlop = screenSlop * Math.max(
+        this.cameras.main.worldView.width / Math.max(1, canvasBounds.width),
+        this.cameras.main.worldView.height / Math.max(1, canvasBounds.height),
+      )
       this.#pendingPointerIntent = {
         world,
         uiConsumed: target instanceof Element && Boolean(target.closest('[data-study-ui]')),
+        seatHitSlop,
       }
       if (this.#pointerIntentFrame !== null) return
       this.#pointerIntentFrame = window.requestAnimationFrame(() => {
         this.#pointerIntentFrame = null
         const pending = this.#pendingPointerIntent
         this.#pendingPointerIntent = null
-        if (pending) this.#processPointerIntent(pending.world, pending.uiConsumed)
+        if (pending) this.#processPointerIntent(pending.world, pending.uiConsumed, pending.seatHitSlop)
       })
     })
   }
 
-  #processPointerIntent(world: TouchWorldPoint, uiConsumed: boolean): void {
+  #processPointerIntent(world: TouchWorldPoint, uiConsumed: boolean, seatHitSlop: number): void {
     const accountId = this.#adapter.session().account.id
     const presence = this.#adapter.presence(this.#roomId)
     this.#syncSeatReservations(presence)
@@ -1559,10 +1650,13 @@ export class ImageRoomScene extends Phaser.Scene {
       return anchor ? [{ userId: person.userId, ...roomPointToPixel(this.#room, anchor) }] : []
     })
     const pointsAtPlayer = players.some((player) => Math.hypot(player.x - world.x, player.y - world.y) <= 44)
-    const hitSeat = pointsAtPlayer ? null : this.#room.seats.find((seat) => {
-      const geometry = resolveSeatGeometry(this.#room, seat)
-      return pointInPolygon(world, geometry.hitArea.map((point) => roomPointToPixel(this.#room, point)))
-    }) ?? null
+    const seatTargets = this.#room.seats.map((seat) => ({
+      seat,
+      hitArea: resolveSeatGeometry(this.#room, seat).hitArea.map((point) => roomPointToPixel(this.#room, point)),
+    }))
+    const hitSeat = pointsAtPlayer
+      ? null
+      : resolveSeatHitTarget(world, seatTargets, seatHitSlop)?.seat ?? null
 
     // A seated anchor is intentionally inside the furniture footprint. Plan
     // the next action from its standing approach, without searching the whole
@@ -1602,6 +1696,7 @@ export class ImageRoomScene extends Phaser.Scene {
       walkable,
       seats,
       players,
+      seatHitSlop,
     })
 
     if (intent.kind === 'ignored') return
@@ -1805,6 +1900,7 @@ export class ImageRoomScene extends Phaser.Scene {
         layerTextures: Object.fromEntries(
           [...this.#avatarSprites].map(([slot, sprite]) => [slot, sprite.visible ? sprite.texture.key : null]),
         ) as Partial<Record<AvatarLayerSlot, string | null>>,
+        studyDeviceTexture: this.#studyDevice?.texture.key ?? null,
         sparkLabel: this.#room.actors.spark?.label ?? null,
         camera: {
           zoom: this.cameras.main.zoom,
@@ -1896,6 +1992,7 @@ declare global {
         bottomId: string
         shoesId: string
         layerTextures: Partial<Record<AvatarLayerSlot, string | null>>
+        studyDeviceTexture: string | null
         sparkLabel: string | null
         camera: {
           zoom: number

@@ -13,11 +13,11 @@ function success<T>(data: T, status = 200) {
   }
 }
 
-function failure(status: number, message: string) {
+function failure(status: number, message: string, code?: string) {
   return {
     ok: false,
     status,
-    json: async () => ({ success: false, message }),
+    json: async () => ({ success: false, message, code }),
   }
 }
 
@@ -320,6 +320,38 @@ describe('RadioTEDUStudyAdapter', () => {
     expect(fetchImpl.mock.calls[1]![0]).toContain('/presence?roomId=library&instanceId=library-2')
     expect(JSON.parse(fetchImpl.mock.calls[2]![1].body)).toMatchObject({ instanceId: 'library-2' })
     expect(fetchImpl.mock.calls[2]![1].headers.Authorization).toBe('Bearer access-token')
+  })
+
+  it('preserves safe server chat error codes for actionable room feedback', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({
+        instance: { id: 'library-2', roomId: 'library', number: 2, occupancy: 1, capacity: 51 },
+      }))
+      .mockResolvedValueOnce(failure(422, 'Message blocked by Social room safety rules.', 'CHAT_CONTENT_BLOCKED'))
+    const adapter = createAdapter(fetchImpl)
+
+    await adapter.enterRoom('library', 'bottom-center-aisle')
+
+    await expect(adapter.sendChat('blocked message', 'library')).rejects.toMatchObject({
+      code: 'CHAT_CONTENT_BLOCKED',
+      status: 422,
+      retryable: false,
+    })
+  })
+
+  it('does not trust malformed server error codes', async () => {
+    const fetchImpl = vi.fn()
+      .mockResolvedValueOnce(success({
+        instance: { id: 'library-2', roomId: 'library', number: 2, occupancy: 1, capacity: 51 },
+      }))
+      .mockResolvedValueOnce(failure(422, 'Rejected', '<script>alert(1)</script>'))
+    const adapter = createAdapter(fetchImpl)
+
+    await adapter.enterRoom('library', 'bottom-center-aisle')
+
+    await expect(adapter.sendChat('rejected message', 'library')).rejects.toMatchObject({
+      code: 'REMOTE_REQUEST_FAILED',
+    })
   })
 
   it('submits moderation reports through the authenticated room instance', async () => {

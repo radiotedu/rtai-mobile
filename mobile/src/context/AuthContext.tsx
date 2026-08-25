@@ -8,6 +8,7 @@ import {
     logoutAccountSession,
 } from '../services/accountLifecycleService';
 import { notifyAuthSessionChanged } from '../services/authSessionEvents';
+import {subscribeGoldBalanceChanges} from '../services/goldBalanceEvents';
 import {
     ErpIdentityError,
     exchangeTeduLoginCode,
@@ -154,6 +155,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             erpAttempts.invalidate();
         };
     }, [erpAttempts]);
+
+    useEffect(() => subscribeGoldBalanceChanges((goldBalance) => {
+        setUser((current) => current
+            ? {...current, gold_balance: goldBalance}
+            : current);
+    }), []);
 
     const beginErpAttempt = useCallback((phase: ErpAuthAttemptPhase) => {
         const attempt = erpAttempts.begin(phase);

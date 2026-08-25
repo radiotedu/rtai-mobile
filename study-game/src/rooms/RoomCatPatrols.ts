@@ -10,7 +10,7 @@ const PATROLS: Readonly<Record<ImageRoomId, readonly PercentPatrolPoint[]>> = Ob
   'chim-alan': [[32, 72], [38, 82], [45, 72], [54, 86], [57, 78], [58, 91]],
   'sports-center': [[27, 88], [35, 82], [64, 84], [70, 72], [72, 90], [76, 82]],
   auditorium: [[33, 90], [50, 90], [67, 90], [82, 90], [67.23, 72.69], [67.23, 55.69]],
-  'learning-lab': [[37, 84], [45, 76], [58, 76], [68, 84], [74, 72], [60, 88]],
+  'learning-lab': [[24, 88], [38, 90], [52, 91], [66, 89], [80, 84], [86, 77]],
 })
 
 export function roomCatPatrolPoints(room: ImageRoomDefinition): readonly PatrolPoint[] {

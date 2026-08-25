@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loginStudyAccount, registerStudyAccount, startStudyTeduLogin, STUDY_PRIVACY_VERSION, STUDY_TERMS_VERSION } from '../src/account/StudyAuthClient'
+import { loginStudyAccount, registerStudyAccount, startStudyTeduLogin, STUDY_PRIVACY_VERSION, STUDY_TERMS_VERSION, verifyStudyAccountSession } from '../src/account/StudyAuthClient'
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
@@ -59,5 +59,19 @@ describe('Study-native account client', () => {
   it('surfaces server errors without treating them as a session', async () => {
     const fetchImpl = vi.fn<FetchLike>(async () => jsonResponse({ success: false, error: 'Invalid credentials' }, 401))
     await expect(loginStudyAccount('user@example.com', 'wrong-pass', fetchImpl)).rejects.toThrow('Invalid credentials')
+  })
+
+  it('stops waiting when the account service does not respond', async () => {
+    vi.useFakeTimers()
+    try {
+      const fetchImpl = vi.fn<FetchLike>((_input, init) => new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true })
+      }))
+      const assertion = expect(verifyStudyAccountSession(fetchImpl)).rejects.toThrow('took too long')
+      await vi.advanceTimersByTimeAsync(12_000)
+      await assertion
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

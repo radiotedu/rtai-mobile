@@ -5,9 +5,11 @@
 import TrackPlayer, {Event, State} from 'react-native-track-player';
 import {Analytics} from './analyticsService';
 import {getAccessToken} from './authTokenStorage';
+import {notifyGoldBalanceChanged} from './goldBalanceEvents';
 import {subscribeAuthSessionChanges} from './authSessionEvents';
 import {
   createListeningClientSessionId,
+  extractServerGoldBalance,
   heartbeatVerifiedListening,
   radioChannelForTrack,
   startVerifiedListening,
@@ -115,6 +117,10 @@ async function sendGoldHeartbeat() {
     const result = await heartbeatVerifiedListening(active.sessionId, active.nonce);
     if (generation !== goldGeneration || goldSession !== active) return;
     active.nonce = result.nonce;
+    const serverBalance = extractServerGoldBalance(result.reward);
+    if (serverBalance !== null) {
+      notifyGoldBalanceChanged(serverBalance);
+    }
     scheduleGoldHeartbeat(active.heartbeatAfterSeconds);
   } catch (error) {
     if (generation !== goldGeneration || goldSession !== active) return;

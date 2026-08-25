@@ -1,4 +1,4 @@
-import { pointInPolygon } from '../pathfinding/RoomNavigationField'
+import { distanceToPolygon, pointInPolygon } from '../pathfinding/RoomNavigationField'
 
 export type TouchWorldPoint = Readonly<{ x: number; y: number }>
 
@@ -25,6 +25,7 @@ export type TouchIntentResolverInput = Readonly<{
   players: readonly TouchPlayerTarget[]
   walkable: boolean
   playerRadius?: number
+  seatHitSlop?: number
 }>
 
 export type TouchIntent =
@@ -54,6 +55,26 @@ function nearest<T extends TouchWorldPoint>(world: TouchWorldPoint, targets: rea
 
 const pointOf = (target: TouchWorldPoint): TouchWorldPoint => ({ x: target.x, y: target.y })
 
+export function resolveSeatHitTarget<T extends Pick<TouchSeatTarget, 'hitArea'>>(
+  world: TouchWorldPoint,
+  seats: readonly T[],
+  hitSlop = 0,
+): T | null {
+  const allowedDistance = Math.max(0, hitSlop)
+  let best: T | null = null
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  for (const candidate of seats) {
+    const candidateDistance = pointInPolygon(world, candidate.hitArea)
+      ? 0
+      : distanceToPolygon(world, candidate.hitArea)
+    if (candidateDistance > allowedDistance || candidateDistance >= bestDistance) continue
+    best = candidate
+    bestDistance = candidateDistance
+  }
+  return best
+}
+
 export function resolveTouchIntent(input: TouchIntentResolverInput): TouchIntent {
   if (input.uiConsumed) return { kind: 'ignored', reason: 'ui-consumed' }
 
@@ -62,7 +83,7 @@ export function resolveTouchIntent(input: TouchIntentResolverInput): TouchIntent
     return { kind: 'interact-player', userId: player.userId }
   }
 
-  const seat = input.seats.find((candidate) => pointInPolygon(input.world, candidate.hitArea))
+  const seat = resolveSeatHitTarget(input.world, input.seats, input.seatHitSlop)
   if (seat) {
     if (seat.id === input.currentSeatId) return { kind: 'stand' }
     if (seat.id === input.activeSeatIntentId) return { kind: 'ignored', reason: 'duplicate-seat' }

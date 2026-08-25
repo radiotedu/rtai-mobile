@@ -12,7 +12,7 @@ import { RoomController } from './RoomController'
 const TILE_WIDTH = 72
 const TILE_HEIGHT = 36
 const ELEVATION_HEIGHT = 28
-const ACTION_FRAMES: Record<AvatarAction, number> = { idle: 1, walk: 4, sit: 1, stand: 3 }
+const ACTION_FRAMES: Record<AvatarAction, number> = { idle: 4, walk: 4, sit: 4, stand: 3 }
 const AVATAR_LAYERS: AvatarLayerSlot[] = ['body', 'skin', 'hair', 'top', 'bottom', 'shoes', 'hat']
 const AVATAR_ASSET_BASE = `${import.meta.env.BASE_URL}assets/avatars/engine-proof`
 
@@ -196,7 +196,7 @@ export class EngineProofScene extends Phaser.Scene {
     }
     this.#drawChair()
 
-    this.add.text(32, 30, 'RADIOTEDU STUDY', {
+    this.add.text(32, 30, 'RADIOTEDU SOCIAL', {
       color: '#dff5ed',
       fontFamily: 'Consolas, monospace',
       fontSize: '15px',

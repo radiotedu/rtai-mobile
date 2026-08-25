@@ -51,7 +51,7 @@ function distanceToSegment(point: WorldPoint, from: WorldPoint, to: WorldPoint):
   return Math.hypot(point.x - (from.x + amount * dx), point.y - (from.y + amount * dy))
 }
 
-function distanceToPolygon(point: WorldPoint, polygon: readonly WorldPoint[]): number {
+export function distanceToPolygon(point: WorldPoint, polygon: readonly WorldPoint[]): number {
   let closest = Number.POSITIVE_INFINITY
   for (let index = 0; index < polygon.length; index += 1) {
     closest = Math.min(closest, distanceToSegment(point, polygon[index]!, polygon[(index + 1) % polygon.length]!))

@@ -2,17 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <base href="%BASE_URL%" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' https://stream.radiotedu.com; connect-src 'self' https://radiotedu.com https://www.radiotedu.com https://stream.radiotedu.com ws://127.0.0.1:* ws://localhost:* wss://radiotedu.com wss://www.radiotedu.com; worker-src 'self' blob:" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#101b22" />
-    <title>RadioTEDU Study</title>
+    <title>RadioTEDU Social</title>
   </head>
   <body>
-    <main id="study-game" aria-label="RadioTEDU Study game">
-      <div id="game-canvas" aria-label="Study room"></div>
-      <div id="game-ui"></div>
+    <main id="study-game" aria-label="RadioTEDU Social world">
+      <div id="game-canvas" aria-label="Campus room"></div>
+      <div id="game-ui">
+        <section class="study-gate" data-study-boot aria-live="polite" aria-busy="true">
+          <div class="study-entry-room" aria-hidden="true">
+            <img src="assets/rooms/library-wide.png" alt="" />
+            <span class="study-entry-shade"></span>
+            <span class="study-entry-avatar"></span>
+            <span class="study-entry-bubble">Getting the campus ready…</span>
+          </div>
+          <main class="study-entry-card">
+            <div class="study-entry-brand"><span aria-hidden="true">R</span><b><strong>RadioTEDU</strong><small>SOCIAL WORLD</small></b></div>
+            <div class="study-entry-stage">
+              <p class="study-entry-kicker">TEDU CAMPUS · LIVE SOCIAL &amp; STUDY ROOMS</p>
+              <h1>Social World is loading.</h1>
+              <p class="study-entry-copy">Preparing the campus, your account and the live rooms.</p>
+              <div class="study-boot-progress" role="progressbar" aria-label="Loading RadioTEDU Social"><i></i></div>
+              <a class="study-entry-help" href="./">Taking too long? Reload Social</a>
+            </div>
+          </main>
+        </section>
+      </div>
     </main>
+    <script src="./study-loader-recovery.js" defer></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -58,8 +58,8 @@ describe('Library seat presentation', () => {
 
       const socket = libraryDeviceSocket(authored.id)
       expect(socket, `${authored.id} laptop socket`).toEqual(authored.side === 'far'
-        ? { side: 'far', x: centerX + 19, y: y2 + 26 }
-        : { side: 'near', x: centerX + 26, y: y1 - 2 })
+        ? { side: 'far', x: centerX + 19, y: y2 + 34 }
+        : { side: 'near', x: centerX + 26, y: y1 + 18 })
     }
   })
 })

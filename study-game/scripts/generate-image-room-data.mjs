@@ -308,7 +308,7 @@ export async function generateImageRoomData(
     readFile(path.join(studyRoot, 'src', 'rooms', 'data', 'chim-alan-amphitheatre-layout.json'), 'utf8').then(JSON.parse),
     readFile(path.join(prototypeRoot, 'data', 'library-habbo-map-mask.json'), 'utf8').then(JSON.parse),
     imageRecord('library-wide.png'),
-    imageRecord('chim-alan-wide.png'),
+    imageRecord('chim-alan-wide-360-restaurant-r3.png'),
   ])
   const library = await compileRoomCutouts(libraryRoomData(appSource, libraryMapMask, libraryImage), libraryImage, assetOutputRoot)
   const chim = await compileRoomCutouts(chimRoomData(chimSource, chimImage, chimLayout), chimImage, assetOutputRoot)

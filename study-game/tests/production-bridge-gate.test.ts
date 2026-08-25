@@ -26,7 +26,7 @@ describe('production Study access gate', () => {
     expect(source).toContain('data-study-auth-form')
     expect(source).toContain('loginStudyAccount')
     expect(source).toContain('registerStudyAccount')
-    expect(source).toContain("new URL('/study/auth-callback.html', location.origin)")
+    expect(source).toContain("new URL('auth-callback.html', new URL(import.meta.env.BASE_URL, location.origin))")
     expect(source).not.toContain('location.assign(entryConfig.loginUrl)')
     expect(source).not.toContain('localStorage.setItem')
   });

@@ -8,11 +8,15 @@ describe('IMAGE_ROOMS', () => {
     expect(Object.keys(IMAGE_ROOMS)).toEqual(['library', 'chim-alan', 'sports-center', 'auditorium', 'learning-lab'])
     expect(IMAGE_ROOMS.library.title).toBe('Library')
     expect(IMAGE_ROOMS['chim-alan'].title).toBe('Çim Alan')
+    expect(IMAGE_ROOMS['chim-alan'].image).toEqual(expect.objectContaining({
+      url: 'assets/rooms/chim-alan-wide-360-restaurant-r3.png',
+      sha256: '1875557012c754fd8f8e3a346dc31b5d8d003e530697bec6674ce08becc12310',
+    }))
     expect(IMAGE_ROOMS['sports-center'].image.sha256).toBe('4ad9bb8bbeb6a2a5ff55d15ef4a99b25872f4092d2fbf1ddc5e371f0c12e9313')
     expect(IMAGE_ROOMS.auditorium.image.sha256).toBe('75c424a223515a3bd455c6a4c09694db28bd33dcdb472484ecb67da91454ff9c')
     expect(IMAGE_ROOMS['sports-center'].image.width / IMAGE_ROOMS['sports-center'].image.height).toBeCloseTo(16 / 9, 2)
     expect(IMAGE_ROOMS.auditorium.image.width / IMAGE_ROOMS.auditorium.image.height).toBeCloseTo(16 / 9, 2)
-    expect(IMAGE_ROOMS['learning-lab'].image.sha256).toBe('3a9dc739ad7d94a4a422c36a30841b8e6a417d8e1025ae69912c6eee5cc92bcc')
+    expect(IMAGE_ROOMS['learning-lab'].image.sha256).toBe('572912669e48aaa3e72c1b6f532d28111566b854af7377d96b4516a1d4785e32')
     expect(IMAGE_ROOMS['learning-lab'].image.width / IMAGE_ROOMS['learning-lab'].image.height).toBeCloseTo(16 / 9, 2)
   })
 

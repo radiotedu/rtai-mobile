@@ -31,6 +31,19 @@ const TRACK_CHANNELS: Record<string, string> = {
   'radiotedu-fr': 'fr',
 };
 
+const STREAM_MOUNT_CHANNELS: Record<string, string> = {
+  radio: 'radio',
+  classic: 'classic',
+  cazz: 'jazz',
+  jazz: 'jazz',
+  lofi: 'lofi',
+  energize: 'energize',
+  rock: 'rock',
+  spark: 'spark',
+  en: 'en',
+  fr: 'fr',
+};
+
 function unwrapData<T>(response: {data?: {data?: T}}): T {
   if (!response.data?.data) {
     throw new Error('Gold listening response is missing');
@@ -40,42 +53,42 @@ function unwrapData<T>(response: {data?: {data?: T}}): T {
 
 export function radioChannelForTrack(track: {id?: unknown; url?: unknown} | undefined): string | null {
   const id = String(track?.id ?? '').toLowerCase();
-  if (TRACK_CHANNELS[id]) {
-    return TRACK_CHANNELS[id];
-  }
-
-  const url = String(track?.url ?? '').toLowerCase();
-  if (!url.includes('stream.radiotedu.com')) {
+  const expectedChannel = TRACK_CHANNELS[id] ?? null;
+  const rawUrl = typeof track?.url === 'string' ? track.url.trim() : '';
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
     return null;
   }
-  if (url.includes('/cazz') || url.includes('/jazz')) {
-    return 'jazz';
+  if (
+    parsed.protocol !== 'https:' ||
+    parsed.hostname.toLowerCase() !== 'stream.radiotedu.com' ||
+    parsed.port ||
+    parsed.username ||
+    parsed.password
+  ) {
+    return null;
   }
-  if (url.includes('/lofi')) {
-    return 'lofi';
+
+  const pathParts = parsed.pathname.toLowerCase().split('/').filter(Boolean);
+  if (pathParts.length !== 1) {
+    return null;
   }
-  if (url.includes('/classic')) {
-    return 'classic';
+  const mount = pathParts[0].replace(/-(?:low|normal|high|flac)$/, '');
+  const channel = STREAM_MOUNT_CHANNELS[mount] ?? null;
+  if (!channel || (expectedChannel && expectedChannel !== channel)) {
+    return null;
   }
-  if (url.includes('/energize')) {
-    return 'energize';
+  return channel;
+}
+
+export function extractServerGoldBalance(reward: unknown): number | null {
+  if (!reward || typeof reward !== 'object') {
+    return null;
   }
-  if (url.includes('/rock')) {
-    return 'rock';
-  }
-  if (url.includes('/spark')) {
-    return 'spark';
-  }
-  if (url.includes('/en')) {
-    return 'en';
-  }
-  if (url.includes('/fr')) {
-    return 'fr';
-  }
-  if (url.includes('/radio')) {
-    return 'radio';
-  }
-  return null;
+  const balance = Number((reward as {spendablePoints?: unknown}).spendablePoints);
+  return Number.isInteger(balance) && balance >= 0 ? balance : null;
 }
 
 export function createListeningClientSessionId(

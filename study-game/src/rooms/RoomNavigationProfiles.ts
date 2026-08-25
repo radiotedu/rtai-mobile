@@ -24,6 +24,32 @@ type ChimAlanLayout = Readonly<{
 
 const CHIM_ALAN_LAYOUT = chimAlanLayout as unknown as ChimAlanLayout
 
+const LIBRARY_TABLETOPS: readonly PercentPolygon[] = Object.freeze([
+  [[50.36, 23.38], [53.53, 20.19], [68.48, 34.33], [65.31, 37.94]],
+  [[39.53, 30.50], [42.88, 27.10], [58.49, 44.85], [55.14, 48.46]],
+  [[28.59, 40.70], [31.64, 37.19], [47.37, 52.92], [44.02, 56.54]],
+  [[14.71, 49.20], [18.06, 45.90], [33.55, 61.96], [30.20, 65.57]],
+  [[57.00, 59.50], [60.00, 55.90], [76.00, 72.10], [72.70, 75.60]],
+  [[44.32, 68.20], [47.55, 64.72], [62.98, 80.66], [59.63, 84.27]],
+])
+
+// The bookcase-like end cabinets are deeper than the tabletops. Keeping them
+// separate preserves the chair aisles while preventing the avatar's body from
+// visually crossing a desk end even when its ground anchor is just outside the
+// tabletop polygon.
+const LIBRARY_TABLE_END_CAPS: readonly PercentPolygon[] = Object.freeze([
+  [[65.00, 34.00], [68.50, 32.70], [70.40, 36.60], [70.40, 42.50], [66.80, 44.40], [65.00, 40.60]],
+  [[54.80, 45.80], [58.40, 44.70], [58.40, 50.80], [55.30, 52.60], [53.90, 48.60]],
+  [[43.80, 53.80], [47.70, 52.50], [47.70, 59.20], [44.80, 60.80], [43.50, 56.80]],
+  [[30.00, 62.20], [33.80, 60.80], [33.80, 68.70], [30.60, 70.10], [29.40, 66.20]],
+  [[72.50, 72.00], [76.60, 70.80], [76.60, 78.40], [73.40, 80.00], [72.00, 76.20]],
+  [[59.40, 80.20], [63.90, 78.90], [63.90, 87.50], [60.40, 89.50], [59.00, 85.40]],
+])
+
+const LIBRARY_TABLE_END_BODY_CLEARANCE: readonly PercentPolygon[] = Object.freeze([
+  [[28.90, 66.00], [30.60, 70.10], [33.80, 68.70], [33.80, 71.80], [29.90, 74.10], [28.30, 68.20]],
+])
+
 const PROFILES: Readonly<Record<ImageRoomId, PercentProfile>> = Object.freeze({
   library: {
     layers: [{ z: 0, walkable: [[
@@ -34,12 +60,9 @@ const PROFILES: Readonly<Record<ImageRoomId, PercentProfile>> = Object.freeze({
     // isometric surface as solid; using only the near edge made an otherwise
     // valid A* segment appear to walk over the desk in the flattened artwork.
     obstacles: [
-      [[50.36, 23.38], [53.53, 20.19], [68.48, 34.33], [65.31, 37.94]],
-      [[39.53, 30.50], [42.88, 27.10], [58.49, 44.85], [55.14, 48.46]],
-      [[28.59, 40.70], [31.64, 37.19], [47.37, 52.92], [44.02, 56.54]],
-      [[14.71, 49.20], [18.06, 45.90], [33.55, 61.96], [30.20, 65.57]],
-      [[57.00, 59.50], [60.00, 55.90], [76.00, 72.10], [72.70, 75.60]],
-      [[44.32, 68.20], [47.55, 64.72], [62.98, 80.66], [59.63, 84.27]],
+      ...LIBRARY_TABLETOPS,
+      ...LIBRARY_TABLE_END_CAPS,
+      ...LIBRARY_TABLE_END_BODY_CLEARANCE,
       [[0, 27.630], [36.124, 18.704], [37.081, 36.132], [0, 56.961]],
       [[34.20, 26.90], [37.30, 26.90], [37.30, 41.40], [34.20, 41.40]],
       [[37.60, 24.60], [40.10, 24.60], [40.10, 36.10], [37.60, 36.10]],
@@ -49,14 +72,7 @@ const PROFILES: Readonly<Record<ImageRoomId, PercentProfile>> = Object.freeze({
     // narrow ground-contact footprints. This keeps a desk click from being
     // interpreted as a reachable floor destination while leaving the chair
     // approach aisles available to A*.
-    interactionObstacles: [
-      [[50.36, 23.38], [53.53, 20.19], [68.48, 34.33], [65.31, 37.94]],
-      [[39.53, 30.50], [42.88, 27.10], [58.49, 44.85], [55.14, 48.46]],
-      [[28.59, 40.70], [31.64, 37.19], [47.37, 52.92], [44.02, 56.54]],
-      [[14.71, 49.20], [18.06, 45.90], [33.55, 61.96], [30.20, 65.57]],
-      [[57.00, 59.50], [60.00, 55.90], [76.00, 72.10], [72.70, 75.60]],
-      [[44.32, 68.20], [47.55, 64.72], [62.98, 80.66], [59.63, 84.27]],
-    ],
+    interactionObstacles: [...LIBRARY_TABLETOPS, ...LIBRARY_TABLE_END_CAPS, ...LIBRARY_TABLE_END_BODY_CLEARANCE],
   },
   'chim-alan': {
     layers: [
@@ -112,14 +128,15 @@ const PROFILES: Readonly<Record<ImageRoomId, PercentProfile>> = Object.freeze({
   },
   'learning-lab': {
     layers: [{ z: 0, walkable: [[
-      [3, 55], [18, 40], [45, 27], [58, 28], [96, 48], [99, 77], [76, 94], [22, 92], [3, 71],
+      [6, 56], [18, 46], [45, 28], [65, 31], [96, 55], [98, 83], [73, 98], [22, 98], [6, 78],
     ]] }],
     obstacles: [
-      [[20, 33], [39, 25], [42, 43], [24, 49]],
-      [[46, 27], [58, 25], [58, 41], [46, 43]],
-      [[62, 29], [83, 30], [83, 48], [62, 48]],
-      [[84, 45], [99, 46], [99, 64], [84, 62]],
-      [[18, 60], [34, 60], [34, 82], [18, 82]],
+      [[17, 50], [38, 61], [37, 66], [16, 55]],
+      [[35, 40], [56, 50], [55, 55], [34, 45]],
+      [[47, 31], [66, 41], [65, 46], [46, 36]],
+      [[50, 53], [68, 63], [67, 69], [49, 59]],
+      [[63, 39], [84, 49], [83, 61], [62, 51]],
+      [[87, 37], [100, 43], [100, 57], [87, 51]],
     ],
   },
 })

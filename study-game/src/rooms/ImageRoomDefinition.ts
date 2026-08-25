@@ -112,7 +112,16 @@ function withResolvedNodes(room: ImageRoomDefinition): ImageRoomDefinition {
 
 export const IMAGE_ROOMS: Readonly<Record<ImageRoomId, ImageRoomDefinition>> = Object.freeze({
   library: withResolvedNodes(rooms.library),
-  'chim-alan': withResolvedNodes(Object.freeze({ ...rooms['chim-alan'], title: 'Çim Alan' })),
+  'chim-alan': withResolvedNodes(Object.freeze({
+    ...rooms['chim-alan'],
+    title: 'Çim Alan',
+    image: Object.freeze({
+      url: 'assets/rooms/chim-alan-wide-360-restaurant-r3.png',
+      width: 1672,
+      height: 941,
+      sha256: '1875557012c754fd8f8e3a346dc31b5d8d003e530697bec6674ce08becc12310',
+    }),
+  })),
   'sports-center': withResolvedNodes(CURATED_CAMPUS_ROOMS['sports-center']),
   auditorium: withResolvedNodes(CURATED_CAMPUS_ROOMS.auditorium),
   'learning-lab': withResolvedNodes(CURATED_CAMPUS_ROOMS['learning-lab']),

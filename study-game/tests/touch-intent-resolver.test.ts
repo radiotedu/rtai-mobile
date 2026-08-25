@@ -29,6 +29,40 @@ describe('resolveTouchIntent', () => {
     })
   })
 
+  it('accepts a small explicit seat slop and still rejects distant furniture clicks', () => {
+    expect(resolveTouchIntent(baseInput({
+      world: { x: 124, y: 100 },
+      seatHitSlop: 9,
+    }))).toEqual({
+      kind: 'sit', seatId: 'seat-a', target: { x: 110, y: 102 },
+    })
+    expect(resolveTouchIntent(baseInput({
+      world: { x: 130, y: 100 },
+      seatHitSlop: 9,
+    }))).toEqual({
+      kind: 'walk', target: { x: 130, y: 100 },
+    })
+  })
+
+  it('chooses the closest seat when forgiving hit areas overlap', () => {
+    expect(resolveTouchIntent(baseInput({
+      world: { x: 122, y: 100 },
+      seatHitSlop: 12,
+      seats: [
+        { id: 'seat-a', target: { x: 110, y: 102 }, hitArea: seatArea, reachable: true, occupied: false },
+        {
+          id: 'seat-b',
+          target: { x: 130, y: 102 },
+          hitArea: [{ x: 126, y: 94 }, { x: 138, y: 94 }, { x: 138, y: 106 }, { x: 126, y: 106 }],
+          reachable: true,
+          occupied: false,
+        },
+      ],
+    }))).toEqual({
+      kind: 'sit', seatId: 'seat-b', target: { x: 130, y: 102 },
+    })
+  })
+
   it('only toggles stand when the current seat itself is clicked', () => {
     expect(resolveTouchIntent(baseInput({ currentSeatId: 'seat-a' }))).toEqual({ kind: 'stand' })
     expect(resolveTouchIntent(baseInput({

@@ -9,19 +9,21 @@ import { RoomNavigationField, pointInPolygon } from '../src/pathfinding/RoomNavi
 import { buildMotionPath, sampleMotionPath } from '../src/game/PathMotion'
 import { IMAGE_ROOMS, roomPointToPixel } from '../src/rooms/ImageRoomDefinition'
 import { roomCatPatrolPoints } from '../src/rooms/RoomCatPatrols'
-import { roomNavigationGeometry } from '../src/rooms/RoomNavigationProfiles'
+import { roomInteractionObstacles, roomNavigationGeometry } from '../src/rooms/RoomNavigationProfiles'
 import { resolveSeatGeometry } from '../src/rooms/RoomSeatGeometry'
 
 const ROOM_HASHES = Object.freeze({
   'library-wide.png': '50d1b58448c156cc6c47b823b450ffb26c43815ff6f346f27b6f1705b2d8c993',
-  'chim-alan-wide.png': 'abb1df4376645a611549a2a95fb698cab9ccb4d192805779b5e31047ea378abe',
+  'chim-alan-wide.png': '84afe78fbf7fb502bea4646d402b638f4ade4e29969ed41fc6a103c2c5018ebf',
+  'chim-alan-wide-360-restaurant-r3.png': '1875557012c754fd8f8e3a346dc31b5d8d003e530697bec6674ce08becc12310',
   'tedu-sports-center-wide.png': '4ad9bb8bbeb6a2a5ff55d15ef4a99b25872f4092d2fbf1ddc5e371f0c12e9313',
   'fatma-semih-akbil-auditorium-wide.png': '75c424a223515a3bd455c6a4c09694db28bd33dcdb472484ecb67da91454ff9c',
   'tedu-learning-lab-wide.png': '3a9dc739ad7d94a4a422c36a30841b8e6a417d8e1025ae69912c6eee5cc92bcc',
+  'tedu-pedagogy-learning-lab-wide-r2.png': '572912669e48aaa3e72c1b6f532d28111566b854af7377d96b4516a1d4785e32',
 })
 
 describe('room navigation fields', () => {
-  it('keeps the five current room maps byte-identical', async () => {
+  it('keeps the current room maps and the source-backed Çim revision byte-identical', async () => {
     for (const [filename, expected] of Object.entries(ROOM_HASHES)) {
       const bytes = await readFile(path.join(process.cwd(), 'public', 'assets', 'rooms', filename))
       expect(createHash('sha256').update(bytes).digest('hex'), filename).toBe(expected)
@@ -171,6 +173,34 @@ describe('room navigation fields', () => {
       ['rear wall', 50, 12],
     ] as const) {
       expect(field.isWalkable(point(x, y)), label).toBe(false)
+    }
+  })
+
+  it('blocks every visible Library desk end without closing chair aisles', () => {
+    const room = IMAGE_ROOMS.library
+    const field = new RoomNavigationField({
+      width: room.image.width,
+      height: room.image.height,
+      geometry: roomNavigationGeometry(room),
+      clearance: 18,
+    })
+    const interactionObstacles = roomInteractionObstacles(room)
+    const deskEndProbes = [
+      { x: 1_135, y: 372 },
+      { x: 950, y: 470 },
+      { x: 770, y: 550 },
+      { x: 535, y: 635 },
+      { x: 1_250, y: 730 },
+      { x: 1_035, y: 810 },
+    ]
+
+    const bodyClearanceProbes = [
+      { x: 505, y: 661 },
+    ]
+
+    for (const point of [...deskEndProbes, ...bodyClearanceProbes]) {
+      expect(field.isWalkable(point), JSON.stringify(point)).toBe(false)
+      expect(interactionObstacles.some((polygon) => pointInPolygon(point, polygon)), JSON.stringify(point)).toBe(true)
     }
   })
 

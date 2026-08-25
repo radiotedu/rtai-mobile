@@ -34,7 +34,7 @@ async function complete() {
     await exchangeStudyTeduCode(code)
     const session = await verifyStudyAccountSession()
     if (!session.user?.id) throw new Error('The signed-in account could not be verified.')
-    status.textContent = 'Account verified. Returning to Study World…'
+    status.textContent = 'Account verified. Returning to Social World…'
     notifyOpener()
     setTimeout(() => window.close(), 250)
   } catch (error) {

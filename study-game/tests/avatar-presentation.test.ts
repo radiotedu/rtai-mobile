@@ -23,8 +23,8 @@ describe('canonical avatar presentation', () => {
     expect(avatarUpperBodyCrop('stand')).toBeNull()
   })
 
-  it('uses ImageGen-derived art for the matching RadioTEDU outfit', () => {
-    expect(shouldUseCanonicalAvatar(canonical)).toBe(true)
+  it('uses the aligned wardrobe layers for the complete RadioTEDU outfit', () => {
+    expect(shouldUseCanonicalAvatar(canonical)).toBe(false)
   })
 
   it.each([

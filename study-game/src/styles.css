@@ -397,6 +397,7 @@ button { cursor: pointer; }
 .swatch-ivory { background: #e7d6b7; }
 .swatch-gold { background: #d9ad3d; }
 .swatch-plum { background: #8f4058; }
+.swatch-ivory-red { background: linear-gradient(135deg, #f3eee4 0 62%, #ed1c2d 62%); }
 
 .chat-dock {
   position: absolute;
@@ -1202,6 +1203,7 @@ button { cursor: pointer; }
 .panel-intro { margin: 0; padding: 13px 14px; color: #9aaca7; font-size: 10px; line-height: 1.5; border-bottom: 1px solid #344140; }
 .event-list { display: flex; padding: 10px; flex-direction: column; gap: 9px; }
 .event-list[hidden],
+.arcade-list[hidden],
 .study-path-list[hidden] { display: none !important; }
 .event-card { display: flex; padding: 12px; flex-direction: column; gap: 7px; border: 1px solid #40504e; border-radius: 7px; background: #162125; }
 .event-card[data-status="active"] { border-color: #659f87; box-shadow: inset 3px 0 #79d0aa; }
@@ -1217,6 +1219,41 @@ button { cursor: pointer; }
 .events-panel > footer { display: flex; margin: 0 10px 12px; padding: 11px; align-items: center; gap: 8px; border: 1px solid #3a4b48; border-radius: 6px; color: #91a39f; background: #111a1d; font-size: 9px; line-height: 1.4; }
 .events-panel > footer svg { width: 17px; flex: 0 0 auto; color: #71c6a1; }
 .events-panel > header > span { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+
+.arcade-list { display: grid; padding: 10px; overflow-y: auto; }
+.pool-dive { display: grid; padding: 12px; gap: 10px; border: 1px solid #3f5751; border-radius: 4px; background: #121e21; }
+.pool-dive > header { display: flex; min-height: 38px; padding: 0; align-items: center; justify-content: space-between; gap: 10px; border: 0; }
+.pool-dive > header > span { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.pool-dive > header small { color: #82a59a; font-size: 7px; font-weight: 900; letter-spacing: 1px; }
+.pool-dive > header strong { color: #f0f6f3; font-size: 15px; }
+.pool-dive > header b { color: #e0c664; font-size: 8px; white-space: nowrap; }
+.pool-dive > p { margin: 0; color: #9eb0aa; font-size: 9px; line-height: 1.5; }
+.pool-dive-scoreboard { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #30443f; background: #0c1517; }
+.pool-dive-scoreboard > span { display: flex; min-height: 45px; padding: 7px; align-items: center; justify-content: center; flex-direction: column; border-right: 1px solid #30443f; text-align: center; }
+.pool-dive-scoreboard > span:last-child { border-right: 0; }
+.pool-dive-scoreboard small { color: #789088; font-size: 6px; font-weight: 900; letter-spacing: .8px; }
+.pool-dive-scoreboard strong { margin-top: 3px; color: #e9f2ee; font-size: 10px; }
+.pool-dive-stage { position: relative; display: grid; min-height: 205px; padding: 18px 12px 12px; align-content: end; gap: 14px; overflow: hidden; border: 1px solid #476960; border-radius: 3px; background: #132a30; }
+.pool-dive-stage::before { position: absolute; inset: 0 0 auto; height: 56%; content: ''; background: #183b43; }
+.pool-dive-stage::after { position: absolute; top: 53%; right: 0; left: 0; height: 2px; content: ''; background: #80cdb3; box-shadow: 0 7px #315e60, 0 14px #234b52; }
+.pool-water { position: absolute; right: 0; bottom: 0; left: 0; display: grid; height: 45%; grid-template-columns: repeat(3, 1fr); opacity: .72; }
+.pool-water i { border-right: 1px solid #2f6164; background: #143a43; }
+.pool-water i:last-child { border-right: 0; }
+.pool-dive-stage > strong { position: relative; z-index: 1; justify-self: center; padding: 7px 12px; border: 1px solid #6fae99; border-radius: 2px; color: #dff7ed; background: #18342f; font-size: 11px; letter-spacing: 1px; }
+.pool-lanes { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.pool-lanes button { display: flex; min-height: 58px; padding: 7px; align-items: center; justify-content: center; flex-direction: column; gap: 4px; border: 1px solid #46736a; border-radius: 3px; color: #d6e7e1; background: #17332f; }
+.pool-lanes button span { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #668f82; border-radius: 50%; font: 900 8px Consolas, monospace; }
+.pool-lanes button b { font-size: 7px; letter-spacing: .7px; }
+.pool-lanes button:hover:not(:disabled),
+.pool-lanes button[data-target="true"] { border-color: #96e3c4; color: #0b221a; background: #7bc9a8; }
+.pool-lanes button:disabled { cursor: default; opacity: .58; }
+.pool-dive[data-arcade-state="active"] .pool-lanes button { opacity: 1; }
+.pool-dive[data-last-correct="true"] .pool-dive-stage { border-color: #8ce0bd; }
+.pool-dive[data-last-correct="false"] .pool-dive-stage { border-color: #a86464; }
+.pool-dive-result { min-height: 28px; padding: 7px 8px; border-left: 2px solid #547b70; background: #0e181a; }
+.pool-dive-start { min-height: 42px; border: 1px solid #77bda2; border-radius: 3px; color: #0c211a; background: #82d4b1; font-size: 9px; font-weight: 900; letter-spacing: .4px; }
+.pool-dive-start:hover:not(:disabled) { background: #9be3c5; }
+.pool-dive-start:disabled { color: #82958f; border-color: #394b47; background: #202b29; cursor: default; }
 
 @media (max-width: 700px) {
   .world-rail {
@@ -1382,6 +1419,10 @@ button { cursor: pointer; }
 .study-entry-kicker { margin: clamp(20px, 4vh, 34px) 0 8px; color: #8ca29d; font-size: 7px; font-weight: 900; letter-spacing: 1.5px; }
 .study-entry-card h1 { margin: 0; max-width: 410px; color: #f0f5f2; font-size: clamp(28px, 3.4vw, 46px); line-height: .98; letter-spacing: -1.6px; }
 .study-entry-copy { max-width: 400px; margin: 14px 0 0; color: #9db0ab; font-size: 11px; line-height: 1.58; }
+.study-boot-progress { width: min(100%, 320px); height: 5px; margin-top: 24px; overflow: hidden; border: 1px solid #30433e; border-radius: 999px; background: #111d1f; }
+.study-boot-progress > i { display: block; width: 42%; height: 100%; border-radius: inherit; background: #79d5b2; animation: study-boot-progress 1.15s ease-in-out infinite alternate; }
+@keyframes study-boot-progress { from { transform: translateX(-15%); } to { transform: translateX(155%); } }
+@media (prefers-reduced-motion: reduce) { .study-boot-progress > i { width: 100%; animation: none; opacity: .72; } }
 .study-entry-features { display: flex; margin-top: 16px; gap: 6px; flex-wrap: wrap; }
 .study-entry-features span { display: inline-flex; max-width: none; min-height: 26px; padding: 0 8px; align-items: center; gap: 5px; border: 1px solid #30433e; border-radius: 2px; color: #c5d3ce; background: #162321; font-size: 8px; font-weight: 800; }
 .study-entry-features svg { width: 12px; height: 12px; color: #83cdb1; }
@@ -2290,6 +2331,20 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
 .chat-empty strong { color: #dce6e2; font-size: 12px; }
 .chat-empty span { font-size: 9px; }
 
+.chat-rules { border-block: 1px solid #30413e; background: rgba(12, 23, 23, .72); }
+.chat-rules summary { display: flex; min-height: 38px; padding: 7px 13px; align-items: center; gap: 9px; color: #c8d8d3; cursor: pointer; list-style: none; }
+.chat-rules summary::-webkit-details-marker { display: none; }
+.chat-rules summary > svg { width: 15px; height: 15px; color: var(--hud-mint); }
+.chat-rules summary > span { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.chat-rules summary strong { font-size: 9px; letter-spacing: .04em; text-transform: uppercase; }
+.chat-rules summary small { color: #78908a; font-size: 7px; }
+.chat-rules .chat-rules-chevron { width: 13px; height: 13px; color: #78908a; transition: transform .18s ease; }
+.chat-rules[open] .chat-rules-chevron { transform: rotate(180deg); }
+.chat-rules ul { display: grid; margin: 0; padding: 10px 16px 6px 28px; gap: 6px; color: #b7c8c3; font-size: 8px; line-height: 1.45; }
+.chat-rules li::marker { color: var(--hud-mint); }
+.chat-rules p { margin: 0; padding: 4px 14px 10px; color: #718883; font-size: 7px; line-height: 1.45; }
+.chat-rules summary:focus-visible { outline: 2px solid var(--hud-mint); outline-offset: -3px; }
+
 .chat-feedback { padding: 7px 14px 0; color: #708782; font-size: 8px; }
 .chat-feedback[data-state="sending"] { color: var(--hud-mint); }
 .chat-feedback[data-state="error"] { color: #ff9098; }
@@ -2496,7 +2551,7 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
 
   .action-dock {
     right: max(8px, env(safe-area-inset-right));
-    bottom: max(2px, env(safe-area-inset-bottom));
+    bottom: max(6px, env(safe-area-inset-bottom));
     left: max(8px, env(safe-area-inset-left));
     justify-content: center;
     gap: 2px;
@@ -2699,6 +2754,235 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
   .chat-dock {
     height: min(52dvh, 480px);
     max-height: min(52dvh, 480px);
+  }
+}
+
+/* 2026-08-21 readability pass.
+   Keep the game world dominant while making desktop controls and account entry
+   comfortably readable. Mobile game controls already occupy the correct
+   touch-first scale, so only its authentication controls receive a small
+   accessibility lift. */
+@media (min-width: 701px) {
+  .study-gate {
+    grid-template-columns: minmax(0, 1fr) minmax(500px, 37.5vw);
+  }
+
+  .study-entry-card {
+    padding: clamp(30px, 5vh, 56px) clamp(34px, 3.6vw, 52px);
+  }
+
+  .study-entry-brand { gap: 12px; }
+  .study-entry-brand > span { width: 44px; height: 44px; }
+  .study-entry-brand > span svg { width: 24px; height: 24px; }
+  .study-entry-brand b strong { font-size: 18px; }
+  .study-entry-brand b small { font-size: 8px; }
+  .study-entry-kicker { margin-top: clamp(24px, 4.2vh, 38px); font-size: 9px; }
+  .study-entry-card h1 { max-width: 450px; font-size: clamp(34px, 3.5vw, 50px); }
+  .study-entry-copy { max-width: 440px; font-size: 13px; line-height: 1.58; }
+  .study-entry-features span { min-height: 32px; padding-inline: 10px; font-size: 9px; }
+  .study-entry-features svg { width: 14px; height: 14px; }
+  .study-entry-actions { margin-top: clamp(24px, 4vh, 36px); gap: 10px; }
+  .study-entry-actions a,
+  .study-entry-actions button {
+    min-height: 60px;
+    padding: 9px 14px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .study-entry-actions a > svg,
+  .study-entry-actions button > svg { width: 22px; height: 22px; }
+  .study-entry-actions a strong,
+  .study-entry-actions button strong { font-size: 13px; }
+  .study-entry-actions a small,
+  .study-entry-actions button small { font-size: 9px; }
+  .study-entry-security { margin-top: 18px; }
+  .study-entry-security strong { font-size: 10px; }
+  .study-entry-security small { font-size: 8px; line-height: 1.45; }
+  .study-entry-help { margin-top: 14px; font-size: 9px; }
+
+  .study-auth-back { min-height: 30px; font-size: 10px; }
+  .study-auth-tabs { margin-top: 20px; padding: 4px; }
+  .study-auth-tabs button { min-height: 44px; font-size: 11px; }
+  .study-auth-form { margin-top: 16px; gap: 12px; }
+  .study-auth-form > label:not(.study-auth-legal) { gap: 7px; font-size: 10px; }
+  .study-auth-form input:not([type="checkbox"]) {
+    min-height: 48px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .study-auth-legal,
+  .study-auth-legal-note { font-size: 9px; line-height: 1.55; }
+  .study-auth-submit { min-height: 54px; padding-inline: 15px; font-size: 12px; }
+  .study-auth-divider { margin: 17px 0 12px; font-size: 8px; }
+  .study-auth-tedu {
+    min-height: 56px;
+    padding: 8px 12px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 11px;
+  }
+  .study-auth-tedu > b { width: 34px; height: 34px; font-size: 13px; }
+  .study-auth-tedu strong { font-size: 11px; }
+  .study-auth-tedu small { font-size: 9px; }
+
+  .study-bar {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    height: 58px;
+    padding: 5px 7px;
+    grid-template-columns: 146px 154px minmax(38px, 1fr) 196px 164px 86px 82px 150px;
+    gap: 5px;
+  }
+  .study-brand { height: 44px; padding-right: 10px; gap: 8px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .study-brand strong { font-size: 13px; }
+  .study-brand small { font-size: 8px; }
+  .room-context { height: 44px; padding-inline: 8px; }
+  .room-context > span svg { width: 12px; height: 12px; }
+  .room-context > span small { font-size: 8px; }
+  .room-title { font-size: 14px; }
+  .game-status { padding-inline: 8px; font-size: 9px; }
+
+  .study-clock {
+    height: 44px;
+    padding: 4px 8px;
+    grid-template-columns: 32px minmax(74px, 1fr) auto auto;
+    gap: 6px;
+  }
+  .focus-icon { width: 30px; height: 30px; }
+  .focus-icon svg { width: 17px; height: 17px; }
+  .focus-copy > small { font-size: 7px; }
+  .focus-copy > strong { font-size: 14px; }
+  .focus-metric { min-width: 30px; padding-left: 6px; }
+  .focus-metric b { font-size: 9px; }
+  .focus-metric small { font-size: 6px; }
+
+  .radio-mini { height: 44px; padding: 4px 6px; grid-template-columns: 32px minmax(0, 1fr) 18px 13px; }
+  .radio-toggle { width: 32px; height: 32px; }
+  .radio-copy small { font-size: 7px; }
+  .radio-copy strong { font-size: 10px; }
+  .radio-copy b { font-size: 7px; }
+
+  .authority-chip,
+  .point-balance,
+  .account-chip { height: 44px; padding-inline: 8px; gap: 6px; }
+  .authority-chip svg,
+  .point-balance > svg { width: 16px; height: 16px; }
+  .authority-chip span small,
+  .point-balance span small { font-size: 7px; }
+  .point-balance strong { font-size: 13px; }
+  .account-avatar { width: 32px; height: 32px; font-size: 11px; }
+  .account-chip span strong { max-width: 98px; font-size: 9px; }
+
+  .world-rail {
+    top: 74px;
+    left: 8px;
+    width: 192px;
+    padding: 5px;
+  }
+  .world-rail .room-tabs { gap: 4px; }
+  .world-rail .room-tabs button {
+    height: 40px;
+    padding: 4px 8px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .room-icon { width: 26px; height: 26px; }
+  .room-icon svg { width: 15px; height: 15px; }
+  .world-rail .room-tabs button > span:last-child { font-size: 10px; }
+  .world-rail .study-mission {
+    margin-top: 5px;
+    padding: 8px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 7px;
+  }
+  .world-rail .mission-icon { width: 28px; height: 28px; }
+  .world-rail .study-mission small { font-size: 7px; }
+  .world-rail .study-mission strong { font-size: 9px; }
+  .world-rail .mission-meta b { font-size: 7px; }
+
+  .room-arrival {
+    top: 74px;
+    left: 208px;
+    width: 252px;
+    min-height: 58px;
+    padding: 8px 10px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 9px;
+  }
+  .room-arrival-icon { width: 36px; height: 36px; }
+  .room-arrival-icon svg { width: 18px; height: 18px; }
+  .room-arrival small { font-size: 7px; }
+  .room-arrival strong { font-size: 13px; }
+  .room-arrival b { font-size: 8px; }
+
+  .action-dock {
+    bottom: 2px;
+    height: 66px;
+    padding: 5px;
+    gap: 3px;
+    overflow: visible;
+  }
+  .action-dock .dock-button {
+    width: 62px;
+    min-width: 62px;
+    height: 54px;
+    min-height: 54px;
+  }
+  .dock-icon { width: 22px; height: 22px; }
+  .dock-icon svg { width: 21px; height: 21px; }
+  .dock-button .button-label { font-size: 8px; }
+  .dock-badge { width: 16px; min-width: 16px; height: 16px; font-size: 8px; }
+
+  .hud-sheet,
+  .presence-panel,
+  .events-panel,
+  .wardrobe-panel,
+  .chat-dock {
+    top: 74px;
+    right: 8px;
+    bottom: 84px;
+    width: 350px;
+  }
+  .hud-sheet > header { min-height: 54px; padding: 8px 10px; }
+  .hud-sheet > header strong { font-size: 13px; }
+  .hud-sheet > header small { font-size: 8px; }
+  .panel-intro { padding: 10px 12px; font-size: 10px; }
+  .close-button { width: 32px; height: 32px; }
+}
+
+@media (max-width: 700px) {
+  .study-auth-form input:not([type="checkbox"]) { min-height: 44px; font-size: 13px; }
+  .study-auth-submit { min-height: 50px; font-size: 11px; }
+  .study-auth-tedu { min-height: 52px; }
+  .study-auth-legal,
+  .study-auth-legal-note { font-size: 8px; }
+  .study-entry-security small { font-size: 8px; }
+}
+
+/* Screenshot-regression guard: the game must always fit the actual viewport.
+   A legacy 320/420px minimum pushed the action dock below short landscape
+   windows and embedded frames. Keep the full dock, its border, and its focus
+   treatment inside a small safe inset instead of growing the document. */
+#study-game {
+  min-height: 0;
+}
+
+.action-dock {
+  box-sizing: border-box;
+}
+
+@media (max-height: 420px) {
+  .action-dock {
+    bottom: max(6px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 12px);
+    overflow: hidden;
+  }
+
+  .dock-button:hover,
+  .dock-button:focus-visible {
+    transform: none;
   }
 }
 
@@ -3226,8 +3510,28 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
 .navigator-room-copy em { margin-top: 5px; color: #b9ccc5; font-size: 6px; font-style: normal; font-weight: 900; letter-spacing: .7px; }
 .navigator-room-card[data-current="true"] .navigator-room-copy em { color: var(--room-accent); }
 .navigator-empty { grid-column: 1 / -1; padding: 24px 12px; color: #91a59f; font-size: 9px; text-align: center; }
+.navigator-tour-link {
+  display: flex;
+  min-height: 48px;
+  margin: 0 10px 12px;
+  padding: 8px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #405650;
+  border-radius: 3px;
+  color: #eef5f2;
+  background: linear-gradient(135deg, #162326, #10191b);
+  text-decoration: none;
+}
+.navigator-tour-link:hover,
+.navigator-tour-link:focus-visible { border-color: #83d8b5; outline: none; box-shadow: 0 0 0 2px rgb(131 216 181 / 10%); }
+.navigator-tour-link span { display: grid; gap: 2px; }
+.navigator-tour-link small { color: #83d8b5; font-size: 6px; font-weight: 900; letter-spacing: .8px; }
+.navigator-tour-link strong { font-size: 10px; }
+.navigator-tour-link b { color: #83d8b5; font-size: 14px; }
 
-.events-view-tabs { display: grid; margin: 8px 10px 0; padding: 3px; grid-template-columns: 1fr 1fr; gap: 3px; border: 1px solid #354a45; border-radius: 3px; background: #0c1517; }
+.events-view-tabs { display: grid; margin: 8px 10px 0; padding: 3px; grid-template-columns: repeat(3, 1fr); gap: 3px; border: 1px solid #354a45; border-radius: 3px; background: #0c1517; }
 .events-view-tabs button { height: 30px; border: 0; border-radius: 2px; color: #8ea49e; background: transparent; font-size: 8px; font-weight: 900; }
 .events-view-tabs button[aria-selected="true"] { color: #13231e; background: #83d8b5; }
 .study-path-list { display: grid; padding: 0 10px 12px; gap: 7px; overflow-y: auto; }
@@ -3265,6 +3569,11 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
   .navigator-room-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .navigator-room-card { min-height: 118px; }
   .navigator-room-copy b { display: none; }
+  .rtac .rtac__settings {
+    right: 8px !important;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: 44px !important;
+  }
   .action-dock { width: min-content; max-width: calc(100vw - 12px); }
   .action-dock .dock-button { width: 54px; min-width: 54px; }
   .chat-reactions { padding-right: 9px; padding-left: 9px; }
@@ -3395,5 +3704,316 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
     left: 6px;
     width: auto;
     max-height: min(460px, calc(100dvh - 84px));
+  }
+}
+
+/* Final desktop HUD sizing guard: keep the enlarged controls inside their frames. */
+@media (min-width: 701px) {
+  .study-bar {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    height: 58px;
+    padding: 5px 7px;
+    grid-template-columns: 146px 154px minmax(38px, 1fr) 196px 164px 86px 82px 150px;
+    gap: 5px;
+  }
+
+  .study-brand {
+    height: 44px;
+    padding-right: 10px;
+    gap: 8px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand-mark svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .study-brand strong {
+    font-size: 13px;
+  }
+
+  .study-brand small {
+    font-size: 8px;
+  }
+
+  .room-context {
+    height: 44px;
+    padding-inline: 8px;
+  }
+
+  .room-context > span svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .room-context > span small {
+    font-size: 8px;
+  }
+
+  .room-title {
+    font-size: 14px;
+  }
+
+  .game-status {
+    padding-inline: 8px;
+    font-size: 9px;
+  }
+
+  .study-clock {
+    height: 44px;
+    padding: 4px 8px;
+    grid-template-columns: 32px minmax(74px, 1fr) auto auto;
+    gap: 6px;
+  }
+
+  .focus-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .focus-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .focus-copy > small {
+    font-size: 7px;
+  }
+
+  .focus-copy > strong {
+    font-size: 14px;
+  }
+
+  .focus-metric {
+    min-width: 30px;
+    padding-left: 6px;
+  }
+
+  .focus-metric b {
+    font-size: 9px;
+  }
+
+  .focus-metric small {
+    font-size: 6px;
+  }
+
+  .radio-mini {
+    height: 44px;
+    padding: 4px 6px;
+    grid-template-columns: 32px minmax(0, 1fr) 18px 13px;
+  }
+
+  .radio-toggle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .radio-copy small {
+    font-size: 7px;
+  }
+
+  .radio-copy strong {
+    font-size: 10px;
+  }
+
+  .radio-copy b {
+    font-size: 7px;
+  }
+
+  .authority-chip,
+  .point-balance,
+  .account-chip {
+    height: 44px;
+    padding-inline: 8px;
+    gap: 6px;
+  }
+
+  .world-rail {
+    top: 74px;
+    left: 8px;
+    width: 192px;
+    padding: 5px;
+  }
+
+  .world-rail .room-tabs {
+    gap: 4px;
+  }
+
+  .world-rail .room-tabs button {
+    height: 40px;
+    padding: 4px 8px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .room-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .room-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .world-rail .room-tabs button > span:last-child {
+    font-size: 10px;
+  }
+
+  .world-rail .study-mission {
+    margin-top: 5px;
+    padding: 8px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .room-arrival {
+    top: 74px;
+    left: 208px;
+    width: 252px;
+    min-height: 58px;
+  }
+
+  .action-dock {
+    bottom: 2px;
+    height: 66px;
+    padding: 5px;
+    gap: 3px;
+    overflow: visible;
+  }
+
+  .action-dock .dock-button {
+    width: 62px;
+    min-width: 62px;
+    height: 54px;
+    min-height: 54px;
+  }
+
+  .dock-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .dock-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .dock-button .button-label {
+    font-size: 8px;
+  }
+
+  .dock-badge {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+
+  .hud-sheet,
+  .people-panel,
+  .account-panel,
+  .shop-panel,
+  .settings-panel,
+  .player-card {
+    top: 74px;
+    right: 8px;
+    bottom: 84px;
+    width: 350px;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1200px) {
+  .study-bar {
+    grid-template-columns: 110px 120px minmax(18px, 1fr) 170px 150px 64px 116px;
+  }
+
+  .authority-chip {
+    display: none;
+  }
+
+  .account-chip span strong {
+    max-width: 72px;
+  }
+}
+
+/* Short landscape windows keep the full room interactive. The compact 3x2
+   control cluster sits in the overview camera's right letterbox instead of
+   covering authored chairs at the bottom of the room. */
+@media (max-height: 420px) and (orientation: landscape) {
+  .action-dock {
+    top: auto;
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    left: auto;
+    display: grid;
+    width: 142px;
+    max-width: calc(100vw - 12px);
+    height: auto;
+    padding: 3px;
+    grid-template-columns: repeat(3, 44px);
+    gap: 2px;
+    transform: none;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .action-dock .dock-button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    pointer-events: auto;
+  }
+
+  .action-dock .button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 700px) {
+  .world-rail .room-tabs {
+    height: 52px;
+    padding: 4px;
+  }
+
+  .world-rail .room-tabs button {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .study-clock {
+    top: max(66px, calc(env(safe-area-inset-top) + 66px));
+  }
+
+  .game-status,
+  .point-balance {
+    top: max(118px, calc(env(safe-area-inset-top) + 118px));
+  }
+
+  .radio-mini {
+    top: max(112px, calc(env(safe-area-inset-top) + 112px));
+    height: 52px;
+    grid-template-columns: 44px minmax(0, 1fr) 18px 13px;
+  }
+
+  .radio-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
   }
 }

@@ -1,21 +1,11 @@
 import type { AvatarAction, AvatarAppearance } from './AvatarAppearance'
 
-const CANONICAL_OUTFIT = Object.freeze({
-  bodyType: 'masc',
-  skinTone: 'warm',
-  hairId: 'short-hair',
-  hairColor: 'brown',
-  topId: 'radio-hoodie',
-  bottomId: 'black-cargos',
-  shoesId: 'sneakers',
-  hatId: 'bucket-hat',
-  accessoryId: null,
-}) satisfies AvatarAppearance
-
-export function shouldUseCanonicalAvatar(appearance: AvatarAppearance): boolean {
-  return Object.entries(CANONICAL_OUTFIT).every(([key, value]) => (
-    appearance[key as keyof AvatarAppearance] === value
-  ))
+export function shouldUseCanonicalAvatar(_appearance: AvatarAppearance): boolean {
+  // The legacy composed sprite uses a different direction order, silhouette and
+  // seated scale from the wearable sheets. Rendering every outfit through the
+  // same layer pipeline keeps clothing aligned when an item is equipped and
+  // prevents the avatar from flipping direction at the canonical combination.
+  return false
 }
 
 export function canonicalAvatarTextureKey(action: AvatarAction): string {

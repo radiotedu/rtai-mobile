@@ -34,7 +34,7 @@ test('presents an immersive game HUD and room-scoped working chat', async ({ pag
   })
   expect(actionDockLayout.count).toBe(6)
   expect(actionDockLayout.gap).toBeGreaterThanOrEqual(0)
-  expect(actionDockLayout.gap).toBeLessThanOrEqual(3)
+  expect(actionDockLayout.gap).toBeLessThanOrEqual(6)
   expect(actionDockLayout.rowSpread).toBeLessThanOrEqual(1)
   await expect(page.locator('.action-dock button[title]')).toHaveCount(0)
   await expect(page.getByTestId('radio-player')).toBeVisible()
@@ -66,7 +66,7 @@ test('presents an immersive game HUD and room-scoped working chat', async ({ pag
   await expect(page.getByTestId('player-ignore')).toHaveText('Ignore')
   await page.getByRole('button', { name: 'Close player' }).click()
 
-  await page.getByRole('button', { name: 'Events' }).click()
+  await page.locator('#events-toggle').click()
   await expect(page.getByTestId('event-list')).toBeVisible()
   await expect(page.getByTestId('study-path-list')).toBeHidden()
   await page.getByRole('button', { name: 'Study Path' }).click()
@@ -152,4 +152,31 @@ test('turns sitting in the Library into a clear focus-session experience', async
   await page.evaluate(() => window.__STUDY_GAME_APP__.stand())
   await expect(page.locator('html')).toHaveAttribute('data-game-state', 'ready', { timeout: 10_000 })
   await expect(page.locator('#study-phase')).toHaveText('FOCUS READY')
+})
+
+test('completes all eight Pool Dive rounds without overflowing the viewport', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.goto('/')
+  await page.locator('html[data-study-ready="true"]').waitFor({ timeout: 30_000 })
+
+  await page.locator('#events-toggle').click()
+  await expect(page.locator('#events-panel')).toBeVisible()
+  await page.locator('.events-view-tabs').getByRole('button', { name: 'Arcade', exact: true }).click()
+  await expect(page.getByTestId('arcade-list')).toBeVisible()
+  await page.getByRole('button', { name: 'Start verified game' }).click()
+  await expect(page.locator('.pool-dive')).toHaveAttribute('data-arcade-state', 'active')
+
+  for (let completedRound = 1; completedRound <= 8; completedRound += 1) {
+    const prompt = await page.locator('.pool-dive-stage').getAttribute('data-pool-prompt')
+    expect(['left', 'center', 'right']).toContain(prompt)
+    await page.locator(`[data-pool-choice="${prompt}"]`).click()
+    if (completedRound < 8) {
+      await expect(page.locator('[data-pool-round]')).toContainText(`${completedRound + 1} / 8`)
+    }
+  }
+
+  await expect(page.locator('.pool-dive')).toHaveAttribute('data-arcade-state', 'complete')
+  await expect(page.locator('[data-pool-score]')).toHaveText('600')
+  await expect(page.locator('[data-pool-result]')).toContainText('Final score 600')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0)
 })

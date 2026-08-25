@@ -2,6 +2,7 @@ export const STUDY_TERMS_VERSION = '2026-08-11'
 export const STUDY_PRIVACY_VERSION = '2026-08-11'
 
 const API_BASE = '/jukebox/api/v1/'
+const ACCOUNT_REQUEST_TIMEOUT_MS = 12_000
 
 type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
@@ -47,14 +48,30 @@ async function accountRequest<T>(
   const headers = new Headers(options.headers || {})
   headers.set('Accept', 'application/json')
   if (options.body) headers.set('Content-Type', 'application/json')
-  const response = await fetchImpl(`${API_BASE}${path.replace(/^\//, '')}`, {
-    ...options,
-    headers,
-    credentials: 'same-origin',
-  })
-  const payload = await response.json().catch(() => null) as ApiEnvelope<T> | null
-  if (!response.ok || payload?.success === false) throw new Error(errorMessage(payload, response.status))
-  return (payload && Object.prototype.hasOwnProperty.call(payload, 'data') ? payload.data : payload) as T
+  const timeoutController = typeof AbortController === 'undefined' || options.signal
+    ? null
+    : new AbortController()
+  const timeout = timeoutController
+    ? globalThis.setTimeout(() => timeoutController.abort(), ACCOUNT_REQUEST_TIMEOUT_MS)
+    : null
+  try {
+    const response = await fetchImpl(`${API_BASE}${path.replace(/^\//, '')}`, {
+      ...options,
+      headers,
+      credentials: 'same-origin',
+      signal: options.signal ?? timeoutController?.signal,
+    })
+    const payload = await response.json().catch(() => null) as ApiEnvelope<T> | null
+    if (!response.ok || payload?.success === false) throw new Error(errorMessage(payload, response.status))
+    return (payload && Object.prototype.hasOwnProperty.call(payload, 'data') ? payload.data : payload) as T
+  } catch (error) {
+    if (timeoutController?.signal.aborted) {
+      throw new Error('The RadioTEDU account service took too long to respond. Please try again.')
+    }
+    throw error
+  } finally {
+    if (timeout !== null) globalThis.clearTimeout(timeout)
+  }
 }
 
 export function isTeduEmailAddress(value: string): boolean {

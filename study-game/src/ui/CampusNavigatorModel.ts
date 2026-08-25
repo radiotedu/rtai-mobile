@@ -13,10 +13,10 @@ export type CampusRoomCard = Readonly<{
 
 export const CAMPUS_ROOM_CARDS: readonly CampusRoomCard[] = Object.freeze([
   Object.freeze({ id: 'library', title: 'Library', category: 'study', description: 'Quiet focus seats and study groups', imageUrl: 'assets/rooms/library-wide.png', accent: '#79d2ae' }),
-  Object.freeze({ id: 'chim-alan', title: 'Çim Alan', category: 'social', description: 'Open-air campus meetups and breaks', imageUrl: 'assets/rooms/chim-alan-wide.png', accent: '#91c865' }),
+  Object.freeze({ id: 'chim-alan', title: 'Çim Alan', category: 'social', description: 'Çim Amfi, campus restaurant and outdoor study', imageUrl: 'assets/rooms/chim-alan-wide-360-restaurant-r3.png', accent: '#91c865' }),
   Object.freeze({ id: 'sports-center', title: 'Sports Center', category: 'activity', description: 'Training, movement and team activities', imageUrl: 'assets/rooms/tedu-sports-center-wide.png', accent: '#78aee8' }),
   Object.freeze({ id: 'auditorium', title: 'Auditorium', category: 'events', description: 'Talks, broadcasts and campus events', imageUrl: 'assets/rooms/fatma-semih-akbil-auditorium-wide.png', accent: '#d48582' }),
-  Object.freeze({ id: 'learning-lab', title: 'Learning Lab', category: 'study', description: 'Creative reading, small-group learning and floor study', imageUrl: 'assets/rooms/tedu-learning-lab-wide.png', accent: '#e3a665' }),
+  Object.freeze({ id: 'learning-lab', title: 'Learning Lab', category: 'study', description: 'Pedagogy consoles and collaborative laboratory desks', imageUrl: 'assets/rooms/tedu-pedagogy-learning-lab-wide-r2.png', accent: '#e3a665' }),
 ])
 
 export function filterCampusRooms(

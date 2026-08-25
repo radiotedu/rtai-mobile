@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { calculateOverviewZoom, calculatePlayableZoom } from '../src/game/CameraFraming'
+import { calculateOverviewZoom, calculatePlayableZoom, cameraFramingMode } from '../src/game/CameraFraming'
 
 describe('calculateOverviewZoom', () => {
   it('fits the complete portrait room inside a desktop viewport', () => {
@@ -35,5 +35,28 @@ describe('calculatePlayableZoom', () => {
     expect(zoom).toBeCloseTo(1600 / 941)
     expect(941 * zoom).toBeGreaterThanOrEqual(1600)
     expect(760 * zoom).toBeGreaterThanOrEqual(900)
+  })
+})
+
+describe('cameraFramingMode', () => {
+  it('keeps a readable overview on a normal desktop stage', () => {
+    expect(cameraFramingMode(
+      { width: 1425, height: 900 },
+      { width: 1672, height: 941 },
+    )).toBe('overview')
+  })
+
+  it('follows the actor when a very short wide stage would make seated avatars tiny', () => {
+    expect(cameraFramingMode(
+      { width: 1425, height: 407 },
+      { width: 1672, height: 941 },
+    )).toBe('follow')
+  })
+
+  it('follows the actor on a phone viewport', () => {
+    expect(cameraFramingMode(
+      { width: 390, height: 844 },
+      { width: 1672, height: 941 },
+    )).toBe('follow')
   })
 })

@@ -1,21 +1,31 @@
 import './styles.css'
 
-import { ArrowRight, Armchair, BookOpen, CalendarDays, Check, Clock3, Coins, createIcons, EllipsisVertical, Flame, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Monitor, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, Trophy, UserPlus, UserRound, UsersRound, Volume2, X } from 'lucide'
+import { ArrowRight, Armchair, BookOpen, CalendarDays, Check, ChevronDown, Clock3, Coins, createIcons, EllipsisVertical, Flame, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Monitor, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, Trophy, UserPlus, UserRound, UsersRound, Volume2, X } from 'lucide'
 import { resolveStudyEntry, type StudyEntryConfig } from './account/StudyEntry'
 import { isTeduEmailAddress, loginStudyAccount, registerStudyAccount, startStudyTeduLogin, verifyStudyAccountSession } from './account/StudyAuthClient'
 import { createStudyWebBridge } from './account/StudyWebBridge'
 import { LocalStudyAdapter } from './adapters/LocalStudyAdapter'
 import { RadioTEDUStudyAdapter } from './adapters/RadioTEDUStudyAdapter'
 import { StudyAdapterError, type StudyAccount, type StudyAdapter, type StudyChatMessage, type StudyHomeSnapshot, type StudyLeaderboardPeriod, type StudyPlayerReportReason, type StudyPresence, type StudyRoomId, type StudyRoomInstance, type StudySession, type StudyTimeSummary, type StudyWorldEvent } from './adapters/StudyAdapter'
+import type { SocialArcadeChoice, SocialArcadeSnapshot } from './adapters/StudyAdapter'
 import { createStudyGame } from './game/StudyGame'
 import { IMAGE_ROOMS, type ImageRoomId } from './rooms/ImageRoomDefinition'
 import { buildStudyPath } from './progression/StudyPathModel'
 import { buildDailyFocusGoal } from './progression/DailyFocusGoal'
 import { GOLD_STORE_ITEMS } from './inventory/GoldStoreCatalog'
-import { studyGear } from './inventory/StudyGearStore'
+import { STUDY_GEAR, studyGear } from './inventory/StudyGearStore'
+import { resolveStudyRadioChannel, STUDY_RADIO_CHANNELS, type StudyRadioChannel } from './radio/StudyRadioChannels'
 import { IgnoredPlayerStore } from './safety/IgnoredPlayerStore'
 import { StudySessionTracker, type StudySessionSnapshot, type StudySessionTransport } from './session/StudySessionTracker'
 import { applyStudyRoomResponse } from './chat/StudyChatCoordinator'
+import { studyChatFailureFeedback } from './chat/StudyChatFeedback'
+
+const WORLD_ICONS = Object.freeze({
+  Armchair, BookOpen, CalendarDays, Check, ChevronDown, Coins, EllipsisVertical, Hand, HelpCircle,
+  Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Monitor, Pause,
+  Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, UserPlus,
+  UserRound, UsersRound, Volume2, X,
+})
 import { CAMPUS_ROOM_CARDS, filterCampusRooms, type CampusRoomCategory } from './ui/CampusNavigatorModel'
 import { HudPanelState, type HudPanelName } from './ui/HudPanelState'
 import { formatRoomInstanceLabel } from './ui/RoomInstancePresentation'
@@ -31,7 +41,6 @@ document.documentElement.dataset.roomId = initialRoom
 const secureBridge = readSecureBridge()
 const entry = resolveStudyEntry(window.RadioTEDUStudyEntry, window.location)
 const isHostedProduction = import.meta.env.PROD && window.location.protocol !== 'file:'
-const STUDY_RADIO_STREAM_URL = 'https://stream.radiotedu.com/radio?q=medium'
 type ActiveStudyBridge = Readonly<{
   apiBase: string
   fetchImpl: typeof fetch
@@ -99,6 +108,7 @@ async function bootStudy(secureBridge: ActiveStudyBridge | null, entryConfig: Re
     bindChat(adapter, safety)
     bindPresence(adapter, panels, safety)
     bindEvents(adapter, panels)
+    bindArcade(adapter)
     bindStudyPath(tracker, roomId)
     bindAttention(tracker)
     bindStudyClock(tracker, adapter)
@@ -138,8 +148,8 @@ async function renderStudyHome(
   ui!.innerHTML = `
     <section class="study-home" data-testid="study-home">
       <header class="home-topbar">
-        <a class="home-brand" href="?view=home" aria-label="RadioTEDU Study home"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU</strong><small>STUDY</small></b></a>
-        <nav aria-label="Study home sections"><a href="#home-rooms">Rooms</a><a href="#home-ranking">Ranking</a><a href="#home-events">Events</a></nav>
+        <a class="home-brand" href="?view=home" aria-label="RadioTEDU Social home"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU</strong><small>SOCIAL</small></b></a>
+        <nav aria-label="Social home sections"><a href="#home-rooms">Rooms</a><a href="#home-ranking">Ranking</a><a href="#home-events">Events</a></nav>
         <div class="home-account-summary"><span class="home-gold"><i data-lucide="coins" aria-hidden="true"></i><b id="home-gold"></b><small>Gold</small></span><a href="${entryConfig.accountUrl}" target="_top"><span id="home-account-avatar" aria-hidden="true"></span><b id="home-account-name"></b><i data-lucide="settings" aria-hidden="true"></i></a></div>
       </header>
       <main>
@@ -182,7 +192,7 @@ async function renderStudyHome(
           </section>
         </div>
       </main>
-      <footer class="home-footer"><span>RadioTEDU Study</span><b>Be kind · Study honestly · Help keep campus safe</b><a href="${entryConfig.helpUrl}" target="_top">Help &amp; safety</a></footer>
+      <footer class="home-footer"><span>RadioTEDU Social</span><b>Be kind · Play fairly · Study honestly · Keep campus safe</b><a href="${entryConfig.helpUrl}" target="_top">Help &amp; safety</a></footer>
     </section>
   `
 
@@ -315,7 +325,7 @@ function formatHomeDuration(seconds: number) {
 
 function renderEngineProof() {
   ui!.innerHTML = `
-    <header class="game-brand" aria-label="RadioTEDU Study"><strong>RadioTEDU</strong><span>STUDY</span></header>
+      <header class="game-brand" aria-label="RadioTEDU Social"><strong>RadioTEDU</strong><span>SOCIAL</span></header>
     <output id="game-status" class="game-status" data-state="loading" aria-live="polite">LOADING</output>
     <nav class="game-controls" aria-label="Engine proof controls">
       <button id="run-proof" class="icon-button" type="button" aria-label="Run movement proof" title="Run movement proof">▶</button>
@@ -328,7 +338,7 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean, e
   document.documentElement.dataset.studyAuthority = serverAuthoritative ? 'verified' : 'local'
   ui!.innerHTML = `
     <header class="study-bar" data-study-ui>
-      <div class="study-brand" aria-label="RadioTEDU Study"><span class="brand-mark"><i data-lucide="radio" aria-hidden="true"></i></span><span class="brand-copy"><strong>RadioTEDU</strong><small>STUDY</small></span></div>
+      <div class="study-brand" aria-label="RadioTEDU Social"><span class="brand-mark"><i data-lucide="radio" aria-hidden="true"></i></span><span class="brand-copy"><strong>RadioTEDU</strong><small>SOCIAL</small></span></div>
       <div class="room-context"><span><i data-lucide="map-pin" aria-hidden="true"></i><small>ROOM</small></span><strong id="room-title" class="room-title">Library</strong><output id="room-instance" class="room-instance" aria-label="Room instance" aria-live="polite">Connecting…</output></div>
       <output id="game-status" class="game-status" data-state="loading" aria-live="polite">LOADING</output>
       <section class="study-clock" data-testid="study-summary" aria-label="Study time">
@@ -396,6 +406,9 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean, e
         <button type="button" data-room-category="events" aria-pressed="false">Events</button>
       </nav>
       <div id="navigator-room-list" class="navigator-room-list" data-testid="navigator-room-list"></div>
+      <a class="navigator-tour-link" data-testid="official-campus-tour-link" href="https://www.tedu.edu.tr/360-derece-sanal-tur" target="_blank" rel="noopener noreferrer">
+        <span><small>REAL CAMPUS REFERENCE</small><strong>Explore TEDU in 360&deg;</strong></span><b aria-hidden="true">&#8599;</b>
+      </a>
     </aside>
     <aside id="presence-panel" class="hud-sheet presence-panel" data-hud-panel="people" data-study-ui aria-label="People in this room" hidden>
       <header><span class="panel-heading"><i data-lucide="users-round" aria-hidden="true"></i><span><small>THIS ROOM</small><strong>People</strong></span></span><button id="presence-close" data-hud-close class="close-button" type="button" aria-label="Close people panel"><i data-lucide="x" aria-hidden="true"></i></button></header>
@@ -404,11 +417,12 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean, e
     </aside>
     <aside id="events-panel" class="hud-sheet events-panel" data-hud-panel="events" data-study-ui aria-label="Campus events" hidden>
       <header><span><small>TEDU CAMPUS</small><strong id="events-panel-title">Events</strong></span><button id="events-close" data-hud-close class="close-button" type="button" aria-label="Close events"><i data-lucide="x" aria-hidden="true"></i></button></header>
-      <nav class="events-view-tabs" aria-label="Events and study path"><button type="button" data-events-view="events" aria-selected="true">Campus Events</button><button type="button" data-events-view="path" aria-selected="false">Study Path</button></nav>
+      <nav class="events-view-tabs" aria-label="Events, arcade and study path"><button type="button" data-events-view="events" aria-selected="true">Campus Events</button><button type="button" data-events-view="arcade" aria-selected="false">Arcade</button><button type="button" data-events-view="path" aria-selected="false">Study Path</button></nav>
       <p id="events-panel-intro" class="panel-intro">Join campus actions with your RadioTEDU account. Gold is awarded only after server verification.</p>
       <div id="event-list" class="event-list" data-testid="event-list" aria-live="polite"></div>
+      <div id="arcade-list" class="arcade-list" data-testid="arcade-list" aria-live="polite" hidden></div>
       <div id="study-path-list" class="study-path-list" data-testid="study-path-list" aria-live="polite" hidden></div>
-      <footer><i data-lucide="check" aria-hidden="true"></i><span>Use the RadioTEDU mobile app for QR check-in and verified rewards.</span></footer>
+      <footer><i data-lucide="check" aria-hidden="true"></i><span>Event check-ins and arcade rewards are verified by RadioTEDU servers.</span></footer>
     </aside>
     <aside id="wardrobe-panel" class="hud-sheet wardrobe-panel" data-hud-panel="wardrobe" data-study-ui aria-label="Wardrobe" hidden>
       <header><strong>Wardrobe</strong><button id="wardrobe-close" data-hud-close class="close-button" type="button" aria-label="Close wardrobe"><i data-lucide="x" aria-hidden="true"></i></button></header>
@@ -420,6 +434,7 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean, e
       </div>
       <section><h2>Top</h2><div class="wearable-grid">
         <button data-testid="wearable-radio-hoodie" data-slot="top" data-wearable-id="radio-hoodie" type="button"><i class="swatch swatch-teal"></i><span>Radio Hoodie<small>Included</small></span></button>
+        <button data-testid="wearable-radiotedu-tee" data-slot="top" data-wearable-id="radiotedu-tee" type="button"><i class="swatch swatch-ivory-red"></i><span>RadioTEDU Tee<small>45 Gold</small></span></button>
         <button data-testid="wearable-varsity-jacket" data-slot="top" data-wearable-id="varsity-jacket" type="button"><i class="swatch swatch-red"></i><span>Varsity<small>80 Gold</small></span></button>
       </div></section>
       <section><h2>Bottom</h2><div class="wearable-grid">
@@ -463,8 +478,18 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean, e
     <aside id="chat-panel" class="hud-sheet chat-dock" data-hud-panel="chat" data-study-ui aria-label="Room chat" hidden>
       <header><span class="panel-heading"><i data-lucide="message-circle" aria-hidden="true"></i><span><small id="chat-room-label">LIBRARY · ROOM 1</small><strong>Room Chat</strong></span></span><span id="chat-connection" class="live-pill"><i></i> LIVE</span><button id="chat-close" data-hud-close class="close-button" type="button" aria-label="Close chat"><i data-lucide="x" aria-hidden="true"></i></button></header>
       <div id="chat-log" data-testid="chat-log" class="chat-log" role="log" aria-live="polite" aria-relevant="additions"><div class="chat-empty"><i data-lucide="message-circle" aria-hidden="true"></i><strong>No messages yet</strong><span>Chat with people in this room.</span></div></div>
+      <details class="chat-rules">
+        <summary><i data-lucide="shield-check" aria-hidden="true"></i><span><strong>Room rules</strong><small>Read before chatting</small></span><i class="chat-rules-chevron" data-lucide="chevron-down" aria-hidden="true"></i></summary>
+        <ul>
+          <li>Be kind. Harassment, hate speech, threats and sexual content are not allowed.</li>
+          <li>Keep personal contact details, external links and account credentials private.</li>
+          <li>No spam, scams, impersonation or attempts to bypass the safety filter.</li>
+          <li>Use Ignore and Report from a player card when someone makes the room unsafe.</li>
+        </ul>
+        <p>Messages are screened before they appear. Reports are reviewed by RadioTEDU moderators.</p>
+      </details>
       <div class="chat-reactions" aria-label="Quick reactions"><button type="button" data-chat-reaction="👋">👋 <span>Wave</span></button><button type="button" data-chat-reaction="📚">📚 <span>Study</span></button><button type="button" data-chat-reaction="☕">☕ <span>Break</span></button></div>
-      <div id="chat-feedback" class="chat-feedback" role="status" aria-live="polite">Be kind · No spam · Room chat</div>
+      <div id="chat-feedback" class="chat-feedback" role="status" aria-live="polite">Be kind · Keep personal details private · Report unsafe behavior</div>
       <form id="chat-form"><span class="chat-input-wrap"><input id="chat-input" maxlength="180" autocomplete="off" placeholder="Message this room…" aria-label="Chat message" /><small id="chat-counter">0/180</small></span><button type="submit" aria-label="Send message" title="Send message"><i data-lucide="send" aria-hidden="true"></i><span class="button-label">Send</span></button></form>
     </aside>
     <aside id="account-panel" class="hud-sheet account-panel" data-hud-panel="account" data-study-ui aria-label="Your RadioTEDU account" hidden>
@@ -478,7 +503,7 @@ function renderStudyShell(session: StudySession, serverAuthoritative: boolean, e
       </nav>
     </aside>
   `
-  createIcons({ icons: { Armchair, BookOpen, CalendarDays, Check, Coins, EllipsisVertical, Hand, HelpCircle, Keyboard, LockKeyhole, LogIn, LogOut, Map, MapPin, MessageCircle, Monitor, Pause, Play, Radio, Send, Settings, ShieldCheck, Shirt, Sparkles, Star, UserPlus, UserRound, UsersRound, Volume2, X } })
+  createIcons({ icons: WORLD_ICONS })
   document.querySelector('#account-name')!.textContent = session.account.displayName
   document.querySelector('#account-avatar')!.textContent = session.account.displayName.trim().slice(0, 1).toUpperCase() || 'R'
   document.querySelector('#account-panel-name')!.textContent = session.account.displayName
@@ -491,7 +516,7 @@ function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
     <section class="study-gate" aria-labelledby="study-entry-title">
       <div class="study-entry-room" aria-hidden="true"><img src="assets/rooms/library-wide.png" alt="" /><span class="study-entry-shade"></span><span class="study-entry-avatar"></span><span class="study-entry-bubble">Ready to focus?</span></div>
       <main class="study-entry-card">
-        <div class="study-entry-brand"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU</strong><small>STUDY WORLD</small></b></div>
+      <div class="study-entry-brand"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU</strong><small>SOCIAL WORLD</small></b></div>
         <div class="study-entry-stage" data-study-entry-stage></div>
       </main>
     </section>
@@ -508,12 +533,12 @@ function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
 
   const renderEntry = () => {
     stage.innerHTML = `
-      <p class="study-entry-kicker">TEDU CAMPUS · LIVE STUDY ROOMS</p>
-      <h1 id="study-entry-title">Study together.<br />Stay on campus.</h1>
+        <p class="study-entry-kicker">TEDU CAMPUS · LIVE SOCIAL &amp; STUDY ROOMS</p>
+        <h1 id="study-entry-title">Meet. Focus. Play.<br />Stay on campus.</h1>
       <p class="study-entry-copy">Enter the social campus to find a desk, join room chat, listen to RadioTEDU and build your verified study streak.</p>
-      <div class="study-entry-features" aria-label="Study World features"><span><i data-lucide="book-open" aria-hidden="true"></i> Focus rooms</span><span><i data-lucide="message-circle" aria-hidden="true"></i> Room chat</span><span><i data-lucide="shirt" aria-hidden="true"></i> Your look</span></div>
+      <div class="study-entry-features" aria-label="Social World features"><span><i data-lucide="book-open" aria-hidden="true"></i> Focus rooms</span><span><i data-lucide="message-circle" aria-hidden="true"></i> Room chat</span><span><i data-lucide="shirt" aria-hidden="true"></i> Your look</span></div>
       <nav class="study-entry-actions" aria-label="Account entry">
-        <button class="study-entry-primary" type="button" data-study-auth-mode="login"><i data-lucide="log-in" aria-hidden="true"></i><span><strong>Log in</strong><small>Continue without leaving Study World</small></span></button>
+        <button class="study-entry-primary" type="button" data-study-auth-mode="login"><i data-lucide="log-in" aria-hidden="true"></i><span><strong>Log in</strong><small>Continue without leaving Social World</small></span></button>
         <button class="study-entry-secondary" type="button" data-study-auth-mode="register"><i data-lucide="user-plus" aria-hidden="true"></i><span><strong>Create account</strong><small>Join the RadioTEDU community</small></span></button>
       </nav>
       <p class="study-entry-security"><i data-lucide="shield-check" aria-hidden="true"></i><span><strong>Server-protected sign in</strong><small>Credentials go directly to the RadioTEDU account API over HTTPS and are never stored by the game.</small></span></p>
@@ -528,10 +553,10 @@ function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
   const renderAuth = (mode: 'login' | 'register') => {
     const registering = mode === 'register'
     stage.innerHTML = `
-      <button class="study-auth-back" type="button" data-study-auth-back>← Study World</button>
+      <button class="study-auth-back" type="button" data-study-auth-back>← Social World</button>
       <p class="study-entry-kicker">SECURE RADIOTEDU ACCOUNT</p>
       <h1 id="study-entry-title">${registering ? 'Create your account.' : 'Welcome back.'}</h1>
-      <p class="study-entry-copy">${registering ? 'Create one shared account for Study, Focus, RTAI and Gold.' : 'Log in here and continue directly into Study World.'}</p>
+      <p class="study-entry-copy">${registering ? 'Create one shared account for Social, Focus, RTAI and Gold.' : 'Log in here and continue directly into Social World.'}</p>
       <div class="study-auth-tabs" role="tablist" aria-label="Account action">
         <button type="button" role="tab" aria-selected="${String(!registering)}" data-study-auth-switch="login">Log in</button>
         <button type="button" role="tab" aria-selected="${String(registering)}" data-study-auth-switch="register">Create account</button>
@@ -590,7 +615,7 @@ function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
         }
         const session = await verifyStudyAccountSession()
         if (!session.user?.id) throw new Error('The signed-in account could not be verified.')
-        setStatus('Account verified. Entering Study World…', 'success')
+        setStatus('Account verified. Entering Social World…', 'success')
         location.reload()
       } catch (error) {
         setStatus(accountError(error), 'error')
@@ -610,7 +635,7 @@ function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
       button.disabled = true
       setStatus('Preparing secure TEDÜ Log in…')
       try {
-        const returnUri = new URL('/study/auth-callback.html', location.origin).href
+        const returnUri = new URL('auth-callback.html', new URL(import.meta.env.BASE_URL, location.origin)).href
         const result = await startStudyTeduLogin(returnUri)
         const authorizationUrl = result.authorization_url || result.authorize_url
         if (!authorizationUrl) throw new Error('The TEDÜ authorization address was not returned.')
@@ -655,7 +680,7 @@ function renderLockedStudy(entryConfig: ReturnType<typeof resolveStudyEntry>) {
 function renderUnavailableStudy() {
   ui!.innerHTML = `
     <section class="study-gate" role="alert">
-      <strong>Study is unavailable</strong>
+      <strong>Social is unavailable</strong>
       <span>Your session could not be verified.</span>
     </section>
   `
@@ -858,6 +883,20 @@ type StudyComputerItem = Readonly<{
   equipped: boolean
 }>
 
+const COMPUTER_GEAR_BY_ASSET_KEY: Readonly<Record<string, string>> = Object.freeze({
+  'computer-basic': 'laptop-campus',
+  'computer-pro': 'laptop-pro',
+  'computer-studio': 'laptop-gold',
+  'laptop-campus': 'laptop-campus',
+  'laptop-pro': 'laptop-pro',
+  'laptop-gold': 'laptop-gold',
+})
+
+function studyGearIdForComputer(item: StudyComputerItem): string | null {
+  const id = COMPUTER_GEAR_BY_ASSET_KEY[item.asset_key] ?? COMPUTER_GEAR_BY_ASSET_KEY[item.item_id]
+  return id && STUDY_GEAR.some((candidate) => candidate.kind === 'laptop' && candidate.id === id) ? id : null
+}
+
 function bindComputerShop(
   adapter: StudyAdapter,
   bridge: ActiveStudyBridge | null,
@@ -915,12 +954,19 @@ function bindComputerShop(
       card.append(artwork, copy, action)
       grid.append(card)
     }
-    createIcons({ icons: { Monitor } })
+    createIcons({ icons: WORLD_ICONS })
   }
 
   const refresh = async () => {
     const data = await request<{ items: StudyComputerItem[], gold_balance: number }>('/study/shop')
     synchronizeBalance(data.gold_balance)
+    for (const item of data.items) {
+      const gearId = studyGearIdForComputer(item)
+      if (gearId && item.owned) studyGear.recordAuthoritativePurchase(gearId, data.gold_balance)
+    }
+    const equipped = data.items.find((item) => item.equipped)
+    const equippedGearId = equipped ? studyGearIdForComputer(equipped) : null
+    if (equippedGearId) studyGear.recordAuthoritativeEquip(equippedGearId)
     render(data.items)
   }
 
@@ -1155,13 +1201,155 @@ function bindEvents(adapter: StudyAdapter, panels: BoundHudPanels) {
   })
 }
 
+function bindArcade(adapter: StudyAdapter) {
+  const host = document.querySelector<HTMLElement>('#arcade-list')
+  if (!host) return
+  host.innerHTML = `
+    <article class="pool-dive" data-arcade-state="idle">
+      <header>
+        <span><small>SERVER-SCORED · 8 ROUNDS</small><strong>Pool Dive</strong></span>
+        <b>UP TO 10 GOLD / DAY</b>
+      </header>
+      <p>Follow the signal and choose the matching diving lane. The server measures every response and calculates the score—this device never sends a score.</p>
+      <div class="pool-dive-scoreboard" aria-live="polite">
+        <span><small>ROUND</small><strong data-pool-round>— / 8</strong></span>
+        <span><small>SCORE</small><strong data-pool-score>0</strong></span>
+        <span><small>VERIFICATION</small><strong data-pool-verification>SERVER</strong></span>
+      </div>
+      <div class="pool-dive-stage" data-pool-prompt="idle">
+        <span class="pool-water" aria-hidden="true"><i></i><i></i><i></i></span>
+        <strong data-pool-signal>PRESS START</strong>
+        <div class="pool-lanes" role="group" aria-label="Choose a diving lane">
+          <button type="button" data-pool-choice="left"><span aria-hidden="true">1</span><b>LEFT</b></button>
+          <button type="button" data-pool-choice="center"><span aria-hidden="true">2</span><b>CENTER</b></button>
+          <button type="button" data-pool-choice="right"><span aria-hidden="true">3</span><b>RIGHT</b></button>
+        </div>
+      </div>
+      <p class="pool-dive-result" data-pool-result role="status" aria-live="polite">Start when you are ready. Very early, late or replayed actions score zero.</p>
+      <button class="pool-dive-start" type="button" data-pool-start>Start verified game</button>
+    </article>
+  `
+
+  const card = host.querySelector<HTMLElement>('.pool-dive')!
+  const startButton = host.querySelector<HTMLButtonElement>('[data-pool-start]')!
+  const signal = host.querySelector<HTMLElement>('[data-pool-signal]')!
+  const round = host.querySelector<HTMLElement>('[data-pool-round]')!
+  const score = host.querySelector<HTMLElement>('[data-pool-score]')!
+  const verification = host.querySelector<HTMLElement>('[data-pool-verification]')!
+  const result = host.querySelector<HTMLElement>('[data-pool-result]')!
+  const lanes = [...host.querySelectorAll<HTMLButtonElement>('[data-pool-choice]')]
+  let snapshot: SocialArcadeSnapshot | null = null
+  let pending = false
+
+  const capable = typeof adapter.startPoolDive === 'function' && typeof adapter.playPoolDiveRound === 'function'
+  if (!capable) {
+    startButton.disabled = true
+    startButton.textContent = 'Verified arcade unavailable'
+    result.textContent = 'Connect a verified RadioTEDU account session to play.'
+    verification.textContent = 'OFFLINE'
+  }
+
+  const render = () => {
+    const session = snapshot?.session
+    card.dataset.arcadeState = pending ? 'pending' : session?.final ? 'complete' : session ? 'active' : 'idle'
+    card.dataset.lastCorrect = snapshot?.result ? String(snapshot.result.correct && snapshot.result.validTiming) : 'none'
+    round.textContent = session ? `${session.round} / ${session.totalRounds}` : '— / 8'
+    score.textContent = String(session?.score ?? 0)
+    verification.textContent = snapshot?.verification === 'local-preview' ? 'LOCAL PREVIEW' : 'SERVER'
+    const prompt = session?.prompt
+    card.querySelector<HTMLElement>('.pool-dive-stage')!.dataset.poolPrompt = prompt ?? (session?.final ? 'complete' : 'idle')
+    signal.textContent = session?.final ? 'DIVE COMPLETE' : prompt ? `DIVE ${prompt.toUpperCase()}` : 'PRESS START'
+    for (const lane of lanes) {
+      lane.disabled = pending || !session || session.final
+      lane.dataset.target = String(lane.dataset.poolChoice === prompt)
+    }
+    startButton.disabled = pending || !capable || Boolean(session && !session.final)
+    startButton.textContent = pending
+      ? 'Server is checking…'
+      : session?.final
+        ? 'Play another verified game'
+        : 'Start verified game'
+    if (snapshot?.result) {
+      result.textContent = snapshot.result.correct && snapshot.result.validTiming
+        ? `Clean dive · +${snapshot.result.roundScore} score`
+        : snapshot.result.correct
+          ? 'Correct lane, but the server timing window was missed.'
+          : 'Wrong lane. Read the next signal and recover.'
+    }
+    if (session?.final) {
+      result.textContent = `Final score ${session.score}. ${snapshot?.pointsAwarded ?? 0} Gold awarded by the server.`
+    }
+  }
+
+  const applyAuthoritativeBalance = (next: SocialArcadeSnapshot) => {
+    if (next.spendablePoints === undefined) return
+    adapter.syncGoldBalance?.(next.spendablePoints)
+    const balance = document.querySelector<HTMLElement>('#point-balance')
+    if (balance) balance.textContent = String(next.spendablePoints)
+  }
+
+  startButton.addEventListener('click', () => {
+    if (!adapter.startPoolDive || pending) return
+    pending = true
+    snapshot = null
+    result.textContent = 'Creating a server-verified round…'
+    render()
+    void adapter.startPoolDive().then((next) => {
+      snapshot = next
+      result.textContent = 'Signal ready. Choose the matching lane.'
+      setHudMessage('POOL DIVE READY')
+    }).catch((error: unknown) => {
+      const code = error instanceof StudyAdapterError ? error.code : 'SOCIAL_ARCADE_UNAVAILABLE'
+      result.textContent = code === 'SOCIAL_ARCADE_RATE_LIMITED'
+        ? 'Too many arcade actions. Wait a moment and try again.'
+        : 'Pool Dive could not start. Your Gold was not changed.'
+      setHudMessage('ARCADE UNAVAILABLE')
+    }).finally(() => {
+      pending = false
+      render()
+    })
+  })
+
+  for (const lane of lanes) {
+    lane.addEventListener('click', () => {
+      if (!adapter.playPoolDiveRound || !snapshot || pending || snapshot.session.final) return
+      const choice = lane.dataset.poolChoice as SocialArcadeChoice
+      const { id, nonce } = snapshot.session
+      if (!nonce) return
+      pending = true
+      render()
+      void adapter.playPoolDiveRound(id, nonce, choice).then((next) => {
+        snapshot = next
+        applyAuthoritativeBalance(next)
+        if (next.session.final) {
+          window.dispatchEvent(new CustomEvent('radiotedu:study-social-action'))
+          setHudMessage(next.pointsAwarded ? `POOL DIVE +${next.pointsAwarded} GOLD` : 'POOL DIVE COMPLETE')
+        }
+      }).catch((error: unknown) => {
+        const code = error instanceof StudyAdapterError ? error.code : 'SOCIAL_ARCADE_UNAVAILABLE'
+        result.textContent = code === 'SOCIAL_ARCADE_SESSION_EXPIRED'
+          ? 'This game expired. Start a new verified game.'
+          : code === 'SOCIAL_ARCADE_RATE_LIMITED'
+            ? 'Too many arcade actions. Wait a moment.'
+            : 'The server could not verify that dive. No score or Gold was added.'
+        setHudMessage('DIVE NOT VERIFIED')
+      }).finally(() => {
+        pending = false
+        render()
+      })
+    })
+  }
+  render()
+}
+
 function bindStudyPath(tracker: StudySessionTracker | undefined, initialRoomId: StudyRoomId) {
   const list = document.querySelector<HTMLElement>('#study-path-list')
   const eventList = document.querySelector<HTMLElement>('#event-list')
+  const arcadeList = document.querySelector<HTMLElement>('#arcade-list')
   const intro = document.querySelector<HTMLElement>('#events-panel-intro')
   const title = document.querySelector<HTMLElement>('#events-panel-title')
   const viewButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-events-view]')]
-  if (!list || !eventList || !intro || !title) return
+  if (!list || !eventList || !arcadeList || !intro || !title) return
   const visitedRooms = new Set<StudyRoomId>([initialRoomId])
   let socialActions = 0
 
@@ -1204,17 +1392,23 @@ function bindStudyPath(tracker: StudySessionTracker | undefined, initialRoomId: 
     document.documentElement.dataset.studyGoalsComplete = String(goals.filter((goal) => goal.complete).length)
   }
 
-  const setView = (view: 'events' | 'path') => {
+  const setView = (view: 'events' | 'arcade' | 'path') => {
     eventList.hidden = view !== 'events'
+    arcadeList.hidden = view !== 'arcade'
     list.hidden = view !== 'path'
-    title.textContent = view === 'events' ? 'Events' : 'Study Path'
+    title.textContent = view === 'events' ? 'Events' : view === 'arcade' ? 'Arcade' : 'Study Path'
     intro.textContent = view === 'events'
       ? 'Join campus actions with your RadioTEDU account. Gold is awarded only after server verification.'
-      : 'Session milestones guide your study. They never create Gold on this device.'
+      : view === 'arcade'
+        ? 'Play short server-scored games. Prompts, timing, score and Gold are verified outside this device.'
+        : 'Session milestones guide your study. They never create Gold on this device.'
     for (const button of viewButtons) button.ariaSelected = String(button.dataset.eventsView === view)
     if (view === 'path') render()
   }
-  for (const button of viewButtons) button.addEventListener('click', () => setView(button.dataset.eventsView === 'path' ? 'path' : 'events'))
+  for (const button of viewButtons) button.addEventListener('click', () => {
+    const view = button.dataset.eventsView
+    setView(view === 'path' ? 'path' : view === 'arcade' ? 'arcade' : 'events')
+  })
   window.addEventListener('radiotedu:study-room-changed', (event) => {
     const roomId = (event as CustomEvent<{ roomId: StudyRoomId }>).detail?.roomId
     if (roomId) visitedRooms.add(roomId)
@@ -1347,8 +1541,9 @@ function bindChat(adapter: StudyAdapter, safety: IgnoredPlayerStore) {
     }).catch((error: unknown) => {
       if (roomId !== currentRoomId()) return
       const code = error instanceof StudyAdapterError ? error.code : 'CHAT_UNAVAILABLE'
-      feedback(code === 'CHAT_RATE_LIMITED' ? 'Slow down—you can send again in a moment.' : 'Message could not be sent. Please try again.', 'error')
-      setHudMessage(code === 'CHAT_RATE_LIMITED' ? 'CHAT COOLDOWN' : 'MESSAGE NOT SENT')
+      const failure = studyChatFailureFeedback(code)
+      feedback(failure.message, 'error')
+      setHudMessage(failure.hud)
     }).finally(() => {
       pending = false
       input.disabled = false
@@ -1657,10 +1852,20 @@ function bindRadioPlayer() {
   const status = document.querySelector<HTMLElement>('#radio-status')
   if (!player || !toggle || !status) return
 
-  const audio = new Audio(STUDY_RADIO_STREAM_URL)
+  let activeChannel: StudyRadioChannel = STUDY_RADIO_CHANNELS.main
+  const audio = new Audio(activeChannel.streamUrl)
   audio.preload = 'none'
   audio.volume = 0.72
   let starting = false
+
+  const updateMediaMetadata = () => {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: 'RadioTEDU',
+      artist: activeChannel.title,
+      album: 'TEDU Study Campus',
+    })
+  }
 
   const setState = (state: 'ready' | 'loading' | 'playing' | 'error') => {
     const playing = state === 'playing'
@@ -1671,12 +1876,12 @@ function bindRadioPlayer() {
     toggle.ariaPressed = String(playing)
     toggle.ariaLabel = playing ? 'Pause RadioTEDU' : 'Play RadioTEDU'
     status.textContent = state === 'loading'
-      ? 'Main Channel · Connecting…'
+      ? `${activeChannel.title} · Connecting…`
       : state === 'playing'
-        ? 'Main Channel · On air'
+        ? `${activeChannel.title} · On air`
         : state === 'error'
-          ? 'Main Channel · Try again'
-          : 'Main Channel · Ready'
+          ? `${activeChannel.title} · Try again`
+          : `${activeChannel.title} · Ready`
   }
 
   const play = async () => {
@@ -1684,7 +1889,7 @@ function bindRadioPlayer() {
     starting = true
     setState('loading')
     try {
-      if (!audio.src) audio.src = STUDY_RADIO_STREAM_URL
+      if (!audio.src) audio.src = activeChannel.streamUrl
       await audio.play()
       setState('playing')
     } catch {
@@ -1700,6 +1905,20 @@ function bindRadioPlayer() {
     setState('ready')
   }
 
+  const selectChannel = (channel: StudyRadioChannel) => {
+    const changed = activeChannel.id !== channel.id
+    activeChannel = channel
+    if (changed) {
+      audio.pause()
+      audio.src = channel.streamUrl
+      audio.load()
+    }
+    updateMediaMetadata()
+    setState('ready')
+    setHudMessage(`${channel.title.toUpperCase()} SELECTED`)
+    void play()
+  }
+
   toggle.addEventListener('click', () => {
     if (player.dataset.playing === 'true') pause()
     else void play()
@@ -1710,17 +1929,17 @@ function bindRadioPlayer() {
   audio.addEventListener('error', () => {
     if (starting || player.dataset.playing === 'true') setState('error')
   })
+  window.addEventListener('radiotedu:study-radio-select', (event) => {
+    const channel = resolveStudyRadioChannel((event as CustomEvent<{ channelId?: unknown }>).detail?.channelId)
+    if (channel) selectChannel(channel)
+  })
   window.addEventListener('pagehide', () => audio.pause())
 
   if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: 'RadioTEDU',
-      artist: 'Main Channel',
-      album: 'TEDU Study Campus',
-    })
     navigator.mediaSession.setActionHandler('play', () => { void play() })
     navigator.mediaSession.setActionHandler('pause', pause)
   }
+  updateMediaMetadata()
   setState('ready')
 }
 

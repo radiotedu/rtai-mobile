@@ -8,11 +8,11 @@ fs.mkdirSync(artifactDir, { recursive: true })
 test('locks the production admin entry when no authenticated server bridge exists', async ({ page }) => {
   await page.goto('/admin.html')
   await expect(page.getByRole('heading', { name: 'Administrator session required' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Sign in securely' })).toHaveAttribute('href', '/login/?return_to=/study/admin.html')
+  await expect(page.getByRole('link', { name: 'Sign in securely' })).toHaveAttribute('href', '/giris/?return_to=%2Fsocial%2Fadmin.html')
   await expect(page.locator('[data-testid="admin-user-list"]')).toHaveCount(0)
 })
 
-test('reviews, bans, unbans, and audits a Study user through visible controls', async ({ page }, testInfo) => {
+test('reviews, bans, unbans, and audits a Social user through visible controls', async ({ page }, testInfo) => {
   test.setTimeout(90_000)
   await page.goto('/admin.html?preview=admin')
   await expect(page.getByRole('heading', { name: 'Campus safety' })).toBeVisible()
@@ -23,8 +23,8 @@ test('reviews, bans, unbans, and audits a Study user through visible controls', 
   await page.locator('#ban-duration').selectOption('24h')
   await page.locator('#ban-note').fill('Confirmed repeated unwanted messages in the Library.')
   await page.locator('#ban-confirmation').fill('Selin')
-  await page.getByRole('button', { name: 'Ban from Study' }).click()
-  await expect(page.locator('#admin-alert')).toContainText('was banned from RadioTEDU Study')
+  await page.getByRole('button', { name: 'Ban from Social' }).click()
+  await expect(page.locator('#admin-alert')).toContainText('was banned from RadioTEDU Social')
   await expect(page.getByTestId('admin-unban-form')).toBeVisible()
   await page.screenshot({ path: path.join(artifactDir, `${testInfo.project.name}-01-banned.png`), fullPage: true })
 

@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  base: './',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/social/' : '/',
   build: {
     sourcemap: true,
     target: 'es2022',
@@ -17,4 +17,4 @@ export default defineConfig({
   server: {
     strictPort: true,
   },
-})
+}))

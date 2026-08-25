@@ -23,7 +23,7 @@ if (!root) throw new Error('Admin root is missing')
 
 const transport = resolveTransport()
 if (!transport) {
-  renderLocked('Administrator session required', 'Sign in with a RadioTEDU account that has Study moderation permission. This page never accepts preview keys or browser-stored admin tokens.')
+  renderLocked('Administrator session required', 'Sign in with a RadioTEDU account that has Social moderation permission. This page never accepts preview keys or browser-stored admin tokens.')
 } else {
   void boot(transport)
 }
@@ -32,7 +32,7 @@ async function boot(api: AdminTransport) {
   try {
     const session = validateAdminSession(await api.session())
     if (!hasPermission(session, 'study.moderation.read')) {
-      renderLocked('Access denied', 'Your authenticated RadioTEDU account does not have permission to open the Study moderation console.')
+      renderLocked('Access denied', 'Your authenticated RadioTEDU account does not have permission to open the Social moderation console.')
       return
     }
     renderShell(session)
@@ -73,16 +73,16 @@ function renderShell(session: AdminSession) {
   root!.innerHTML = `
     <section class="admin-shell">
       <header class="admin-topbar">
-        <div class="admin-brand"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU Study</strong><small>MODERATION CONSOLE</small></b></div>
+        <div class="admin-brand"><span><i data-lucide="radio" aria-hidden="true"></i></span><b><strong>RadioTEDU Social</strong><small>MODERATION CONSOLE</small></b></div>
         <span class="admin-environment">SERVER AUTHORITY</span>
         <div class="admin-operator"><span class="operator-avatar" id="operator-avatar"></span><span class="operator-copy"><strong id="operator-name"></strong><small>AUTHORIZED OPERATOR</small></span></div>
       </header>
       <div class="admin-content">
-        <section class="admin-intro"><div><h1>Campus safety</h1><p>Review Study reports and apply scoped sanctions. Every state-changing action is confirmed by the server and written to the immutable moderation audit trail.</p></div><span class="admin-security"><i data-lucide="shield-check" aria-hidden="true"></i> Deny by default · audited actions</span></section>
+        <section class="admin-intro"><div><h1>Campus safety</h1><p>Review Social reports and apply scoped sanctions. Every state-changing action is confirmed by the server and written to the immutable moderation audit trail.</p></div><span class="admin-security"><i data-lucide="shield-check" aria-hidden="true"></i> Deny by default · audited actions</span></section>
         <output id="admin-alert" class="admin-alert" aria-live="polite"></output>
         <section class="admin-stats" aria-label="Moderation overview">
           <article class="admin-stat"><span><i data-lucide="users-round" aria-hidden="true"></i></span><b><strong id="stat-online">—</strong><small>Online now</small></b></article>
-          <article class="admin-stat"><span><i data-lucide="ban" aria-hidden="true"></i></span><b><strong id="stat-bans">—</strong><small>Active Study bans</small></b></article>
+          <article class="admin-stat"><span><i data-lucide="ban" aria-hidden="true"></i></span><b><strong id="stat-bans">—</strong><small>Active Social bans</small></b></article>
           <article class="admin-stat"><span><i data-lucide="flag" aria-hidden="true"></i></span><b><strong id="stat-reports">—</strong><small>Open reports</small></b></article>
           <article class="admin-stat"><span><i data-lucide="history" aria-hidden="true"></i></span><b><strong id="stat-actions">—</strong><small>Actions today</small></b></article>
         </section>
@@ -94,11 +94,11 @@ function renderShell(session: AdminSession) {
         <section id="view-users" class="admin-view">
           <div class="moderation-grid">
             <section class="admin-card">
-              <header><span><strong>Study users</strong><small>Public profile and Study status only</small></span></header>
-              <form id="user-search" class="admin-search"><input id="user-query" type="search" maxlength="80" autocomplete="off" placeholder="Search display name or public user ID" aria-label="Search Study users" /><select id="user-status" aria-label="Filter Study users"><option value="all">All statuses</option><option value="active">Active</option><option value="banned">Banned</option></select><button type="submit"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button></form>
+              <header><span><strong>Social users</strong><small>Public profile and Social status only</small></span></header>
+              <form id="user-search" class="admin-search"><input id="user-query" type="search" maxlength="80" autocomplete="off" placeholder="Search display name or public user ID" aria-label="Search Social users" /><select id="user-status" aria-label="Filter Social users"><option value="all">All statuses</option><option value="active">Active</option><option value="banned">Banned</option></select><button type="submit"><i data-lucide="search" aria-hidden="true"></i><span>Search</span></button></form>
               <div id="user-list" data-testid="admin-user-list"></div>
             </section>
-            <aside class="admin-card"><header><span><strong>Moderation action</strong><small>Server-confirmed and reversible</small></span></header><div id="user-detail" class="user-detail"><div class="detail-placeholder">Select a Study user to review their status.</div></div></aside>
+            <aside class="admin-card"><header><span><strong>Moderation action</strong><small>Server-confirmed and reversible</small></span></header><div id="user-detail" class="user-detail"><div class="detail-placeholder">Select a Social user to review their status.</div></div></aside>
           </div>
         </section>
         <section id="view-reports" class="admin-view" hidden><section class="admin-card"><header><span><strong>Open reports</strong><small>Reports never create automatic sanctions</small></span></header><div id="report-list" class="report-list" data-testid="admin-report-list"></div></section></section>
@@ -124,7 +124,7 @@ function renderUsers(api: AdminTransport, session: AdminSession) {
   if (!users.length) {
     const empty = document.createElement('p')
     empty.className = 'empty-state'
-    empty.textContent = 'No Study users match this filter.'
+    empty.textContent = 'No Social users match this filter.'
     host.append(empty)
     renderUserDetail(api, session)
     return
@@ -183,7 +183,7 @@ function renderUserDetail(api: AdminTransport, session: AdminSession) {
   if (!user) {
     const placeholder = document.createElement('div')
     placeholder.className = 'detail-placeholder'
-    placeholder.textContent = 'Select a Study user to review their status.'
+  placeholder.textContent = 'Select a Social user to review their status.'
     host.append(placeholder)
     return
   }
@@ -205,7 +205,7 @@ function renderUserDetail(api: AdminTransport, session: AdminSession) {
   header.append(avatar, identity, pill)
   const meta = document.createElement('div')
   meta.className = 'detail-meta'
-  meta.append(metaCell('Current room', user.roomId ? `${user.roomId} · ${user.instanceId ?? 'assigned'}` : 'Offline'), metaCell('Last seen', formatTimestamp(user.lastSeenAt)), metaCell('Open reports', String(user.openReportCount)), metaCell('Scope', 'RadioTEDU Study'))
+  meta.append(metaCell('Current room', user.roomId ? `${user.roomId} · ${user.instanceId ?? 'assigned'}` : 'Offline'), metaCell('Last seen', formatTimestamp(user.lastSeenAt)), metaCell('Open reports', String(user.openReportCount)), metaCell('Scope', 'RadioTEDU Social'))
   host.append(header, meta)
   if (user.status === 'banned' && user.activeBan) renderUnban(api, session, host, user)
   else renderBan(api, session, host, user)
@@ -216,9 +216,9 @@ function renderBan(api: AdminTransport, session: AdminSession, host: HTMLElement
   form.className = 'ban-form'
   form.dataset.testid = 'admin-ban-form'
   const heading = document.createElement('h3')
-  heading.textContent = 'Create Study ban'
+  heading.textContent = 'Create Social ban'
   const copy = document.createElement('p')
-  copy.textContent = 'A ban immediately removes this account from Study rooms, releases its seat, and invalidates active Study sessions. It does not alter the main RadioTEDU account.'
+  copy.textContent = 'A ban immediately removes this account from Social rooms, releases its seat, and invalidates active focus sessions. It does not alter the main RadioTEDU account.'
   const reason = selectField('Reason', 'ban-reason', MODERATION_REASONS.map((value) => ({ value, label: formatModerationReason(value) })))
   const duration = selectField('Duration', 'ban-duration', BAN_DURATIONS.map((value) => ({ value, label: value === 'permanent' ? 'Permanent' : value })))
   const note = textareaField('Internal moderation note', 'ban-note', 'Explain the evidence and policy basis (3–500 characters).')
@@ -229,7 +229,7 @@ function renderBan(api: AdminTransport, session: AdminSession, host: HTMLElement
   const submit = document.createElement('button')
   submit.type = 'submit'
   submit.className = 'danger-action'
-  submit.textContent = 'Ban from Study'
+  submit.textContent = 'Ban from Social'
   submit.disabled = !hasPermission(session, 'study.moderation.ban')
   footer.append(hint, submit)
   form.append(heading, copy, reason, duration, note, confirm, footer)
@@ -248,7 +248,7 @@ function renderBan(api: AdminTransport, session: AdminSession, host: HTMLElement
       })
       await api.ban({ ...payload, idempotencyKey: crypto.randomUUID() })
       await refreshAll(api, session)
-      setAlert(`${user.displayName} was banned from RadioTEDU Study.`, 'success')
+      setAlert(`${user.displayName} was banned from RadioTEDU Social.`, 'success')
     } catch (error) {
       setAlert(safeError(error), 'error')
       submit.disabled = false
@@ -292,7 +292,7 @@ function renderUnban(api: AdminTransport, session: AdminSession, host: HTMLEleme
       submit.disabled = true
       await api.unban({ banId: ban.id, targetUserId: user.userId, note: noteValue, idempotencyKey: crypto.randomUUID() })
       await refreshAll(api, session)
-      setAlert(`${user.displayName}'s Study ban was revoked.`, 'success')
+      setAlert(`${user.displayName}'s Social ban was revoked.`, 'success')
     } catch (error) {
       setAlert(safeError(error), 'error')
       submit.disabled = false
@@ -304,7 +304,7 @@ function renderUnban(api: AdminTransport, session: AdminSession, host: HTMLEleme
 function renderReports(api: AdminTransport, session: AdminSession) {
   const host = document.querySelector<HTMLElement>('#report-list')!
   host.replaceChildren()
-  if (!reports.length) { const empty = document.createElement('p'); empty.className = 'empty-state'; empty.textContent = 'No open Study reports.'; host.append(empty); return }
+    if (!reports.length) { const empty = document.createElement('p'); empty.className = 'empty-state'; empty.textContent = 'No open Social reports.'; host.append(empty); return }
   for (const report of reports) {
     const item = document.createElement('article')
     item.className = 'report-item'
@@ -393,7 +393,8 @@ function bindUserSearch(api: AdminTransport, session: AdminSession) {
 }
 
 function renderLocked(title: string, message: string) {
-  root!.innerHTML = `<section class="admin-lock"><article class="admin-lock-card"><span><i data-lucide="lock-keyhole" aria-hidden="true"></i></span><h1></h1><p></p><a href="/login/?return_to=/study/admin.html">Sign in securely</a></article></section>`
+  const returnTo = window.location.pathname === '/study/admin.html' ? '/study/admin.html' : '/social/admin.html'
+  root!.innerHTML = `<section class="admin-lock"><article class="admin-lock-card"><span><i data-lucide="lock-keyhole" aria-hidden="true"></i></span><h1></h1><p></p><a href="/giris/?return_to=${encodeURIComponent(returnTo)}">Sign in securely</a></article></section>`
   document.querySelector('.admin-lock-card h1')!.textContent = title
   document.querySelector('.admin-lock-card p')!.textContent = message
   refreshIcons()

@@ -24,15 +24,15 @@ describe('native game interaction safety', () => {
     expect(manifest).toContain('android.permission.VIBRATE');
   });
 
-  it('keeps rhythm scoring independent from translated feedback text', () => {
+  it('keeps song answers gated and scoring independent from translated feedback', () => {
     const source = fs.readFileSync(
       path.join(__dirname, '../src/screens/games/RhythmTapScreen.tsx'),
       'utf8',
     );
 
-    expect(source).toContain('const isPerfect = latency < 420');
-    expect(source).toContain('const gained = isPerfect ?');
-    expect(source).not.toContain("judgement === 'Perfect'");
-    expect(source).not.toContain('progressLabel={`Beat');
+    expect(source).toContain('answerGateRef.current.tryEnter()');
+    expect(source).toContain('option === currentQuestion.answer');
+    expect(source).toContain('nextCorrect * 160');
+    expect(source).not.toContain("copy('games.correct') ===");
   });
 });

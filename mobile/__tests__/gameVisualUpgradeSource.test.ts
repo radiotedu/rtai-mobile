@@ -11,7 +11,7 @@ describe('arcade visual upgrade', () => {
       ['SnakeScreen.tsx', 'accentColor="#48E08A"', 'snakeEye'],
       ['MemoryGameScreen.tsx', 'accentColor="#A78BFA"', 'cardBack'],
       ['TetrisScreen.tsx', 'accentColor="#46C8FF"', 'sidePanel'],
-      ['RhythmTapScreen.tsx', 'accentColor="#FFD54A"', 'targetRing'],
+      ['RhythmTapScreen.tsx', 'accentColor="#FFD54A"', 'vinylRecord'],
       ['WordGuessScreen.tsx', 'accentColor="#FF8A4C"', 'optionLetter'],
     ];
 

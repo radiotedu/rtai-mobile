@@ -6,6 +6,25 @@ export interface WordGuessQuestion {
   options: string[];
 }
 
+export interface SongGuessQuestion {
+  clue: string;
+  year: string;
+  genre: string;
+  answer: string;
+  options: string[];
+}
+
+const SONG_QUESTIONS: SongGuessQuestion[] = [
+  {clue: '🌃 ✨ 🚗', year: '2019', genre: 'Synth-pop', answer: 'Blinding Lights', options: ['Blinding Lights', 'Levitating', 'As It Was', 'Bad Guy']},
+  {clue: '👑 🍹 🌞', year: '1978', genre: 'Rock', answer: "Don't Stop Me Now", options: ["Don't Stop Me Now", 'Dreams', 'Africa', 'Heroes']},
+  {clue: '🌊 💜 🌧️', year: '1984', genre: 'Pop rock', answer: 'Purple Rain', options: ['Purple Rain', 'November Rain', 'Yellow', 'Watermelon Sugar']},
+  {clue: '🚀 🌌 👽', year: '1972', genre: 'Glam rock', answer: 'Starman', options: ['Starman', 'Rocket Man', 'Space Oddity', 'Supermassive Black Hole']},
+  {clue: '💃 🪩 🪩', year: '1976', genre: 'Disco', answer: 'Dancing Queen', options: ['Dancing Queen', 'Le Freak', 'Stayin Alive', 'I Will Survive']},
+  {clue: '🟡 🌟 🎸', year: '2000', genre: 'Alternative rock', answer: 'Yellow', options: ['Yellow', 'Fix You', 'Creep', 'Wonderwall']},
+  {clue: '👋 🌎 📞', year: '2015', genre: 'Soul pop', answer: 'Hello', options: ['Hello', 'Easy on Me', 'Someone Like You', 'Rolling in the Deep']},
+  {clue: '💡 🌀 🤖', year: '2013', genre: 'Disco funk', answer: 'Get Lucky', options: ['Get Lucky', 'Instant Crush', 'One More Time', 'Around the World']},
+];
+
 const QUESTIONS: Record<AppLanguage, WordGuessQuestion[]> = {
   en: [
     {prompt: 'Who performs Shape of You?', answer: 'Ed Sheeran', options: ['Ed Sheeran', 'The Weeknd', 'Dua Lipa', 'Coldplay']},
@@ -72,4 +91,8 @@ const QUESTIONS: Record<AppLanguage, WordGuessQuestion[]> = {
 export function getWordGuessQuestions(language?: string): WordGuessQuestion[] {
   const code = (language ?? 'en').split(/[-_]/)[0] as AppLanguage;
   return QUESTIONS[code] ?? QUESTIONS.en;
+}
+
+export function getSongGuessQuestions(): SongGuessQuestion[] {
+  return SONG_QUESTIONS;
 }

@@ -53,7 +53,7 @@ const QUALITY_OPTIONS: Array<{
   {quality: 'automatic', labelKey: 'player.automatic', descriptionKey: 'player.adapts', icon: 'auto-fix'},
   {quality: 'low', labelKey: 'player.low', descriptionKey: 'player.lowDescription', icon: 'signal-cellular-1'},
   {quality: 'normal', labelKey: 'player.normal', descriptionKey: 'player.normalDescription', icon: 'signal-cellular-2'},
-  {quality: 'flac', labelKey: 'player.flac', descriptionKey: 'player.flacDescription', icon: 'waveform'},
+  {quality: 'flac', labelKey: 'player.highQuality', descriptionKey: 'player.flacCodecDescription', icon: 'waveform'},
 ];
 
 /**
@@ -182,6 +182,15 @@ const PlayerScreen = () => {
     } else {
       await TrackPlayer.play();
     }
+  };
+
+  const seekPodcastBy = async (seconds: number) => {
+    if (currentChannel || !isPodcastId(activeTrack?.id)) {
+      return;
+    }
+    await TrackPlayer.seekBy(seconds).catch((error) => {
+      logSafeError('player.podcastSeek', error);
+    });
   };
 
   const goToOffset = async (delta: number) => {
@@ -346,10 +355,10 @@ const PlayerScreen = () => {
 
           <View style={styles.controls}>
             <TouchableOpacity
-              onPress={() => goToOffset(-1)}
+              onPress={() => currentChannel ? goToOffset(-1) : seekPodcastBy(-15)}
               style={styles.sideButton}
-              accessibilityLabel={copy('player.previous')}>
-              <Icon name="skip-previous" size={40} color={COLORS.text} />
+              accessibilityLabel={currentChannel ? copy('player.previous') : copy('player.rewind15')}>
+              <Icon name={currentChannel ? 'skip-previous' : 'rewind-15'} size={40} color={COLORS.text} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -369,10 +378,10 @@ const PlayerScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => goToOffset(1)}
+              onPress={() => currentChannel ? goToOffset(1) : seekPodcastBy(30)}
               style={styles.sideButton}
-              accessibilityLabel={copy('player.next')}>
-              <Icon name="skip-next" size={40} color={COLORS.text} />
+              accessibilityLabel={currentChannel ? copy('player.next') : copy('player.forward30')}>
+              <Icon name={currentChannel ? 'skip-next' : 'fast-forward-30'} size={40} color={COLORS.text} />
             </TouchableOpacity>
           </View>
         </ScrollView>

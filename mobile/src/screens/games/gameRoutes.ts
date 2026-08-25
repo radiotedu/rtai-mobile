@@ -60,8 +60,8 @@ export const BUILTIN_GAMES: BuiltinGame[] = [
   },
   {
     slug: 'rhythm-tap',
-    title: 'Rhythm',
-    description: 'Tap at the right time with the beat.',
+    title: 'Song Guess',
+    description: 'Guess the song from its visual clues.',
     daily_point_limit: 0,
   },
   {

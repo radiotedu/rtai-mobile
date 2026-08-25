@@ -3,7 +3,7 @@
   "version": "1.2.5",
   "private": true,
   "scripts": {
-    "android": "react-native run-android --mode mobileDebug",
+    "android": "react-native run-android --mode debug",
     "android:auto": "react-native run-android --mode debug",
     "ios": "react-native run-ios",
     "lint": "eslint .",

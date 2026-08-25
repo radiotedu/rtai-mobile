@@ -95,6 +95,21 @@ describe('TEDÜ mobile identity login', () => {
     await expect(exchangeTeduLoginCode('one-time')).rejects.toMatchObject({code: 'erp.invalidSession'});
   });
 
+  it('never accepts a guest account from the ERP login exchange', async () => {
+    const post = axios.post as AxiosPostMock;
+    post.mockResolvedValueOnce({
+      data: {data: {
+        user: {id: 'guest-1', role: 'guest', is_guest: true},
+        access_token: 'guest-access',
+        refresh_token: 'guest-refresh',
+      }},
+    });
+
+    await expect(exchangeTeduLoginCode('erp-code')).rejects.toMatchObject({
+      code: 'erp.invalidSession',
+    });
+  });
+
   it('honors cancellation even when a mocked request resolves after abort', async () => {
     const post = axios.post as AxiosPostMock;
     const startController = new AbortController();

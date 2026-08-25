@@ -13,6 +13,7 @@
 -keep class com.doublesymmetry.trackplayer.** { *; }
 -keep class com.doublesymmetry.kotlinaudio.** { *; }
 -keep interface com.doublesymmetry.kotlinaudio.** { *; }
+-keep class com.google.android.exoplayer2.ext.flac.** { *; }
 -keep class android.support.v4.media.** { *; }
 
 # RadioTEDU native car browser + bridge (referenced from the manifest and from

@@ -42,6 +42,13 @@ type ParsedUrl = {
   searchParams: Record<string, string>;
 };
 
+export function isGuestTeduSession(session: TeduLoginSession): boolean {
+  const user = session.user as Record<string, unknown>;
+  const accountType = String(user.account_type ?? user.type ?? '').toLowerCase();
+  const role = String(user.role ?? '').toLowerCase();
+  return user.is_guest === true || accountType === 'guest' || role === 'guest';
+}
+
 /**
  * Hermes on some Android builds exposes URL but throws when URL.protocol is
  * accessed. Keep auth redirect validation dependency-free and deterministic.
@@ -159,7 +166,12 @@ export async function exchangeTeduLoginCode(
   );
   throwIfAborted(signal);
   const session = responseData<TeduLoginSession>(response);
-  if (!session.access_token || !session.refresh_token || !session.user) {
+  if (
+    !session.access_token ||
+    !session.refresh_token ||
+    !session.user ||
+    isGuestTeduSession(session)
+  ) {
     throw new ErpIdentityError('erp.invalidSession');
   }
   return session;

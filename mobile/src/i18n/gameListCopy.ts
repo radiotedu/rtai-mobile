@@ -33,12 +33,12 @@ const GAME_LIST_COPY: Record<string, LocalizedGameText> = {
     fr: {title: 'Blocs', description: 'Alignez les blocs qui tombent et effacez les lignes.'},
   },
   'rhythm-tap': {
-    en: {title: 'Rhythm', description: 'Tap at the right time with the beat.'},
-    tr: {title: 'Ritim', description: 'Ritme göre doğru zamanda dokun.'},
-    ru: {title: 'Ритм', description: 'Нажимайте вовремя в такт музыке.'},
-    ar: {title: 'الإيقاع', description: 'انقر في الوقت المناسب مع الإيقاع.'},
-    de: {title: 'Rhythmus', description: 'Tippe im richtigen Moment zum Beat.'},
-    fr: {title: 'Rythme', description: 'Tapez au bon moment en suivant le rythme.'},
+    en: {title: 'Song Guess', description: 'Guess the song from its visual clues.'},
+    tr: {title: 'Şarkı Bilmece', description: 'Görsel ipuçlarından şarkıyı bul.'},
+    ru: {title: 'Угадай песню', description: 'Угадайте песню по визуальным подсказкам.'},
+    ar: {title: 'خمّن الأغنية', description: 'خمّن الأغنية من التلميحات المرئية.'},
+    de: {title: 'Song-Quiz', description: 'Errate den Song anhand visueller Hinweise.'},
+    fr: {title: 'Devine la chanson', description: 'Devinez la chanson grâce aux indices visuels.'},
   },
   'word-guess': {
     en: {title: 'Word Guess', description: 'Find the hidden word from the clues.'},

@@ -98,6 +98,8 @@ function App(): React.JSX.Element {
             Capability.SkipToPrevious,
             Capability.Stop,
             Capability.SeekTo,
+            Capability.JumpBackward,
+            Capability.JumpForward,
             Capability.PlayFromSearch,
           ],
           compactCapabilities: [
@@ -113,8 +115,12 @@ function App(): React.JSX.Element {
             Capability.SkipToNext,
             Capability.SkipToPrevious,
             Capability.Stop,
+            Capability.JumpBackward,
+            Capability.JumpForward,
             Capability.PlayFromSearch,
           ],
+          forwardJumpInterval: 30,
+          backwardJumpInterval: 15,
           android: {
             // @ts-ignore
             alwaysPauseOnInterruption: true,

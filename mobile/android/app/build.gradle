@@ -165,6 +165,13 @@ android {
     }
 }
 
+configurations.configureEach {
+    // RN Track Player pulls KotlinAudio transitively. Replace it with the
+    // reproducible RadioTEDU patch below so libFLAC can be preferred over
+    // Android's failing platform decoder for continuous Ogg/FLAC streams.
+    exclude group: "com.github.doublesymmetry", module: "kotlinaudio"
+}
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
@@ -197,6 +204,16 @@ dependencies {
     // error instead of buffering forever. It is a transitive dep of
     // media3-exoplayer, but declared explicitly so the import always resolves.
     implementation("androidx.media3:media3-datasource:${media3Version}")
+
+    // Mobile playback still uses RN Track Player's ExoPlayer 2.19 stack.
+    // The patched KotlinAudio builder enables extension renderers and this
+    // native libFLAC module supplies the decoder used in PREFER mode.
+    implementation(files("../vendor/kotlinaudio-v2.1.0-radiotedu.aar"))
+    implementation(files("../vendor/exoplayer-flac-2.19.0-radiotedu.aar"))
+    implementation("com.google.android.exoplayer:exoplayer:2.19.0")
+    implementation("com.google.android.exoplayer:extension-mediasession:2.19.0")
+    implementation("io.coil-kt:coil:2.2.0")
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Pure JVM policy tests only; not packaged into release builds.
     testImplementation("junit:junit:4.13.2")

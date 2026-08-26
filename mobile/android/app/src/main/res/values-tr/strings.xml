@@ -3,6 +3,7 @@
     <string name="car_playback_error">Oynatma hatası</string>
     <string name="car_stream_connect_error">Yayına bağlanılamadı</string>
     <string name="car_flac_metered_warning">FLAC çok daha fazla mobil veri kullanır. Wi-Fi ağına bağlanın veya Normal kaliteyi seçin.</string>
+    <string name="car_hifi_confirmation_warning">Hi-Fi çok daha fazla mobil veri kullanır. Devam etmek için Hi-Fi’yi Onayla’ya dokunun.</string>
     <string name="car_no_media_item_requested">Çalınacak medya seçilmedi</string>
     <string name="car_unknown_media_item">Bilinmeyen RadioTEDU içeriği</string>
     <string name="car_podcasts">RadioTEDU Podcastleri</string>

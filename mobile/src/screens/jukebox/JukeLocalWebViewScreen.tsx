@@ -84,6 +84,7 @@ const JukeLocalWebViewScreen = () => {
           originWhitelist={['https://radiotedu.com']}
           javaScriptEnabled
           cacheEnabled={false}
+          cacheMode="LOAD_NO_CACHE"
           domStorageEnabled
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled={false}

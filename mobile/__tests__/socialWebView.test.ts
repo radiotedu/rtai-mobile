@@ -25,6 +25,8 @@ describe('Social WebView surface', () => {
     expect(screenSource).toContain('onShouldStartLoadWithRequest');
     expect(screenSource).toContain('isAllowedSocialNavigation');
     expect(screenSource).toContain('parseSocialMessage');
+    expect(screenSource).toContain('cacheEnabled={false}');
+    expect(screenSource).toContain('cacheMode="LOAD_NO_CACHE"');
     expect(screenSource).not.toContain('AsyncStorage');
     expect(screenSource).not.toContain('accessToken');
     expect(screenSource).not.toContain('refresh_token');

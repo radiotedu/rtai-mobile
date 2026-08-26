@@ -149,6 +149,17 @@ describe('Android Auto car bridge source contract', () => {
     expect(nativeSourceText).toContain('params?.isSuggested == true');
     expect(nativeSourceText).not.toContain('setIconBitmap');
     expect(nativeSourceText).toContain('setArtworkData');
+    expect(nativeSourceText).toContain('enrichCurrentTrackArtwork');
+    expect(nativeSourceText).toContain('setStation(if (fallback.seriesId == null) fallback.title else null)');
+    expect(nativeSourceText).toContain('TRACK_ARTWORK_MAX_BYTES');
+    expect(nativeSourceText).toContain('itunes.apple.com/search');
+    expect(nativeSourceText).toContain('ACTION_TOGGLE_HIFI');
+    expect(nativeSourceText).toContain('Confirm Hi-Fi');
+    expect(nativeSourceText).toContain('CommandButton.ICON_QUALITY');
+    expect(nativeSourceText).toContain('KEY_CONTENT_FORMAT_TINTABLE_LARGE_ICON_URI');
+    expect(nativeSourceText).toContain('KEY_CONTENT_FORMAT_TINTABLE_SMALL_ICON_URI');
+    expect(nativeSourceText).toContain('setSubtitle(if (quality == "flac") "$title · Hi-Fi" else null)');
+    expect(carBridgeSource).toContain('hiFiUrl: c.streams.flac');
     expect(nativeSourceText).toContain('CAR_TILE_MAX_BYTES');
     expect(nativeSourceText).toContain('R.drawable.car_tile_radio');
     expect(nativeSourceText).toContain('R.drawable.car_tile_podcasts');

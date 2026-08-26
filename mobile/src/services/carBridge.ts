@@ -107,6 +107,8 @@ type CarItem = {
   url: string;
   quality?: StreamQuality;
   audioFormat?: 'HE-AAC v2' | 'AAC-LC' | 'FLAC' | 'MP3 192' | 'Podcast audio' | string;
+  /** Optional lossless stream; never exposed as a browse-row URL. */
+  hiFiUrl?: string;
   /** Podcast series identifier; used by native Android Auto Next/Previous. */
   seriesId?: string;
 };
@@ -143,6 +145,9 @@ function radioItems(): CarItem[] {
       quality: track.streamQuality,
       audioFormat,
       url: track.url,
+      ...(c.id === 'radiotedu-classic' || c.id === 'radiotedu-jazz'
+        ? {hiFiUrl: c.streams.flac}
+        : {}),
     };
   });
 }

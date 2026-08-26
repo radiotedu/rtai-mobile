@@ -31,9 +31,12 @@ import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -42,12 +45,18 @@ import com.radiotedumobile.R
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 import java.text.Normalizer
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 
 private const val CAT_RADIO = "cat_radio"
 private const val CAT_PODCASTS = "cat_podcasts"
 private const val PODCAST_SERIES_PREFIX = "podcast-series:"
+private const val HIFI_MEDIA_ID_SUFFIX = ":hifi"
 private val ROOT_CATEGORY_IDS = listOf(CAT_RADIO, CAT_PODCASTS)
 
 /**
@@ -82,6 +91,14 @@ class RadioTeduCarService : MediaLibraryService() {
         private const val CONTENT_STYLE_LIST = 1
 
         private const val EXTRA_AUDIO_FORMAT = "com.radiotedu.media.AUDIO_FORMAT"
+        private const val ACTION_TOGGLE_HIFI = "com.radiotedumobile.car.action.TOGGLE_HIFI"
+        private const val HIFI_CONFIRMATION_WINDOW_MS = 30_000L
+        private const val FORMAT_ICON_LARGE =
+            "androidx.car.app.mediaextensions.KEY_CONTENT_FORMAT_TINTABLE_LARGE_ICON_URI"
+        private const val FORMAT_ICON_SMALL =
+            "androidx.car.app.mediaextensions.KEY_CONTENT_FORMAT_TINTABLE_SMALL_ICON_URI"
+        private const val HIFI_FORMAT_ICON =
+            "android.resource://com.radiotedumobile/drawable/car_format_hifi"
         private const val KEY_LAST_MEDIA_ID = "last_media_id"
         private const val KEY_PROGRESS_PREFIX = "podcast_progress:"
         private const val KEY_POSITION_PREFIX = "podcast_position_ms:"
@@ -100,6 +117,8 @@ class RadioTeduCarService : MediaLibraryService() {
         private const val PROGRESS_SAVE_INTERVAL_MS = 15_000L
         private const val CAR_TILE_SIZE_PX = 128
         private const val CAR_TILE_MAX_BYTES = 64 * 1024
+        private const val TRACK_ARTWORK_MAX_BYTES = 512 * 1024
+        private const val ARTWORK_LOOKUP_TIMEOUT_MS = 2_500
 
         // A deliberately small cold-start fallback. Availability-filtered JS
         // catalog data replaces it after the first app launch. Shipping extra
@@ -122,6 +141,12 @@ class RadioTeduCarService : MediaLibraryService() {
     private var activeCatalogItem: CatalogItem? = null
     private var publishingNormalizedMetadata = false
     private val tileArtworkCache = mutableMapOf<Int, ByteArray>()
+    private val artworkExecutor = Executors.newSingleThreadExecutor()
+    private val trackArtworkCache = ConcurrentHashMap<String, TrackArtwork>()
+    private var activeArtworkLookupKey: String? = null
+    private var pendingHiFiMediaId: String? = null
+    private var pendingHiFiUntilMs = 0L
+    private val hiFiCommand = SessionCommand(ACTION_TOGGLE_HIFI, Bundle.EMPTY)
 
     override fun onCreate() {
         super.onCreate()
@@ -189,6 +214,7 @@ class RadioTeduCarService : MediaLibraryService() {
         player.removeListener(playerListener)
         librarySession.release()
         player.release()
+        artworkExecutor.shutdownNow()
         super.onDestroy()
     }
 
@@ -232,6 +258,10 @@ class RadioTeduCarService : MediaLibraryService() {
                 markPodcastCompleted(previous.id)
             }
             activeCatalogItem = mediaItem?.mediaId?.let(::findItem)
+            activeArtworkLookupKey = null
+            pendingHiFiMediaId = null
+            pendingHiFiUntilMs = 0L
+            updateHiFiButton()
             activeCatalogItem?.id?.let {
                 prefs().edit().putString(KEY_LAST_MEDIA_ID, it).apply()
             }
@@ -316,11 +346,7 @@ class RadioTeduCarService : MediaLibraryService() {
         }
         if (artist.isEmpty()) artist = fallback.artist
 
-        if (mediaMetadata.title?.toString() == title &&
-            mediaMetadata.artist?.toString().orEmpty() == artist
-        ) {
-            return
-        }
+        val artworkKey = "${fallback.id}\u0000$artist\u0000$title"
 
         val normalized = current.mediaMetadata.buildUpon()
             .setTitle(title)
@@ -328,9 +354,101 @@ class RadioTeduCarService : MediaLibraryService() {
             .setArtist(artist)
             .setStation(if (fallback.seriesId == null) fallback.title else null)
             .build()
-
-        replaceCurrentMetadata(index, current, normalized)
+        if (mediaMetadata.title?.toString() != title ||
+            mediaMetadata.artist?.toString().orEmpty() != artist ||
+            mediaMetadata.station?.toString() != fallback.title
+        ) {
+            replaceCurrentMetadata(index, current, normalized)
+        }
+        if (fallback.seriesId == null) {
+            enrichCurrentTrackArtwork(artworkKey, fallback.id, artist, title)
+        }
     }
+
+    /** Add song cover art without delaying or restarting the live stream. */
+    private fun enrichCurrentTrackArtwork(
+        lookupKey: String,
+        mediaId: String,
+        artist: String,
+        title: String,
+    ) {
+        if (activeArtworkLookupKey == lookupKey) return
+        activeArtworkLookupKey = lookupKey
+        trackArtworkCache[lookupKey]?.let { artwork ->
+            publishTrackArtwork(lookupKey, mediaId, artwork)
+            return
+        }
+        artworkExecutor.execute {
+            val artwork = fetchTrackArtwork("$artist $title") ?: return@execute
+            trackArtworkCache[lookupKey] = artwork
+            mainHandler.post { publishTrackArtwork(lookupKey, mediaId, artwork) }
+        }
+    }
+
+    private fun publishTrackArtwork(
+        lookupKey: String,
+        mediaId: String,
+        artwork: TrackArtwork,
+    ) {
+        if (activeArtworkLookupKey != lookupKey) return
+        val current = player.currentMediaItem ?: return
+        if (current.mediaId != mediaId) return
+        val index = player.currentMediaItemIndex
+        if (index == C.INDEX_UNSET) return
+        val metadata = current.mediaMetadata.buildUpon()
+            .setArtworkUri(Uri.parse(artwork.uri))
+            .setArtworkData(artwork.data, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+            .build()
+        replaceCurrentMetadata(index, current, metadata)
+    }
+
+    private fun fetchTrackArtwork(query: String): TrackArtwork? = runCatching {
+        val encoded = URLEncoder.encode(query, Charsets.UTF_8.name())
+        val searchUrl = URL(
+            "https://itunes.apple.com/search?term=$encoded&media=music&entity=song&limit=1",
+        )
+        val search = openArtworkConnection(searchUrl)
+        val response = try {
+            if (search.responseCode !in 200..299) return@runCatching null
+            search.inputStream.bufferedReader().use { it.readText() }
+        } finally {
+            search.disconnect()
+        }
+        val result = JSONObject(response).optJSONArray("results")?.optJSONObject(0)
+            ?: return@runCatching null
+        val artworkUri = result.optString("artworkUrl100")
+            .replace("100x100bb", "600x600bb")
+            .takeIf { it.startsWith("https://") }
+            ?: return@runCatching null
+        val image = openArtworkConnection(URL(artworkUri))
+        val bytes = try {
+            if (image.responseCode !in 200..299) return@runCatching null
+            image.inputStream.use { input ->
+                val output = ByteArrayOutputStream()
+                val buffer = ByteArray(8 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    if (output.size() + count > TRACK_ARTWORK_MAX_BYTES) return@runCatching null
+                    output.write(buffer, 0, count)
+                }
+                output.toByteArray()
+            }
+        } finally {
+            image.disconnect()
+        }
+        TrackArtwork(artworkUri, bytes)
+    }.getOrNull()
+
+    private fun openArtworkConnection(url: URL): HttpURLConnection =
+        (url.openConnection() as HttpURLConnection).apply {
+            connectTimeout = ARTWORK_LOOKUP_TIMEOUT_MS
+            readTimeout = ARTWORK_LOOKUP_TIMEOUT_MS
+            instanceFollowRedirects = true
+            setRequestProperty("Accept", "application/json,image/*")
+        }
+
+    private data class TrackArtwork(val uri: String, val data: ByteArray)
 
     private fun replaceCurrentMetadata(
         index: Int,
@@ -482,6 +600,72 @@ class RadioTeduCarService : MediaLibraryService() {
     // --- Media3 library/session callbacks ---
 
     private inner class LibraryCallback : MediaLibrarySession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): MediaSession.ConnectionResult {
+            val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
+                .buildUpon()
+                .add(hiFiCommand)
+                .build()
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(commands)
+                .setMediaButtonPreferences(hiFiButtonPreferences())
+                .build()
+        }
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> {
+            if (customCommand.customAction != ACTION_TOGGLE_HIFI) {
+                return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED),
+                )
+            }
+            val active = activeCatalogItem ?: player.currentMediaItem?.mediaId?.let(::findItem)
+            if (active == null || (active.hiFiUrl == null && active.quality != "flac")) {
+                return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED),
+                )
+            }
+
+            if (active.quality == "flac") {
+                val normal = findItem(active.id.removeSuffix(HIFI_MEDIA_ID_SUFFIX))
+                if (normal != null) switchCarQuality(normal)
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (
+                isMeteredNetwork() &&
+                (pendingHiFiMediaId != active.id || now > pendingHiFiUntilMs)
+            ) {
+                pendingHiFiMediaId = active.id
+                pendingHiFiUntilMs = now + HIFI_CONFIRMATION_WINDOW_MS
+                librarySession.sendError(
+                    controller,
+                    SessionError(
+                        SessionError.ERROR_NOT_SUPPORTED,
+                        localizedString(R.string.car_hifi_confirmation_warning),
+                    ),
+                )
+                updateHiFiButton()
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+
+            val hiFi = active.toHiFiVariant()
+                ?: return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED),
+                )
+            pendingHiFiMediaId = null
+            pendingHiFiUntilMs = 0L
+            switchCarQuality(hiFi)
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+        }
+
         override fun onGetLibraryRoot(
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
@@ -908,6 +1092,7 @@ class RadioTeduCarService : MediaLibraryService() {
         val seriesId: String? = null,
         val quality: String? = null,
         val audioFormat: String? = null,
+        val hiFiUrl: String? = null,
     )
 
     private fun CatalogItem.toMediaItem(playable: Boolean): MediaItem {
@@ -915,6 +1100,10 @@ class RadioTeduCarService : MediaLibraryService() {
         val extras = Bundle().apply {
             putString(MediaConstants.METADATA_KEY_CONTENT_ID, id)
             audioFormat?.let { putString(EXTRA_AUDIO_FORMAT, it) }
+            if (quality == "flac") {
+                putString(FORMAT_ICON_LARGE, HIFI_FORMAT_ICON)
+                putString(FORMAT_ICON_SMALL, HIFI_FORMAT_ICON)
+            }
             if (seriesId != null) {
                 putString(MediaConstants.METADATA_KEY_SERIES_CONTENT_ID, seriesId)
                 putDouble(
@@ -941,10 +1130,13 @@ class RadioTeduCarService : MediaLibraryService() {
             .setAlbumTitle(
                 if (seriesId != null) {
                     artist.ifEmpty { localizedString(R.string.car_podcasts) }
+                } else if (quality == "flac") {
+                    "Hi-Fi"
                 } else {
                     null
                 },
             )
+            .setSubtitle(if (quality == "flac") "$title · Hi-Fi" else null)
             .setStation(if (seriesId == null) title else null)
             .setIsBrowsable(false)
             .setIsPlayable(true)
@@ -995,6 +1187,8 @@ class RadioTeduCarService : MediaLibraryService() {
                     else -> if (seriesId != null) localizedString(R.string.car_podcast_audio) else null
                 }
             },
+            hiFiUrl = json.optString("hiFiUrl", "")
+                .takeIf { it.startsWith("https://") && it.endsWith("-flac") },
         )
     }
 
@@ -1037,9 +1231,63 @@ class RadioTeduCarService : MediaLibraryService() {
         return listOf(fallbackRadioItem())
     }
 
-    private fun findItem(mediaId: String): CatalogItem? =
-        allPlayableItems().firstOrNull { it.id == mediaId }
-            ?: if (mediaId == FALLBACK_RADIO_ID) fallbackRadioItem() else null
+    private fun findItem(mediaId: String): CatalogItem? {
+        val wantsHiFi = mediaId.endsWith(HIFI_MEDIA_ID_SUFFIX)
+        val baseId = mediaId.removeSuffix(HIFI_MEDIA_ID_SUFFIX)
+        val base = allPlayableItems().firstOrNull { it.id == baseId }
+            ?: if (baseId == FALLBACK_RADIO_ID) fallbackRadioItem() else null
+        return if (wantsHiFi) base?.toHiFiVariant() else base
+    }
+
+    private fun CatalogItem.toHiFiVariant(): CatalogItem? = hiFiUrl?.let { losslessUrl ->
+        copy(
+            id = id.removeSuffix(HIFI_MEDIA_ID_SUFFIX) + HIFI_MEDIA_ID_SUFFIX,
+            url = losslessUrl,
+            quality = "flac",
+            audioFormat = "FLAC",
+        )
+    }
+
+    private fun switchCarQuality(item: CatalogItem) {
+        val resumePlaying = player.playWhenReady
+        activeCatalogItem = item
+        player.setMediaItem(item.toMediaItem(playable = true))
+        player.prepare()
+        player.playWhenReady = resumePlaying
+        updateHiFiButton()
+    }
+
+    private fun hiFiButtonPreferences(): List<CommandButton> {
+        val active = activeCatalogItem ?: return emptyList()
+        val supportsHiFi = active.hiFiUrl != null || active.quality == "flac"
+        if (!supportsHiFi) return emptyList()
+        val now = android.os.SystemClock.elapsedRealtime()
+        val awaitingConfirmation = active.quality != "flac" &&
+            pendingHiFiMediaId == active.id && now <= pendingHiFiUntilMs
+        val name = when {
+            active.quality == "flac" -> "Normal"
+            awaitingConfirmation -> "Confirm Hi-Fi"
+            else -> "Hi-Fi"
+        }
+        val icon = if (active.quality == "flac") {
+            CommandButton.ICON_CHECK_CIRCLE_FILLED
+        } else {
+            CommandButton.ICON_QUALITY
+        }
+        return listOf(
+            CommandButton.Builder(icon)
+                .setDisplayName(name)
+                .setSessionCommand(hiFiCommand)
+                .setCustomIconResId(R.drawable.car_format_hifi)
+                .build(),
+        )
+    }
+
+    private fun updateHiFiButton() {
+        if (::librarySession.isInitialized) {
+            librarySession.setMediaButtonPreferences(hiFiButtonPreferences())
+        }
+    }
 
     private fun fallbackRadioItem(): CatalogItem = CatalogItem(
         id = FALLBACK_RADIO_ID,

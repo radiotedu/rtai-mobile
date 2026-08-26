@@ -10,7 +10,7 @@ export const DEFAULT_STREAM_QUALITY: StreamQuality = 'normal';
 export const GA4_PROPERTY_ID = '547255730';
 
 export function isAnalyticsConfigured(): boolean {
-  return Platform.OS === 'android';
+  return Platform.OS === 'android' || Platform.OS === 'ios';
 }
 
 // Audio stream of the restaurant Jukebox (the communal selection). When set,

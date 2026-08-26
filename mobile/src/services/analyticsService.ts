@@ -1,4 +1,4 @@
-/** Consent-gated Google Analytics for Firebase bridge (Android only). */
+/** Consent-gated Google Analytics for Firebase bridge (Android and iOS). */
 import {NativeModules, Platform} from 'react-native';
 import {CONSENT_VERSION} from '../privacy/consentVersion';
 
@@ -17,7 +17,10 @@ export function setAnalyticsConsent(
   allowed: boolean,
   demo?: {ageRange?: string | null; gender?: string | null},
 ): void {
-  analyticsAllowed = allowed && Platform.OS === 'android' && Boolean(bridge);
+  analyticsAllowed =
+    allowed &&
+    (Platform.OS === 'android' || Platform.OS === 'ios') &&
+    Boolean(bridge);
   bridge?.setCollectionEnabled(analyticsAllowed, CONSENT_VERSION);
   bridge?.setDemographics(
     analyticsAllowed ? demo?.ageRange ?? null : null,

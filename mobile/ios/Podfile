@@ -17,6 +17,10 @@ end
 target 'RadioTEDUMobile' do
   config = use_native_modules!
 
+  # Add iOS as a second Firebase/GA4 app stream. Core excludes IDFA support;
+  # collection remains off until the app's existing consent gate enables it.
+  pod 'FirebaseAnalytics/Core', '~> 11.15.0'
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.

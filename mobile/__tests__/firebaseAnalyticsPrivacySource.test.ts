@@ -42,6 +42,30 @@ describe('Firebase Analytics privacy configuration', () => {
     expect(config).not.toContain('GA4_API_SECRET');
   });
 
+  test('adds a separate consent-gated iOS Firebase stream without replacing Android', () => {
+    const podfile = read('ios/Podfile');
+    const plist = read('ios/RadioTEDUMobile/Info.plist');
+    const bridge = read('ios/RadioTEDUMobile/AnalyticsBridge.mm');
+    const appDelegate = read('ios/RadioTEDUMobile/AppDelegate.mm');
+    const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
+    const androidBridge = read(
+      'android/app/src/main/java/com/radiotedumobile/analytics/AnalyticsBridgeModule.kt',
+    );
+
+    expect(podfile).toContain("pod 'FirebaseAnalytics/Core', '~> 11.15.0'");
+    expect(plist).toMatch(/FIREBASE_ANALYTICS_COLLECTION_ENABLED<\/key>\s*<false\/>/);
+    expect(plist).toMatch(/GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED<\/key>\s*<false\/>/);
+    expect(bridge).toContain('RCT_EXPORT_MODULE(RadioTeduAnalyticsBridge)');
+    expect(bridge).toContain('FIRConsentTypeAnalyticsStorage');
+    expect(bridge).toContain('FIRConsentTypeAdPersonalization');
+    expect(bridge).toContain('setAnalyticsCollectionEnabled:versionedEnabled');
+    expect(bridge).toContain('[FIRAnalytics resetAnalyticsData]');
+    expect(appDelegate).toContain('pathForResource:@"GoogleService-Info"');
+    expect(appDelegate).toContain('[AnalyticsBridge revokeStaleConsent]');
+    expect(project).toContain('AnalyticsBridge.mm in Sources');
+    expect(androidBridge).toContain('class AnalyticsBridgeModule');
+  });
+
   test('embeds complete legal notices and secures account tokens', () => {
     const consent = read('src/screens/ConsentScreen.tsx');
     const tokenStorage = read('src/services/authTokenStorage.ts');

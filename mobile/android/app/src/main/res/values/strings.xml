@@ -4,6 +4,7 @@
     <string name="car_playback_error">Playback error</string>
     <string name="car_stream_connect_error">Unable to connect to the stream</string>
     <string name="car_flac_metered_warning">FLAC uses considerably more mobile data. Connect to Wi-Fi or choose Normal.</string>
+    <string name="car_hifi_confirmation_warning">Hi-Fi uses considerably more mobile data. Tap Confirm Hi-Fi to continue.</string>
     <string name="car_no_media_item_requested">No media item was requested</string>
     <string name="car_unknown_media_item">Unknown RadioTEDU media item</string>
     <string name="car_podcasts">RadioTEDU Podcasts</string>

@@ -3,6 +3,7 @@
     <string name="car_playback_error">Erreur de lecture</string>
     <string name="car_stream_connect_error">Impossible de se connecter au flux</string>
     <string name="car_flac_metered_warning">Le FLAC consomme beaucoup plus de données mobiles. Connectez-vous au Wi-Fi ou choisissez la qualité normale.</string>
+    <string name="car_hifi_confirmation_warning">Le Hi-Fi consomme beaucoup plus de données mobiles. Touchez « Confirmer Hi-Fi » pour continuer.</string>
     <string name="car_no_media_item_requested">Aucun contenu à lire n’a été sélectionné</string>
     <string name="car_unknown_media_item">Contenu RadioTEDU inconnu</string>
     <string name="car_podcasts">Podcasts RadioTEDU</string>

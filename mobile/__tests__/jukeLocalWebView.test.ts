@@ -10,6 +10,25 @@ import {
 } from '../src/services/jukeLocalWebViewService';
 
 describe('juke-local app WebView contract', () => {
+  it('always loads the remotely deployed controller without native cache', () => {
+    const screen = fs.readFileSync(
+      path.join(__dirname, '../src/screens/jukebox/JukeLocalWebViewScreen.tsx'),
+      'utf8',
+    );
+    expect(screen).toContain('source={{uri: controllerUrl}}');
+    expect(screen).toContain('cacheEnabled={false}');
+    expect(screen).toContain('cacheMode="LOAD_NO_CACHE"');
+  });
+
+  it('keeps the controller session mounted across bottom-menu changes', () => {
+    const navigator = fs.readFileSync(
+      path.join(__dirname, '../src/navigation/RootNavigator.tsx'),
+      'utf8',
+    );
+    expect(navigator).toContain('name="Jukebox"');
+    expect(navigator).toContain('unmountOnBlur: false');
+  });
+
   it('seeds the authenticated RadioTEDU account bridge before the controller bundle starts', () => {
     const script = buildJukeLocalAuthInjection({
       accessToken: 'access-token',

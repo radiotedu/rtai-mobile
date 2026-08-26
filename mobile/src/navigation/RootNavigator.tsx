@@ -127,7 +127,17 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{title: t('tabs.home'), headerShown: false}} />
       <Tab.Screen name="Radio" component={RadioScreen} options={{title: t('tabs.radio'), headerShown: false}} />
       <Tab.Screen name="Podcasts" component={PodcastScreen} options={{title: t('tabs.podcasts'), headerShown: false}} />
-      <Tab.Screen name="Jukebox" component={JukeLocalWebViewScreen} options={{title: t('tabs.jukebox'), headerShown: false}} />
+      <Tab.Screen
+        name="Jukebox"
+        component={JukeLocalWebViewScreen}
+        options={{
+          title: t('tabs.jukebox'),
+          headerShown: false,
+          // Keep the live WebView/session exactly where the listener left it
+          // while they visit another bottom-menu tab.
+          unmountOnBlur: false,
+        }}
+      />
       <Tab.Screen name="Study" component={StudyHomeScreen} options={{title: t('tabs.study'), headerShown: false}} />
     </Tab.Navigator>
   );

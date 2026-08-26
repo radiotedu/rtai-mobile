@@ -1,5 +1,7 @@
 #import "AppDelegate.h"
+#import "AnalyticsBridge.h"
 
+#import <FirebaseCore/FirebaseCore.h>
 #import <React/RCTBundleURLProvider.h>
 
 @interface RadioTEDUSceneDelegate : UIResponder <UIWindowSceneDelegate>
@@ -34,6 +36,15 @@
   // You can add your custom initial props in the dictionary below.
   // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
+
+  // Firebase Analytics requires the administrator-generated iOS app config.
+  // If it is absent in a developer checkout, analytics remains a safe no-op.
+  NSString *firebaseConfig =
+      [[NSBundle mainBundle] pathForResource:@"GoogleService-Info" ofType:@"plist"];
+  if (firebaseConfig != nil) {
+    [FIRApp configure];
+    [AnalyticsBridge revokeStaleConsent];
+  }
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }

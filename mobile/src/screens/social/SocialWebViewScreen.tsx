@@ -136,6 +136,8 @@ const SocialWebViewScreen = () => {
             originWhitelist={['https://radiotedu.com/*', 'http://127.0.0.1:*']}
             javaScriptEnabled
             domStorageEnabled
+            cacheEnabled={false}
+            cacheMode="LOAD_NO_CACHE"
             sharedCookiesEnabled={false}
             thirdPartyCookiesEnabled={false}
             injectedJavaScriptBeforeContentLoaded={injectedAccountBridge}

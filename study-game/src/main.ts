@@ -1230,6 +1230,19 @@ function bindArcade(adapter: StudyAdapter) {
         <span><small>VERIFICATION</small><strong data-pool-verification>SERVER</strong></span>
       </div>
       <div class="pool-dive-stage" data-pool-prompt="idle">
+        <div class="pool-deck" aria-hidden="true">
+          <span class="pool-deck-rail"></span>
+          <span class="pool-starting-block"><i>R</i></span>
+        </div>
+        <div class="pool-diver" aria-hidden="true">
+          <span class="pool-diver-head"><i></i></span>
+          <span class="pool-diver-body"></span>
+          <span class="pool-diver-arm pool-diver-arm-left"></span>
+          <span class="pool-diver-arm pool-diver-arm-right"></span>
+          <span class="pool-diver-leg pool-diver-leg-left"></span>
+          <span class="pool-diver-leg pool-diver-leg-right"></span>
+        </div>
+        <span class="pool-splash" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         <span class="pool-water" aria-hidden="true"><i></i><i></i><i></i></span>
         <strong data-pool-signal>PRESS START</strong>
         <div class="pool-lanes" role="group" aria-label="Choose a diving lane">
@@ -1244,6 +1257,7 @@ function bindArcade(adapter: StudyAdapter) {
   `
 
   const card = host.querySelector<HTMLElement>('.pool-dive')!
+  const stage = host.querySelector<HTMLElement>('.pool-dive-stage')!
   const startButton = host.querySelector<HTMLButtonElement>('[data-pool-start]')!
   const signal = host.querySelector<HTMLElement>('[data-pool-signal]')!
   const round = host.querySelector<HTMLElement>('[data-pool-round]')!
@@ -1253,12 +1267,21 @@ function bindArcade(adapter: StudyAdapter) {
   const lanes = [...host.querySelectorAll<HTMLButtonElement>('[data-pool-choice]')]
   let snapshot: SocialArcadeSnapshot | null = null
   let pending = false
+  let motion: 'idle' | 'starting' | 'ready' | 'takeoff' | 'splash' | 'recover' | 'complete' | 'error' = 'idle'
+  let selectedLane: SocialArcadeChoice = 'center'
+  let outcome: 'none' | 'clean' | 'miss' = 'none'
+  let statusMessage = 'Start when you are ready. Very early, late or replayed actions score zero.'
+
+  const waitForMotion = (durationMs: number) => new Promise<void>((resolve) => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.setTimeout(resolve, reducedMotion ? 16 : durationMs)
+  })
 
   const capable = typeof adapter.startPoolDive === 'function' && typeof adapter.playPoolDiveRound === 'function'
   if (!capable) {
     startButton.disabled = true
     startButton.textContent = 'Verified arcade unavailable'
-    result.textContent = 'Connect a verified RadioTEDU account session to play.'
+    statusMessage = 'Connect a verified RadioTEDU account session to play.'
     verification.textContent = 'OFFLINE'
   }
 
@@ -1266,32 +1289,34 @@ function bindArcade(adapter: StudyAdapter) {
     const session = snapshot?.session
     card.dataset.arcadeState = pending ? 'pending' : session?.final ? 'complete' : session ? 'active' : 'idle'
     card.dataset.lastCorrect = snapshot?.result ? String(snapshot.result.correct && snapshot.result.validTiming) : 'none'
+    card.dataset.poolMotion = motion
     round.textContent = session ? `${session.round} / ${session.totalRounds}` : '— / 8'
     score.textContent = String(session?.score ?? 0)
-    verification.textContent = snapshot?.verification === 'local-preview' ? 'LOCAL PREVIEW' : 'SERVER'
+    verification.textContent = !capable
+      ? 'OFFLINE'
+      : snapshot?.verification === 'local-preview'
+        ? 'LOCAL PREVIEW'
+        : 'SERVER'
     const prompt = session?.prompt
-    card.querySelector<HTMLElement>('.pool-dive-stage')!.dataset.poolPrompt = prompt ?? (session?.final ? 'complete' : 'idle')
+    stage.dataset.poolPrompt = prompt ?? (session?.final ? 'complete' : 'idle')
+    stage.dataset.poolMotion = motion
+    stage.dataset.poolLane = selectedLane
+    stage.dataset.poolOutcome = outcome
     signal.textContent = session?.final ? 'DIVE COMPLETE' : prompt ? `DIVE ${prompt.toUpperCase()}` : 'PRESS START'
     for (const lane of lanes) {
       lane.disabled = pending || !session || session.final
       lane.dataset.target = String(lane.dataset.poolChoice === prompt)
+      lane.dataset.selected = String(lane.dataset.poolChoice === selectedLane && motion !== 'idle')
     }
     startButton.disabled = pending || !capable || Boolean(session && !session.final)
-    startButton.textContent = pending
-      ? 'Server is checking…'
-      : session?.final
-        ? 'Play another verified game'
-        : 'Start verified game'
-    if (snapshot?.result) {
-      result.textContent = snapshot.result.correct && snapshot.result.validTiming
-        ? `Clean dive · +${snapshot.result.roundScore} score`
-        : snapshot.result.correct
-          ? 'Correct lane, but the server timing window was missed.'
-          : 'Wrong lane. Read the next signal and recover.'
-    }
-    if (session?.final) {
-      result.textContent = `Final score ${session.score}. ${snapshot?.pointsAwarded ?? 0} Gold awarded by the server.`
-    }
+    startButton.textContent = !capable
+      ? 'Verified arcade unavailable'
+      : pending
+        ? 'Server is checking…'
+        : session?.final
+          ? 'Play another verified game'
+          : 'Start verified game'
+    result.textContent = statusMessage
   }
 
   const applyAuthoritativeBalance = (next: SocialArcadeSnapshot) => {
@@ -1305,21 +1330,29 @@ function bindArcade(adapter: StudyAdapter) {
     if (!adapter.startPoolDive || pending) return
     pending = true
     snapshot = null
-    result.textContent = 'Creating a server-verified round…'
+    motion = 'starting'
+    outcome = 'none'
+    selectedLane = 'center'
+    statusMessage = 'Creating a server-verified round…'
     render()
     void adapter.startPoolDive().then((next) => {
       snapshot = next
-      result.textContent = 'Signal ready. Choose the matching lane.'
+      motion = 'ready'
+      statusMessage = 'Signal ready. Choose the matching lane.'
       setHudMessage('POOL DIVE READY')
     }).catch((error: unknown) => {
       const code = error instanceof StudyAdapterError ? error.code : 'SOCIAL_ARCADE_UNAVAILABLE'
-      result.textContent = code === 'SOCIAL_ARCADE_RATE_LIMITED'
+      motion = 'error'
+      statusMessage = code === 'SOCIAL_ARCADE_RATE_LIMITED'
         ? 'Too many arcade actions. Wait a moment and try again.'
         : 'Pool Dive could not start. Your Gold was not changed.'
       setHudMessage('ARCADE UNAVAILABLE')
     }).finally(() => {
       pending = false
       render()
+      if (snapshot && window.matchMedia('(max-width: 700px)').matches) {
+        stage.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' })
+      }
     })
   })
 
@@ -1330,17 +1363,45 @@ function bindArcade(adapter: StudyAdapter) {
       const { id, nonce } = snapshot.session
       if (!nonce) return
       pending = true
+      selectedLane = choice
+      outcome = 'none'
+      motion = 'takeoff'
+      statusMessage = 'Dive in motion. The server is verifying this response.'
       render()
-      void adapter.playPoolDiveRound(id, nonce, choice).then((next) => {
+      void Promise.all([
+        adapter.playPoolDiveRound(id, nonce, choice),
+        waitForMotion(420),
+      ]).then(async ([next]) => {
         snapshot = next
         applyAuthoritativeBalance(next)
+        outcome = next.result?.correct && next.result.validTiming ? 'clean' : 'miss'
+        motion = 'splash'
+        statusMessage = next.result?.correct && next.result.validTiming
+          ? `Clean dive · +${next.result.roundScore} score`
+          : next.result?.correct
+            ? 'Correct lane, but the server timing window was missed.'
+            : 'Wrong lane. Read the next signal and recover.'
+        render()
+        await waitForMotion(260)
         if (next.session.final) {
+          motion = 'complete'
+          statusMessage = `Final score ${next.session.score}. ${next.pointsAwarded ?? 0} Gold awarded by the server.`
           window.dispatchEvent(new CustomEvent('radiotedu:study-social-action'))
           setHudMessage(next.pointsAwarded ? `POOL DIVE +${next.pointsAwarded} GOLD` : 'POOL DIVE COMPLETE')
+        } else {
+          motion = 'recover'
+          render()
+          await waitForMotion(120)
+          motion = 'ready'
+          outcome = 'none'
+          statusMessage = 'Next signal ready. Choose the matching lane.'
         }
       }).catch((error: unknown) => {
         const code = error instanceof StudyAdapterError ? error.code : 'SOCIAL_ARCADE_UNAVAILABLE'
-        result.textContent = code === 'SOCIAL_ARCADE_SESSION_EXPIRED'
+        snapshot = null
+        motion = 'error'
+        outcome = 'miss'
+        statusMessage = code === 'SOCIAL_ARCADE_SESSION_EXPIRED'
           ? 'This game expired. Start a new verified game.'
           : code === 'SOCIAL_ARCADE_RATE_LIMITED'
             ? 'Too many arcade actions. Wait a moment.'

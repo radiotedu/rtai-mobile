@@ -1233,27 +1233,120 @@ button { cursor: pointer; }
 .pool-dive-scoreboard > span:last-child { border-right: 0; }
 .pool-dive-scoreboard small { color: #789088; font-size: 6px; font-weight: 900; letter-spacing: .8px; }
 .pool-dive-scoreboard strong { margin-top: 3px; color: #e9f2ee; font-size: 10px; }
-.pool-dive-stage { position: relative; display: grid; min-height: 205px; padding: 18px 12px 12px; align-content: end; gap: 14px; overflow: hidden; border: 1px solid #476960; border-radius: 3px; background: #132a30; }
-.pool-dive-stage::before { position: absolute; inset: 0 0 auto; height: 56%; content: ''; background: #183b43; }
-.pool-dive-stage::after { position: absolute; top: 53%; right: 0; left: 0; height: 2px; content: ''; background: #80cdb3; box-shadow: 0 7px #315e60, 0 14px #234b52; }
-.pool-water { position: absolute; right: 0; bottom: 0; left: 0; display: grid; height: 45%; grid-template-columns: repeat(3, 1fr); opacity: .72; }
-.pool-water i { border-right: 1px solid #2f6164; background: #143a43; }
+.pool-dive-stage { --pool-dive-x: 0px; --pool-dive-mid-x: 0px; position: relative; display: grid; min-height: 278px; padding: 16px 10px 10px; align-content: end; gap: 8px; overflow: hidden; border: 1px solid #476960; border-radius: 3px; background: #132a30; isolation: isolate; }
+.pool-dive-stage[data-pool-lane="left"] { --pool-dive-x: -94px; --pool-dive-mid-x: -46px; }
+.pool-dive-stage[data-pool-lane="right"] { --pool-dive-x: 94px; --pool-dive-mid-x: 46px; }
+.pool-dive-stage::before { position: absolute; inset: 0 0 auto; height: 76px; content: ''; border-bottom: 2px solid #6c9990; background: #183b43; }
+.pool-dive-stage::after { position: absolute; z-index: 1; top: 74px; right: 0; left: 0; height: 12px; content: ''; border-top: 2px solid #bdd6cc; border-bottom: 2px solid #315e60; background: #829890; }
+.pool-deck { position: absolute; z-index: 3; top: 29px; left: -8px; width: calc(50% + 13px); height: 50px; border: 2px solid #263e3a; background: #d2d0bb; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
+.pool-deck::before { position: absolute; right: 13px; bottom: 5px; width: 42px; height: 5px; content: ''; border: 1px solid #496d64; background: #e8e4ce; }
+.pool-deck-rail { position: absolute; top: -18px; right: 9px; width: 34px; height: 22px; border: 3px solid #b8cbc4; border-bottom: 0; }
+.pool-starting-block { position: absolute; right: 17px; bottom: 11px; display: grid; width: 24px; height: 21px; place-items: center; border: 2px solid #405d56; color: #eef4ef; background: #c51f2b; font: 900 8px Consolas, monospace; }
+.pool-starting-block::after { position: absolute; right: -4px; bottom: -9px; width: 28px; height: 7px; content: ''; border: 2px solid #405d56; background: #e6e2cb; transform: skewX(-20deg); }
+.pool-water { position: absolute; z-index: 0; inset: 86px 0 69px; display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 2px solid #4c898f; background: #174650; }
+.pool-water::before { position: absolute; inset: 17px 0 auto; height: 2px; content: ''; background: #65acaa; box-shadow: 0 26px #2b7478, 0 52px #65acaa, 0 78px #2b7478; }
+.pool-water i { position: relative; border-right: 1px solid #84b8ae; }
+.pool-water i::after { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; content: ''; background: #ece3b5; opacity: .74; }
 .pool-water i:last-child { border-right: 0; }
-.pool-dive-stage > strong { position: relative; z-index: 1; justify-self: center; padding: 7px 12px; border: 1px solid #6fae99; border-radius: 2px; color: #dff7ed; background: #18342f; font-size: 11px; letter-spacing: 1px; }
-.pool-lanes { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-.pool-lanes button { display: flex; min-height: 58px; padding: 7px; align-items: center; justify-content: center; flex-direction: column; gap: 4px; border: 1px solid #46736a; border-radius: 3px; color: #d6e7e1; background: #17332f; }
+.pool-dive-stage > strong { position: absolute; z-index: 7; top: 10px; right: 9px; max-width: calc(50% - 8px); padding: 7px 9px; border: 1px solid #6fae99; border-radius: 2px; color: #dff7ed; background: #18342f; font-size: 10px; letter-spacing: .8px; text-align: center; }
+.pool-diver { position: absolute; z-index: 5; top: 31px; left: 50%; width: 24px; height: 51px; transform: translateX(-50%); transform-origin: 50% 75%; image-rendering: pixelated; }
+.pool-diver-head { position: absolute; z-index: 3; top: 0; left: 5px; width: 15px; height: 15px; border: 2px solid #4c2e28; background: #c98c67; }
+.pool-diver-head i { position: absolute; inset: -2px -2px auto; height: 6px; background: #252321; }
+.pool-diver-body { position: absolute; z-index: 2; top: 14px; left: 4px; width: 17px; height: 20px; border: 2px solid #711620; background: #e32636; }
+.pool-diver-body::after { position: absolute; right: 3px; bottom: 3px; width: 5px; height: 5px; content: ''; background: #f3ece3; }
+.pool-diver-arm,
+.pool-diver-leg { position: absolute; width: 6px; border: 2px solid #4c2e28; transform-origin: 50% 0; }
+.pool-diver-arm { z-index: 1; top: 17px; height: 20px; background: #c98c67; }
+.pool-diver-arm-left { left: 0; transform: rotate(13deg); }
+.pool-diver-arm-right { right: 0; transform: rotate(-13deg); }
+.pool-diver-leg { top: 32px; height: 19px; background: #263e54; }
+.pool-diver-leg-left { left: 5px; transform: rotate(4deg); }
+.pool-diver-leg-right { right: 5px; transform: rotate(-4deg); }
+.pool-splash { position: absolute; z-index: 6; top: 131px; left: 50%; width: 40px; height: 24px; margin-left: var(--pool-dive-x); opacity: 0; transform: translateX(-50%); }
+.pool-splash::before { position: absolute; right: 2px; bottom: 0; left: 2px; height: 7px; content: ''; border: 2px solid #d8f5ed; background: #77c9c6; }
+.pool-splash i { position: absolute; bottom: 4px; left: 17px; width: 5px; height: 16px; border: 2px solid #d8f5ed; background: #77c9c6; transform-origin: 50% 100%; }
+.pool-splash i:nth-child(1) { transform: rotate(-58deg) translateY(2px); }
+.pool-splash i:nth-child(2) { transform: rotate(-24deg) translateY(-2px); }
+.pool-splash i:nth-child(3) { transform: rotate(24deg) translateY(-2px); }
+.pool-splash i:nth-child(4) { transform: rotate(58deg) translateY(2px); }
+.pool-lanes { position: relative; z-index: 8; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.pool-lanes button { display: flex; min-height: 58px; padding: 7px; align-items: center; justify-content: center; flex-direction: column; gap: 4px; border: 1px solid #46736a; border-radius: 3px; color: #d6e7e1; background: #17332f; transition: border-color 120ms linear, color 120ms linear, background-color 120ms linear; }
 .pool-lanes button span { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #668f82; border-radius: 50%; font: 900 8px Consolas, monospace; }
 .pool-lanes button b { font-size: 7px; letter-spacing: .7px; }
 .pool-lanes button:hover:not(:disabled),
 .pool-lanes button[data-target="true"] { border-color: #96e3c4; color: #0b221a; background: #7bc9a8; }
+.pool-lanes button[data-selected="true"] { outline: 2px solid #f1cd62; outline-offset: -3px; }
+.pool-lanes button:focus-visible { outline: 2px solid #f1cd62; outline-offset: 2px; }
 .pool-lanes button:disabled { cursor: default; opacity: .58; }
 .pool-dive[data-arcade-state="active"] .pool-lanes button { opacity: 1; }
 .pool-dive[data-last-correct="true"] .pool-dive-stage { border-color: #8ce0bd; }
 .pool-dive[data-last-correct="false"] .pool-dive-stage { border-color: #a86464; }
+.pool-dive-stage[data-pool-motion="starting"] .pool-diver { animation: pool-diver-enter 240ms steps(4, end) both; }
+.pool-dive-stage[data-pool-motion="takeoff"] .pool-diver { animation: pool-diver-takeoff 420ms steps(7, end) both; }
+.pool-dive-stage[data-pool-motion="takeoff"] .pool-diver-arm-left { animation: pool-arm-stream-left 420ms steps(4, end) both; }
+.pool-dive-stage[data-pool-motion="takeoff"] .pool-diver-arm-right { animation: pool-arm-stream-right 420ms steps(4, end) both; }
+.pool-dive-stage[data-pool-motion="splash"] .pool-diver { opacity: 0; transform: translate(calc(-50% + var(--pool-dive-x)), 94px) rotate(90deg); }
+.pool-dive-stage[data-pool-motion="splash"] .pool-splash { animation: pool-splash-rise 260ms steps(4, end) both; }
+.pool-dive-stage[data-pool-motion="recover"] .pool-diver { animation: pool-diver-reset 120ms steps(2, end) both; }
+.pool-dive-stage[data-pool-motion="complete"] .pool-diver { transform: translateX(-50%); }
+.pool-dive-stage[data-pool-motion="complete"] .pool-diver-arm-left { transform: rotate(145deg); }
+.pool-dive-stage[data-pool-motion="complete"] .pool-diver-arm-right { transform: rotate(-145deg); }
+.pool-dive-stage[data-pool-motion="error"] { border-color: #a86464; }
+.pool-dive-stage[data-pool-outcome="miss"] .pool-splash::before,
+.pool-dive-stage[data-pool-outcome="miss"] .pool-splash i { border-color: #f0b2a4; background: #ad5d56; }
+.pool-dive-stage[data-pool-outcome="clean"] .pool-splash::before,
+.pool-dive-stage[data-pool-outcome="clean"] .pool-splash i { border-color: #e3fff5; background: #80d6c0; }
+.pool-dive[data-pool-motion="takeoff"] .pool-lanes button,
+.pool-dive[data-pool-motion="splash"] .pool-lanes button,
+.pool-dive[data-pool-motion="recover"] .pool-lanes button { opacity: .72; }
+@keyframes pool-diver-enter {
+  0% { opacity: 0; transform: translate(-76px, 0); }
+  100% { opacity: 1; transform: translateX(-50%); }
+}
+@keyframes pool-diver-takeoff {
+  0% { transform: translateX(-50%) rotate(0deg) scaleY(1); }
+  24% { transform: translate(calc(-50% + var(--pool-dive-mid-x)), -4px) rotate(-18deg) scaleY(.86); }
+  48% { transform: translate(calc(-50% + var(--pool-dive-mid-x)), 18px) rotate(18deg) scaleY(1); }
+  72% { transform: translate(calc(-50% + var(--pool-dive-x)), 55px) rotate(62deg) scaleY(1); }
+  100% { transform: translate(calc(-50% + var(--pool-dive-x)), 94px) rotate(90deg) scaleY(1); }
+}
+@keyframes pool-arm-stream-left {
+  0%, 24% { transform: rotate(13deg); }
+  48%, 100% { transform: rotate(154deg); }
+}
+@keyframes pool-arm-stream-right {
+  0%, 24% { transform: rotate(-13deg); }
+  48%, 100% { transform: rotate(-154deg); }
+}
+@keyframes pool-splash-rise {
+  0% { opacity: 0; transform: translate(-50%, 7px) scale(.5); }
+  45% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -5px) scale(1.18); }
+}
+@keyframes pool-diver-reset {
+  0% { opacity: 0; transform: translate(calc(-50% + var(--pool-dive-x)), 94px) rotate(90deg); }
+  100% { opacity: 1; transform: translateX(-50%); }
+}
 .pool-dive-result { min-height: 28px; padding: 7px 8px; border-left: 2px solid #547b70; background: #0e181a; }
 .pool-dive-start { min-height: 42px; border: 1px solid #77bda2; border-radius: 3px; color: #0c211a; background: #82d4b1; font-size: 9px; font-weight: 900; letter-spacing: .4px; }
 .pool-dive-start:hover:not(:disabled) { background: #9be3c5; }
 .pool-dive-start:disabled { color: #82958f; border-color: #394b47; background: #202b29; cursor: default; }
+
+@media (max-width: 700px) {
+  .pool-dive { padding: 10px; }
+  .pool-dive > header { align-items: flex-start; }
+  .pool-dive-stage { min-height: 264px; }
+  .pool-dive-stage[data-pool-lane="left"] { --pool-dive-x: -82px; --pool-dive-mid-x: -40px; }
+  .pool-dive-stage[data-pool-lane="right"] { --pool-dive-x: 82px; --pool-dive-mid-x: 40px; }
+  .pool-lanes button { min-height: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pool-dive-stage .pool-diver,
+  .pool-dive-stage .pool-diver-arm,
+  .pool-dive-stage .pool-splash { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+  .pool-lanes button { transition: none; }
+}
 
 @media (max-width: 700px) {
   .world-rail {
@@ -3581,6 +3674,11 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
     right: 8px !important;
     bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
     min-height: 44px !important;
+  }
+  html:not([data-hud-panel="closed"]) .rtac .rtac__settings {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
   .action-dock { width: min-content; max-width: calc(100vw - 12px); }
   .action-dock .dock-button { width: 54px; min-width: 54px; }

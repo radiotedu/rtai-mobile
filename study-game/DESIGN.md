@@ -16,6 +16,7 @@ RadioTEDU Social is an isometric pixel-campus world for TEDU students. It uses R
 - A floor click means walk, a chair click means sit, and clicking away while seated means stand and continue walking.
 - Furniture, walls, stages, restaurant fixtures, and other solid room geometry are never valid walking targets.
 - Motion communicates an action or state transition. Ambient motion stays secondary to navigation and study activity.
+- Pool Dive uses discrete ready, takeoff, splash, recovery, and completion poses. The 800 ms choreography explains a verified round, locks duplicate input, and yields to a 32 ms reduced-motion path when requested.
 - Gold purchases, inventory, study time, moderation, and account state remain server-authoritative.
 
 ## Layout
@@ -38,3 +39,4 @@ RadioTEDU Social is an isometric pixel-campus world for TEDU students. It uses R
 - Spacing: a compact desktop register and a larger mobile touch register match the input method.
 - Cards and panels: solid panels are used only for actionable account, social, inventory, event, and moderation content.
 - Illustration: every room image and sprite represents a real game location, object, character, or state.
+- Arcade motion: the pixel diver and pool geometry reuse the game's authored CSS and sprite language, avoiding heavyweight render tooling and third-party assets while keeping the interaction consistent across desktop and mobile.

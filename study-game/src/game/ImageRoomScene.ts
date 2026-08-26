@@ -191,9 +191,11 @@ export class ImageRoomScene extends Phaser.Scene {
   #lastWalkTarget: WorldPoint | null = null
   #keyboardHandler = (event: KeyboardEvent): void => {
     const target = event.target
+    // Closing a HUD sheet returns focus to its button. Keep WASD available
+    // there, while never stealing keys from fields where players type.
     if (target instanceof HTMLElement && (
       target.isContentEditable
-      || target.matches('input, textarea, select, button')
+      || target.matches('input, textarea, select')
     )) return
 
     const direction = new Map<string, { x: number; y: number }>([

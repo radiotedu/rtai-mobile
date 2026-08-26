@@ -34,8 +34,8 @@ test('captures both Library seat directions and the Çim Alan cafe perspective',
     const targets = window.__STUDY_GAME_APP__.tapTargets().floor
       .filter((target) => document.elementFromPoint(target.screen.x, target.screen.y)?.tagName === 'CANVAS')
       .sort((left, right) => (
-        Math.hypot(left.world.x - 1_050, left.world.y - 345)
-        - Math.hypot(right.world.x - 1_050, right.world.y - 345)
+        Math.hypot(left.world.x - 950, left.world.y - 350)
+        - Math.hypot(right.world.x - 950, right.world.y - 350)
       ))
     return targets[0] ?? null
   })
@@ -58,8 +58,8 @@ test('captures the Çim Alan cafe after a real mobile terrace tap', async ({ pag
     const targets = window.__STUDY_GAME_APP__.tapTargets().floor
       .filter((target) => document.elementFromPoint(target.screen.x, target.screen.y)?.tagName === 'CANVAS')
       .sort((left, right) => (
-        Math.hypot(left.world.x - 1_050, left.world.y - 345)
-        - Math.hypot(right.world.x - 1_050, right.world.y - 345)
+        Math.hypot(left.world.x - 950, left.world.y - 350)
+        - Math.hypot(right.world.x - 950, right.world.y - 350)
       ))
     return targets[0] ?? null
   })

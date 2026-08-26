@@ -83,6 +83,13 @@ for (const profile of [
   const enterLibrary = page.getByRole('button', { name: /Enter Library/i })
   if (await enterLibrary.isVisible().catch(() => false)) await enterLibrary.click()
   await page.locator('html[data-study-ready="true"]').waitFor({ timeout: 30_000 })
+  const rejectAnalytics = page.locator('[data-rtac-reject]:visible').last()
+  const consentHandled = await rejectAnalytics.click({ timeout: 30_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (consentHandled) {
+    await page.locator('[data-rtac-banner]:visible').waitFor({ state: 'hidden', timeout: 10_000 })
+  }
 
   await page.getByRole('button', { name: 'Wardrobe' }).click()
   for (const [slot, id] of [

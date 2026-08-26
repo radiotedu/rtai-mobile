@@ -90,7 +90,8 @@ const firstFloor = visibleFloorTargets(targets, initial.nodeId)[0]
 if (!firstFloor) throw new Error('No visible floor target for mobile QA')
 
 await tap(firstFloor, 'tap-floor')
-await sampleUntil('walking-to-floor', (state) => state.state === 'ready' && state.nodeId === firstFloor.id)
+await sampleUntil('walking-to-floor', (state) => state.state === 'ready'
+  && Math.hypot(state.position.x - firstFloor.world.x, state.position.y - firstFloor.world.y) <= 24)
 
 targets = await page.evaluate(() => window.__STUDY_GAME_APP__.tapTargets())
 const redirectFloors = visibleFloorTargets(targets, firstFloor.id)
@@ -100,12 +101,26 @@ if (!redirectStart || !redirectFinish) throw new Error('Not enough visible floor
 
 await tap(redirectStart, 'tap-redirect-start')
 await page.waitForTimeout(260)
-await tap(redirectFinish, 'tap-redirect-finish')
-await sampleUntil('redirected-walk', (state) => state.state === 'ready' && state.nodeId === redirectFinish.id)
+const refreshedRedirectFinish = await page.evaluate((targetId) => (
+  window.__STUDY_GAME_APP__.tapTargets().nodes.find((node) => node.id === targetId) ?? null
+), redirectFinish.id)
+if (!refreshedRedirectFinish) throw new Error('Redirect target disappeared during camera follow')
+await tap(refreshedRedirectFinish, 'tap-redirect-finish')
+await sampleUntil('redirected-walk', (state) => state.state === 'ready'
+  && Math.hypot(state.position.x - refreshedRedirectFinish.world.x, state.position.y - refreshedRedirectFinish.world.y) <= 24)
 
 targets = await page.evaluate(() => window.__STUDY_GAME_APP__.tapTargets())
 const seat = targets.seats
   .filter((candidate) => candidate.reachable && !candidate.occupied)
+  .map((candidate) => ({
+    ...candidate,
+    // The actor anchor can sit behind the desk artwork. Tap the authored
+    // chair hit-area centroid, which is the real touch target a player sees.
+    screen: {
+      x: candidate.hitAreaScreen.reduce((sum, point) => sum + point.x, 0) / candidate.hitAreaScreen.length,
+      y: candidate.hitAreaScreen.reduce((sum, point) => sum + point.y, 0) / candidate.hitAreaScreen.length,
+    },
+  }))
   .filter((candidate) => candidate.screen.x > 24 && candidate.screen.x < viewport.width - 24)
   .filter((candidate) => candidate.screen.y > 90 && candidate.screen.y < viewport.height - 100)[0]
 if (!seat) throw new Error('No visible available seat for mobile QA')
@@ -115,7 +130,11 @@ await sampleUntil('walking-to-seat', (state) => state.state === 'seated' && stat
 await page.waitForTimeout(800)
 await snapshot('seated-hold')
 
-await tap(redirectFinish, 'tap-stand')
+const standTarget = await page.evaluate((targetId) => (
+  window.__STUDY_GAME_APP__.tapTargets().nodes.find((node) => node.id === targetId) ?? null
+), refreshedRedirectFinish.id)
+if (!standTarget) throw new Error('Stand target disappeared after sitting')
+await tap(standTarget, 'tap-stand')
 await sampleUntil('standing', (state) => state.state === 'ready' && state.seatId === null, 10_000)
 await page.waitForTimeout(500)
 await page.screenshot({ path: path.join(outputDir, '99-final.png') })

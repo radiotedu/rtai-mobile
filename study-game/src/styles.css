@@ -2757,6 +2757,14 @@ html[data-daily-focus-complete="true"] .study-mission { border-color: rgba(239, 
   }
 }
 
+/* Keyboard focus is a persistent interaction layer, not a hover substitute.
+   The warm RadioTEDU ring stays visible over both dark HUD chrome and the
+   detailed campus artwork. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid #f2cf72 !important;
+  outline-offset: 2px !important;
+}
+
 /* 2026-08-21 readability pass.
    Keep the game world dominant while making desktop controls and account entry
    comfortably readable. Mobile game controls already occupy the correct

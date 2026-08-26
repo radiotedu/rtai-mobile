@@ -77,7 +77,13 @@ describe('Çim Alan amphitheatre calibration', () => {
     for (const point of removedPath) {
       expect(field.layerAt(point), `${point.x},${point.y}`).toBeNull()
     }
-    expect(field.layerAt({ x: 900, y: 285 }), 'restaurant courtyard').not.toBeNull()
+    expect(field.layerAt({ x: 900, y: 285 }), 'restaurant courtyard approach').not.toBeNull()
+    expect(field.layerAt({ x: 950, y: 350 }), 'open restaurant forecourt').not.toBeNull()
+    expect(field.layerAt({ x: 1_050, y: 345 }), 'restaurant tables and facade').toBeNull()
+    expect(
+      roomInteractionObstacles(room).some((polygon) => pointInPolygon({ x: 1_050, y: 345 }, polygon)),
+      'restaurant fixtures must reject direct floor clicks',
+    ).toBe(true)
   })
 
   it('ships transparent source-pixel foreground assets for every calibrated seat', async () => {

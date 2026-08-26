@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
+import { chromium } from '@playwright/test'
 import sharp from 'sharp'
 
 const journeyDir = path.resolve(process.argv[2] ?? '../artifacts/study-game/mobile-touch-journey')
@@ -15,11 +16,64 @@ const avatarContactSheetPath = path.join(journeyDir, 'avatar-state-contact-sheet
 await rm(framesDir, { recursive: true, force: true })
 await mkdir(framesDir, { recursive: true })
 
+async function extractFramesWithChromium() {
+  const browser = await chromium.launch({ headless: true })
+  const page = await browser.newPage()
+  try {
+    await page.setContent(`
+      <style>html,body{margin:0;background:#0a0f12}canvas{display:block}</style>
+      <video id="source" muted preload="auto"></video>
+      <canvas id="frame"></canvas>
+    `)
+    const source = `data:video/webm;base64,${(await readFile(videoPath)).toString('base64')}`
+    const metadata = await page.evaluate(async (src) => {
+      const video = document.querySelector('#source')
+      const canvas = document.querySelector('#frame')
+      video.src = src
+      video.load()
+      if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+        await new Promise((resolve, reject) => {
+          video.addEventListener('loadedmetadata', resolve, { once: true })
+          video.addEventListener('error', () => reject(new Error('Chromium could not decode the QA video')), { once: true })
+        })
+      }
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      return { duration: video.duration, width: video.videoWidth, height: video.videoHeight }
+    }, source)
+    if (!Number.isFinite(metadata.duration) || metadata.duration <= 0 || metadata.width <= 0 || metadata.height <= 0) {
+      throw new Error('Chromium returned invalid QA video metadata')
+    }
+    await page.setViewportSize({ width: metadata.width, height: metadata.height })
+    const frameCount = Math.max(1, Math.ceil(metadata.duration * 8))
+    for (let index = 0; index < frameCount; index += 1) {
+      const atSeconds = Math.min(Math.max(0, metadata.duration - 0.001), index / 8)
+      await page.evaluate(async (time) => {
+        const video = document.querySelector('#source')
+        const canvas = document.querySelector('#frame')
+        if (Math.abs(video.currentTime - time) > 0.001) {
+          const seeked = new Promise((resolve, reject) => {
+            video.addEventListener('seeked', resolve, { once: true })
+            video.addEventListener('error', () => reject(new Error('Chromium video seek failed')), { once: true })
+          })
+          video.currentTime = time
+          await seeked
+        }
+        canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height)
+      }, atSeconds)
+      await page.locator('#frame').screenshot({ path: path.join(framesDir, `frame-${String(index + 1).padStart(5, '0')}.png`) })
+    }
+  } finally {
+    await browser.close()
+  }
+}
+
 const ffmpeg = spawnSync('ffmpeg', [
   '-hide_banner', '-loglevel', 'error', '-y', '-i', videoPath,
   '-vf', 'fps=8', path.join(framesDir, 'frame-%05d.png'),
 ], { encoding: 'utf8' })
-if (ffmpeg.status !== 0) throw new Error(ffmpeg.stderr || 'ffmpeg frame extraction failed')
+const frameExtractor = ffmpeg.status === 0 ? 'ffmpeg' : 'chromium'
+if (frameExtractor === 'chromium') await extractFramesWithChromium()
 
 const files = (await readdir(framesDir)).filter((file) => file.endsWith('.png')).sort()
 const frames = []
@@ -121,6 +175,7 @@ if (avatarContactFrames.length > 0) {
 
 const report = {
   videoPath,
+  frameExtractor,
   frameRate: 8,
   frameCount: frames.length,
   durationMs: frames.length * 125,
@@ -146,4 +201,5 @@ console.log(JSON.stringify({
   seatedObserved: report.seatedObserved,
   consoleErrors: report.consoleErrors.length,
   unexpectedFreeze: report.unexpectedFreeze,
+  frameExtractor: report.frameExtractor,
 }))

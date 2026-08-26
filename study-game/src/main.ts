@@ -736,6 +736,7 @@ type BoundHudPanels = Readonly<{
 
 function bindPanels(): BoundHudPanels {
   const state = new HudPanelState()
+  let returnFocus: HTMLElement | null = null
   const render = () => {
     const current = state.snapshot().current
     document.documentElement.dataset.hudPanel = current
@@ -749,21 +750,33 @@ function bindPanels(): BoundHudPanels {
   document.querySelectorAll<HTMLButtonElement>('[data-hud-toggle]').forEach((toggle) => {
     toggle.addEventListener('click', () => {
       state.toggle(toggle.dataset.hudToggle as HudPanelName)
+      returnFocus = state.snapshot().current === 'closed' ? null : toggle
       render()
-      if (state.snapshot().current === 'closed') toggle.blur()
     })
   })
   document.querySelectorAll<HTMLButtonElement>('[data-hud-close]').forEach((close) => {
     close.addEventListener('click', () => {
+      const target = returnFocus
       state.close()
       render()
-      close.blur()
+      returnFocus = null
+      target?.focus()
     })
   })
   render()
   return {
-    open: (panel) => { state.open(panel); render() },
-    close: () => { state.close(); render() },
+    open: (panel) => {
+      returnFocus = document.querySelector<HTMLElement>(`[data-hud-toggle="${panel}"]`)
+      state.open(panel)
+      render()
+    },
+    close: () => {
+      const target = returnFocus
+      state.close()
+      render()
+      returnFocus = null
+      target?.focus()
+    },
   }
 }
 
@@ -1436,12 +1449,13 @@ function bindGlobalShortcuts(panels: BoundHudPanels) {
   window.addEventListener('keydown', (event) => {
     const target = event.target
     const typing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable)
+    const interactive = target instanceof HTMLElement && Boolean(target.closest('button, a, input, textarea, select, summary, [role="button"]'))
     if (event.key === 'Escape') {
       panels.close()
       if (typing) (target as HTMLElement).blur()
       return
     }
-    if (event.key === 'Enter' && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    if (event.key === 'Enter' && !typing && !interactive && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault()
       panels.open('chat')
       document.querySelector<HTMLInputElement>('#chat-input')?.focus()

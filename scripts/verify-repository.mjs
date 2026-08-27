@@ -48,8 +48,8 @@ const endpointContracts = [
   },
   {
     relativePath: 'mobile/src/services/studyWebViewService.ts',
-    endpoint: 'https://radiotedu.com/study/',
-    patterns: [/['"]https:\/\/radiotedu\.com\/study\/['"]/],
+    endpoint: 'https://radiotedu.com/social/',
+    patterns: [/['"]https:\/\/radiotedu\.com\/social\/['"]/],
   },
   {
     relativePath: 'mobile/src/services/votingWebViewService.ts',

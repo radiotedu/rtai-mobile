@@ -401,12 +401,12 @@ const AUTH_FIX_COPY: Record<AppLanguage, Record<string, string>> = {
 };
 
 const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
-  en: {'radio.live': 'LIVE', 'study.kicker': 'Study', 'profile.lastSyncFailed': 'Last synchronization failed.'},
-  tr: {'radio.live': 'CANLI YAYIN', 'study.kicker': 'Çalışma', 'profile.lastSyncFailed': 'Son eşitleme başarısız oldu.'},
-  ru: {'radio.live': 'ЭФИР', 'study.kicker': 'Учёба', 'profile.lastSyncFailed': 'Последняя синхронизация не удалась.'},
-  ar: {'radio.live': 'مباشر', 'study.kicker': 'الدراسة', 'profile.lastSyncFailed': 'فشلت آخر مزامنة.'},
-  de: {'radio.live': 'LIVE', 'study.kicker': 'Lernen', 'profile.lastSyncFailed': 'Die letzte Synchronisierung ist fehlgeschlagen.'},
-  fr: {'radio.live': 'EN DIRECT', 'study.kicker': 'Étude', 'profile.lastSyncFailed': 'La dernière synchronisation a échoué.'},
+  en: {'radio.live': 'LIVE', 'study.kicker': 'Study', 'profile.lastSyncFailed': 'Last synchronization failed.', 'home.tickets': 'My tickets', 'home.roomQr': 'Room QR'},
+  tr: {'radio.live': 'CANLI YAYIN', 'study.kicker': 'Çalışma', 'profile.lastSyncFailed': 'Son eşitleme başarısız oldu.', 'home.tickets': 'Biletlerim', 'home.roomQr': 'Oda QR'},
+  ru: {'radio.live': 'ЭФИР', 'study.kicker': 'Учёба', 'profile.lastSyncFailed': 'Последняя синхронизация не удалась.', 'home.tickets': 'Мои билеты', 'home.roomQr': 'QR комнаты'},
+  ar: {'radio.live': 'مباشر', 'study.kicker': 'الدراسة', 'profile.lastSyncFailed': 'فشلت آخر مزامنة.', 'home.tickets': 'تذاكري', 'home.roomQr': 'QR الغرفة'},
+  de: {'radio.live': 'LIVE', 'study.kicker': 'Lernen', 'profile.lastSyncFailed': 'Die letzte Synchronisierung ist fehlgeschlagen.', 'home.tickets': 'Meine Tickets', 'home.roomQr': 'Raum-QR'},
+  fr: {'radio.live': 'EN DIRECT', 'study.kicker': 'Étude', 'profile.lastSyncFailed': 'La dernière synchronisation a échoué.', 'home.tickets': 'Mes billets', 'home.roomQr': 'QR de salle'},
 };
 
 export function authCopy(language: string | undefined, key: string): string {

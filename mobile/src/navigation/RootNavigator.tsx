@@ -31,6 +31,8 @@ import LanguageScreen from '../screens/LanguageScreen';
 import FocusScreen from '../screens/FocusScreen';
 import PrivacyScreen from '../screens/PrivacyScreen';
 import PlayerScreen from '../screens/PlayerScreen';
+import MyTicketsScreen from '../screens/MyTicketsScreen';
+import RoomQrScreen from '../screens/RoomQrScreen';
 import {COLORS} from '../theme/theme';
 
 const Tab = createBottomTabNavigator();
@@ -194,6 +196,8 @@ export function RootNavigator() {
       <Stack.Screen name="Games" component={GamesScreen} />
       <Stack.Screen name="Market" component={MarketScreen} />
       <Stack.Screen name="NextSongVote" component={NextSongVoteScreen} />
+      <Stack.Screen name="MyTickets" component={MyTicketsScreen} />
+      <Stack.Screen name="RoomQr" component={RoomQrScreen} />
       <Stack.Screen name="Social" component={SocialWebViewScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="LibraryStudyWeb" component={LibraryStudyWebView} />

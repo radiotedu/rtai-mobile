@@ -27,6 +27,10 @@ import {
   fetchGamificationHome,
 } from '../services/gamificationService';
 import {logSafeError} from '../utils/safeLog';
+import {
+  ErpIdentityStatus,
+  fetchErpIdentityStatus,
+} from '../services/ecosystem';
 
 const emptyHome: GamificationHome = {
   points: {
@@ -49,18 +53,31 @@ const HomeScreen = () => {
   );
   const {user} = useAuth();
   const [home, setHome] = useState<GamificationHome | null>(null);
+  const [erpIdentity, setErpIdentity] = useState<ErpIdentityStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadHome = useCallback(async () => {
     if (!user) {
       setHome(null);
+      setErpIdentity(null);
       return;
     }
 
     setLoading(true);
     try {
-      setHome(await fetchGamificationHome());
+      const identityRequest = user.is_guest
+        ? Promise.resolve(null)
+        : fetchErpIdentityStatus().catch(error => {
+          logSafeError('home.erp-identity', error);
+          return null;
+        });
+      const [nextHome, nextIdentity] = await Promise.all([
+        fetchGamificationHome(),
+        identityRequest,
+      ]);
+      setHome(nextHome);
+      setErpIdentity(nextIdentity);
     } catch (error) {
       logSafeError('home.gamification', error);
       Alert.alert(copy('home.errorTitle'), copy('home.errorText'));
@@ -83,6 +100,8 @@ const HomeScreen = () => {
 
   const accountHome = user ? home : null;
   const homeData = accountHome ?? emptyHome;
+  const canUseRoomQr = erpIdentity?.linked === true &&
+    erpIdentity.permissions.includes('room.attendance');
 
   return (
     <PageTransition>
@@ -127,6 +146,12 @@ const HomeScreen = () => {
           <View style={styles.quickGrid}>
             <QuickAction icon="timer-outline" label={t('focus.title')} onPress={() => navigation.navigate('Focus')} />
             <QuickAction icon="vote-outline" label={copy('home.vote')} onPress={() => navigation.navigate('NextSongVote')} />
+            {user && !user.is_guest ? (
+              <QuickAction icon="ticket-confirmation-outline" label={copy('home.tickets')} onPress={() => navigation.navigate('MyTickets')} />
+            ) : null}
+            {canUseRoomQr ? (
+              <QuickAction icon="qrcode-scan" label={copy('home.roomQr')} onPress={() => navigation.navigate('RoomQr')} />
+            ) : null}
             <QuickAction icon="account-group-outline" label={copy('home.social')} onPress={() => navigation.navigate('Social')} />
             <QuickAction icon="trophy-outline" label={copy('home.rankings')} onPress={() => navigation.navigate('Leaderboard')} />
             <QuickAction icon="calendar-star" label={copy('home.events')} onPress={() => navigation.navigate('Events')} />

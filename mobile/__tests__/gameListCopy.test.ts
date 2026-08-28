@@ -4,8 +4,8 @@ import {screenCopy} from '../src/i18n/screenCopy';
 
 describe('game catalog localization', () => {
   it('localizes bundled slugs instead of leaking backend language', () => {
-    expect(gameListCopy('snake', 'en', {title: 'Yılan'}).title).toBe('Snake');
-    expect(gameListCopy('snake', 'ru', {title: 'Yılan'}).title).toBe('Змейка');
+    expect(gameListCopy('snake', 'en', {title: 'Yılan'}).title).toBe('Neon Snake');
+    expect(gameListCopy('snake', 'ru', {title: 'Yılan'}).title).toBe('Неоновая змейка');
     expect(gameListCopy('memory', 'fr', {title: 'Hafıza'}).title).toBe('Mémoire');
   });
 
@@ -18,7 +18,7 @@ describe('game catalog localization', () => {
 
   it('ships accurate practice and Arabic catalog copy', () => {
     expect(gameListCopy('word-guess', 'ar').description).toBe(
-      'اكتشف الكلمة المخفية من خلال التلميحات.',
+      'اثنا عشر تحدياً عشوائياً من مجموعة تضم 256 سؤالاً.',
     );
     expect(gameListCopy('word-guess', 'ar').description).not.toMatch(/[А-Яа-я]/);
 

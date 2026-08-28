@@ -87,7 +87,21 @@ export function extractServerGoldBalance(reward: unknown): number | null {
   if (!reward || typeof reward !== 'object') {
     return null;
   }
-  const balance = Number((reward as {spendablePoints?: unknown}).spendablePoints);
+  const payload = reward as {
+    spendablePoints?: unknown;
+    spendable_points?: unknown;
+    gold_balance?: unknown;
+    balance?: unknown;
+    points?: {spendable_points?: unknown; spendablePoints?: unknown};
+  };
+  const balance = Number(
+    payload.spendable_points ??
+    payload.spendablePoints ??
+    payload.gold_balance ??
+    payload.balance ??
+    payload.points?.spendable_points ??
+    payload.points?.spendablePoints,
+  );
   return Number.isInteger(balance) && balance >= 0 ? balance : null;
 }
 

@@ -23,6 +23,7 @@ import {
 import {isPodcastId, playChannelById} from '../services/playbackQueue';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
+import {Analytics} from '../services/analyticsService';
 
 const QUALITY_OPTIONS: Array<{
   value: StreamQualityPreference;
@@ -94,12 +95,15 @@ const StreamSettingsScreen = () => {
   };
 
   const updateQuality = async (quality: StreamQualityPreference) => {
+    const previousQuality = preferences.quality;
     setIsSaving(true);
     setError('');
     try {
       await setPreferences({...preferences, quality});
       await applyToCurrentChannel();
+      Analytics.qualityChanged(previousQuality, quality, 'success');
     } catch {
+      Analytics.qualityChanged(previousQuality, quality, 'error');
       setError(copy('stream.applyError'));
     } finally {
       setIsSaving(false);

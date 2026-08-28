@@ -11,27 +11,39 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
-import {AgeRange, Gender, useConsent} from '../privacy/ConsentContext';
+import {AgeRange, Gender, ListeningContext, useConsent} from '../privacy/ConsentContext';
 import {
   CONSENT_AGE_RANGES,
   isAdultConsentAge,
   normalizeConsentForAge,
 } from '../privacy/minorConsentPolicy';
-import {setAnalyticsConsent} from '../services/analyticsService';
+import {Analytics, setAnalyticsConsent} from '../services/analyticsService';
 import {
   PRIVACY_URL,
   REGISTRATION_TERMS_VERSION,
   TERMS_URL,
 } from '../services/registrationPolicy';
-import {requestAndroidNotificationPermission} from '../services/notificationService';
+import {
+  requestAndroidNotificationPermission,
+  scheduleListeningReminder,
+} from '../services/notificationService';
 
 const GENDERS: Gender[] = ['female', 'male', 'other', 'na'];
+const LISTENING_CONTEXTS: ListeningContext[] = ['home', 'commute', 'school', 'work', 'other', 'na'];
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
 const GENDER_LABEL_KEY: Record<Gender, string> = {
   female: 'privacy.genderFemale',
   male: 'privacy.genderMale',
   other: 'privacy.genderOther',
   na: 'privacy.genderNA',
+};
+const LISTENING_CONTEXT_LABEL_KEY: Record<ListeningContext, string> = {
+  home: 'privacy.listenHome',
+  commute: 'privacy.listenCommute',
+  school: 'privacy.listenSchool',
+  work: 'privacy.listenWork',
+  other: 'privacy.listenOther',
+  na: 'privacy.listenNA',
 };
 function ageLabel(t: (k: string) => string, r: AgeRange): string {
   if (r === 'under18') {
@@ -53,6 +65,7 @@ const ConsentScreen = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [ageRange, setAgeRange] = useState<AgeRange | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
+  const [listeningContext, setListeningContext] = useState<ListeningContext | null>(null);
   const adultAnalyticsEligible = isAdultConsentAge(ageRange);
 
   const chooseAgeRange = (nextAgeRange: AgeRange) => {
@@ -73,6 +86,7 @@ const ConsentScreen = () => {
       demographics,
       ageRange,
       gender: demographics ? gender : null,
+      listeningContext: analytics ? listeningContext : null,
       termsAccepted: true,
       termsVersion: REGISTRATION_TERMS_VERSION,
     });
@@ -80,8 +94,16 @@ const ConsentScreen = () => {
     setAnalyticsConsent(selected.analytics, {
       ageRange: selected.demographics ? selected.ageRange : null,
       gender: selected.demographics ? selected.gender : null,
+      listeningContext: selected.analytics ? selected.listeningContext : null,
     });
-    await requestAndroidNotificationPermission().catch(() => 'unavailable');
+    const permission = await requestAndroidNotificationPermission().catch(() => 'unavailable' as const);
+    Analytics.notificationPermission(permission);
+    if (permission === 'granted') {
+      scheduleListeningReminder(
+        t('notifications.listeningReminderTitle'),
+        t('notifications.listeningReminderBody'),
+      );
+    }
   };
 
   const declineAll = async () => {
@@ -93,11 +115,18 @@ const ConsentScreen = () => {
       demographics: false,
       ageRange,
       gender: null,
+      listeningContext: null,
       termsAccepted: true,
       termsVersion: REGISTRATION_TERMS_VERSION,
     });
     setAnalyticsConsent(false);
-    await requestAndroidNotificationPermission().catch(() => 'unavailable');
+    const permission = await requestAndroidNotificationPermission().catch(() => 'unavailable' as const);
+    if (permission === 'granted') {
+      scheduleListeningReminder(
+        t('notifications.listeningReminderTitle'),
+        t('notifications.listeningReminderBody'),
+      );
+    }
   };
 
   return (
@@ -148,6 +177,7 @@ const ConsentScreen = () => {
               setAnalytics(value);
               if (!value) {
                 setDemographics(false);
+                setListeningContext(null);
               }
             }}
             disabled={!adultAnalyticsEligible}
@@ -180,6 +210,25 @@ const ConsentScreen = () => {
                   <Text
                     style={[styles.chipText, gender === g && styles.chipTextOn]}>
                     {t(GENDER_LABEL_KEY[g])}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {analytics && (
+          <View style={styles.demo}>
+            <Text style={styles.groupLabel}>{t('privacy.listeningContext')}</Text>
+            <Text style={styles.minorNotice}>{t('privacy.listeningContextDesc')}</Text>
+            <View style={styles.chips}>
+              {LISTENING_CONTEXTS.map(context => (
+                <TouchableOpacity
+                  key={context}
+                  onPress={() => setListeningContext(context)}
+                  style={[styles.chip, listeningContext === context && styles.chipOn]}>
+                  <Text style={[styles.chipText, listeningContext === context && styles.chipTextOn]}>
+                    {t(LISTENING_CONTEXT_LABEL_KEY[context])}
                   </Text>
                 </TouchableOpacity>
               ))}

@@ -1,4 +1,4 @@
-import {PermissionsAndroid, Platform} from 'react-native';
+import {NativeModules, PermissionsAndroid, Platform} from 'react-native';
 
 import api from './api';
 
@@ -19,6 +19,27 @@ const PREFERENCE_KEYS: Array<keyof NotificationPreferences> = [
   'jukebox',
   'events',
 ];
+
+type NotificationBridge = {
+  scheduleListeningReminder: (title: string, body: string) => void;
+  updateListeningReminderText: (title: string, body: string) => void;
+};
+
+const notificationBridge = NativeModules.RadioTeduNotificationBridge as
+  | NotificationBridge
+  | undefined;
+
+export function scheduleListeningReminder(title: string, body: string) {
+  if (Platform.OS === 'android' && notificationBridge) {
+    notificationBridge.scheduleListeningReminder(title, body);
+  }
+}
+
+export function updateListeningReminderText(title: string, body: string) {
+  if (Platform.OS === 'android' && notificationBridge) {
+    notificationBridge.updateListeningReminderText(title, body);
+  }
+}
 
 export function buildNotificationPreferencesPayload(preferences: NotificationPreferences) {
   return PREFERENCE_KEYS.reduce<Record<string, boolean>>((payload, key) => {

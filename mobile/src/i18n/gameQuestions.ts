@@ -1,4 +1,5 @@
 import type {AppLanguage} from './index';
+import {MUSIC_QUIZ_CATALOG} from '../data/musicQuizCatalog';
 
 export interface WordGuessQuestion {
   prompt: string;
@@ -90,7 +91,41 @@ const QUESTIONS: Record<AppLanguage, WordGuessQuestion[]> = {
 
 export function getWordGuessQuestions(language?: string): WordGuessQuestion[] {
   const code = (language ?? 'en').split(/[-_]/)[0] as AppLanguage;
-  return QUESTIONS[code] ?? QUESTIONS.en;
+  const prompt = QUESTION_PROMPTS[code] ?? QUESTION_PROMPTS.en;
+  const artists = MUSIC_QUIZ_CATALOG.map(item => item.artist);
+  return MUSIC_QUIZ_CATALOG.flatMap((item, artistIndex) =>
+    item.tracks.map(track => {
+      const distractors = [7, 19, 37].map(
+        offset => artists[(artistIndex + offset) % artists.length],
+      );
+      const options = rotate(
+        [item.artist, ...distractors],
+        hash(`${track}:${item.artist}`) % 4,
+      );
+      return {
+        prompt: prompt.replace('{track}', track),
+        answer: item.artist,
+        options,
+      };
+    }),
+  );
+}
+
+const QUESTION_PROMPTS: Record<AppLanguage, string> = {
+  en: 'Who performs “{track}”?',
+  tr: '“{track}” şarkısını kim seslendiriyor?',
+  ru: 'Кто исполняет «{track}»?',
+  ar: 'من يؤدي أغنية «{track}»؟',
+  de: 'Wer singt „{track}“?',
+  fr: 'Qui interprète « {track} » ?',
+};
+
+function hash(value: string): number {
+  return [...value].reduce((total, character) => total + character.charCodeAt(0), 0);
+}
+
+function rotate<T>(items: T[], offset: number): T[] {
+  return [...items.slice(offset), ...items.slice(0, offset)];
 }
 
 export function getSongGuessQuestions(): SongGuessQuestion[] {

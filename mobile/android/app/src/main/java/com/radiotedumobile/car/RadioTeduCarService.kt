@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -40,6 +42,7 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.radiotedumobile.MainActivity
 import com.radiotedumobile.R
 import org.json.JSONArray
@@ -139,6 +142,8 @@ class RadioTeduCarService : MediaLibraryService() {
     private var bufferingWatchdog: Runnable? = null
     private var progressTicker: Runnable? = null
     private var activeCatalogItem: CatalogItem? = null
+    private var analyticsItemId: String? = null
+    private var analyticsStartedAtMs = 0L
     private var publishingNormalizedMetadata = false
     private val tileArtworkCache = mutableMapOf<Int, ByteArray>()
     private val artworkExecutor = Executors.newSingleThreadExecutor()
@@ -211,6 +216,7 @@ class RadioTeduCarService : MediaLibraryService() {
         CarBridge.onNowPlaying = null
         cancelBufferingWatchdog()
         cancelProgressTicker(save = true)
+        logCarListenComplete()
         player.removeListener(playerListener)
         librarySession.release()
         player.release()
@@ -247,17 +253,21 @@ class RadioTeduCarService : MediaLibraryService() {
             if (isPlaying) {
                 cancelBufferingWatchdog()
                 startProgressTicker()
+                logCarPlaybackStart()
             } else {
                 cancelProgressTicker(save = true)
+                logCarListenComplete()
             }
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            logCarListenComplete()
             val previous = activeCatalogItem
             if (previous?.seriesId != null && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
                 markPodcastCompleted(previous.id)
             }
             activeCatalogItem = mediaItem?.mediaId?.let(::findItem)
+            analyticsItemId = null
             activeArtworkLookupKey = null
             pendingHiFiMediaId = null
             pendingHiFiUntilMs = 0L
@@ -1375,6 +1385,53 @@ class RadioTeduCarService : MediaLibraryService() {
     }
 
     private fun prefs() = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun logCarPlaybackStart() {
+        val item = activeCatalogItem ?: return
+        if (analyticsItemId == item.id && analyticsStartedAtMs > 0L) return
+        analyticsItemId = item.id
+        analyticsStartedAtMs = android.os.SystemClock.elapsedRealtime()
+        FirebaseAnalytics.getInstance(this).logEvent(
+            "playback_start",
+            carAnalyticsBundle(item),
+        )
+    }
+
+    private fun logCarListenComplete() {
+        val item = activeCatalogItem ?: return
+        val startedAt = analyticsStartedAtMs
+        if (startedAt <= 0L) return
+        val seconds = ((android.os.SystemClock.elapsedRealtime() - startedAt) / 1000L)
+            .coerceAtLeast(0L)
+        analyticsStartedAtMs = 0L
+        if (seconds < 1L) return
+        FirebaseAnalytics.getInstance(this).logEvent(
+            "listen_complete",
+            carAnalyticsBundle(item).apply { putLong("seconds", seconds) },
+        )
+    }
+
+    private fun carAnalyticsBundle(item: CatalogItem) = Bundle().apply {
+        putString("content_id", item.id.removeSuffix(HIFI_MEDIA_ID_SUFFIX))
+        putString("content_type", if (item.seriesId == null) "radio" else "podcast")
+        putString("station", item.title)
+        putString("quality", if (item.quality == "flac") "hifi" else (item.quality ?: "normal"))
+        putString("surface", "android_auto")
+        putString("network_type", activeNetworkType())
+    }
+
+    private fun activeNetworkType(): String {
+        val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return "unknown"
+        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return "offline"
+        return when {
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> "bluetooth"
+            else -> "other"
+        }
+    }
 
     private fun isMeteredNetwork(): Boolean =
         (getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager)

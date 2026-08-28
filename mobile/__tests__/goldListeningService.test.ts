@@ -38,6 +38,8 @@ describe('verified Gold listening service', () => {
 
   it('accepts a displayed balance only from a valid server reward response', () => {
     expect(extractServerGoldBalance({spendablePoints: 125})).toBe(125);
+    expect(extractServerGoldBalance({spendable_points: 126})).toBe(126);
+    expect(extractServerGoldBalance({points: {spendable_points: 127}})).toBe(127);
     expect(extractServerGoldBalance({spendablePoints: -1})).toBeNull();
     expect(extractServerGoldBalance({spendablePoints: 1.5})).toBeNull();
     expect(extractServerGoldBalance(null)).toBeNull();

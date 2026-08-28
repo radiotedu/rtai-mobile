@@ -21,6 +21,7 @@ const STORAGE_KEY = '@radiotedu/consent';
 
 export type AgeRange = ConsentAgeRange;
 export type Gender = 'female' | 'male' | 'other' | 'na';
+export type ListeningContext = 'home' | 'commute' | 'school' | 'work' | 'other' | 'na';
 
 export interface ConsentState {
   decided: boolean; // has the user answered the first-launch prompt?
@@ -29,6 +30,7 @@ export interface ConsentState {
   demographics: boolean; // optional age range / gender, separately consented
   ageRange: AgeRange | null;
   gender: Gender | null;
+  listeningContext: ListeningContext | null;
   termsAccepted: boolean;
   termsVersion: string | null;
   decidedAt: string | null;
@@ -41,6 +43,7 @@ const DEFAULT_STATE: ConsentState = {
   demographics: false,
   ageRange: null,
   gender: null,
+  listeningContext: null,
   termsAccepted: false,
   termsVersion: null,
   decidedAt: null,

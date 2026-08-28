@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView, WebViewMessageEvent} from 'react-native-webview';
+import {useNavigation} from '@react-navigation/native';
 
 import AuthGuard from '../../components/AuthGuard';
 import {useAuth} from '../../context/AuthContext';
@@ -14,6 +15,7 @@ import {
 import {COLORS, SPACING} from '../../theme/theme';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
+import {Analytics} from '../../services/analyticsService';
 
 const WebView = NativeWebView as any;
 
@@ -25,6 +27,7 @@ function asInjectedJson(value: unknown) {
 }
 
 const SocialWebViewScreen = () => {
+  const navigation = useNavigation<any>();
   const webViewRef = useRef<any>(null);
   const {user, refreshSession} = useAuth();
   const {i18n} = useTranslation();
@@ -33,6 +36,10 @@ const SocialWebViewScreen = () => {
   const [isPreparingSession, setIsPreparingSession] = useState(true);
   const [webViewNonce, setWebViewNonce] = useState(0);
   const [hasLoadError, setHasLoadError] = useState(false);
+  const leaveSocial = useCallback(() => {
+    Analytics.webView('social', 'leave', 'success');
+    navigation.goBack();
+  }, [navigation]);
 
   useEffect(() => {
     let isMounted = true;
@@ -108,6 +115,13 @@ const SocialWebViewScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={leaveSocial}
+          accessibilityRole="button"
+          accessibilityLabel={copy('social.back')}>
+          <Icon name="chevron-left" size={22} color={COLORS.text} />
+        </TouchableOpacity>
         <View style={styles.headerIcon}>
           <Icon name="account-group" size={22} color={COLORS.primary} />
         </View>
@@ -118,6 +132,7 @@ const SocialWebViewScreen = () => {
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={() => {
+            Analytics.webView('social', 'reload', 'requested');
             setHasLoadError(false);
             setWebViewNonce((value) => value + 1);
           }}
@@ -142,12 +157,19 @@ const SocialWebViewScreen = () => {
             thirdPartyCookiesEnabled={false}
             injectedJavaScriptBeforeContentLoaded={injectedAccountBridge}
             injectedJavaScript={injectedAccountBridge}
-            onLoadEnd={injectAccount}
+            onLoadEnd={() => {
+              injectAccount();
+              Analytics.webView('social', 'load', 'success');
+            }}
             onMessage={handleSocialMessage}
             onShouldStartLoadWithRequest={allowSocialNavigation}
-            onError={() => setHasLoadError(true)}
+            onError={() => {
+              Analytics.webView('social', 'load', 'error');
+              setHasLoadError(true);
+            }}
             onHttpError={(event: {nativeEvent: {statusCode: number}}) => {
               if (event.nativeEvent.statusCode >= 400) {
+                Analytics.webView('social', 'load', `http_${event.nativeEvent.statusCode}`);
                 setHasLoadError(true);
               }
             }}
@@ -168,6 +190,7 @@ const SocialWebViewScreen = () => {
             <TouchableOpacity
               style={styles.retryButton}
               onPress={() => {
+                Analytics.webView('social', 'retry', 'requested');
                 setHasLoadError(false);
                 setWebViewNonce((value) => value + 1);
               }}>
@@ -199,6 +222,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(227,30,36,0.12)',
+  },
+  backButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   headerCopy: {flex: 1},
   kicker: {color: COLORS.primary, fontSize: 10, fontWeight: '900', textTransform: 'uppercase'},

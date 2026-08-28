@@ -72,6 +72,10 @@
     "lofi": "Lo-Fi",
     "add": "Hinzufügen"
   },
+  "notifications": {
+    "listeningReminderTitle": "RadioTEDU vermisst dich",
+    "listeningReminderBody": "Vermisst du gute Musik?"
+  },
   "privacy": {
     "title": "Daten & Datenschutz",
     "consentTitle": "Deine Privatsphäre",
@@ -85,7 +89,7 @@
     "termsHeading": "In-App-Nutzungsbedingungen — Version 22. August 2026",
     "fullTerms": "Mit dem Häkchen akzeptieren Sie diese Bedingungen gegenüber RadioTEDU. Nutzen Sie die App rechtmäßig und persönlich, schützen Sie Zugangsdaten und stören oder umgehen Sie Dienste/Sicherheit nicht. Rechtswidrige oder rechtsverletzende Inhalte sind verboten. Inhalte, Marken und Software bleiben Eigentum ihrer Inhaber. Streams können sich ändern oder ausfallen; zwingende Verbraucherrechte bleiben bestehen. Gold ist ein nicht übertragbarer, bargeldloser App-Vorteil ohne garantierten Geldwert. Bei Missbrauch oder wesentlichem Verstoß kann ein Konto im Rahmen geltender Rechte eingeschränkt werden. Türkisches Recht gilt unter Wahrung zwingender Verbraucher-, Datenschutz- und Gerichtsstandsrechte. Wesentliche Änderungen erfordern neue Zustimmung. Kontakt: radio@tedu.edu.tr.",
     "analyticsLabel": "Optionale Nutzungsanalyse",
-    "analyticsDesc": "Falls aktiviert, erhält Google Analytics eine App-Instanz-ID, Hör-/Sender- und Sitzungsaktivität, App-/Geräteinformationen, einen aus maskierter IP abgeleiteten ungefähren Standort und optionale Altersgruppe/Geschlecht. Kein Kontoname, keine E-Mail, Werbe-ID oder genaue Position. Google ist Drittanbieter-Empfänger.",
+    "analyticsDesc": "Falls aktiviert, erhält Google Analytics eine App-Instanz-ID; App-Starts, Bildschirme/Navigation und Funktionsinteraktionen; nicht identifizierenden Kontostatus, Benachrichtigungsberechtigung, WebView-Zustand und Spiel-/Gold-Aktivität; Inhalte/Sender, Qualität, Wiedergabeoberfläche, Netzwerk, Dauer, Pufferung, Fehler und Ausweichvorgänge; App-/Geräte-/Sprachinformationen; einen aus maskierter IP abgeleiteten ungefähren Standort sowie optionale Altersgruppe/Geschlecht und den selbst angegebenen Hörkontext. Ereignisdaten können bis zu 14 Monate gespeichert werden. Kontoname, E-Mail, Werbe-ID und genauer Standort werden nicht gesendet. Google ist Drittanbieter-Empfänger.",
     "demographicsLabel": "Demografie (Alter, Geschlecht)",
     "demographicsDesc": "Optional. Hilft uns zu verstehen, wer zuhört.",
     "ageRange": "Altersgruppe",
@@ -95,6 +99,14 @@
     "genderMale": "Männlich",
     "genderOther": "Divers",
     "genderNA": "Keine Angabe",
+    "listeningContext": "Wo hörst du normalerweise?",
+    "listeningContextDesc": "Optional. Selbstauskunft; der genaue Standort wird nicht verwendet.",
+    "listenHome": "Zu Hause",
+    "listenCommute": "Auto / unterwegs",
+    "listenSchool": "Schule / Campus",
+    "listenWork": "Arbeit",
+    "listenOther": "Anderswo",
+    "listenNA": "Keine Angabe",
     "ageUnder18": "Unter 18",
     "age55plus": "55+",
     "essentialNotice": "Erforderliche Verarbeitung ist von optionaler Einwilligung getrennt. Details stehen im Datenschutzhinweis.",

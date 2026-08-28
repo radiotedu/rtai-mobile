@@ -266,6 +266,7 @@ function ConsentGate({
     setAnalyticsConsent(consent.analytics, {
       ageRange: consent.demographics ? consent.ageRange : null,
       gender: consent.demographics ? consent.gender : null,
+      listeningContext: consent.analytics ? consent.listeningContext : null,
     });
     Analytics.appOpen();
   }, [
@@ -275,6 +276,7 @@ function ConsentGate({
     consent.demographics,
     consent.ageRange,
     consent.gender,
+    consent.listeningContext,
   ]);
 
   let content: React.JSX.Element;

@@ -29,7 +29,10 @@ describe('Firebase Analytics privacy configuration', () => {
     const config = read('src/services/config.ts');
     expect(service).toContain('RadioTeduAnalyticsBridge');
     expect(service).toContain('setCollectionEnabled(analyticsAllowed, CONSENT_VERSION)');
-    expect(bridge).toContain('CURRENT_CONSENT_VERSION = 4');
+    expect(bridge).toContain('CURRENT_CONSENT_VERSION = 6');
+    expect(service).toContain('setListeningContext');
+    expect(service).toContain("send('playback_start'");
+    expect(service).toContain("send('listen_complete'");
     expect(bridge).toContain('setAnalyticsCollectionEnabled(versionedEnabled)');
     expect(bridge).toContain('fun revokeStaleConsent(context: Context)');
     expect(application).toContain('AnalyticsBridgeModule.revokeStaleConsent(this)');

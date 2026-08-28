@@ -27,6 +27,7 @@ import {
 } from '../data/radioChannels';
 import {getChannelCopy} from '../i18n/channelCopy';
 import {logSafeError} from '../utils/safeLog';
+import {Analytics} from './analyticsService';
 import type {Podcast} from './podcastService';
 import {
   isCellularNetwork,
@@ -216,6 +217,7 @@ export async function playTrackById(id: string): Promise<boolean> {
   const queue = await TrackPlayer.getQueue();
   const index = queue.findIndex(track => track.id === id);
   if (index === -1) {
+    Analytics.interaction(id.startsWith('podcast:') ? 'podcast' : 'radio', 'play', 'not_found');
     return false;
   }
   const activeTrack = await TrackPlayer.getActiveTrack();
@@ -226,6 +228,7 @@ export async function playTrackById(id: string): Promise<boolean> {
     await TrackPlayer.play();
   }
   recordRecent(queue[index]).catch(() => {});
+  Analytics.interaction(id.startsWith('podcast:') ? 'podcast' : 'radio', 'play', 'success');
   return true;
 }
 
@@ -320,7 +323,8 @@ export function startConnectionWatchdog(
         console.log(
           `[playbackQueue] Connection to stream timed out after ${effectiveTimeout}ms. Cascading fallback.`,
         );
-        await fallbackActiveChannelStream();
+        const recovered = await fallbackActiveChannelStream();
+        Analytics.playbackError('connection_timeout', recovered);
       }
     } catch (error) {
       logSafeError('playback.connectionWatchdog', error);
@@ -347,7 +351,14 @@ export async function playChannelById(
   if (
     quality === 'flac' &&
     isCellularNetwork(selection.network) &&
-    !(await confirmFlacOnCellular(channel))
+    !(await confirmFlacOnCellular(channel).then(confirmed => {
+      Analytics.interaction(
+        'stream_quality',
+        'mobile_data_warning',
+        confirmed ? 'approved' : 'cancelled',
+      );
+      return confirmed;
+    }))
   ) {
     return {played: false, cancelled: true, quality};
   }

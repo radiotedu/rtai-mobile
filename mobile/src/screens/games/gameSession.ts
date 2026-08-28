@@ -5,6 +5,9 @@ import {
   VerifiedGameSession,
 } from '../../services/gamificationService';
 import {isPracticeGame} from './gameRoutes';
+import {notifyGoldBalanceChanged} from '../../services/goldBalanceEvents';
+import {extractServerGoldBalance} from '../../services/goldListeningService';
+import {Analytics} from '../../services/analyticsService';
 
 const verifiedRounds = new Map<string, Promise<VerifiedGameSession | null>>();
 
@@ -13,6 +16,7 @@ export function createClientRoundId(game: ArcadeGame) {
 }
 
 export function prepareVerifiedGameRound(game: ArcadeGame, clientRoundId: string) {
+  Analytics.gameStarted(game.slug || String(game.id), isPracticeGame(game));
   if (isPracticeGame(game)) {
     return;
   }
@@ -51,6 +55,12 @@ export async function submitMobileGameScore(params: {
   startedAt: number;
 }) {
   if (isPracticeGame(params.game)) {
+    Analytics.gameCompleted(
+      params.game.slug || String(params.game.id),
+      params.score,
+      Date.now() - params.startedAt,
+      'practice',
+    );
     return {points_awarded: 0, practice: true};
   }
 
@@ -64,6 +74,20 @@ export async function submitMobileGameScore(params: {
     nonce: proof.nonce,
   });
   const result = await submitGameScore(params.game.id, payload);
+  Analytics.gameCompleted(
+    params.game.slug || String(params.game.id),
+    params.score,
+    payload.play_duration_ms,
+    'verified',
+  );
+  const balance = extractServerGoldBalance(result);
+  if (balance !== null) {
+    notifyGoldBalanceChanged(balance);
+  }
+  const awarded = Number((result as {points_awarded?: unknown})?.points_awarded ?? 0);
+  if (Number.isFinite(awarded) && awarded > 0) {
+    Analytics.goldEarned('game', awarded);
+  }
   verifiedRounds.delete(params.clientRoundId);
   return result;
 }

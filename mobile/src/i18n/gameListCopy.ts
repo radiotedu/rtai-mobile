@@ -9,12 +9,12 @@ type LocalizedGameText = Record<AppLanguage, GameListText>;
 
 const GAME_LIST_COPY: Record<string, LocalizedGameText> = {
   snake: {
-    en: {title: 'Snake', description: 'Classic snake game — speed increases as you grow.'},
-    tr: {title: 'Yılan', description: 'Klasik yılan oyunu — büyüdükçe hızlanır.'},
-    ru: {title: 'Змейка', description: 'Классическая змейка — скорость растёт вместе с длиной.'},
-    ar: {title: 'الثعبان', description: 'لعبة الثعبان الكلاسيكية — تزداد السرعة كلما كبرت.'},
-    de: {title: 'Snake', description: 'Klassisches Snake-Spiel — mit deiner Länge wird es schneller.'},
-    fr: {title: 'Serpent', description: 'Jeu du serpent classique — il accélère quand tu grandis.'},
+    en: {title: 'Neon Snake', description: 'Swipe through obstacles, collect rare notes and protect three lives.'},
+    tr: {title: 'Neon Yılan', description: 'Engelleri kaydırarak aş, nadir notaları topla ve üç canını koru.'},
+    ru: {title: 'Неоновая змейка', description: 'Обходите препятствия, собирайте редкие ноты и берегите три жизни.'},
+    ar: {title: 'الثعبان النيون', description: 'تجاوز العقبات واجمع النوتات النادرة وحافظ على الأرواح الثلاثة.'},
+    de: {title: 'Neon Snake', description: 'Weiche Hindernissen aus, sammle seltene Noten und schütze drei Leben.'},
+    fr: {title: 'Serpent néon', description: 'Évitez les obstacles, attrapez les notes rares et protégez vos trois vies.'},
   },
   memory: {
     en: {title: 'Memory', description: 'Match cards and test your memory.'},
@@ -41,12 +41,12 @@ const GAME_LIST_COPY: Record<string, LocalizedGameText> = {
     fr: {title: 'Devine la chanson', description: 'Devinez la chanson grâce aux indices visuels.'},
   },
   'word-guess': {
-    en: {title: 'Word Guess', description: 'Find the hidden word from the clues.'},
-    tr: {title: 'Kelime Tahmini', description: 'İpuçlarıyla gizli kelimeyi bul.'},
-    ru: {title: 'Угадай слово', description: 'Найдите загаданное слово по подсказкам.'},
-    ar: {title: 'خمن الكلمة', description: 'اكتشف الكلمة المخفية من خلال التلميحات.'},
-    de: {title: 'Wort raten', description: 'Finde das versteckte Wort anhand der Hinweise.'},
-    fr: {title: 'Devine le mot', description: 'Trouvez le mot caché grâce aux indices.'},
+    en: {title: 'Music IQ', description: 'Twelve random challenges from a 256-question music catalog.'},
+    tr: {title: 'Müzik IQ', description: '256 soruluk müzik havuzundan rastgele on iki soru.'},
+    ru: {title: 'Музыкальный IQ', description: 'Двенадцать случайных заданий из каталога на 256 вопросов.'},
+    ar: {title: 'ذكاء الموسيقى', description: 'اثنا عشر تحدياً عشوائياً من مجموعة تضم 256 سؤالاً.'},
+    de: {title: 'Musik-IQ', description: 'Zwölf zufällige Aufgaben aus einem Katalog mit 256 Fragen.'},
+    fr: {title: 'QI musical', description: 'Douze défis aléatoires tirés d’un catalogue de 256 questions.'},
   },
 };
 

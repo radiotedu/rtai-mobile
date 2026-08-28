@@ -72,6 +72,10 @@
     "lofi": "Lo-Fi",
     "add": "Ajouter"
   },
+  "notifications": {
+    "listeningReminderTitle": "RadioTEDU pense à vous",
+    "listeningReminderBody": "La musique de qualité vous manque ?"
+  },
   "privacy": {
     "title": "Données et confidentialité",
     "consentTitle": "Votre confidentialité",
@@ -85,7 +89,7 @@
     "termsHeading": "Conditions d'utilisation — version 22 août 2026",
     "fullTerms": "En cochant la case, vous acceptez ces Conditions avec RadioTEDU. Utilisez l'application légalement et à titre personnel, protégez vos identifiants et ne perturbez ni ne contournez les services ou leur sécurité. Les contenus illégaux ou portant atteinte aux droits sont interdits. Les contenus, marques et logiciels restent la propriété de leurs titulaires. Les flux et fonctions en ligne peuvent changer ou être indisponibles ; les droits impératifs des consommateurs restent applicables. Gold est un avantage interne non transférable et sans valeur monétaire garantie. Un compte peut être limité en cas d'abus ou de violation grave, dans le respect des droits applicables. Le droit turc s'applique sans supprimer les droits impératifs des consommateurs, de la protection des données ou de compétence juridictionnelle. Les modifications importantes nécessitent une nouvelle acceptation. Contact : radio@tedu.edu.tr.",
     "analyticsLabel": "Analyse d'utilisation facultative",
-    "analyticsDesc": "Si elle est activée, Google Analytics reçoit un identifiant d'instance, l'activité d'écoute/de station et de session, des informations sur l'application et l'appareil, une localisation approximative issue d'une adresse IP masquée et, facultativement, une tranche d'âge et le genre. Aucun nom de compte, e-mail, identifiant publicitaire ni localisation précise. Google est un destinataire tiers.",
+    "analyticsDesc": "Si elle est activée, Google Analytics reçoit un identifiant d'instance ; les ouvertures, écrans/navigation et interactions ; l'état de compte non identifiant, l'autorisation de notification, la santé WebView et l'activité jeux/Gold ; le contenu/la station, la qualité, la surface, le réseau, la durée, la mise en mémoire tampon, les erreurs et replis ; les informations d'application/appareil/langue ; une localisation approximative issue d'une IP masquée ; et, facultativement, la tranche d'âge, le genre et le contexte d'écoute déclaré. Les données d'événement peuvent être conservées jusqu'à 14 mois. Aucun nom de compte, e-mail, identifiant publicitaire ni localisation précise n'est envoyé. Google est un destinataire tiers.",
     "demographicsLabel": "Données démographiques (âge, genre)",
     "demographicsDesc": "Facultatif. Nous aide à comprendre qui écoute.",
     "ageRange": "Tranche d'âge",
@@ -95,6 +99,14 @@
     "genderMale": "Homme",
     "genderOther": "Autre",
     "genderNA": "Je préfère ne pas répondre",
+    "listeningContext": "Où écoutez-vous habituellement ?",
+    "listeningContextDesc": "Facultatif. Réponse déclarative ; aucune localisation précise n’est utilisée.",
+    "listenHome": "À la maison",
+    "listenCommute": "En voiture / trajet",
+    "listenSchool": "École / campus",
+    "listenWork": "Au travail",
+    "listenOther": "Ailleurs",
+    "listenNA": "Je préfère ne pas répondre",
     "ageUnder18": "Moins de 18 ans",
     "age55plus": "55 ans et plus",
     "essentialNotice": "Le traitement essentiel est distinct du consentement facultatif. Consultez l'avis de confidentialité pour l'identité du responsable, les finalités, les bases, les destinataires, la conservation et vos droits.",

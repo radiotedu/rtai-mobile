@@ -13,7 +13,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
-import {useConsent} from '../privacy/ConsentContext';
+import {ListeningContext, useConsent} from '../privacy/ConsentContext';
 import {
   CONSENT_AGE_RANGES,
   ConsentAgeRange,
@@ -26,6 +26,15 @@ import {PRIVACY_URL, TERMS_URL} from '../services/registrationPolicy';
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
 const APPLE_PRIVACY_URL = 'https://www.apple.com/legal/privacy/';
 const RIGHTS_REQUEST_URL = 'mailto:radio@tedu.edu.tr?subject=KVKK%20GDPR%20Data%20Request';
+const LISTENING_CONTEXTS: ListeningContext[] = ['home', 'commute', 'school', 'work', 'other', 'na'];
+const LISTENING_CONTEXT_LABEL_KEY: Record<ListeningContext, string> = {
+  home: 'privacy.listenHome',
+  commute: 'privacy.listenCommute',
+  school: 'privacy.listenSchool',
+  work: 'privacy.listenWork',
+  other: 'privacy.listenOther',
+  na: 'privacy.listenNA',
+};
 
 function ageLabel(t: (key: string) => string, ageRange: ConsentAgeRange): string {
   if (ageRange === 'under18') {
@@ -45,6 +54,7 @@ const PrivacyScreen = ({navigation}: any) => {
     analytics?: boolean;
     demographics?: boolean;
     ageRange?: ConsentAgeRange;
+    listeningContext?: ListeningContext;
   }) => {
     const merged = normalizeConsentForAge({...consent, ...next});
     await saveConsent({
@@ -52,10 +62,12 @@ const PrivacyScreen = ({navigation}: any) => {
       demographics: merged.demographics,
       ageRange: merged.ageRange,
       gender: merged.gender,
+      listeningContext: merged.listeningContext,
     });
     setAnalyticsConsent(merged.analytics, {
       ageRange: merged.demographics ? merged.ageRange : null,
       gender: merged.demographics ? merged.gender : null,
+      listeningContext: merged.analytics ? merged.listeningContext : null,
     });
   };
 
@@ -117,6 +129,25 @@ const PrivacyScreen = ({navigation}: any) => {
             ))}
           </View>
         </View>
+
+        {consent.analytics ? (
+          <View style={styles.demo}>
+            <Text style={styles.groupLabel}>{t('privacy.listeningContext')}</Text>
+            <Text style={styles.minorNotice}>{t('privacy.listeningContextDesc')}</Text>
+            <View style={styles.chips}>
+              {LISTENING_CONTEXTS.map(context => (
+                <TouchableOpacity
+                  key={context}
+                  onPress={() => update({listeningContext: context})}
+                  style={[styles.chip, consent.listeningContext === context && styles.chipOn]}>
+                  <Text style={[styles.chipText, consent.listeningContext === context && styles.chipTextOn]}>
+                    {t(LISTENING_CONTEXT_LABEL_KEY[context])}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.row}>
           <View style={styles.rowText}>

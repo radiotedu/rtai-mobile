@@ -72,6 +72,10 @@
     "lofi": "Lo-Fi",
     "add": "Add"
   },
+  "notifications": {
+    "listeningReminderTitle": "RadioTEDU misses you",
+    "listeningReminderBody": "Did you miss hearing some quality music?"
+  },
   "privacy": {
     "title": "Data & Privacy",
     "consentTitle": "Your privacy",
@@ -85,7 +89,7 @@
     "termsHeading": "In-app Terms of Use — version 22 August 2026",
     "fullTerms": "By checking acceptance, you agree to these Terms with RadioTEDU. Use the app lawfully and for personal purposes; protect account credentials; do not disrupt services, evade security, misuse streams, or submit unlawful or rights-infringing material. RadioTEDU content, brands and software remain owned by or licensed to their respective owners. Streams and online features depend on networks and third parties and may change or be unavailable; mandatory consumer rights remain unaffected. Gold is a non-cash, non-transferable in-service benefit with no guaranteed monetary value. Accounts may be restricted for abuse or material breach, subject to applicable rights. Turkish law applies, without removing mandatory consumer or data-protection rights or competent forums. Material changes require renewed acceptance. Contact: radio@tedu.edu.tr.",
     "analyticsLabel": "Optional usage analytics",
-    "analyticsDesc": "If enabled, Google Analytics receives an app-instance ID, listening/channel and session activity, app/device information, approximate location derived from masked IP, and optional age range/gender. No account name, email, advertising ID or precise location. Google is a third-party recipient.",
+    "analyticsDesc": "If enabled, Google Analytics receives an app-instance ID; app launches, screens/navigation and feature interactions; non-identifying account state, notification permission, WebView health and game/Gold activity; listening content/station, quality, surface, network, duration, buffering, errors and fallbacks; app/device/language information; approximate location derived from masked IP; and optional age range/gender and self-reported listening context. Event-level analytics may be retained for up to 14 months. No account name, email, advertising ID or precise location is sent. Google is a third-party recipient.",
     "demographicsLabel": "Demographics (age, gender)",
     "demographicsDesc": "Optional. Helps us understand who listens.",
     "ageRange": "Age range",
@@ -95,6 +99,14 @@
     "genderMale": "Male",
     "genderOther": "Other",
     "genderNA": "Prefer not to say",
+    "listeningContext": "Where do you usually listen?",
+    "listeningContextDesc": "Optional. This is self-reported and does not use precise location.",
+    "listenHome": "Home",
+    "listenCommute": "Car / commute",
+    "listenSchool": "School / campus",
+    "listenWork": "Work",
+    "listenOther": "Elsewhere",
+    "listenNA": "Prefer not to say",
     "ageUnder18": "Under 18",
     "age55plus": "55+",
     "essentialNotice": "Essential processing is separate from optional consent. See the Privacy Notice for controller identity, purposes, legal bases, recipients, retention and your rights.",

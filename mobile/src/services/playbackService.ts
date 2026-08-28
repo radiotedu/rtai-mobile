@@ -15,6 +15,7 @@ import {
 import {fetchPodcasts} from './podcastService';
 import {resolveCurrentStreamPreferences} from './streamPreferences';
 import {logSafeError} from '../utils/safeLog';
+import {Analytics} from './analyticsService';
 
 const LATEST_PODCAST_WORDS = [
   'latest',
@@ -162,10 +163,12 @@ export const PlaybackService = async function () {
   TrackPlayer.addEventListener(Event.PlaybackError, async error => {
     try {
       const recovered = await fallbackActiveChannelStream();
+      Analytics.playbackError(String(error?.code ?? 'unknown'), recovered);
       if (!recovered) {
         logSafeError('playback.noFallback', error);
       }
     } catch (fallbackError) {
+      Analytics.playbackError(String(error?.code ?? 'unknown'), false);
       logSafeError('playback.fallback', fallbackError);
     }
   });

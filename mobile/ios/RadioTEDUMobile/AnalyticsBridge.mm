@@ -4,7 +4,7 @@
 #import <FirebaseAnalytics/FIRAnalytics+Consent.h>
 #import <FirebaseCore/FirebaseCore.h>
 
-static NSInteger const RadioTEDUAnalyticsConsentVersion = 4;
+static NSInteger const RadioTEDUAnalyticsConsentVersion = 6;
 static NSString *const RadioTEDUAnalyticsConsentVersionKey =
     @"radiotedu_analytics_consent_version";
 
@@ -79,6 +79,14 @@ RCT_EXPORT_METHOD(setDemographics:(NSString *_Nullable)ageRange
   }
   [FIRAnalytics setUserPropertyString:ageRange forName:@"age_range"];
   [FIRAnalytics setUserPropertyString:gender forName:@"gender"];
+}
+
+RCT_EXPORT_METHOD(setListeningContext:(NSString *_Nullable)context)
+{
+  if (![[self class] isConfigured]) {
+    return;
+  }
+  [FIRAnalytics setUserPropertyString:context forName:@"listening_context"];
 }
 
 RCT_EXPORT_METHOD(logEvent:(NSString *)name

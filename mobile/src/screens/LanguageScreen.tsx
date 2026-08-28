@@ -19,9 +19,10 @@ import {
   getLanguagePreference,
   setLanguage,
 } from '../i18n';
+import {updateListeningReminderText} from '../services/notificationService';
 
 const LanguageScreen = ({navigation}: any) => {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
   const [current, setCurrent] = useState<AppLanguage>(getCurrentLanguage());
   const [preference, setPreference] = useState<LanguagePreference>(getLanguagePreference());
 
@@ -32,6 +33,10 @@ const LanguageScreen = ({navigation}: any) => {
     const directionChanged = await setLanguage(lang);
     setPreference(lang);
     setCurrent(getCurrentLanguage());
+    updateListeningReminderText(
+      String(i18n.t('notifications.listeningReminderTitle')),
+      String(i18n.t('notifications.listeningReminderBody')),
+    );
     if (directionChanged) {
       Alert.alert(t('language.select'), t('language.restartNotice'));
     }

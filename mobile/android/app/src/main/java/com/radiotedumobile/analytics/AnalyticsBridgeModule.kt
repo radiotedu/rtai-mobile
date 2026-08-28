@@ -13,7 +13,7 @@ class AnalyticsBridgeModule(reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
     companion object {
-        const val CURRENT_CONSENT_VERSION = 4
+        const val CURRENT_CONSENT_VERSION = 6
         private const val PREFS = "radiotedu_analytics_consent"
         private const val KEY_VERSION = "version"
 
@@ -78,6 +78,11 @@ class AnalyticsBridgeModule(reactContext: ReactApplicationContext) :
     fun setDemographics(ageRange: String?, gender: String?) {
         analytics.setUserProperty("age_range", ageRange)
         analytics.setUserProperty("gender", gender)
+    }
+
+    @ReactMethod
+    fun setListeningContext(context: String?) {
+        analytics.setUserProperty("listening_context", context)
     }
 
     @ReactMethod

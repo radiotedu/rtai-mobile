@@ -47,6 +47,18 @@ describe('minor optional-consent guard', () => {
     });
   });
 
+  it('clears self-reported listening context when analytics is disabled', () => {
+    expect(
+      normalizeConsentForAge({
+        analytics: false,
+        demographics: false,
+        ageRange: '25-34' as const,
+        gender: null,
+        listeningContext: 'school',
+      }),
+    ).toMatchObject({listeningContext: null});
+  });
+
   it('normalizes both restored and newly saved consent and never passes local age without demographic consent', () => {
     const context = fs.readFileSync(
       path.join(__dirname, '../src/privacy/ConsentContext.tsx'),

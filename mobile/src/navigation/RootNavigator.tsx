@@ -50,6 +50,7 @@ function MainTabs() {
   const {t} = useTranslation();
   return (
     <Tab.Navigator
+      backBehavior="history"
       screenOptions={({route}) => ({
         tabBarLabelPosition: 'below-icon',
         tabBarIcon: ({focused, color}) => {

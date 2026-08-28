@@ -33,6 +33,7 @@ import {
 import {playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
+import {Analytics} from '../services/analyticsService';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
 import {
@@ -176,16 +177,20 @@ const RadioScreen = () => {
   };
 
   const toggleFavorite = async (channelId: string) => {
+    const adding = !favoriteIds.includes(channelId);
     const nextFavorites = toggleFavoriteChannelId(favoriteIds, channelId);
     setFavoriteIds(nextFavorites);
     try {
       await saveFavoriteChannelIds(nextFavorites);
+      Analytics.interaction('radio', adding ? 'favorite_add' : 'favorite_remove');
     } catch (error) {
+      Analytics.interaction('radio', adding ? 'favorite_add' : 'favorite_remove', 'error');
       logSafeError('radio.favoritesSave', error);
     }
   };
 
   const openHistory = () => {
+    Analytics.interaction('radio', 'open_history');
     fetchHistory(selectedChannel.id);
     setShowHistoryModal(true);
   };

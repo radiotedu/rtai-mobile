@@ -17,6 +17,7 @@ import {
     type TeduLoginSession,
 } from '../services/erpIdentity';
 import {buildRegistrationPolicy} from '../services/registrationPolicy';
+import {Analytics} from '../services/analyticsService';
 import api, {isDefinitiveAuthRejection} from '../services/api';
 import {
     clearAuthTokens,
@@ -161,6 +162,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ? {...current, gold_balance: goldBalance}
             : current);
     }), []);
+
+    useEffect(() => {
+        if (!isLoading) {
+            Analytics.authState(user ? (user.is_guest ? 'guest' : 'registered') : 'signed_out');
+        }
+    }, [isLoading, user?.is_guest]);
 
     const beginErpAttempt = useCallback((phase: ErpAuthAttemptPhase) => {
         const attempt = erpAttempts.begin(phase);

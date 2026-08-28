@@ -20,6 +20,7 @@ type AgeProtectedConsent = {
   demographics: boolean;
   ageRange: ConsentAgeRange | null;
   gender: unknown | null;
+  listeningContext?: unknown | null;
 };
 
 export function isAdultConsentAge(
@@ -43,6 +44,9 @@ export function normalizeConsentForAge<T extends AgeProtectedConsent>(
   }
   if (!normalized.analytics) {
     normalized.demographics = false;
+    if ('listeningContext' in normalized) {
+      normalized.listeningContext = null;
+    }
   }
   if (!normalized.demographics) {
     normalized.gender = null;

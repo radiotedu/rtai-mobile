@@ -23,6 +23,7 @@ import {
 } from '../services/gamificationService';
 import {BUILTIN_GAMES, getGameRouteForSlug, isPracticeGame} from './games/gameRoutes';
 import {screenCopy} from '../i18n/screenCopy';
+import {Analytics} from '../services/analyticsService';
 import {gameListCopy} from '../i18n/gameListCopy';
 import {logSafeError} from '../utils/safeLog';
 
@@ -68,9 +69,13 @@ const GamesScreen = () => {
   // why the list no longer reads "no active games on the server" when the
   // arcade-games registry is empty.
   const displayGames = useMemo<ArcadeGame[]>(() => {
-    const serverBySlug = new Map(
-      games.filter(g => !!g.slug).map(g => [g.slug as string, g]),
-    );
+    const serverBySlug = new Map<string, ArcadeGame>();
+    for (const serverGame of games) {
+      const canonicalSlug = canonicalBuiltinSlug(serverGame.slug, serverGame.title);
+      if (canonicalSlug && !serverBySlug.has(canonicalSlug)) {
+        serverBySlug.set(canonicalSlug, serverGame);
+      }
+    }
     const builtins: ArcadeGame[] = BUILTIN_GAMES.map(b => {
       const server = serverBySlug.get(b.slug);
       return {
@@ -82,22 +87,28 @@ const GamesScreen = () => {
       };
     });
     const builtinSlugs = new Set(BUILTIN_GAMES.map(b => b.slug));
-    const extras = games.filter(g => g.slug && !builtinSlugs.has(g.slug));
+    const extras = games.filter(g => {
+      const canonicalSlug = canonicalBuiltinSlug(g.slug, g.title);
+      return !canonicalSlug || !builtinSlugs.has(canonicalSlug);
+    });
     return [...builtins, ...extras];
   }, [games]);
 
   const handlePlay = (game: ArcadeGame) => {
     if (isAccountRequired && !isPracticeGame(game)) {
+      Analytics.interaction('games', 'open_game', 'login_required');
       Alert.alert(copy('study.loginRequired'), copy('games.account'));
       return;
     }
 
     const routeName = getGameRouteForSlug(game.slug);
     if (!routeName) {
+      Analytics.interaction('games', 'open_game', 'unavailable');
       Alert.alert(copy('games.soon'), copy('games.soon'));
       return;
     }
 
+    Analytics.interaction('games', 'open_game', 'success');
     navigation.navigate(routeName, {game});
   };
 
@@ -203,6 +214,33 @@ const GamesScreen = () => {
     </SafeAreaView>
   );
 };
+
+function canonicalBuiltinSlug(slug?: string | null, title?: string | null): string | null {
+  const normalize = (value?: string | null) =>
+    String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const candidates = [normalize(slug), normalize(title)];
+  const aliases: Record<string, string> = {
+    snake: 'snake',
+    'snake-game': 'snake',
+    'neon-snake': 'snake',
+    memory: 'memory',
+    'memory-game': 'memory',
+    'memory-cards': 'memory',
+    tetris: 'tetris',
+    blocks: 'tetris',
+    'block-game': 'tetris',
+    'rhythm-tap': 'rhythm-tap',
+    'song-guess': 'rhythm-tap',
+    'song-quiz': 'rhythm-tap',
+    'word-guess': 'word-guess',
+    wordguess: 'word-guess',
+    'music-iq': 'word-guess',
+  };
+  for (const candidate of candidates) {
+    if (aliases[candidate]) return aliases[candidate];
+  }
+  return null;
+}
 
 function getGameIcon(slug?: string) {
   if (slug === 'snake') {

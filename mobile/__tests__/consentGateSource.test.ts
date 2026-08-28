@@ -36,7 +36,7 @@ describe('consent gate startup fallback', () => {
       'utf8',
     );
 
-    expect(versionSource).toContain('CONSENT_VERSION = 4');
+    expect(versionSource).toContain('CONSENT_VERSION = 6');
     expect(consentSource).toContain('termsAccepted: false');
     expect(consentSource).toContain('decidedAt: null');
     expect(screenSource).toContain('useState(false)');
@@ -46,5 +46,7 @@ describe('consent gate startup fallback', () => {
     expect(screenSource).toContain('Linking.openURL(TERMS_URL)');
     expect(screenSource).toContain('requestAndroidNotificationPermission');
     expect(screenSource.match(/await requestAndroidNotificationPermission/g)).toHaveLength(2);
+    expect(screenSource).toContain('scheduleListeningReminder');
+    expect(screenSource).toContain('setListeningContext(null)');
   });
 });

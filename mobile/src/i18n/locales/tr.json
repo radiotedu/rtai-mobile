@@ -72,6 +72,10 @@
     "lofi": "Lo-Fi",
     "add": "Ekle"
   },
+  "notifications": {
+    "listeningReminderTitle": "RadioTEDU seni özledi",
+    "listeningReminderBody": "Kaliteli müzik dinlemeyi özledin mi?"
+  },
   "privacy": {
     "title": "Veri ve Gizlilik",
     "consentTitle": "Gizliliğiniz",
@@ -85,7 +89,7 @@
     "termsHeading": "Uygulama içi Kullanım Koşulları — sürüm 22 Ağustos 2026",
     "fullTerms": "Kabul kutusunu işaretleyerek RadioTEDU ile bu Koşulları kabul edersiniz. Uygulamayı hukuka uygun ve kişisel amaçlarla kullanın; hesap bilgilerinizi koruyun; hizmetleri bozmayın, güvenliği aşmayın, yayınları kötüye kullanmayın, hukuka veya başkasının haklarına aykırı içerik göndermeyin. RadioTEDU içeriği, markaları ve yazılımı sahiplerine veya lisans verenlere aittir. Yayınlar ve çevrim içi özellikler ağlara ve üçüncü taraflara bağlıdır; değişebilir veya kesilebilir, emredici tüketici hakları saklıdır. Gold nakit değeri ve devredilebilirliği olmayan uygulama içi bir faydadır; parasal değeri garanti edilmez. Kötüye kullanım veya esaslı ihlalde hesap, uygulanabilir haklar saklı kalmak üzere sınırlandırılabilir. Emredici tüketici, veri koruma ve görevli merci hakları saklı kalmak üzere Türk hukuku uygulanır. Esaslı değişikliklerde yeniden kabul istenir. İletişim: radio@tedu.edu.tr.",
     "analyticsLabel": "İsteğe bağlı kullanım analizi",
-    "analyticsDesc": "Etkinleştirilirse Google Analytics; uygulama örneği kimliği, dinleme/kanal ve oturum etkinliği, uygulama/cihaz bilgileri, maskelenmiş IP'den türetilen yaklaşık konum ve isteğe bağlı yaş aralığı/cinsiyet bilgisini alır. Hesap adı, e-posta, reklam kimliği veya kesin konum gönderilmez. Google üçüncü taraf alıcıdır.",
+    "analyticsDesc": "Etkinleştirilirse Google Analytics; uygulama örneği kimliği; uygulama açılışları, ekranlar/gezinme ve özellik etkileşimleri; kimlik içermeyen hesap durumu, bildirim izni, WebView sağlığı ve oyun/Gold etkinliği; dinlenen içerik/kanal, kalite, dinleme yüzeyi, ağ, süre, buffering, hatalar ve fallback'ler; uygulama/cihaz/dil bilgileri; maskelenmiş IP'den türetilen yaklaşık konum ile isteğe bağlı yaş aralığı/cinsiyet ve beyan edilen dinleme ortamını alır. Olay düzeyindeki analiz verileri 14 aya kadar saklanabilir. Hesap adı, e-posta, reklam kimliği veya kesin konum gönderilmez. Google üçüncü taraf alıcıdır.",
     "demographicsLabel": "Demografi (yaş, cinsiyet)",
     "demographicsDesc": "İsteğe bağlı. Kimlerin dinlediğini anlamamıza yardımcı olur.",
     "ageRange": "Yaş aralığı",
@@ -95,6 +99,14 @@
     "genderMale": "Erkek",
     "genderOther": "Diğer",
     "genderNA": "Belirtmek istemiyorum",
+    "listeningContext": "Genellikle nerede dinliyorsun?",
+    "listeningContextDesc": "İsteğe bağlıdır. Kendi beyanındır; kesin konum kullanılmaz.",
+    "listenHome": "Evde",
+    "listenCommute": "Arabada / yolda",
+    "listenSchool": "Okulda / kampüste",
+    "listenWork": "İş yerinde",
+    "listenOther": "Başka bir yerde",
+    "listenNA": "Belirtmek istemiyorum",
     "ageUnder18": "18 altı",
     "age55plus": "55+",
     "essentialNotice": "Zorunlu veri işleme, isteğe bağlı rızadan ayrıdır. Veri sorumlusu, amaçlar, hukuki sebepler, alıcılar, saklama ve haklarınız için Aydınlatma Metni’ni inceleyin.",

@@ -14,6 +14,7 @@ import com.facebook.soloader.SoLoader
 import com.radiotedumobile.car.CarBridgePackage
 import com.radiotedumobile.analytics.AnalyticsBridgePackage
 import com.radiotedumobile.analytics.AnalyticsBridgeModule
+import com.radiotedumobile.notifications.NotificationBridgePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -24,6 +25,7 @@ class MainApplication : Application(), ReactApplication {
           // Custom Android Auto / Automotive media browser bridge.
           packages.add(CarBridgePackage())
           packages.add(AnalyticsBridgePackage())
+          packages.add(NotificationBridgePackage())
           return packages
         }
 

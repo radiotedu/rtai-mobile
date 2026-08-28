@@ -42,8 +42,8 @@ export interface BuiltinGame {
 export const BUILTIN_GAMES: BuiltinGame[] = [
   {
     slug: 'snake',
-    title: 'Snake',
-    description: 'Classic snake game — speed increases as you grow.',
+    title: 'Neon Snake',
+    description: 'Swipe through obstacles, collect rare notes and protect three lives.',
     daily_point_limit: 0,
   },
   {
@@ -66,8 +66,8 @@ export const BUILTIN_GAMES: BuiltinGame[] = [
   },
   {
     slug: 'word-guess',
-    title: 'Word Guess',
-    description: 'Find the hidden word from the clues.',
+    title: 'Music IQ',
+    description: 'Twelve random challenges from a 256-question music catalog.',
     daily_point_limit: 0,
   },
 ];

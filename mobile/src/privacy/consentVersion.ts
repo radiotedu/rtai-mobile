@@ -1,2 +1,2 @@
 /** Must match AnalyticsBridgeModule.CURRENT_CONSENT_VERSION. */
-export const CONSENT_VERSION = 4;
+export const CONSENT_VERSION = 6;

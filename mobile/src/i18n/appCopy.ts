@@ -60,12 +60,12 @@ const COPY: Record<AppLanguage, Record<string, CopyValue>> = {
 };
 
 const SOCIAL_COPY: Record<AppLanguage, Record<string, string>> = {
-  en: {'social.title': 'Social', 'social.registerTitle': 'Register first', 'social.registerText': 'Social is available to registered RadioTEDU accounts.', 'social.loadError': 'Social could not load', 'social.loadErrorText': 'The Social connection is not available yet. Your app account remains signed in.', 'social.retry': 'Retry', 'social.reload': 'Reload Social'},
-  tr: {'social.title': 'Social', 'social.registerTitle': 'Önce kayıt ol', 'social.registerText': 'Social, kayıtlı RadioTEDU hesaplarına açıktır.', 'social.loadError': 'Social yüklenemedi', 'social.loadErrorText': 'Social bağlantısı henüz kullanılamıyor. Uygulama hesabın açık kalır.', 'social.retry': 'Tekrar dene', 'social.reload': 'Social’ı yenile'},
-  ru: {'social.title': 'Social', 'social.registerTitle': 'Сначала зарегистрируйтесь', 'social.registerText': 'Social доступен зарегистрированным аккаунтам RadioTEDU.', 'social.loadError': 'Social не загрузился', 'social.loadErrorText': 'Соединение Social пока недоступно. Вход в приложение сохранён.', 'social.retry': 'Повторить', 'social.reload': 'Обновить Social'},
-  ar: {'social.title': 'Social', 'social.registerTitle': 'أنشئ حساباً أولاً', 'social.registerText': 'يتوفر Social لحسابات RadioTEDU المسجلة.', 'social.loadError': 'تعذر تحميل Social', 'social.loadErrorText': 'اتصال Social غير متاح بعد. سيبقى حساب التطبيق مسجلاً.', 'social.retry': 'إعادة المحاولة', 'social.reload': 'إعادة تحميل Social'},
-  de: {'social.title': 'Social', 'social.registerTitle': 'Zuerst registrieren', 'social.registerText': 'Social ist für registrierte RadioTEDU-Konten verfügbar.', 'social.loadError': 'Social konnte nicht geladen werden', 'social.loadErrorText': 'Die Social-Verbindung ist noch nicht verfügbar. Deine App-Anmeldung bleibt bestehen.', 'social.retry': 'Erneut versuchen', 'social.reload': 'Social neu laden'},
-  fr: {'social.title': 'Social', 'social.registerTitle': 'Inscrivez-vous d’abord', 'social.registerText': 'Social est disponible pour les comptes RadioTEDU enregistrés.', 'social.loadError': 'Social n’a pas pu charger', 'social.loadErrorText': 'La connexion Social n’est pas encore disponible. Votre compte reste connecté.', 'social.retry': 'Réessayer', 'social.reload': 'Recharger Social'},
+  en: {'social.back': 'Back', 'social.title': 'Social', 'social.registerTitle': 'Register first', 'social.registerText': 'Social is available to registered RadioTEDU accounts.', 'social.loadError': 'Social could not load', 'social.loadErrorText': 'The Social connection is not available yet. Your app account remains signed in.', 'social.retry': 'Retry', 'social.reload': 'Reload Social'},
+  tr: {'social.back': 'Geri', 'social.title': 'Social', 'social.registerTitle': 'Önce kayıt ol', 'social.registerText': 'Social, kayıtlı RadioTEDU hesaplarına açıktır.', 'social.loadError': 'Social yüklenemedi', 'social.loadErrorText': 'Social bağlantısı henüz kullanılamıyor. Uygulama hesabın açık kalır.', 'social.retry': 'Tekrar dene', 'social.reload': 'Social’ı yenile'},
+  ru: {'social.back': 'Назад', 'social.title': 'Social', 'social.registerTitle': 'Сначала зарегистрируйтесь', 'social.registerText': 'Social доступен зарегистрированным аккаунтам RadioTEDU.', 'social.loadError': 'Social не загрузился', 'social.loadErrorText': 'Соединение Social пока недоступно. Вход в приложение сохранён.', 'social.retry': 'Повторить', 'social.reload': 'Обновить Social'},
+  ar: {'social.back': 'رجوع', 'social.title': 'Social', 'social.registerTitle': 'أنشئ حساباً أولاً', 'social.registerText': 'يتوفر Social لحسابات RadioTEDU المسجلة.', 'social.loadError': 'تعذر تحميل Social', 'social.loadErrorText': 'اتصال Social غير متاح بعد. سيبقى حساب التطبيق مسجلاً.', 'social.retry': 'إعادة المحاولة', 'social.reload': 'إعادة تحميل Social'},
+  de: {'social.back': 'Zurück', 'social.title': 'Social', 'social.registerTitle': 'Zuerst registrieren', 'social.registerText': 'Social ist für registrierte RadioTEDU-Konten verfügbar.', 'social.loadError': 'Social konnte nicht geladen werden', 'social.loadErrorText': 'Die Social-Verbindung ist noch nicht verfügbar. Deine App-Anmeldung bleibt bestehen.', 'social.retry': 'Erneut versuchen', 'social.reload': 'Social neu laden'},
+  fr: {'social.back': 'Retour', 'social.title': 'Social', 'social.registerTitle': 'Inscrivez-vous d’abord', 'social.registerText': 'Social est disponible pour les comptes RadioTEDU enregistrés.', 'social.loadError': 'Social n’a pas pu charger', 'social.loadErrorText': 'La connexion Social n’est pas encore disponible. Votre compte reste connecté.', 'social.retry': 'Réessayer', 'social.reload': 'Recharger Social'},
 };
 
 const JUKEBOX_COPY: Record<AppLanguage, Record<string, string>> = {
@@ -120,6 +120,15 @@ const GAME_UI_COPY: Record<AppLanguage, Record<string, string>> = {
   ar: {'games.snakeLength': 'كتلاً', 'games.snakeUp': 'أعلى', 'games.snakeDown': 'أسفل', 'games.tetrisLines': 'أسطر', 'games.rhythmMisses': 'إخفاقات', 'games.rhythmCombo': 'سلسلة الإيقاع', 'games.rhythmLeft': 'يسار', 'games.rhythmCenter': 'وسط', 'games.rhythmRight': 'يمين', 'games.pause': 'إيقاف مؤقت', 'games.resume': 'متابعة', 'games.wordQuestion': 'سؤال', 'games.wordCorrect': 'صحيح', 'games.wordStreak': 'سلسلة المعرفة', 'games.correct': 'صحيح! السلسلة', 'games.wrong': 'إجابة خاطئة', 'games.perfect': 'ممتاز', 'games.good': 'جيد', 'games.miss': 'لم تصب', 'games.wrongLane': 'المسار خاطئ', 'games.tetrisFull': 'امتلأت الكتل'},
   de: {'games.snakeLength': 'Blöcke', 'games.snakeUp': 'Nach oben', 'games.snakeDown': 'Nach unten', 'games.tetrisLines': 'Reihen', 'games.rhythmMisses': 'Fehler', 'games.rhythmCombo': 'Rhythmus-Serie', 'games.rhythmLeft': 'Links', 'games.rhythmCenter': 'Mitte', 'games.rhythmRight': 'Rechts', 'games.pause': 'Pause', 'games.resume': 'Fortsetzen', 'games.wordQuestion': 'Frage', 'games.wordCorrect': 'richtig', 'games.wordStreak': 'Wissensserie', 'games.correct': 'Richtig! Serie', 'games.wrong': 'Falsche Antwort', 'games.perfect': 'Perfekt', 'games.good': 'Gut', 'games.miss': 'Daneben', 'games.wrongLane': 'Falsche Spur', 'games.tetrisFull': 'Blöcke voll'},
   fr: {'games.snakeLength': 'blocs', 'games.snakeUp': 'Haut', 'games.snakeDown': 'Bas', 'games.tetrisLines': 'lignes', 'games.rhythmMisses': 'ratés', 'games.rhythmCombo': 'Série rythmique', 'games.rhythmLeft': 'Gauche', 'games.rhythmCenter': 'Centre', 'games.rhythmRight': 'Droite', 'games.pause': 'Pause', 'games.resume': 'Reprendre', 'games.wordQuestion': 'Question', 'games.wordCorrect': 'correct', 'games.wordStreak': 'Série de connaissances', 'games.correct': 'Correct ! Série', 'games.wrong': 'Mauvaise réponse', 'games.perfect': 'Parfait', 'games.good': 'Bien', 'games.miss': 'Raté', 'games.wrongLane': 'Mauvaise voie', 'games.tetrisFull': 'Blocs remplis'},
+};
+
+const GAME_V2_COPY: Record<AppLanguage, Record<string, string>> = {
+  en: {'games.timeUp': 'Time is up', 'games.questionPool': 'questions in the pool'},
+  tr: {'games.timeUp': 'Süre doldu', 'games.questionPool': 'soruluk havuz'},
+  ru: {'games.timeUp': 'Время вышло', 'games.questionPool': 'вопросов в наборе'},
+  ar: {'games.timeUp': 'انتهى الوقت', 'games.questionPool': 'سؤالاً في المجموعة'},
+  de: {'games.timeUp': 'Zeit abgelaufen', 'games.questionPool': 'Fragen im Pool'},
+  fr: {'games.timeUp': 'Temps écoulé', 'games.questionPool': 'questions disponibles'},
 };
 
 const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
@@ -464,6 +473,7 @@ const APP_COPY_TABLES = [
   GAME_COPY,
   GAME_FEEDBACK_COPY,
   GAME_UI_COPY,
+  GAME_V2_COPY,
   LOCALE_FIX_COPY,
 ];
 
@@ -478,6 +488,6 @@ export function missingAppCopyKeys(language: AppLanguage): string[] {
 
 export function appCopy(language: string | undefined, key: string, values: Record<string, string | number> = {}): string {
   const lang = (language ?? 'en').split(/[-_]/)[0] as AppLanguage;
-  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? key;
+  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? key;
   return typeof value === 'function' ? value(values) : value;
 }

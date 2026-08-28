@@ -7,6 +7,7 @@ import { SOCKET_ORIGIN, SOCKET_PATH, STORAGE_API } from '../../services/config';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {logSafeError} from '../../utils/safeLog';
+import {Analytics} from '../../services/analyticsService';
 import {
   fetchActiveNextSongVoteRound,
   getCandidateCoverUrl,
@@ -145,7 +146,9 @@ export default function NextSongVotePanel({ deviceId }: NextSongVotePanelProps) 
       if (nextRound) {
         setRound(nextRound);
       }
+      Analytics.interaction('voting', 'submit_vote', 'success');
     } catch (error: any) {
+      Analytics.interaction('voting', 'submit_vote', 'error');
       logSafeError('voting.submit', error);
       Alert.alert(copy('common.error'), copy('votePanel.error'));
     } finally {

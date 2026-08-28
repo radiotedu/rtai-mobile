@@ -167,7 +167,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!isLoading) {
             Analytics.authState(user ? (user.is_guest ? 'guest' : 'registered') : 'signed_out');
         }
-    }, [isLoading, user?.is_guest]);
+    }, [isLoading, user]);
 
     const beginErpAttempt = useCallback((phase: ErpAuthAttemptPhase) => {
         const attempt = erpAttempts.begin(phase);

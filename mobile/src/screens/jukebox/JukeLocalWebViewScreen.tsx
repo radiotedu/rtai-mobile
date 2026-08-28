@@ -91,7 +91,13 @@ const JukeLocalWebViewScreen = () => {
           injectedJavaScriptBeforeContentLoaded={authInjection}
           injectedJavaScript={authInjection}
           mixedContentMode="never"
+          allowFileAccess={false}
+          allowFileAccessFromFileURLs={false}
+          allowUniversalAccessFromFileURLs={false}
           setSupportMultipleWindows={false}
+          javaScriptCanOpenWindowsAutomatically={false}
+          webviewDebuggingEnabled={false}
+          allowsLinkPreview={false}
           startInLoadingState
           renderLoading={() => (
             <View style={styles.loadingPanel}>

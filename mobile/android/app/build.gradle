@@ -84,6 +84,18 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+// Metro 0.81's transitive image-size parser can loop on malformed modern
+// image containers. Metro only parses local bundle assets, so reject those
+// formats before any bundle task can inspect them.
+def mobileRoot = rootProject.projectDir.parentFile
+def unsafeBundlerAssets = fileTree(mobileRoot) {
+    include 'src/**/*.icns', 'src/**/*.jxl', 'src/**/*.heif', 'src/**/*.heic'
+    include 'assets/**/*.icns', 'assets/**/*.jxl', 'assets/**/*.heif', 'assets/**/*.heic'
+}
+if (!unsafeBundlerAssets.isEmpty()) {
+    throw new GradleException("Unsafe image container in Metro bundle inputs: ${unsafeBundlerAssets.files}")
+}
+
 def gitShaOutput = new ByteArrayOutputStream()
 exec {
     workingDir rootProject.projectDir

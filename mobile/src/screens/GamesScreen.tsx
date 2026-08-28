@@ -45,15 +45,30 @@ const GamesScreen = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [nextGames, nextMarket] = await Promise.all([
-        user ? fetchGames() : Promise.resolve([]),
-        user ? fetchMarketItems() : Promise.resolve([]),
+      if (!user || user.is_guest) {
+        setGames([]);
+        setMarket([]);
+        return;
+      }
+      const [gamesResult, marketResult] = await Promise.allSettled([
+        fetchGames(),
+        fetchMarketItems(),
       ]);
-      setGames(nextGames);
-      setMarket(nextMarket);
-    } catch (error) {
-      logSafeError('games.load', error);
-      Alert.alert(copy('home.errorTitle'), copy('games.empty'));
+      if (gamesResult.status === 'fulfilled') {
+        setGames(gamesResult.value);
+      } else {
+        setGames([]);
+        logSafeError('games.registryLoad', gamesResult.reason);
+      }
+      if (marketResult.status === 'fulfilled') {
+        setMarket(marketResult.value);
+      } else {
+        setMarket([]);
+        logSafeError('games.marketLoad', marketResult.reason);
+      }
+      if (gamesResult.status === 'rejected' && marketResult.status === 'rejected') {
+        Alert.alert(copy('home.errorTitle'), copy('games.empty'));
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -217,24 +232,43 @@ const GamesScreen = () => {
 
 function canonicalBuiltinSlug(slug?: string | null, title?: string | null): string | null {
   const normalize = (value?: string | null) =>
-    String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[ıİ]/g, 'i')
+      .replace(/[şŞ]/g, 's')
+      .replace(/[ğĞ]/g, 'g')
+      .replace(/[üÜ]/g, 'u')
+      .replace(/[öÖ]/g, 'o')
+      .replace(/[çÇ]/g, 'c')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
   const candidates = [normalize(slug), normalize(title)];
   const aliases: Record<string, string> = {
     snake: 'snake',
     'snake-game': 'snake',
     'neon-snake': 'snake',
+    yilan: 'snake',
+    'yilan-oyunu': 'snake',
     memory: 'memory',
     'memory-game': 'memory',
     'memory-cards': 'memory',
+    hafiza: 'memory',
+    'hafiza-oyunu': 'memory',
     tetris: 'tetris',
     blocks: 'tetris',
     'block-game': 'tetris',
     'rhythm-tap': 'rhythm-tap',
     'song-guess': 'rhythm-tap',
     'song-quiz': 'rhythm-tap',
+    ritim: 'rhythm-tap',
+    'sarki-tahmin': 'rhythm-tap',
     'word-guess': 'word-guess',
     wordguess: 'word-guess',
     'music-iq': 'word-guess',
+    'kelime-tahmin': 'word-guess',
   };
   for (const candidate of candidates) {
     if (aliases[candidate]) return aliases[candidate];

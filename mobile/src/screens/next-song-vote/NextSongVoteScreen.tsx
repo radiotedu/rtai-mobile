@@ -35,6 +35,7 @@ import {
 } from '../../services/votingWebViewService';
 import {COLORS, SPACING} from '../../theme/theme';
 import {screenCopy} from '../../i18n/screenCopy';
+import {Analytics} from '../../services/analyticsService';
 
 const WebView = NativeWebView as any;
 const EMPTY_AUTH_STATE: VotingWebViewAuthState = {
@@ -60,12 +61,20 @@ export default function NextSongVoteScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
-  const [canGoBack, setCanGoBack] = useState(false);
+  const [, setCanGoBack] = useState(false);
   const votingUrl = useMemo(
     () =>
       buildVotingWebViewUrl(i18n.resolvedLanguage ?? i18n.language),
     [i18n.language, i18n.resolvedLanguage],
   );
+  const leaveVoting = useCallback(() => {
+    Analytics.webView('voting', 'leave', 'success');
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs', {screen: 'Home'});
+    }
+  }, [navigation]);
 
   const injectCurrentAuth = useCallback(() => {
     if (!webViewReadyRef.current) {
@@ -153,17 +162,13 @@ export default function NextSongVoteScreen() {
     const backSubscription = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
-        if (canGoBack) {
-          webViewRef.current?.goBack();
-        } else {
-          navigation.goBack();
-        }
+        leaveVoting();
         return true;
       },
     );
 
     return () => backSubscription.remove();
-  }, [canGoBack, navigation]);
+  }, [leaveVoting]);
 
   const handleVotingMessage = useCallback(
     (event: WebViewMessageEvent) => {
@@ -219,6 +224,16 @@ export default function NextSongVoteScreen() {
         style={styles.container}
         edges={['top', 'left', 'right']}>
         <GlobalHeader />
+        <View style={styles.exitBar}>
+          <TouchableOpacity
+            style={styles.exitButton}
+            onPress={leaveVoting}
+            accessibilityRole="button"
+            accessibilityLabel={copy('vote.back')}>
+            <Icon name="chevron-left" size={21} color={COLORS.text} />
+            <Text style={styles.exitText}>{copy('vote.back')}</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.webContainer}>
           {!authResolved ? (
             <View style={styles.loadingPanel}>
@@ -230,7 +245,7 @@ export default function NextSongVoteScreen() {
               ref={webViewRef}
               source={{uri: votingUrl}}
               style={styles.webView}
-              originWhitelist={['https://*']}
+              originWhitelist={['https://radiotedu.com']}
               javaScriptEnabled
               injectedJavaScriptBeforeContentLoaded={authBootstrap}
               injectedJavaScript={authBootstrap}
@@ -317,6 +332,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#07080B',
   },
+  exitBar: {
+    minHeight: 42,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.background,
+  },
+  exitButton: {
+    alignSelf: 'flex-start',
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  exitText: {color: COLORS.text, fontSize: 13, fontWeight: '800'},
   webView: {
     flex: 1,
     backgroundColor: '#07080B',

@@ -182,6 +182,9 @@ const LibraryStudyWebView = () => {
         thirdPartyCookiesEnabled={false}
         mixedContentMode="never"
         setSupportMultipleWindows={false}
+        javaScriptCanOpenWindowsAutomatically={false}
+        webviewDebuggingEnabled={false}
+        allowsLinkPreview={false}
         allowFileAccess={false}
         allowFileAccessFromFileURLs={false}
         allowUniversalAccessFromFileURLs={false}

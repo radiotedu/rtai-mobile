@@ -10,7 +10,7 @@ type AnalyticsBridge = {
   logEvent(name: string, params: Record<string, string | number | boolean>): void;
 };
 
-const bridge = NativeModules.RadioTeduAnalyticsBridge as
+const bridge = NativeModules?.RadioTeduAnalyticsBridge as
   | AnalyticsBridge
   | undefined;
 let analyticsAllowed = false;
@@ -94,7 +94,7 @@ export const Analytics = {
       duration_ms: Math.max(0, Math.round(durationMs)),
       result,
     }),
-  webView: (feature: 'social' | 'jukebox', action: string, result: string) =>
+  webView: (feature: 'social' | 'jukebox' | 'voting', action: string, result: string) =>
     send('webview_event', {feature, action, result}),
 };
 

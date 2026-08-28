@@ -38,7 +38,11 @@ const SocialWebViewScreen = () => {
   const [hasLoadError, setHasLoadError] = useState(false);
   const leaveSocial = useCallback(() => {
     Analytics.webView('social', 'leave', 'success');
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs', {screen: 'Home'});
+    }
   }, [navigation]);
 
   useEffect(() => {
@@ -148,13 +152,21 @@ const SocialWebViewScreen = () => {
             ref={webViewRef}
             source={{uri: RESOLVED_SOCIAL_WEB_URL}}
             style={styles.webView}
-            originWhitelist={['https://radiotedu.com/*', 'http://127.0.0.1:*']}
+            originWhitelist={['https://radiotedu.com']}
             javaScriptEnabled
             domStorageEnabled
             cacheEnabled={false}
             cacheMode="LOAD_NO_CACHE"
             sharedCookiesEnabled={false}
             thirdPartyCookiesEnabled={false}
+            mixedContentMode="never"
+            allowFileAccess={false}
+            allowFileAccessFromFileURLs={false}
+            allowUniversalAccessFromFileURLs={false}
+            setSupportMultipleWindows={false}
+            javaScriptCanOpenWindowsAutomatically={false}
+            webviewDebuggingEnabled={false}
+            allowsLinkPreview={false}
             injectedJavaScriptBeforeContentLoaded={injectedAccountBridge}
             injectedJavaScript={injectedAccountBridge}
             onLoadEnd={() => {

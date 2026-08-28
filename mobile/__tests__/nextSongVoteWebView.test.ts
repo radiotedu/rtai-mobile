@@ -48,7 +48,9 @@ describe('NextSongVote production WebView surface', () => {
     expect(screenSource).toContain("'change'");
     expect(screenSource).toContain('BackHandler.addEventListener(');
     expect(screenSource).toContain("'hardwareBackPress'");
-    expect(screenSource).toContain('webViewRef.current?.goBack()');
+    expect(screenSource).toContain('leaveVoting();');
+    expect(screenSource).toContain("copy('vote.back')");
+    expect(screenSource).not.toContain('webViewRef.current?.goBack()');
   });
 
   it('re-injects auth when the shared native session token changes', () => {

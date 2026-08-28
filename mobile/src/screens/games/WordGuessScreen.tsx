@@ -127,7 +127,7 @@ const WordGuessScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GameShell title={copy('games.word')} subtitle={copy('games.wordSubtitle')} icon="music-circle-outline" accentColor="#FF7043"
+      <GameShell title={copy('games.word')} subtitle={copy('games.wordSubtitle')} icon="music-circle-outline" accentColor="#FF8A4C"
         score={score} progressLabel={`${Math.min(index + 1, questions.length)}/${questions.length}`}
         rightLabel={`${correct} ${copy('games.wordCorrect')}`} onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />
@@ -145,7 +145,7 @@ const WordGuessScreen = () => {
           {!finished && currentQuestion ? (
             <View style={styles.stage}>
               <View style={styles.categoryRow}>
-                <View style={styles.categoryIcon}><Icon name="radio-tower" size={22} color="#FF7043" /></View>
+                <View style={styles.categoryIcon}><Icon name="radio-tower" size={22} color="#FF8A4C" /></View>
                 <View><Text style={styles.category}>RadioTEDU Music IQ</Text><Text style={styles.poolCount}>256 {copy('games.questionPool')}</Text></View>
               </View>
               <Text style={styles.prompt}>{currentQuestion.prompt}</Text>
@@ -192,9 +192,9 @@ const styles = StyleSheet.create({
   timerText: {color: '#FFB199', fontSize: 16, fontWeight: '900'},
   timerDanger: {color: '#FF5C6C'},
   timerTrack: {height: 5, borderRadius: 3, backgroundColor: '#35211D', overflow: 'hidden', marginTop: SPACING.sm},
-  timerFill: {height: '100%', backgroundColor: '#FF7043'},
+  timerFill: {height: '100%', backgroundColor: '#FF8A4C'},
   content: {paddingBottom: SPACING.xl},
-  stage: {marginTop: SPACING.lg, padding: SPACING.lg, borderRadius: 30, backgroundColor: '#1D1513', borderWidth: 1, borderColor: 'rgba(255,112,67,0.34)', shadowColor: '#FF7043', shadowOpacity: 0.16, shadowRadius: 18, elevation: 7},
+  stage: {marginTop: SPACING.lg, padding: SPACING.lg, borderRadius: 30, backgroundColor: '#1D1513', borderWidth: 1, borderColor: 'rgba(255,138,76,0.34)', shadowColor: '#FF8A4C', shadowOpacity: 0.16, shadowRadius: 18, elevation: 7},
   categoryRow: {flexDirection: 'row', alignItems: 'center', gap: SPACING.sm},
   categoryIcon: {width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,112,67,0.12)', borderWidth: 1, borderColor: 'rgba(255,112,67,0.32)'},
   category: {color: '#FFB199', fontSize: 12, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase'},

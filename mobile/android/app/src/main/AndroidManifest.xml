@@ -24,6 +24,7 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:appCategory="audio"
       android:allowBackup="false"
+      android:enableOnBackInvokedCallback="false"
       android:networkSecurityConfig="@xml/network_security_config"
       android:theme="@style/AppTheme">
       <!-- No Firebase Analytics data before explicit optional consent. -->

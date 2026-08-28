@@ -84,7 +84,14 @@ export async function submitMobileGameScore(params: {
   if (balance !== null) {
     notifyGoldBalanceChanged(balance);
   }
-  const awarded = Number((result as {points_awarded?: unknown})?.points_awarded ?? 0);
+  const reward = result as {
+    points_awarded?: unknown;
+    pointsAwarded?: unknown;
+    amount?: unknown;
+  };
+  const awarded = Number(
+    reward.points_awarded ?? reward.pointsAwarded ?? reward.amount ?? 0,
+  );
   if (Number.isFinite(awarded) && awarded > 0) {
     Analytics.goldEarned('game', awarded);
   }

@@ -26,7 +26,7 @@ const SONG_QUESTIONS: SongGuessQuestion[] = [
   {clue: '💡 🌀 🤖', year: '2013', genre: 'Disco funk', answer: 'Get Lucky', options: ['Get Lucky', 'Instant Crush', 'One More Time', 'Around the World']},
 ];
 
-const QUESTIONS: Record<AppLanguage, WordGuessQuestion[]> = {
+export const LEGACY_WORD_QUESTIONS: Record<AppLanguage, WordGuessQuestion[]> = {
   en: [
     {prompt: 'Who performs Shape of You?', answer: 'Ed Sheeran', options: ['Ed Sheeran', 'The Weeknd', 'Dua Lipa', 'Coldplay']},
     {prompt: 'Who released Blinding Lights?', answer: 'The Weeknd', options: ['The Weeknd', 'Bruno Mars', 'Daft Punk', 'Adele']},

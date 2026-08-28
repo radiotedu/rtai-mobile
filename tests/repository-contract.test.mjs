@@ -67,7 +67,7 @@ test('standalone repository satisfies its public contract', () => {
   assert.match(configSource, /baseApi:\s*`\$\{serverOrigin\}\/api\/v1`/);
   assert.match(
     studyServiceSource,
-    /['"]https:\/\/radiotedu\.com\/study\/['"]/,
+    /['"]https:\/\/radiotedu\.com\/social\/['"]/,
   );
   assert.match(
     votingServiceSource,
@@ -140,7 +140,7 @@ test('rejects extra paths after owned service endpoint literals', () => {
     writeFixtureFile(
       fixtureRoot,
       'mobile/src/services/studyWebViewService.ts',
-      "export const STUDY_REMOTE_ROOT = 'https://radiotedu.com/study/wrong';\n",
+      "export const STUDY_REMOTE_ROOT = 'https://radiotedu.com/social/wrong';\n",
     );
     writeFixtureFile(
       fixtureRoot,
@@ -157,7 +157,7 @@ test('rejects extra paths after owned service endpoint literals', () => {
 
     for (const [endpoint, relativePath] of [
       [
-        'https://radiotedu.com/study/',
+        'https://radiotedu.com/social/',
         'mobile/src/services/studyWebViewService.ts',
       ],
       [

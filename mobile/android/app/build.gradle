@@ -118,8 +118,8 @@ android {
         applicationId "com.radiotedumobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 12060
-        versionName "1.2.6"
+        versionCode 12070
+        versionName "1.2.7"
         manifestPlaceholders.buildGitSha = buildGitSha
         manifestPlaceholders.buildGitDirty = buildGitDirty.toString()
     }

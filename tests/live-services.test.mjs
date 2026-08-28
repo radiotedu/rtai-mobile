@@ -10,7 +10,16 @@ test('release health check covers every remote WebView and form-factor stream', 
     'voting',
     'study',
   ]);
-  assert.equal(services.filter(item => item.kind === 'stream').length, 6);
+  assert.deepEqual(services.filter(item => item.kind === 'stream').map(item => item.name), [
+    'radio',
+    'classic',
+    'cazz',
+    'lofi',
+    'energize',
+    'rock',
+    'en',
+    'fr',
+  ]);
 });
 
 test('health probe rejects unavailable pages and non-audio stream responses', async () => {

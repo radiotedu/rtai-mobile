@@ -1,10 +1,73 @@
+import {parseHttpUrl} from './safeHttpUrlService';
+import {
+  buildWebViewAccountBridge,
+  type WebViewAccountAuthState,
+} from './webViewAccountBridge';
+
 export type SocialAccountSource = {
   id?: unknown;
   display_name?: unknown;
   role?: unknown;
   is_guest?: unknown;
   avatar_url?: unknown;
+  gold_balance?: unknown;
 };
+
+const SOCIAL_API_PREFIXES = [
+  '/jukebox/api/v1/study',
+  '/jukebox/api/v1/economy',
+  '/jukebox/api/v1/gamification',
+] as const;
+
+function serializeForInjection(value: unknown) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+export function buildSocialAuthInjection(
+  authState: WebViewAccountAuthState,
+  account: SocialAccountSource | null | undefined,
+) {
+  const authenticated = Boolean(authState.accessToken && account && resolveSocialAccess(account).allowed);
+  const bootstrap = authenticated && account ? buildSocialBootstrap(account) : null;
+  const rawGold = authenticated && account ? Number(account.gold_balance) : 0;
+  const globalPoints = Number.isSafeInteger(rawGold) && rawGold >= 0 ? rawGold : 0;
+  const state = {
+    authenticated,
+    bootstrap,
+    account: bootstrap
+      ? {
+          id: bootstrap.account.id,
+          displayName: bootstrap.account.displayName,
+          authenticated: true,
+        }
+      : null,
+    globalPoints,
+  };
+
+  return `${buildWebViewAccountBridge(authState, SOCIAL_API_PREFIXES)}
+    (function () {
+      var state = ${serializeForInjection(state)};
+      window.RadioTEDUAccount = state.bootstrap;
+      window.RadioTEDUStudyBridge = state.authenticated && state.account
+        ? Object.freeze({
+            apiBase: '/jukebox/api/v1/study',
+            request: function (resource, options) { return window.fetch(resource, options); },
+            account: Object.freeze(state.account),
+            globalPoints: state.globalPoints
+          })
+        : null;
+      try {
+        window.dispatchEvent(new CustomEvent('radiotedu:account', { detail: window.RadioTEDUAccount }));
+        document.dispatchEvent(new CustomEvent('radiotedu:account', { detail: window.RadioTEDUAccount }));
+      } catch (_) {}
+      true;
+    })();
+    true;
+  `;
+}
 
 export type SocialAccessDecision =
   | {allowed: true; reason: null}
@@ -110,4 +173,3 @@ function normalizeRootPath(pathname: string): string {
   }
   return pathname.endsWith('/') ? pathname : `${pathname}/`;
 }
-import {parseHttpUrl} from './safeHttpUrlService';

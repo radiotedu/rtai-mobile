@@ -21,10 +21,23 @@ function serializeForInjection(value: unknown) {
 }
 
 export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) {
+  const publicUser = authState.accessToken
+    ? asWebViewUserPresentation(authState.user)
+    : null;
   const compatibilityState = {
     accessToken: authState.accessToken,
-    user: authState.accessToken
-      ? asWebViewUserPresentation(authState.user)
+    // The current controller gates its UI on both `token` and `user` before it
+    // refreshes the authoritative profile. This deliberately non-privileged
+    // presentation only unlocks that refresh; the API still decides identity,
+    // role and every permitted action from the signed bearer token.
+    user: publicUser
+      ? {
+          ...publicUser,
+          is_guest: false,
+          role: 'listener',
+          total_songs_added: 0,
+          last_super_vote_at: null,
+        }
       : null,
   };
 
@@ -57,15 +70,23 @@ export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) 
           // Remove any token persisted by older app builds before installing
           // the ephemeral compatibility view.
           originalRemoveItem.call(window.localStorage, 'token');
+          originalRemoveItem.call(window.localStorage, 'user');
           Storage.prototype.getItem = function (key) {
             if (this === window.localStorage && key === 'token') {
               return window.__RADIOTEDU_EPHEMERAL_TOKEN__ || null;
+            }
+            if (this === window.localStorage && key === 'user') {
+              return window.__RADIOTEDU_EPHEMERAL_USER__ || null;
             }
             return originalGetItem.call(this, key);
           };
           Storage.prototype.setItem = function (key, value) {
             if (this === window.localStorage && key === 'token') {
               window.__RADIOTEDU_EPHEMERAL_TOKEN__ = String(value || '');
+              return;
+            }
+            if (this === window.localStorage && key === 'user') {
+              window.__RADIOTEDU_EPHEMERAL_USER__ = String(value || '');
               return;
             }
             return originalSetItem.call(this, key, value);
@@ -75,11 +96,18 @@ export function buildJukeLocalAuthInjection(authState: WebViewAccountAuthState) 
               window.__RADIOTEDU_EPHEMERAL_TOKEN__ = '';
               return;
             }
+            if (this === window.localStorage && key === 'user') {
+              window.__RADIOTEDU_EPHEMERAL_USER__ = '';
+              return;
+            }
             return originalRemoveItem.call(this, key);
           };
         }
         window.__RADIOTEDU_EPHEMERAL_TOKEN__ =
           typeof state.accessToken === 'string' ? state.accessToken : '';
+        window.__RADIOTEDU_EPHEMERAL_USER__ = state.user
+          ? JSON.stringify(state.user)
+          : '';
       } catch (_) {}
       window.dispatchEvent(new CustomEvent('radiotedu:native-auth', {
         detail: {authenticated: Boolean(state.accessToken)}

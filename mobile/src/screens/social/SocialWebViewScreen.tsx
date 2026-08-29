@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView, WebViewMessageEvent} from 'react-native-webview';
@@ -6,9 +6,11 @@ import {useNavigation} from '@react-navigation/native';
 
 import AuthGuard from '../../components/AuthGuard';
 import {useAuth} from '../../context/AuthContext';
+import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
+import {getAccessToken} from '../../services/authTokenStorage';
 import {RESOLVED_SOCIAL_WEB_URL} from '../../services/config';
 import {
-  buildSocialBootstrap,
+  buildSocialAuthInjection,
   isAllowedSocialNavigation,
   parseSocialMessage,
 } from '../../services/socialSessionService';
@@ -19,21 +21,18 @@ import {Analytics} from '../../services/analyticsService';
 
 const WebView = NativeWebView as any;
 
-function asInjectedJson(value: unknown) {
-  return JSON.stringify(value)
-    .replace(/</g, '\\u003c')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
-}
-
 const SocialWebViewScreen = () => {
   const navigation = useNavigation<any>();
   const webViewRef = useRef<any>(null);
-  const {user, refreshSession} = useAuth();
+  const {user, isLoading: isAuthLoading, refreshSession} = useAuth();
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
   const isRegisteredUser = Boolean(user && !user.is_guest);
   const [isPreparingSession, setIsPreparingSession] = useState(true);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [authInjection, setAuthInjection] = useState(
+    buildSocialAuthInjection({accessToken: null, user: null}, null),
+  );
   const [webViewNonce, setWebViewNonce] = useState(0);
   const [hasLoadError, setHasLoadError] = useState(false);
   const leaveSocial = useCallback(() => {
@@ -61,34 +60,42 @@ const SocialWebViewScreen = () => {
       }
     }
 
-    void prepareSession();
+    prepareSession().catch(() => undefined);
 
     return () => {
       isMounted = false;
     };
   }, [refreshSession, user?.id]);
 
-  const accountBootstrap = useMemo(
-    () => (isRegisteredUser && user ? buildSocialBootstrap(user) : null),
-    [isRegisteredUser, user],
-  );
+  const refreshAuthBridge = useCallback(async () => {
+    if (isAuthLoading) {
+      setAuthResolved(false);
+      return;
+    }
+    let accessToken: string | null = null;
+    try {
+      accessToken = await getAccessToken();
+    } catch {
+      accessToken = null;
+    }
+    const eligibleUser = accessToken && user && !user.is_guest ? user : null;
+    const script = buildSocialAuthInjection(
+      {accessToken: eligibleUser ? accessToken : null, user: eligibleUser},
+      eligibleUser,
+    );
+    setAuthInjection(script);
+    setAuthResolved(true);
+    webViewRef.current?.injectJavaScript(script);
+  }, [isAuthLoading, user]);
 
-  const injectedAccountBridge = useMemo(() => {
-    return `
-      (function () {
-        window.RadioTEDUAccount = ${asInjectedJson(accountBootstrap)};
-        try {
-          window.dispatchEvent(new CustomEvent('radiotedu:account', { detail: window.RadioTEDUAccount }));
-          document.dispatchEvent(new CustomEvent('radiotedu:account', { detail: window.RadioTEDUAccount }));
-        } catch (error) {}
-        true;
-      })();
-    `;
-  }, [accountBootstrap]);
+  useEffect(() => {
+    refreshAuthBridge().catch(() => undefined);
+    return subscribeAuthSessionChanges(refreshAuthBridge);
+  }, [refreshAuthBridge]);
 
   const injectAccount = useCallback(() => {
-    webViewRef.current?.injectJavaScript(injectedAccountBridge);
-  }, [injectedAccountBridge]);
+    webViewRef.current?.injectJavaScript(authInjection);
+  }, [authInjection]);
 
   const handleSocialMessage = useCallback(
     (event: WebViewMessageEvent) => {
@@ -146,7 +153,7 @@ const SocialWebViewScreen = () => {
       </View>
 
       <View style={styles.webContainer}>
-        {!isPreparingSession && !hasLoadError ? (
+        {!isPreparingSession && authResolved && !hasLoadError ? (
           <WebView
             key={`${user?.id || 'anonymous'}-account-${webViewNonce}`}
             ref={webViewRef}
@@ -167,8 +174,8 @@ const SocialWebViewScreen = () => {
             javaScriptCanOpenWindowsAutomatically={false}
             webviewDebuggingEnabled={false}
             allowsLinkPreview={false}
-            injectedJavaScriptBeforeContentLoaded={injectedAccountBridge}
-            injectedJavaScript={injectedAccountBridge}
+            injectedJavaScriptBeforeContentLoaded={authInjection}
+            injectedJavaScript={authInjection}
             onLoadEnd={() => {
               injectAccount();
               Analytics.webView('social', 'load', 'success');

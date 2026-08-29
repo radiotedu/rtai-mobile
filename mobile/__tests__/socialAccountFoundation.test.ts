@@ -2,6 +2,7 @@ import {describe, expect, it} from '@jest/globals';
 
 import {
   buildSocialBootstrap,
+  buildSocialAuthInjection,
   isAllowedSocialNavigation,
   parseSocialMessage,
   resolveSocialAccess,
@@ -44,6 +45,21 @@ describe('mobile Social account foundation', () => {
     expect(JSON.stringify(bootstrap)).not.toContain('private@example.com');
     expect(JSON.stringify(bootstrap)).not.toContain('must-not-cross-the-webview-boundary');
     expect(JSON.stringify(bootstrap)).not.toContain('access_token');
+  });
+
+  it('creates an ephemeral native Study bridge for Social and its server-scored arcade', () => {
+    const injection = buildSocialAuthInjection(
+      {accessToken: 'native-access-proof', user: memberAccount},
+      {...memberAccount, gold_balance: 240},
+    );
+
+    expect(injection).toContain('window.RadioTEDUStudyBridge');
+    expect(injection).toContain('/jukebox/api/v1/gamification');
+    expect(injection).toContain('/jukebox/api/v1/study');
+    expect(injection).toContain('globalPoints');
+    expect(injection).not.toContain('private@example.com');
+    expect(injection).not.toContain('localStorage.setItem');
+    expect(injection).not.toContain('refresh_token');
   });
 
   it('allows navigation only inside configured Social roots', () => {

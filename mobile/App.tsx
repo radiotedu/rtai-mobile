@@ -49,6 +49,7 @@ const linking: any = {
         },
       },
       Events: 'events/qr/:qrCode',
+      Ecosystem: 'dashboard',
       Profile: 'profile',
       Focus: 'focus',
       Language: 'language',

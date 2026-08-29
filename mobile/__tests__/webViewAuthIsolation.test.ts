@@ -254,7 +254,14 @@ describe('WebView bearer isolation', () => {
     expect(trusted.__RADIOTEDU_NATIVE_AUTH__.user).toEqual({
       id: 'user-1',
       display_name: 'Ada',
+      is_guest: false,
+      role: 'listener',
+      total_songs_added: 0,
+      last_super_vote_at: null,
     });
     expect(trusted.localStorage.getItem('token')).toBe('juke-secret');
+    expect(JSON.parse(trusted.localStorage.getItem('user'))).toEqual(
+      trusted.__RADIOTEDU_NATIVE_AUTH__.user,
+    );
   });
 });

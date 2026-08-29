@@ -55,6 +55,7 @@ export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean 
     activeRouteName === 'Profile' ||
     activeRouteName === 'Jukebox' ||
     activeRouteName === 'Games' ||
+    activeRouteName === 'Social' ||
     activeRouteName === 'Player' ||
     IMMERSIVE_GAME_ROUTES.has(activeRouteName)
   );

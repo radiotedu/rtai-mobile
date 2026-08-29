@@ -46,8 +46,13 @@ describe('juke-local app WebView contract', () => {
     expect(script).not.toContain('private@example.test');
     expect(script).not.toContain('"role":"admin"');
     expect(script).toContain('window.__RADIOTEDU_EPHEMERAL_TOKEN__');
+    expect(script).toContain('window.__RADIOTEDU_EPHEMERAL_USER__');
     expect(script).toContain("originalRemoveItem.call(window.localStorage, 'token')");
+    expect(script).toContain("originalRemoveItem.call(window.localStorage, 'user')");
     expect(script).not.toContain("window.localStorage.setItem('token'");
+    expect(script).not.toContain("window.localStorage.setItem('user'");
+    expect(script).toContain('"role":"listener"');
+    expect(script).toContain('"is_guest":false');
     expect(script).toContain("window.location.pathname.replace(/\\/+$/, '') === '/juke-local/controller'");
     expect(script.indexOf("window.location.protocol === 'https:'")).toBeLessThan(
       script.lastIndexOf('window.__RADIOTEDU_NATIVE_AUTH__ = state'),
@@ -140,6 +145,8 @@ describe('juke-local app WebView contract', () => {
 
     expect(script).toContain("typeof state.accessToken === 'string' ? state.accessToken : ''");
     expect(script).toContain("originalRemoveItem.call(window.localStorage, 'token')");
+    expect(script).toContain("originalRemoveItem.call(window.localStorage, 'user')");
+    expect(script).toContain('window.__RADIOTEDU_EPHEMERAL_USER__ = state.user');
     expect(script).toContain('authenticated: Boolean(state.accessToken)');
   });
 

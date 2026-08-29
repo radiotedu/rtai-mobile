@@ -18,6 +18,7 @@ import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
 import {gameListCopy} from '../i18n/gameListCopy';
+import {ecosystemCopy} from '../i18n/ecosystemCopy';
 import {useAuth} from '../context/AuthContext';
 import {
   AppEvent,
@@ -51,6 +52,7 @@ const HomeScreen = () => {
       screenCopy(i18n.language, key, values),
     [i18n.language],
   );
+  const ecosystem = ecosystemCopy(i18n.language);
   const {user} = useAuth();
   const [home, setHome] = useState<GamificationHome | null>(null);
   const [erpIdentity, setErpIdentity] = useState<ErpIdentityStatus | null>(null);
@@ -155,6 +157,7 @@ const HomeScreen = () => {
             <QuickAction icon="account-group-outline" label={copy('home.social')} onPress={() => navigation.navigate('Social')} />
             <QuickAction icon="trophy-outline" label={copy('home.rankings')} onPress={() => navigation.navigate('Leaderboard')} />
             <QuickAction icon="calendar-star" label={copy('home.events')} onPress={() => navigation.navigate('Events')} />
+            <QuickAction icon="view-dashboard-outline" label={ecosystem.navTitle} onPress={() => navigation.navigate('Ecosystem')} />
             <QuickAction icon="gamepad-variant" label={copy('home.games')} onPress={() => navigation.navigate('Games')} />
             <QuickAction icon="shopping-outline" label={copy('home.market')} onPress={() => navigation.navigate('Market')} />
           </View>

@@ -20,6 +20,19 @@ describe('juke-local app WebView contract', () => {
     expect(screen).toContain('cacheMode="LOAD_NO_CACHE"');
   });
 
+  it('wires account preflight and foreground refresh through the guarded coordinator', () => {
+    const screen = fs.readFileSync(
+      path.join(__dirname, '../src/screens/jukebox/JukeLocalWebViewScreen.tsx'),
+      'utf8',
+    );
+    expect(screen).toContain('createLatestRefreshCoordinator');
+    expect(screen).toContain('resolveStableWebViewSession');
+    expect(screen).toContain('readStoredWebViewCredential');
+    expect(screen).toContain("AppState.addEventListener('change'");
+    expect(screen).toContain('.handleAppStateChange(nextState, undefined)');
+    expect(screen).toContain('coordinator.dispose()');
+  });
+
   it('keeps the controller session mounted across bottom-menu changes', () => {
     const navigator = fs.readFileSync(
       path.join(__dirname, '../src/navigation/RootNavigator.tsx'),

@@ -26,6 +26,10 @@ describe('NextSongVote production WebView surface', () => {
     expect(screenSource).toContain('buildVotingAuthInjection(authStateRef.current)');
     expect(screenSource).toContain('injectedJavaScriptBeforeContentLoaded={authBootstrap}');
     expect(screenSource).toContain('injectedJavaScript={authBootstrap}');
+    expect(screenSource).toContain('createLatestRefreshCoordinator');
+    expect(screenSource).toContain('resolveStableWebViewSession');
+    expect(screenSource).toContain('readStoredWebViewCredential');
+    expect(screenSource).toContain('coordinator.dispose()');
   });
 
   it('locks down navigation, cookies, mixed content, files, windows, and debugging', () => {
@@ -46,6 +50,8 @@ describe('NextSongVote production WebView surface', () => {
     expect(screenSource).toContain('onContentProcessDidTerminate');
     expect(screenSource).toContain('AppState.addEventListener(');
     expect(screenSource).toContain("'change'");
+    expect(screenSource).toContain('.handleAppStateChange(nextState, undefined)');
+    expect(screenSource).toContain('cacheMode="LOAD_NO_CACHE"');
     expect(screenSource).toContain('BackHandler.addEventListener(');
     expect(screenSource).toContain("'hardwareBackPress'");
     expect(screenSource).toContain('leaveVoting();');
@@ -63,7 +69,8 @@ describe('NextSongVote production WebView surface', () => {
       'utf8',
     );
 
-    expect(screenSource).toContain('subscribeAuthSessionChanges(readAndInjectAuth)');
+    expect(screenSource).toContain('subscribeAuthSessionChanges(() => {');
+    expect(screenSource).toContain('requestSessionRefresh().catch(() => undefined);');
     expect(apiSource).toContain('notifyAuthSessionChanged()');
     expect(authSource).toContain('notifyAuthSessionChanged()');
   });

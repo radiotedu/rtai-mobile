@@ -1,18 +1,31 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  ActivityIndicator,
+  AppState,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView} from 'react-native-webview';
 import {useTranslation} from 'react-i18next';
-import {useAuth} from '../../context/AuthContext';
+import {useAuth, type User} from '../../context/AuthContext';
 import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
-import {getAccessToken} from '../../services/authTokenStorage';
 import {
   buildJukeLocalAuthInjection,
   buildJukeLocalControllerUrl,
   isAllowedJukeLocalNavigation,
 } from '../../services/jukeLocalWebViewService';
+import {
+  createLatestRefreshCoordinator,
+  createWebViewUserRevision,
+  readStoredWebViewCredential,
+  resolveStableWebViewSession,
+  type LatestRefreshCoordinator,
+} from '../../services/webViewSessionRefreshCoordinator';
 import {COLORS, SPACING} from '../../theme/theme';
 import {screenCopy} from '../../i18n/screenCopy';
 
@@ -20,10 +33,15 @@ const WebView = NativeWebView as any;
 
 const JukeLocalWebViewScreen = () => {
   const route = useRoute<any>();
-  const {user, isLoading: isAuthLoading} = useAuth();
+  const {user, isLoading: isAuthLoading, refreshSession} = useAuth();
   const {i18n} = useTranslation();
   const copy = (key: string) => screenCopy(i18n.language, key);
   const webViewRef = useRef<any>(null);
+  const sessionConfigRef = useRef({user, isAuthLoading, refreshSession});
+  const userRevision = createWebViewUserRevision(user);
+  const observedUserRevisionRef = useRef(userRevision);
+  const refreshCoordinatorRef = useRef<LatestRefreshCoordinator<void> | null>(null);
+  sessionConfigRef.current = {user, isAuthLoading, refreshSession};
   const [hasLoadError, setHasLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [authResolved, setAuthResolved] = useState(false);
@@ -43,30 +61,72 @@ const JukeLocalWebViewScreen = () => {
       route.params?.deviceCode,
     ],
   );
-  const refreshAuthBridge = useCallback(async () => {
-    if (isAuthLoading) {
+  const requestSessionRefresh = useCallback(() => {
+    if (sessionConfigRef.current.isAuthLoading) {
       setAuthResolved(false);
-      return;
+      return Promise.resolve();
     }
-    let accessToken: string | null = null;
-    try {
-      accessToken = await getAccessToken();
-    } catch {
-      accessToken = null;
-    }
-    const state = accessToken && user && !user.is_guest
-      ? {accessToken, user}
-      : {accessToken: null, user: null};
-    const script = buildJukeLocalAuthInjection(state);
-    setAuthInjection(script);
-    setAuthResolved(true);
-    webViewRef.current?.injectJavaScript(script);
-  }, [isAuthLoading, user]);
+
+    return refreshCoordinatorRef.current?.requestRefresh() ?? Promise.resolve();
+  }, []);
 
   useEffect(() => {
-    refreshAuthBridge();
-    return subscribeAuthSessionChanges(refreshAuthBridge);
-  }, [refreshAuthBridge]);
+    const coordinator = createLatestRefreshCoordinator<
+      void,
+      {accessToken: string | null; user: User | null}
+    >({
+      resolve: () => {
+        const config = sessionConfigRef.current;
+        return resolveStableWebViewSession({
+          readCredential: readStoredWebViewCredential,
+          refreshUser: config.refreshSession,
+          getCurrentUser: () => sessionConfigRef.current.user,
+          isEligibleUser: sessionUser => !sessionUser.is_guest,
+        });
+      },
+      apply: state => {
+        const script = buildJukeLocalAuthInjection(state);
+        setAuthInjection(script);
+        setAuthResolved(true);
+        webViewRef.current?.injectJavaScript(script);
+      },
+    });
+    refreshCoordinatorRef.current = coordinator;
+
+    return () => {
+      if (refreshCoordinatorRef.current === coordinator) {
+        refreshCoordinatorRef.current = null;
+      }
+      coordinator.dispose();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (observedUserRevisionRef.current === userRevision) {
+      return;
+    }
+    observedUserRevisionRef.current = userRevision;
+    if (authResolved && !isAuthLoading) {
+      requestSessionRefresh().catch(() => undefined);
+    }
+  }, [authResolved, isAuthLoading, requestSessionRefresh, userRevision]);
+
+  useEffect(() => {
+    requestSessionRefresh().catch(() => undefined);
+  }, [isAuthLoading, requestSessionRefresh]);
+
+  useEffect(() => subscribeAuthSessionChanges(() => {
+    requestSessionRefresh().catch(() => undefined);
+  }), [requestSessionRefresh]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      refreshCoordinatorRef.current
+        ?.handleAppStateChange(nextState, undefined)
+        .catch(() => undefined);
+    });
+    return () => subscription.remove();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

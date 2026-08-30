@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {getAccessToken} from '../../services/authTokenStorage';
 import NetInfo from '@react-native-community/netinfo';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
@@ -23,7 +22,7 @@ import {
 
 import GlobalHeader from '../../components/GlobalHeader';
 import PageTransition from '../../components/PageTransition';
-import {useAuth} from '../../context/AuthContext';
+import {useAuth, type User} from '../../context/AuthContext';
 import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
 import {
   buildVotingWebViewUrl,
@@ -36,6 +35,13 @@ import {
 import {COLORS, SPACING} from '../../theme/theme';
 import {screenCopy} from '../../i18n/screenCopy';
 import {Analytics} from '../../services/analyticsService';
+import {
+  createLatestRefreshCoordinator,
+  createWebViewUserRevision,
+  readStoredWebViewCredential,
+  resolveStableWebViewSession,
+  type LatestRefreshCoordinator,
+} from '../../services/webViewSessionRefreshCoordinator';
 
 const WebView = NativeWebView as any;
 const EMPTY_AUTH_STATE: VotingWebViewAuthState = {
@@ -47,11 +53,14 @@ export default function NextSongVoteScreen() {
   const navigation = useNavigation<any>();
   const {i18n} = useTranslation();
   const copy = (key: string) => screenCopy(i18n.language, key);
-  const {user} = useAuth();
+  const {user, isLoading: isAuthLoading, refreshSession} = useAuth();
   const webViewRef = useRef<any>(null);
-  const mountedRef = useRef(true);
   const webViewReadyRef = useRef(false);
-  const authReadVersionRef = useRef(0);
+  const sessionConfigRef = useRef({user, isAuthLoading, refreshSession});
+  const userRevision = createWebViewUserRevision(user);
+  const observedUserRevisionRef = useRef(userRevision);
+  const refreshCoordinatorRef = useRef<LatestRefreshCoordinator<void> | null>(null);
+  sessionConfigRef.current = {user, isAuthLoading, refreshSession};
   const authStateRef = useRef<VotingWebViewAuthState>(EMPTY_AUTH_STATE);
   const [authResolved, setAuthResolved] = useState(false);
   const [authBootstrap, setAuthBootstrap] = useState(
@@ -85,57 +94,72 @@ export default function NextSongVoteScreen() {
     );
   }, []);
 
-  const readAndInjectAuth = useCallback(async () => {
-    const requestVersion = ++authReadVersionRef.current;
-    let accessToken: string | null = null;
-
-    try {
-      accessToken = await getAccessToken();
-    } catch {
-      accessToken = null;
+  const requestSessionRefresh = useCallback(() => {
+    if (sessionConfigRef.current.isAuthLoading) {
+      setAuthResolved(false);
+      return Promise.resolve();
     }
-
-    if (
-      !mountedRef.current ||
-      requestVersion !== authReadVersionRef.current
-    ) {
-      return;
-    }
-
-    authStateRef.current =
-      accessToken && user && !user.is_guest
-        ? {accessToken, user}
-        : {accessToken: null, user: null};
-    setAuthBootstrap(buildVotingAuthInjection(authStateRef.current));
-    setAuthResolved(true);
-    injectCurrentAuth();
-  }, [injectCurrentAuth, user]);
-
-  useEffect(() => {
-    mountedRef.current = true;
-
-    return () => {
-      mountedRef.current = false;
-      authReadVersionRef.current += 1;
-      webViewReadyRef.current = false;
-    };
+    return refreshCoordinatorRef.current?.requestRefresh() ?? Promise.resolve();
   }, []);
 
   useEffect(() => {
-    readAndInjectAuth();
-  }, [readAndInjectAuth]);
+    const coordinator = createLatestRefreshCoordinator<
+      void,
+      {accessToken: string | null; user: User | null}
+    >({
+      resolve: () => {
+        const config = sessionConfigRef.current;
+        return resolveStableWebViewSession({
+          readCredential: readStoredWebViewCredential,
+          refreshUser: config.refreshSession,
+          getCurrentUser: () => sessionConfigRef.current.user,
+          isEligibleUser: sessionUser => !sessionUser.is_guest,
+        });
+      },
+      apply: state => {
+        authStateRef.current = state;
+        setAuthBootstrap(buildVotingAuthInjection(state));
+        setAuthResolved(true);
+        injectCurrentAuth();
+      },
+    });
+    refreshCoordinatorRef.current = coordinator;
 
-  useEffect(
-    () => subscribeAuthSessionChanges(readAndInjectAuth),
-    [readAndInjectAuth],
-  );
+    return () => {
+      if (refreshCoordinatorRef.current === coordinator) {
+        refreshCoordinatorRef.current = null;
+      }
+      coordinator.dispose();
+      webViewReadyRef.current = false;
+    };
+  }, [injectCurrentAuth]);
+
+  useEffect(() => {
+    if (observedUserRevisionRef.current === userRevision) {
+      return;
+    }
+    observedUserRevisionRef.current = userRevision;
+    if (authResolved && !isAuthLoading) {
+      requestSessionRefresh().catch(() => undefined);
+    }
+  }, [authResolved, isAuthLoading, requestSessionRefresh, userRevision]);
+
+  useEffect(() => {
+    requestSessionRefresh().catch(() => undefined);
+  }, [isAuthLoading, requestSessionRefresh]);
+
+  useEffect(() => subscribeAuthSessionChanges(() => {
+    requestSessionRefresh().catch(() => undefined);
+  }), [requestSessionRefresh]);
 
   useEffect(() => {
     const appStateSubscription = AppState.addEventListener(
       'change',
       nextState => {
         if (nextState === 'active') {
-          readAndInjectAuth();
+          refreshCoordinatorRef.current
+            ?.handleAppStateChange(nextState, undefined)
+            .catch(() => undefined);
         }
       },
     );
@@ -152,7 +176,7 @@ export default function NextSongVoteScreen() {
       appStateSubscription.remove();
       networkSubscription();
     };
-  }, [readAndInjectAuth]);
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'android') {
@@ -178,9 +202,9 @@ export default function NextSongVoteScreen() {
       }
 
       webViewReadyRef.current = true;
-      readAndInjectAuth();
+      injectCurrentAuth();
     },
-    [readAndInjectAuth],
+    [injectCurrentAuth],
   );
 
   const handleVotingLoadEnd = useCallback(() => {
@@ -189,8 +213,8 @@ export default function NextSongVoteScreen() {
     // completed document as ready, then let the injected bearer bridge trigger
     // its session refresh.
     webViewReadyRef.current = true;
-    readAndInjectAuth();
-  }, [readAndInjectAuth]);
+    injectCurrentAuth();
+  }, [injectCurrentAuth]);
 
   const handleNavigationRequest = useCallback((request: {url: string}) => {
     const decision = classifyVotingNavigation(request.url);
@@ -250,6 +274,7 @@ export default function NextSongVoteScreen() {
               injectedJavaScriptBeforeContentLoaded={authBootstrap}
               injectedJavaScript={authBootstrap}
               cacheEnabled={false}
+              cacheMode="LOAD_NO_CACHE"
               domStorageEnabled={false}
               mixedContentMode="never"
               thirdPartyCookiesEnabled={false}

@@ -3,8 +3,10 @@ import path from 'path';
 import {describe, expect, it} from '@jest/globals';
 
 import {
+  buildRegistrationRequest,
   createErpAuthAttemptCoordinator,
   normalizeUser,
+  registrationPreferredLanguage,
 } from '../src/context/AuthContext';
 
 describe('mobile auth context session contract', () => {
@@ -23,6 +25,24 @@ describe('mobile auth context session contract', () => {
       rank_score: 900,
       gold_balance: 125,
     }));
+  });
+
+  it('sends the effective app language only through the backend registration allowlist', () => {
+    expect(buildRegistrationRequest(
+      'listener@example.test',
+      'correct-horse-battery-staple',
+      'Listener',
+      {legalAccepted: true, age: 22},
+      'fr-FR',
+    )).toEqual(expect.objectContaining({
+      preferred_language: 'fr',
+      terms_accepted: true,
+      privacy_acknowledged: true,
+      age: 22,
+    }));
+    expect(registrationPreferredLanguage('it-IT')).toBe('it');
+    expect(registrationPreferredLanguage('jp')).toBe('jp');
+    expect(registrationPreferredLanguage('unsupported')).toBe('en');
   });
 
   it('uses the configured API for startup verification and preserves transient sessions', () => {

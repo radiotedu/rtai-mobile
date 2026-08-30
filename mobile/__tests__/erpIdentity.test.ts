@@ -9,11 +9,28 @@ import {
   startTeduLogin,
   TEDU_LOGIN_RETURN_URI,
 } from '../src/services/erpIdentity';
+import {
+  clearPendingErpLoginPkce,
+  getPendingErpLoginPkce,
+} from '../src/services/erpLoginPkce';
 import {authCopy} from '../src/i18n/screenCopy';
 
 jest.mock('axios', () => ({post: jest.fn()}));
 jest.mock('react-native', () => ({
   Linking: {openURL: jest.fn()},
+}));
+jest.mock('../src/services/erpLoginPkce', () => ({
+  beginPendingErpLoginPkce: jest.fn(async () => ({
+    verifier: 'v'.repeat(43),
+    createdAt: 1,
+    codeChallenge: 'c'.repeat(43),
+    method: 'S256',
+  })),
+  getPendingErpLoginPkce: jest.fn(async () => ({
+    verifier: 'v'.repeat(43),
+    createdAt: 1,
+  })),
+  clearPendingErpLoginPkce: jest.fn(async () => true),
 }));
 
 type AxiosPostMock = jest.MockedFunction<(
@@ -59,7 +76,11 @@ describe('TEDÜ mobile identity login', () => {
     await startTeduLogin();
     expect(post).toHaveBeenCalledWith(
       expect.stringContaining('/auth/erp-link/login/start'),
-      {return_uri: TEDU_LOGIN_RETURN_URI},
+      {
+        return_uri: TEDU_LOGIN_RETURN_URI,
+        code_challenge: 'c'.repeat(43),
+        code_challenge_method: 'S256',
+      },
       {timeout: ERP_IDENTITY_TIMEOUT_MS, signal: undefined},
     );
     expect(Linking.openURL).toHaveBeenCalledWith(
@@ -80,9 +101,38 @@ describe('TEDÜ mobile identity login', () => {
     });
     expect(post).toHaveBeenCalledWith(
       expect.stringContaining('/auth/erp-link/login/exchange'),
-      {code: 'one-time'},
+      {code: 'one-time', code_verifier: 'v'.repeat(43)},
       {timeout: ERP_IDENTITY_TIMEOUT_MS, signal: undefined},
     );
+    expect(clearPendingErpLoginPkce).toHaveBeenCalledWith('v'.repeat(43));
+  });
+
+  it('rejects an unsolicited callback when no secure pending verifier exists', async () => {
+    const post = axios.post as AxiosPostMock;
+    (getPendingErpLoginPkce as jest.MockedFunction<typeof getPendingErpLoginPkce>)
+      .mockResolvedValueOnce(null);
+
+    await expect(exchangeTeduLoginCode('unsolicited')).rejects.toMatchObject({
+      code: 'erp.callbackFailed',
+    });
+    expect(post).not.toHaveBeenCalled();
+    expect(clearPendingErpLoginPkce).toHaveBeenCalledWith();
+  });
+
+  it('preserves pending PKCE on transient exchange failures', async () => {
+    const post = axios.post as AxiosPostMock;
+    post.mockRejectedValueOnce({isAxiosError: true, request: {}});
+
+    await expect(exchangeTeduLoginCode('retryable')).rejects.toBeDefined();
+    expect(clearPendingErpLoginPkce).not.toHaveBeenCalled();
+  });
+
+  it('clears pending PKCE on terminal exchange rejection', async () => {
+    const post = axios.post as AxiosPostMock;
+    post.mockRejectedValueOnce({isAxiosError: true, response: {status: 401}});
+
+    await expect(exchangeTeduLoginCode('rejected')).rejects.toBeDefined();
+    expect(clearPendingErpLoginPkce).toHaveBeenCalledWith('v'.repeat(43));
   });
 
   it('rejects invalid responses with stable ERP error codes', async () => {

@@ -62,6 +62,8 @@ export interface AvatarProfile {
 
 export interface AvatarPurchaseResponse extends Partial<AvatarProfile> {
   points?: GamificationPoints;
+  spendable_points?: number;
+  replayed?: boolean;
 }
 
 export interface EquipAvatarItemPayload {

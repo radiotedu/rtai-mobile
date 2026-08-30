@@ -23,6 +23,7 @@ import {
   fetchMarketItems,
   redeemMarketItem,
 } from '../services/gamificationService';
+import {notifyGoldBalanceChanged} from '../services/goldBalanceEvents';
 import {logSafeError} from '../utils/safeLog';
 
 const MarketScreen = () => {
@@ -73,10 +74,14 @@ const MarketScreen = () => {
     try {
       const result = await redeemMarketItem(item.id, idempotencyKey);
       delete redemptionKeys.current[item.id];
+      const serverSpendablePoints = Number(result?.spendable_points);
       setPoints((current) => ({
         ...(current ?? {lifetime_points: 0, spendable_points: 0}),
-        spendable_points: Number(result?.spendable_points ?? current?.spendable_points ?? 0),
+        spendable_points: Number.isInteger(serverSpendablePoints) && serverSpendablePoints >= 0
+          ? serverSpendablePoints
+          : current?.spendable_points ?? 0,
       }));
+      notifyGoldBalanceChanged(serverSpendablePoints);
       Alert.alert(copy('market.requested'), copy('market.requestedText'));
     } catch (error: any) {
       logSafeError('market.redeem', error);

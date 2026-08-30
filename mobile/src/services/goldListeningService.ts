@@ -29,6 +29,12 @@ const TRACK_CHANNELS: Record<string, string> = {
   'radiotedu-spark': 'spark',
   'radiotedu-en': 'en',
   'radiotedu-fr': 'fr',
+  'radiotedu-it': 'it',
+  'radiotedu-ru': 'ru',
+  'radiotedu-ar': 'ar',
+  'radiotedu-de': 'de',
+  'radiotedu-tr': 'tr',
+  'radiotedu-jp': 'jp',
 };
 
 const STREAM_MOUNT_CHANNELS: Record<string, string> = {
@@ -42,6 +48,12 @@ const STREAM_MOUNT_CHANNELS: Record<string, string> = {
   spark: 'spark',
   en: 'en',
   fr: 'fr',
+  it: 'it',
+  ru: 'ru',
+  ar: 'ar',
+  de: 'de',
+  tr: 'tr',
+  jp: 'jp',
 };
 
 function unwrapData<T>(response: {data?: {data?: T}}): T {

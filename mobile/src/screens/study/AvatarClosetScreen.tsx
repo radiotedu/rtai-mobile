@@ -18,6 +18,7 @@ import {
 } from '../../services/studyService';
 import {COLORS, SPACING} from '../../theme/theme';
 import {appCopy} from '../../i18n/appCopy';
+import {notifyGoldBalanceChanged} from '../../services/goldBalanceEvents';
 import {logSafeError} from '../../utils/safeLog';
 
 export const AVATAR_CLOSET_SLOTS: Array<{id: AvatarSlot; titleKey: string; icon: string}> = [
@@ -76,7 +77,17 @@ const AvatarClosetScreen = () => {
           ...current,
           ownedItemIds: purchase.ownedItemIds ?? [...current.ownedItemIds, item.itemId],
         }));
-        setWalletPoints(purchase.points ?? walletPoints);
+        const serverSpendablePoints = Number(
+          purchase.spendable_points ?? purchase.points?.spendable_points,
+        );
+        setWalletPoints(current => {
+          const nextPoints = purchase.points ?? current;
+          if (!nextPoints || !Number.isInteger(serverSpendablePoints) || serverSpendablePoints < 0) {
+            return nextPoints;
+          }
+          return {...nextPoints, spendable_points: serverSpendablePoints};
+        });
+        notifyGoldBalanceChanged(serverSpendablePoints);
       }
 
       const equipment = await equipAvatarItem({slot: item.slot, itemId: item.itemId});

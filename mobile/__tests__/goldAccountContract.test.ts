@@ -10,6 +10,7 @@ describe('mobile Account and Gold product contract', () => {
   const profileSource = readScreen('ProfileScreen.tsx');
   const homeSource = readScreen('HomeScreen.tsx');
   const marketSource = readScreen('MarketScreen.tsx');
+  const avatarClosetSource = readScreen(path.join('study', 'AvatarClosetScreen.tsx'));
   const eventsSource = readScreen('EventsScreen.tsx');
   const gamesSource = readScreen('GamesScreen.tsx');
   const leaderboardSource = readScreen('LeaderboardScreen.tsx');
@@ -34,6 +35,9 @@ describe('mobile Account and Gold product contract', () => {
     expect(screenCopySource).toContain("'home.goldBalance': 'Gold balance'");
     expect(leaderboardSource).toContain('leaderboard.lifetime');
     expect(homeSource).toContain('lifetime_points');
+    expect(marketSource).toContain('notifyGoldBalanceChanged(serverSpendablePoints)');
+    expect(avatarClosetSource).toContain('purchase.spendable_points ?? purchase.points?.spendable_points');
+    expect(avatarClosetSource).toContain('notifyGoldBalanceChanged(serverSpendablePoints)');
   });
 
   it('uses the shared TEDÜ login and GDPR-aware registration contract', () => {

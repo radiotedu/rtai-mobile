@@ -28,6 +28,12 @@ describe('verified Gold listening service', () => {
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/radio-high'})).toBe('radio');
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/en-high'})).toBe('en');
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/fr-flac'})).toBe('fr');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/it'})).toBe('it');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/ru-normal'})).toBe('ru');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/ar-high'})).toBe('ar');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/de'})).toBe('de');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/tr-low'})).toBe('tr');
+    expect(radioChannelForTrack({url: 'https://stream.radiotedu.com/jp-flac'})).toBe('jp');
     expect(radioChannelForTrack({url: 'https://example.com/radio'})).toBeNull();
     expect(radioChannelForTrack({url: 'http://stream.radiotedu.com/radio'})).toBeNull();
     expect(radioChannelForTrack({url: 'https://stream.radiotedu.com.evil.example/radio'})).toBeNull();

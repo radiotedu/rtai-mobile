@@ -1,12 +1,18 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {getAccessToken} from '../../services/authTokenStorage';
+import {
+  ActivityIndicator,
+  AppState,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {WebView as NativeWebView} from 'react-native-webview';
 
-import {useAuth} from '../../context/AuthContext';
+import {useAuth, type User} from '../../context/AuthContext';
 import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
 import {BASE_API} from '../../services/config';
 import {
@@ -19,99 +25,129 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {useTranslation} from 'react-i18next';
 import {screenCopy} from '../../i18n/screenCopy';
 import {appCopy} from '../../i18n/appCopy';
+import {
+  createLatestRefreshCoordinator,
+  createWebViewUserRevision,
+  readStoredWebViewCredential,
+  resolveStableWebViewSession,
+  type LatestRefreshCoordinator,
+  type WebViewSessionState,
+} from '../../services/webViewSessionRefreshCoordinator';
 
 const WebView = NativeWebView as any;
+
+const buildStudyBridgeScript = (sessionUser: User | null, token: string | null) => {
+  if (!sessionUser || sessionUser.is_guest || !token) {
+    return 'true;';
+  }
+  return createStudyWebViewBridge({
+    account: {
+      id: sessionUser.id,
+      displayName: sessionUser.display_name,
+      authenticated: true,
+    },
+    globalPoints: Number(sessionUser.rank_score ?? 0),
+    apiBase: BASE_API,
+    accessToken: token,
+  });
+};
 
 const LibraryStudyWebView = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const webViewRef = useRef<any>(null);
-  const mountedRef = useRef(true);
-  const authReadVersionRef = useRef(0);
-  const {user} = useAuth();
+  const {user, isLoading: isAuthLoading, refreshSession} = useAuth();
+  const sessionConfigRef = useRef({user, isAuthLoading, refreshSession});
+  const userRevision = createWebViewUserRevision(user);
+  const observedUserRevisionRef = useRef(userRevision);
+  const refreshCoordinatorRef = useRef<LatestRefreshCoordinator<void> | null>(null);
+  sessionConfigRef.current = {user, isAuthLoading, refreshSession};
   const {i18n} = useTranslation();
   const copy = (key: string) => screenCopy(i18n.language, key);
   const appText = (key: string) => appCopy(i18n.language, key);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [appliedSession, setAppliedSession] = useState<WebViewSessionState<User>>({
+    accessToken: null,
+    user: null,
+  });
   const [credentialsReady, setCredentialsReady] = useState(false);
   const [hasLoadError, setHasLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [credentialAccountId, setCredentialAccountId] = useState<string | null>(
-    null,
-  );
   const roomId = route.params?.locationId === 'chim-alan' ? 'chim-alan' : 'library';
   const isLocked = !user || user.is_guest;
 
-  const account = useMemo(
-    () =>
-      user
-        ? {
-            id: user.id,
-            displayName: user.display_name,
-            authenticated: !user.is_guest,
-          }
-        : null,
-    [user],
-  );
-
-  const createBridgeScript = useCallback(
-    (token: string | null) => {
-      if (!account || !token) {
-        return 'true;';
-      }
-      return createStudyWebViewBridge({
-        account,
-        globalPoints: Number(user?.rank_score ?? 0),
-        apiBase: BASE_API,
-        accessToken: token,
-      });
-    },
-    [account, user?.rank_score],
-  );
-
-  const refreshAuthBridge = useCallback(async () => {
-    const requestVersion = ++authReadVersionRef.current;
-    let token: string | null = null;
-    try {
-      token = await getAccessToken();
-    } catch {
-      token = null;
+  const requestSessionRefresh = useCallback(() => {
+    if (sessionConfigRef.current.isAuthLoading) {
+      setCredentialsReady(false);
+      return Promise.resolve();
     }
 
-    if (
-      !mountedRef.current ||
-      requestVersion !== authReadVersionRef.current
-    ) {
-      return;
-    }
-
-    const nextToken = user && !user.is_guest ? token : null;
-    setAccessToken(nextToken);
-    setCredentialAccountId(user?.id ?? null);
-    setCredentialsReady(true);
-    webViewRef.current?.injectJavaScript(
-      nextToken
-        ? createBridgeScript(nextToken)
-        : createStudyAuthClearInjection(),
-    );
-  }, [createBridgeScript, user]);
+    return refreshCoordinatorRef.current?.requestRefresh() ?? Promise.resolve();
+  }, []);
 
   useEffect(() => {
-    mountedRef.current = true;
+    const coordinator = createLatestRefreshCoordinator<
+      void,
+      {accessToken: string | null; user: User | null}
+    >({
+      resolve: () => {
+        const config = sessionConfigRef.current;
+        return resolveStableWebViewSession({
+          readCredential: readStoredWebViewCredential,
+          refreshUser: config.refreshSession,
+          getCurrentUser: () => sessionConfigRef.current.user,
+          isEligibleUser: sessionUser => !sessionUser.is_guest,
+        });
+      },
+      apply: state => {
+        setAppliedSession(state);
+        setCredentialsReady(true);
+        webViewRef.current?.injectJavaScript(
+          state.accessToken && state.user
+            ? buildStudyBridgeScript(state.user, state.accessToken)
+            : createStudyAuthClearInjection(),
+        );
+      },
+    });
+    refreshCoordinatorRef.current = coordinator;
+
     return () => {
-      mountedRef.current = false;
-      authReadVersionRef.current += 1;
+      if (refreshCoordinatorRef.current === coordinator) {
+        refreshCoordinatorRef.current = null;
+      }
+      coordinator.dispose();
     };
   }, []);
 
   useEffect(() => {
-    refreshAuthBridge();
-    return subscribeAuthSessionChanges(refreshAuthBridge);
-  }, [refreshAuthBridge]);
+    requestSessionRefresh().catch(() => undefined);
+  }, [isAuthLoading, requestSessionRefresh]);
+
+  useEffect(() => {
+    if (observedUserRevisionRef.current === userRevision) {
+      return;
+    }
+    observedUserRevisionRef.current = userRevision;
+    if (credentialsReady && !isAuthLoading) {
+      requestSessionRefresh().catch(() => undefined);
+    }
+  }, [credentialsReady, isAuthLoading, requestSessionRefresh, userRevision]);
+
+  useEffect(() => subscribeAuthSessionChanges(() => {
+    requestSessionRefresh().catch(() => undefined);
+  }), [requestSessionRefresh]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      refreshCoordinatorRef.current
+        ?.handleAppStateChange(nextState, undefined)
+        .catch(() => undefined);
+    });
+    return () => subscription.remove();
+  }, []);
 
   const bridgeScript = useMemo(() => {
-    return createBridgeScript(accessToken);
-  }, [accessToken, createBridgeScript]);
+    return buildStudyBridgeScript(appliedSession.user, appliedSession.accessToken);
+  }, [appliedSession]);
 
   const gameUrl = useMemo(
     () =>
@@ -131,7 +167,7 @@ const LibraryStudyWebView = () => {
     );
   }
 
-  if (!credentialsReady || credentialAccountId !== user?.id) {
+  if (!credentialsReady || appliedSession.user?.id !== user?.id) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loading}>
@@ -141,7 +177,7 @@ const LibraryStudyWebView = () => {
     );
   }
 
-  if (!accessToken) {
+  if (!appliedSession.accessToken) {
     return (
       <SafeAreaView style={styles.lockedContainer}>
         <Icon name="account-lock-outline" size={34} color={COLORS.primary} />
@@ -177,6 +213,7 @@ const LibraryStudyWebView = () => {
         originWhitelist={['https://radiotedu.com']}
         javaScriptEnabled
         cacheEnabled={false}
+        cacheMode="LOAD_NO_CACHE"
         domStorageEnabled
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}

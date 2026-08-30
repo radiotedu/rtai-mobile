@@ -31,6 +31,7 @@ describe('next-song vote navigation', () => {
     expect(screenSource).not.toContain('AuthGuard');
     expect(screenSource).toContain('accessToken: null');
     expect(screenSource).toContain('user: null');
-    expect(screenSource).toContain('getAccessToken()');
+    expect(screenSource).toContain('readStoredWebViewCredential');
+    expect(screenSource).toContain('resolveStableWebViewSession');
   });
 });

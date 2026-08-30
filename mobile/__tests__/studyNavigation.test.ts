@@ -32,6 +32,7 @@ describe('Study navigation', () => {
     expect(source).toContain('onShouldStartLoadWithRequest');
     expect(source).toContain('onHttpError');
     expect(source).toContain('cacheEnabled={false}');
+    expect(source).toContain('cacheMode="LOAD_NO_CACHE"');
     expect(source).toContain('allowFileAccess={false}');
     expect(source).toContain('allowFileAccessFromFileURLs={false}');
     expect(source).toContain('allowUniversalAccessFromFileURLs={false}');
@@ -39,8 +40,16 @@ describe('Study navigation', () => {
     expect(source).toContain('thirdPartyCookiesEnabled={false}');
     expect(source).toContain('domStorageEnabled');
     expect(source).not.toContain('domStorageEnabled={false}');
-    expect(source).toContain('getAccessToken()');
-    expect(source).toContain('subscribeAuthSessionChanges(refreshAuthBridge)');
+    expect(source).toContain('createLatestRefreshCoordinator');
+    expect(source).toContain('resolveStableWebViewSession');
+    expect(source).toContain('readStoredWebViewCredential');
+    expect(source).toContain("AppState.addEventListener('change'");
+    expect(source).toContain('.handleAppStateChange(nextState, undefined)');
+    expect(source).toContain('coordinator.dispose()');
+    expect(source).toContain(
+      'buildStudyBridgeScript(appliedSession.user, appliedSession.accessToken)',
+    );
+    expect(source).not.toContain('buildStudyBridgeScript(user, accessToken)');
     expect(source).toContain('i18n.resolvedLanguage ?? i18n.language');
     expect(source).not.toContain('refresh_token');
     expect(source).not.toContain('FOCUS_WEB_URL');

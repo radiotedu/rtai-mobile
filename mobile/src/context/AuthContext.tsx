@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback, use
 import axios from 'axios';
 import {Linking} from 'react-native';
 
+import {getCurrentLanguage} from '../i18n';
 import { BASE_API } from '../services/config';
 import {
     deleteAccountAndClearSession,
@@ -16,6 +17,7 @@ import {
     startTeduLogin,
     type TeduLoginSession,
 } from '../services/erpIdentity';
+import {clearPendingErpLoginPkce} from '../services/erpLoginPkce';
 import {buildRegistrationPolicy} from '../services/registrationPolicy';
 import {Analytics} from '../services/analyticsService';
 import api, {isDefinitiveAuthRejection} from '../services/api';
@@ -45,6 +47,45 @@ export interface User {
     last_super_vote_at?: string | null;
 }
 
+export type RegistrationOptions = {legalAccepted: boolean; age?: number};
+
+const BACKEND_PREFERRED_LANGUAGES = [
+    'en',
+    'tr',
+    'ru',
+    'ar',
+    'de',
+    'fr',
+    'it',
+    'jp',
+] as const;
+type BackendPreferredLanguage = (typeof BACKEND_PREFERRED_LANGUAGES)[number];
+
+export function registrationPreferredLanguage(language: unknown): BackendPreferredLanguage {
+    const code = typeof language === 'string'
+        ? language.trim().toLowerCase().split(/[-_]/)[0]
+        : '';
+    return (BACKEND_PREFERRED_LANGUAGES as readonly string[]).includes(code)
+        ? code as BackendPreferredLanguage
+        : 'en';
+}
+
+export function buildRegistrationRequest(
+    email: string,
+    password: string,
+    displayName: string,
+    options: RegistrationOptions,
+    effectiveLanguage: unknown = getCurrentLanguage(),
+) {
+    return {
+        email,
+        password,
+        display_name: displayName,
+        preferred_language: registrationPreferredLanguage(effectiveLanguage),
+        ...buildRegistrationPolicy(email, options.legalAccepted, options.age),
+    };
+}
+
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
@@ -53,7 +94,7 @@ interface AuthContextType {
         email: string,
         password: string,
         displayName: string,
-        options: {legalAccepted: boolean; age?: number},
+        options: RegistrationOptions,
     ) => Promise<void>;
     loginWithTedu: () => Promise<void>;
     isTeduLoginLoading: boolean;
@@ -270,6 +311,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             if (callback.error || !callback.code) {
+                await clearPendingErpLoginPkce();
                 throw new ErpIdentityError(callback.error ?? 'erp.callbackFailed');
             }
             const session = await exchangeTeduLoginCode(
@@ -319,6 +361,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const login = async (email: string, password: string) => {
         invalidateErpAttempt();
+        await clearPendingErpLoginPkce();
         try {
             const response = await axios.post(
                 `${API_URL}/auth/login`,
@@ -335,18 +378,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: string,
         password: string,
         displayName: string,
-        options: {legalAccepted: boolean; age?: number},
+        options: RegistrationOptions,
     ) => {
         invalidateErpAttempt();
+        await clearPendingErpLoginPkce();
         try {
             const response = await axios.post(
                 `${API_URL}/auth/register`,
-                {
-                    email,
-                    password,
-                    display_name: displayName,
-                    ...buildRegistrationPolicy(email, options.legalAccepted, options.age),
-                },
+                buildRegistrationRequest(email, password, displayName, options),
                 {timeout: AUTH_REQUEST_TIMEOUT_MS},
             );
             await persistSession(response.data.data);
@@ -385,6 +424,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const guestLogin = async (displayName: string) => {
         invalidateErpAttempt();
+        await clearPendingErpLoginPkce();
         try {
             const response = await axios.post(
                 `${API_URL}/auth/guest`,
@@ -399,6 +439,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const logout = useCallback(async () => {
         invalidateErpAttempt();
+        await clearPendingErpLoginPkce();
         try {
             await logoutAccountSession();
         } finally {
@@ -409,6 +450,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const deleteAccount = useCallback(async (password?: string) => {
         invalidateErpAttempt();
+        await clearPendingErpLoginPkce();
         await deleteAccountAndClearSession(password);
         setUser(null);
         notifyAuthSessionChanged();

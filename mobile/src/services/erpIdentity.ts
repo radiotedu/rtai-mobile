@@ -2,6 +2,11 @@ import {Linking} from 'react-native';
 import axios from 'axios';
 
 import {BASE_API} from './config';
+import {
+  beginPendingErpLoginPkce,
+  clearPendingErpLoginPkce,
+  getPendingErpLoginPkce,
+} from './erpLoginPkce';
 
 export const TEDU_LOGIN_RETURN_URI = 'radiotedu://auth/erp/linked';
 export const ERP_IDENTITY_TIMEOUT_MS = 15000;
@@ -131,27 +136,54 @@ function throwIfAborted(signal?: AbortSignal): void {
   throw error;
 }
 
+function responseStatus(error: unknown): number | null {
+  const status = (error as {response?: {status?: unknown}} | null)?.response?.status;
+  return typeof status === 'number' && Number.isFinite(status) ? status : null;
+}
+
+function isTerminalRequestError(error: unknown): boolean {
+  const status = responseStatus(error);
+  return status !== null && status >= 400 && status < 500;
+}
+
 export async function startTeduLogin(signal?: AbortSignal): Promise<void> {
   throwIfAborted(signal);
-  const response = await axios.post(
-    `${BASE_API}/auth/erp-link/login/start`,
-    {return_uri: TEDU_LOGIN_RETURN_URI},
-    {timeout: ERP_IDENTITY_TIMEOUT_MS, signal},
-  );
-  throwIfAborted(signal);
-  const data = responseData<{authorization_url?: string}>(response);
-  const authorizationUrl = data.authorization_url?.trim() ?? '';
-  const parsedAuthorizationUrl = parseUrl(authorizationUrl);
-  if (
-    !parsedAuthorizationUrl ||
-    parsedAuthorizationUrl.protocol !== 'https:' ||
-    parsedAuthorizationUrl.hostname !== 'radiotedu.com' ||
-    parsedAuthorizationUrl.pathname !== '/erp/oauth/authorize'
-  ) {
-    throw new ErpIdentityError('erp.unsafeUrl');
+  const pkce = await beginPendingErpLoginPkce();
+  try {
+    const response = await axios.post(
+      `${BASE_API}/auth/erp-link/login/start`,
+      {
+        return_uri: TEDU_LOGIN_RETURN_URI,
+        code_challenge: pkce.codeChallenge,
+        code_challenge_method: pkce.method,
+      },
+      {timeout: ERP_IDENTITY_TIMEOUT_MS, signal},
+    );
+    throwIfAborted(signal);
+    const data = responseData<{authorization_url?: string}>(response);
+    const authorizationUrl = data.authorization_url?.trim() ?? '';
+    const parsedAuthorizationUrl = parseUrl(authorizationUrl);
+    if (
+      !parsedAuthorizationUrl ||
+      parsedAuthorizationUrl.protocol !== 'https:' ||
+      parsedAuthorizationUrl.hostname !== 'radiotedu.com' ||
+      parsedAuthorizationUrl.pathname !== '/erp/oauth/authorize'
+    ) {
+      throw new ErpIdentityError('erp.unsafeUrl');
+    }
+    throwIfAborted(signal);
+    await Linking.openURL(authorizationUrl);
+  } catch (error) {
+    const isAbort = (error as {name?: unknown} | null)?.name === 'AbortError';
+    const isNetworkFailure = (error as {isAxiosError?: unknown} | null)?.isAxiosError === true
+      && responseStatus(error) === null;
+    if (!isAbort && !isNetworkFailure && (
+      error instanceof ErpIdentityError || isTerminalRequestError(error)
+    )) {
+      await clearPendingErpLoginPkce(pkce.verifier);
+    }
+    throw error;
   }
-  throwIfAborted(signal);
-  await Linking.openURL(authorizationUrl);
 }
 
 export async function exchangeTeduLoginCode(
@@ -159,20 +191,41 @@ export async function exchangeTeduLoginCode(
   signal?: AbortSignal,
 ): Promise<TeduLoginSession> {
   throwIfAborted(signal);
-  const response = await axios.post(
-    `${BASE_API}/auth/erp-link/login/exchange`,
-    {code},
-    {timeout: ERP_IDENTITY_TIMEOUT_MS, signal},
-  );
-  throwIfAborted(signal);
-  const session = responseData<TeduLoginSession>(response);
-  if (
-    !session.access_token ||
-    !session.refresh_token ||
-    !session.user ||
-    isGuestTeduSession(session)
-  ) {
-    throw new ErpIdentityError('erp.invalidSession');
+  const pending = await getPendingErpLoginPkce();
+  if (!pending) {
+    await clearPendingErpLoginPkce();
+    throw new ErpIdentityError('erp.callbackFailed');
   }
-  return session;
+
+  let response: {data?: {data?: TeduLoginSession}};
+  try {
+    response = await axios.post(
+      `${BASE_API}/auth/erp-link/login/exchange`,
+      {code, code_verifier: pending.verifier},
+      {timeout: ERP_IDENTITY_TIMEOUT_MS, signal},
+    );
+    throwIfAborted(signal);
+  } catch (error) {
+    if (isTerminalRequestError(error)) {
+      await clearPendingErpLoginPkce(pending.verifier);
+    }
+    throw error;
+  }
+
+  try {
+    const session = responseData<TeduLoginSession>(response);
+    if (
+      !session.access_token ||
+      !session.refresh_token ||
+      !session.user ||
+      isGuestTeduSession(session)
+    ) {
+      throw new ErpIdentityError('erp.invalidSession');
+    }
+    await clearPendingErpLoginPkce(pending.verifier);
+    return session;
+  } catch (error) {
+    await clearPendingErpLoginPkce(pending.verifier);
+    throw error;
+  }
 }

@@ -24,6 +24,11 @@ describe('game catalog localization', () => {
 
     for (const language of ['en', 'tr', 'ru', 'ar', 'de', 'fr']) {
       expect(screenCopy(language, 'games.practiceNoRewards')).toContain('Gold');
+      expect(screenCopy(language, 'games.heroSubtitle')).toContain('Gold');
     }
+
+    expect(screenCopy('en', 'games.heroTitle')).toContain('practice mode');
+    expect(screenCopy('en', 'games.heroSubtitle')).toContain('not submitted to the server');
+    expect(screenCopy('en', 'games.account')).toContain('No account is required');
   });
 });

@@ -21,16 +21,19 @@ export function getGameRouteForSlug(slug?: string | null): GameRouteName | null 
   return GAME_ROUTE_BY_SLUG[slug.trim().toLowerCase()] ?? null;
 }
 
-export function isPracticeGame(game?: {id?: string | null} | null): boolean {
-  return String(game?.id ?? '').startsWith('builtin:');
+export function isPracticeGame(game?: {id?: string | null; slug?: string | null} | null): boolean {
+  return (
+    String(game?.id ?? '').startsWith('builtin:') ||
+    getGameRouteForSlug(game?.slug) !== null
+  );
 }
 
 /**
  * The games that ship inside the mobile app. These are always listed in the
  * Games screen (even when the backend arcade-games registry is empty), and are
  * enriched with the server record — real id + daily point limit — whenever a
- * matching slug exists on the backend. Without that record, each game runs as
- * local practice and cannot promise a Gold reward.
+ * matching slug exists on the backend. That enrichment is presentation-only:
+ * bundled native routes always run as local practice and never award Gold.
  */
 export interface BuiltinGame {
   slug: string;

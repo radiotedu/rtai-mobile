@@ -39,13 +39,16 @@ describe('gameSession helpers', () => {
     expect(getGameResultMessage(0, 0, 'Skor')).toBe('Skor 0 · +0 Gold');
   });
 
-  it('keeps bundled practice rounds offline and reward-free', async () => {
+  it('ignores registry reward metadata for bundled practice rounds', async () => {
     jest.mocked(startGameSession).mockClear();
     jest.mocked(submitGameScore).mockClear();
     const game = {
-      id: 'builtin:snake',
+      id: 'server-game-123',
       slug: 'snake',
       title: 'Snake',
+      point_rate: 10,
+      daily_point_limit: 500,
+      metadata: {rewards_enabled: true, awards_gold: true},
     };
 
     prepareVerifiedGameRound(game, 'practice-round');

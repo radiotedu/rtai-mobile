@@ -16,9 +16,12 @@ describe('game route mapping', () => {
     expect(getGameRouteForSlug('demo')).toBeNull();
   });
 
-  it('distinguishes local practice rounds from server-verified games', () => {
+  it('keeps bundled native routes practice-only when the registry supplies real ids', () => {
     expect(isPracticeGame({id: 'builtin:snake'})).toBe(true);
-    expect(isPracticeGame({id: 'game-123'})).toBe(false);
+    for (const game of BUILTIN_GAMES) {
+      expect(isPracticeGame({id: `game-${game.slug}`, slug: game.slug})).toBe(true);
+    }
+    expect(isPracticeGame({id: 'game-123', slug: 'server-only-game'})).toBe(false);
     expect(BUILTIN_GAMES.every(game => game.daily_point_limit === 0)).toBe(true);
   });
 });

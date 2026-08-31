@@ -275,18 +275,24 @@ const SnakeScreen = () => {
         </View>
 
         <View style={styles.controls}>
-          <ControlButton icon="arrow-left-bold" label={copy('games.rhythmLeft')} onPress={() => setSafeDirection('left')} />
-          <ControlButton icon="arrow-up-bold" label={copy('games.snakeUp')} onPress={() => setSafeDirection('up')} />
-          <TouchableOpacity
-            style={styles.pauseButton}
-            onPress={toggleRunning}
-            disabled={gameOver}
-            accessibilityRole="button"
-            accessibilityLabel={copy(running ? 'games.pause' : 'games.resume')}>
-            <Icon name={running ? 'pause' : 'play'} size={26} color="#fff" />
-          </TouchableOpacity>
-          <ControlButton icon="arrow-down-bold" label={copy('games.snakeDown')} onPress={() => setSafeDirection('down')} />
-          <ControlButton icon="arrow-right-bold" label={copy('games.rhythmRight')} onPress={() => setSafeDirection('right')} />
+          <View style={styles.dpadTop}>
+            <ControlButton icon="arrow-up-bold" label={copy('games.snakeUp')} onPress={() => setSafeDirection('up')} />
+          </View>
+          <View style={styles.dpadMiddle}>
+            <ControlButton icon="arrow-left-bold" label={copy('games.rhythmLeft')} onPress={() => setSafeDirection('left')} />
+            <TouchableOpacity
+              style={styles.pauseButton}
+              onPress={toggleRunning}
+              disabled={gameOver}
+              accessibilityRole="button"
+              accessibilityLabel={copy(running ? 'games.pause' : 'games.resume')}>
+              <Icon name={running ? 'pause' : 'play'} size={26} color="#fff" />
+            </TouchableOpacity>
+            <ControlButton icon="arrow-right-bold" label={copy('games.rhythmRight')} onPress={() => setSafeDirection('right')} />
+          </View>
+          <View style={styles.dpadBottom}>
+            <ControlButton icon="arrow-down-bold" label={copy('games.snakeDown')} onPress={() => setSafeDirection('down')} />
+          </View>
         </View>
 
         <Text style={styles.helpText}>{copy('games.snakeHelp')}</Text>
@@ -380,9 +386,12 @@ const styles = StyleSheet.create({
   goldenFoodCell: {backgroundColor: '#FF8A4C', borderColor: '#FFD4BA', shadowColor: '#FF8A4C', shadowOpacity: 0.8, shadowRadius: 5, elevation: 5},
   obstacleCell: {backgroundColor: '#33252B', borderColor: '#74505D', transform: [{scale: 0.82}]},
   obstacleCore: {width: 8, height: 8, borderRadius: 3, transform: [{rotate: '45deg'}], backgroundColor: '#B87A8E'},
-  controls: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg, gap: 6},
+  controls: {alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg, gap: 4},
+  dpadTop: {alignItems: 'center'},
+  dpadMiddle: {flexDirection: 'row', alignItems: 'center', gap: 4},
+  dpadBottom: {alignItems: 'center'},
   controlButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17221B', borderWidth: 1, borderColor: 'rgba(72,224,138,0.28)'},
-  pauseButton: {width: 56, height: 52, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#26B96B', shadowColor: '#48E08A', shadowOpacity: 0.32, shadowRadius: 10, elevation: 6},
+  pauseButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#26B96B', shadowColor: '#48E08A', shadowOpacity: 0.32, shadowRadius: 10, elevation: 6},
   helpText: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginTop: SPACING.md},
 });
 

@@ -11,19 +11,20 @@ export interface SongGuessQuestion {
   clue: string;
   year: string;
   genre: string;
+  artist: string;
   answer: string;
   options: string[];
 }
 
 const SONG_QUESTIONS: SongGuessQuestion[] = [
-  {clue: '🌃 ✨ 🚗', year: '2019', genre: 'Synth-pop', answer: 'Blinding Lights', options: ['Blinding Lights', 'Levitating', 'As It Was', 'Bad Guy']},
-  {clue: '👑 🍹 🌞', year: '1978', genre: 'Rock', answer: "Don't Stop Me Now", options: ["Don't Stop Me Now", 'Dreams', 'Africa', 'Heroes']},
-  {clue: '🌊 💜 🌧️', year: '1984', genre: 'Pop rock', answer: 'Purple Rain', options: ['Purple Rain', 'November Rain', 'Yellow', 'Watermelon Sugar']},
-  {clue: '🚀 🌌 👽', year: '1972', genre: 'Glam rock', answer: 'Starman', options: ['Starman', 'Rocket Man', 'Space Oddity', 'Supermassive Black Hole']},
-  {clue: '💃 🪩 🪩', year: '1976', genre: 'Disco', answer: 'Dancing Queen', options: ['Dancing Queen', 'Le Freak', 'Stayin Alive', 'I Will Survive']},
-  {clue: '🟡 🌟 🎸', year: '2000', genre: 'Alternative rock', answer: 'Yellow', options: ['Yellow', 'Fix You', 'Creep', 'Wonderwall']},
-  {clue: '👋 🌎 📞', year: '2015', genre: 'Soul pop', answer: 'Hello', options: ['Hello', 'Easy on Me', 'Someone Like You', 'Rolling in the Deep']},
-  {clue: '💡 🌀 🤖', year: '2013', genre: 'Disco funk', answer: 'Get Lucky', options: ['Get Lucky', 'Instant Crush', 'One More Time', 'Around the World']},
+  {clue: '🌃 ✨ 🚗', year: '2019', genre: 'Synth-pop', artist: 'The Weeknd', answer: 'Blinding Lights', options: ['Blinding Lights', 'Levitating', 'As It Was', 'Bad Guy']},
+  {clue: '👑 🍹 🌞', year: '1978', genre: 'Rock', artist: 'Queen', answer: "Don't Stop Me Now", options: ["Don't Stop Me Now", 'Dreams', 'Africa', 'Heroes']},
+  {clue: '🌊 💜 🌧️', year: '1984', genre: 'Pop rock', artist: 'Prince', answer: 'Purple Rain', options: ['Purple Rain', 'November Rain', 'Yellow', 'Watermelon Sugar']},
+  {clue: '🚀 🌌 👽', year: '1972', genre: 'Glam rock', artist: 'David Bowie', answer: 'Starman', options: ['Starman', 'Rocket Man', 'Space Oddity', 'Supermassive Black Hole']},
+  {clue: '💃 🪩 🪩', year: '1976', genre: 'Disco', artist: 'ABBA', answer: 'Dancing Queen', options: ['Dancing Queen', 'Le Freak', 'Stayin Alive', 'I Will Survive']},
+  {clue: '🟡 🌟 🎸', year: '2000', genre: 'Alternative rock', artist: 'Coldplay', answer: 'Yellow', options: ['Yellow', 'Fix You', 'Creep', 'Wonderwall']},
+  {clue: '👋 🌎 📞', year: '2015', genre: 'Soul pop', artist: 'Adele', answer: 'Hello', options: ['Hello', 'Easy on Me', 'Someone Like You', 'Rolling in the Deep']},
+  {clue: '💡 🌀 🤖', year: '2013', genre: 'Disco funk', artist: 'Daft Punk', answer: 'Get Lucky', options: ['Get Lucky', 'Instant Crush', 'One More Time', 'Around the World']},
 ];
 
 export const LEGACY_WORD_QUESTIONS: Record<AppLanguage, WordGuessQuestion[]> = {

@@ -222,12 +222,17 @@ const TetrisScreen = () => {
         </View>
 
         <View style={styles.controls}>
-          <ControlButton icon="arrow-left-bold" onPress={() => moveHorizontal(-1)} disabled={gameOver} />
-          <ControlButton icon="rotate-right" onPress={rotate} disabled={gameOver} />
-          <ControlButton icon="arrow-right-bold" onPress={() => moveHorizontal(1)} disabled={gameOver} />
-          <TouchableOpacity style={styles.dropButton} onPress={drop} disabled={gameOver}>
-            <Text style={styles.dropText}>{copy('games.drop')}</Text>
-          </TouchableOpacity>
+          <View style={styles.dpadTop}>
+            <ControlButton icon="rotate-right" onPress={rotate} disabled={gameOver} />
+          </View>
+          <View style={styles.dpadMiddle}>
+            <ControlButton icon="arrow-left-bold" onPress={() => moveHorizontal(-1)} disabled={gameOver} />
+            <View style={styles.dpadCenter} />
+            <ControlButton icon="arrow-right-bold" onPress={() => moveHorizontal(1)} disabled={gameOver} />
+          </View>
+          <View style={styles.dpadBottom}>
+            <ControlButton icon="arrow-down-bold" onPress={drop} disabled={gameOver} />
+          </View>
         </View>
       </GameShell>
 
@@ -328,10 +333,12 @@ const styles = StyleSheet.create({
   miniRow: {flexDirection: 'row'},
   miniCell: {width: 14, height: 14, margin: 1, borderRadius: 4, backgroundColor: '#1B303D'},
   pauseButton: {width: 54, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1479A3'},
-  controls: {flexDirection: 'row', justifyContent: 'center', gap: SPACING.sm, marginTop: SPACING.lg},
+  controls: {alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: SPACING.lg},
+  dpadTop: {alignItems: 'center'},
+  dpadMiddle: {flexDirection: 'row', alignItems: 'center', gap: 4},
+  dpadBottom: {alignItems: 'center'},
+  dpadCenter: {width: 52, height: 52},
   controlButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#13232C', borderWidth: 1, borderColor: 'rgba(70,200,255,0.28)'},
-  dropButton: {height: 50, paddingHorizontal: SPACING.lg, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1479A3', shadowColor: '#46C8FF', shadowOpacity: 0.3, shadowRadius: 9, elevation: 5},
-  dropText: {color: '#fff', fontSize: 14, fontWeight: '900'},
   disabled: {opacity: 0.5},
 });
 

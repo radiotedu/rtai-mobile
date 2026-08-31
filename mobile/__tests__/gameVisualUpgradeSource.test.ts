@@ -40,6 +40,9 @@ describe('arcade visual upgrade', () => {
       expect(source).toContain(
         'controlButton: {width: 52, height: 52, borderRadius: 4',
       );
+      expect(source).toContain('dpadTop');
+      expect(source).toContain('dpadMiddle');
+      expect(source).toContain('dpadBottom');
     }
   });
 });

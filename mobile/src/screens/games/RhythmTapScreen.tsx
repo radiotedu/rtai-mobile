@@ -13,6 +13,10 @@ import {appCopy} from '../../i18n/appCopy';
 import {getSongGuessQuestions, SongGuessQuestion} from '../../i18n/gameQuestions';
 import {isPracticeGame} from './gameRoutes';
 import {logSafeError} from '../../utils/safeLog';
+import {
+  LicensedPreviewSession,
+  startLicensedSongPreview,
+} from '../../services/licensedSongPreview';
 
 const QUESTION_COUNT = 6;
 
@@ -35,13 +39,48 @@ const RhythmTapScreen = () => {
   const submittedRef = useRef(false);
   const answerGateRef = useRef(createAnswerGate());
   const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewSessionRef = useRef<LicensedPreviewSession | null>(null);
+  const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'playing' | 'unavailable'>('idle');
   const roundIdRef = useRef(createClientRoundId(game));
   const startedAtRef = useRef(Date.now());
   const currentQuestion = questions[index];
   const score = useMemo(() => correct * 160 + Math.max(0, streak - 1) * 35, [correct, streak]);
 
   useEffect(() => { prepareVerifiedGameRound(game, roundIdRef.current); }, [game]);
-  useEffect(() => () => { if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current); }, []);
+  useEffect(() => () => {
+    if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    void previewSessionRef.current?.stop();
+  }, []);
+
+  const togglePreview = async () => {
+    if (previewState === 'loading') return;
+    if (previewSessionRef.current) {
+      const session = previewSessionRef.current;
+      previewSessionRef.current = null;
+      setPreviewState('idle');
+      await session.stop();
+      return;
+    }
+
+    setPreviewState('loading');
+    try {
+      const session = await startLicensedSongPreview({
+        title: currentQuestion.answer,
+        artist: currentQuestion.artist,
+      });
+      previewSessionRef.current = session;
+      setPreviewState('playing');
+      void session.finished.finally(() => {
+        if (previewSessionRef.current === session) {
+          previewSessionRef.current = null;
+          setPreviewState('idle');
+        }
+      });
+    } catch (error) {
+      logSafeError('games.songGuess.preview', error);
+      setPreviewState('unavailable');
+    }
+  };
 
   const submitFinalScore = async (finalScore: number) => {
     setIsSubmitting(true);
@@ -66,6 +105,10 @@ const RhythmTapScreen = () => {
 
   const answer = (option: string) => {
     if (selected || finished || !answerGateRef.current.tryEnter()) return;
+    const preview = previewSessionRef.current;
+    previewSessionRef.current = null;
+    if (preview) void preview.stop();
+    setPreviewState('idle');
     const isCorrect = option === currentQuestion.answer;
     const nextCorrect = isCorrect ? correct + 1 : correct;
     const nextStreak = isCorrect ? streak + 1 : 1;
@@ -90,6 +133,10 @@ const RhythmTapScreen = () => {
   const resetGame = () => {
     if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
     transitionTimeoutRef.current = null;
+    const preview = previewSessionRef.current;
+    previewSessionRef.current = null;
+    if (preview) void preview.stop();
+    setPreviewState('idle');
     answerGateRef.current.release();
     roundIdRef.current = createClientRoundId(game);
     prepareVerifiedGameRound(game, roundIdRef.current);
@@ -123,6 +170,25 @@ const RhythmTapScreen = () => {
                   {[18, 34, 48, 28, 42, 22, 38].map((height, barIndex) => <View key={barIndex} style={[styles.equalizerBar, {height}]} />)}
                 </View>
               </View>
+              <TouchableOpacity
+                style={[styles.previewButton, previewState === 'playing' && styles.previewButtonActive]}
+                onPress={togglePreview}
+                disabled={selected !== null || finished || previewState === 'loading'}
+                accessibilityRole="button"
+                accessibilityLabel={copy('games.previewPlay')}>
+                <Icon
+                  name={previewState === 'playing' ? 'stop' : previewState === 'loading' ? 'loading' : 'play'}
+                  size={21}
+                  color="#111"
+                />
+                <Text style={styles.previewButtonText}>
+                  {previewState === 'unavailable'
+                    ? copy('games.previewUnavailable')
+                    : previewState === 'playing'
+                      ? copy('games.previewStop')
+                      : copy('games.previewPlay')}
+                </Text>
+              </TouchableOpacity>
               <Text style={styles.prompt}>{copy('games.songPrompt')}</Text>
               <Text style={styles.clue}>{currentQuestion.clue}</Text>
               <View style={styles.tags}><Text style={styles.tag}>{currentQuestion.year}</Text><Text style={styles.tag}>{currentQuestion.genre}</Text></View>
@@ -173,6 +239,9 @@ const styles = StyleSheet.create({
   vinylLabel: {width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFD54A', alignItems: 'center', justifyContent: 'center'},
   equalizer: {flex: 1, height: 62, marginLeft: SPACING.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   equalizerBar: {width: 6, borderRadius: 4, backgroundColor: '#FFD54A'},
+  previewButton: {alignSelf: 'center', minWidth: 180, height: 48, marginTop: SPACING.md, paddingHorizontal: SPACING.md, borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD54A', borderWidth: 1, borderColor: '#FFF0A3'},
+  previewButtonActive: {backgroundColor: '#FF8A4C', borderColor: '#FFD4BA'},
+  previewButtonText: {color: '#111', fontSize: 13, fontWeight: '900', letterSpacing: 0.5},
   prompt: {color: COLORS.textMuted, fontSize: 13, fontWeight: '900', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: SPACING.lg},
   clue: {color: COLORS.text, fontSize: 36, letterSpacing: 7, textAlign: 'center', marginTop: SPACING.sm},
   tags: {flexDirection: 'row', justifyContent: 'center', gap: SPACING.sm, marginVertical: SPACING.md},

@@ -22,6 +22,9 @@ target 'RadioTEDUMobile' do
   # FirebaseCoreInternal is Swift while GoogleUtilities is Objective-C. Generate
   # a module map for that dependency so CocoaPods can integrate the graph as
   # the default static libraries used by React Native.
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseInstallations', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseAnalytics/Core', '~> 11.15.0'
 

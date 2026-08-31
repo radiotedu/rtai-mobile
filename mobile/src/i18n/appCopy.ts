@@ -185,6 +185,9 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'games.songCorrect': 'correct',
     'games.songStreak': 'Song streak',
     'games.songPrompt': 'Which song is it?',
+    'games.previewPlay': 'Play 7-second preview',
+    'games.previewStop': 'Stop preview',
+    'games.previewUnavailable': 'Preview unavailable',
     'votePanel.seconds': ({seconds}) => `${seconds}s`,
   },
   tr: {
@@ -240,6 +243,9 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'games.songCorrect': 'doğru',
     'games.songStreak': 'Şarkı serisi',
     'games.songPrompt': 'Bu hangi şarkı?',
+    'games.previewPlay': '7 saniyelik önizlemeyi çal',
+    'games.previewStop': 'Önizlemeyi durdur',
+    'games.previewUnavailable': 'Önizleme bulunamadı',
     'votePanel.seconds': ({seconds}) => `${seconds} sn`,
   },
   ru: {
@@ -295,6 +301,9 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'games.songCorrect': 'верно',
     'games.songStreak': 'Серия песен',
     'games.songPrompt': 'Что это за песня?',
+    'games.previewPlay': 'Включить 7-секундный фрагмент',
+    'games.previewStop': 'Остановить фрагмент',
+    'games.previewUnavailable': 'Фрагмент недоступен',
     'votePanel.seconds': ({seconds}) => `${seconds} с`,
   },
   ar: {
@@ -350,6 +359,9 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'games.songCorrect': 'صحيح',
     'games.songStreak': 'سلسلة الأغاني',
     'games.songPrompt': 'ما هذه الأغنية؟',
+    'games.previewPlay': 'تشغيل معاينة لمدة 7 ثوانٍ',
+    'games.previewStop': 'إيقاف المعاينة',
+    'games.previewUnavailable': 'المعاينة غير متاحة',
     'votePanel.seconds': ({seconds}) => `${seconds} ث`,
   },
   de: {
@@ -405,6 +417,9 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'games.songCorrect': 'richtig',
     'games.songStreak': 'Song-Serie',
     'games.songPrompt': 'Welcher Song ist das?',
+    'games.previewPlay': '7-Sekunden-Vorschau abspielen',
+    'games.previewStop': 'Vorschau stoppen',
+    'games.previewUnavailable': 'Vorschau nicht verfügbar',
     'votePanel.seconds': ({seconds}) => `${seconds} s`,
   },
   fr: {
@@ -460,6 +475,9 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'games.songCorrect': 'correct',
     'games.songStreak': 'Série musicale',
     'games.songPrompt': 'Quelle est cette chanson ?',
+    'games.previewPlay': 'Lire un extrait de 7 secondes',
+    'games.previewStop': "Arrêter l'extrait",
+    'games.previewUnavailable': 'Extrait indisponible',
     'votePanel.seconds': ({seconds}) => `${seconds} s`,
   },
 };

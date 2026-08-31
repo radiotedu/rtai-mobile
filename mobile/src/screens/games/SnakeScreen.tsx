@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   obstacleCell: {backgroundColor: '#33252B', borderColor: '#74505D', transform: [{scale: 0.82}]},
   obstacleCore: {width: 8, height: 8, borderRadius: 3, transform: [{rotate: '45deg'}], backgroundColor: '#B87A8E'},
   controls: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg, gap: 6},
-  controlButton: {width: 54, height: 50, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17221B', borderWidth: 1, borderColor: 'rgba(72,224,138,0.28)'},
+  controlButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17221B', borderWidth: 1, borderColor: 'rgba(72,224,138,0.28)'},
   pauseButton: {width: 56, height: 52, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: '#26B96B', shadowColor: '#48E08A', shadowOpacity: 0.32, shadowRadius: 10, elevation: 6},
   helpText: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginTop: SPACING.md},
 });

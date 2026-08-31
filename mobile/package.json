@@ -1,6 +1,6 @@
 {
   "name": "com.radiotedumobile",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "private": true,
   "scripts": {
     "android": "react-native run-android --mode debug",

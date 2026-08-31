@@ -15,6 +15,33 @@ describe('Android form-factor delivery', () => {
     expect(manifest).toContain('androidx.car.app.launchable');
     expect(manifest).toContain('android.media.browse.MediaBrowserService');
     expect(manifest).toContain('.car.RadioTeduCarService');
+    expect(manifest.match(/android\.media\.action\.MEDIA_PLAY_FROM_SEARCH/g)).toHaveLength(1);
+    const media3Block = manifest.slice(manifest.indexOf('.car.RadioTeduCarService'));
+    expect(media3Block).toContain('android.media.action.MEDIA_PLAY_FROM_SEARCH');
+  });
+
+  it('keeps Assistant, Gemini, icons, and decoder fallback on current Media3', () => {
+    const service = read(
+      'app/src/main/java/com/radiotedumobile/car/RadioTeduCarService.kt',
+    );
+    const gradle = read('app/build.gradle');
+    expect(gradle).toContain('def media3Version = "1.10.1"');
+    expect(gradle).toContain('androidx.media3:media3-session:${media3Version}');
+    expect(service).toContain('class RadioTeduCarService : MediaLibraryService()');
+    expect(service).toContain('override fun onSearch(');
+    expect(service).toContain('override fun onGetSearchResult(');
+    expect(service).toContain('requestMetadata.searchQuery');
+    expect(service).toContain('DefaultRenderersFactory');
+    expect(service).toContain('.setEnableDecoderFallback(true)');
+    expect(service).toContain('EXTENSION_RENDERER_MODE_PREFER');
+    expect(gradle).toContain('kotlinaudio-v2.1.0-radiotedu.aar');
+    expect(gradle).toContain('exoplayer-flac-2.19.0-radiotedu.aar');
+    expect(
+      fs.existsSync(path.join(root, 'vendor/kotlinaudio-v2.1.0-radiotedu.aar')),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(root, 'vendor/exoplayer-flac-2.19.0-radiotedu.aar')),
+    ).toBe(true);
   });
 
   it('keeps car toolbar category icons transparent for host tinting', () => {
@@ -63,7 +90,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('tv/build.gradle');
     const manifest = read('tv/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 12081');
+    expect(gradle).toContain('versionCode 12091');
     expect(manifest).toContain('android.software.leanback');
     expect(manifest).toContain('android.intent.category.LEANBACK_LAUNCHER');
     expect(manifest).toContain('android.hardware.touchscreen');
@@ -74,7 +101,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('wear/build.gradle');
     const manifest = read('wear/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 12082');
+    expect(gradle).toContain('versionCode 12092');
     expect(gradle).toContain('targetSdkVersion 35');
     expect(manifest).toContain('android.hardware.type.watch');
     expect(manifest).toContain('com.google.android.wearable.standalone');
@@ -88,9 +115,24 @@ describe('Android form-factor delivery', () => {
     const service = read(
       'formfactor/src/main/java/com/radiotedumobile/formfactor/RadioPlaybackService.kt',
     );
+    const gradle = read('formfactor/build.gradle');
+    const tvManifest = read('tv/src/main/AndroidManifest.xml');
+    const wearManifest = read('wear/src/main/AndroidManifest.xml');
     expect(channels).toContain('https://stream.radiotedu.com/radio');
     expect(channels).toContain('https://stream.radiotedu.com/rock');
-    expect(service).toContain('MediaSessionService');
+    expect(gradle.match(/androidx\.media3:[^:]+:1\.10\.1/g)).toHaveLength(2);
+    expect(service).toContain('MediaLibraryService');
+    expect(service).toContain('override fun onSearch(');
+    expect(service).toContain('requestMetadata.searchQuery');
+    expect(service).toContain('.setEnableDecoderFallback(true)');
+    expect(service).toContain('EXTENSION_RENDERER_MODE_PREFER');
+    expect(service).toContain('Icy-MetaData');
     expect(service).toContain('setAudioAttributes');
+    for (const manifest of [tvManifest, wearManifest]) {
+      expect(manifest).toContain('android:exported="true"');
+      expect(manifest).toContain('androidx.media3.session.MediaLibraryService');
+      expect(manifest).toContain('android.media.action.MEDIA_PLAY_FROM_SEARCH');
+      expect(manifest).toContain('android.intent.action.MEDIA_BUTTON');
+    }
   });
 });

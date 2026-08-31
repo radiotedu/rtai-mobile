@@ -97,7 +97,6 @@
         tools:replace="android:stopWithTask">
         <intent-filter>
           <action android:name="android.intent.action.MEDIA_BUTTON" />
-          <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
         </intent-filter>
       </service>
 
@@ -114,6 +113,10 @@
                action alongside it for older Android Auto/AAOS hosts. -->
           <action android:name="androidx.media3.session.MediaLibraryService" />
           <action android:name="android.media.browse.MediaBrowserService" />
+          <!-- Assistant and Gemini use the same play-from-search media
+               contract. Keep a single owner so queries cannot fall through
+               to RNTP's legacy, non-browsable session. -->
+          <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
         </intent-filter>
         <!-- Newer AAOS launchers require an explicit service opt-in when the
              single APK also exposes a phone launcher activity. -->

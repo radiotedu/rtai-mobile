@@ -32,4 +32,14 @@ describe('arcade visual upgrade', () => {
     expect(catalog).toContain('gameWatermark');
     expect(catalog).toContain('gameNumber');
   });
+
+  it('keeps directional controls cubic instead of pill-shaped', () => {
+    const snake = read('src/screens/games/SnakeScreen.tsx');
+    const tetris = read('src/screens/games/TetrisScreen.tsx');
+    for (const source of [snake, tetris]) {
+      expect(source).toContain(
+        'controlButton: {width: 52, height: 52, borderRadius: 4',
+      );
+    }
+  });
 });

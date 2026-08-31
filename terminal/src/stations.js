@@ -1,4 +1,5 @@
 const STREAM_ORIGIN = process.env.RADIOTEDU_STREAM_ORIGIN || 'https://stream.radiotedu.com';
+const SUPPORTED_CODECS = Object.freeze(['HE-AAC v2', 'AAC-LC', 'MP3', 'Ogg/Opus', 'FLAC']);
 
 const STATIONS = [
   {id: 'radio', name: 'RadioTEDU', mount: '/radio', description: 'Main channel', flac: false},
@@ -29,11 +30,11 @@ function streamUrl(station, quality = 'normal') {
 }
 
 function codecFor(quality) {
-  return quality === 'flac' ? 'FLAC' : 'HE-AAC v1';
+  return quality === 'flac' ? 'FLAC' : 'HE-AAC v2';
 }
 
 function listStations() {
   return STATIONS.map(item => ({...item, qualities: item.flac ? ['normal', 'low', 'flac'] : ['normal', 'low']}));
 }
 
-module.exports = {STREAM_ORIGIN, STATIONS, getStation, streamUrl, codecFor, listStations};
+module.exports = {STREAM_ORIGIN, SUPPORTED_CODECS, STATIONS, getStation, streamUrl, codecFor, listStations};

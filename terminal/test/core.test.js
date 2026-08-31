@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {getStation, streamUrl, codecFor} = require('../src/stations');
+const {getStation, streamUrl, codecFor, SUPPORTED_CODECS} = require('../src/stations');
 const {parseInput} = require('../src/tui');
 
 test('quality mounts match RadioTEDU contract', () => {
@@ -8,8 +8,9 @@ test('quality mounts match RadioTEDU contract', () => {
   assert.equal(streamUrl('cazz', 'low'), 'https://stream.radiotedu.com/cazz-low');
   assert.equal(streamUrl('cazz', 'flac'), 'https://stream.radiotedu.com/cazz-flac');
   assert.throws(() => streamUrl('lofi', 'flac'), /no FLAC/);
-  assert.equal(codecFor('normal'), 'HE-AAC v1');
+  assert.equal(codecFor('normal'), 'HE-AAC v2');
   assert.equal(codecFor('flac'), 'FLAC');
+  assert.deepEqual(SUPPORTED_CODECS, ['HE-AAC v2', 'AAC-LC', 'MP3', 'Ogg/Opus', 'FLAC']);
 });
 
 test('station aliases keep cazz as the public mount', () => {

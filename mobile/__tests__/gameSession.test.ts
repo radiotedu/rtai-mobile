@@ -1,19 +1,40 @@
-import {describe, expect, it, jest} from '@jest/globals';
+import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 jest.mock('../src/services/gamificationService', () => ({
   startGameSession: jest.fn(),
   submitGameScore: jest.fn(),
 }));
 
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  default: {fetch: jest.fn()},
+}));
+
 import {
   buildGameScorePayload,
   getGameResultMessage,
+  hasVerifiedInternet,
   prepareVerifiedGameRound,
   submitMobileGameScore,
 } from '../src/screens/games/gameSession';
 import {startGameSession, submitGameScore} from '../src/services/gamificationService';
+import NetInfo from '@react-native-community/netinfo';
 
 describe('gameSession helpers', () => {
+  beforeEach(() => {
+    jest.mocked(NetInfo.fetch).mockReset();
+    jest.mocked(NetInfo.fetch).mockResolvedValue({
+      isConnected: true,
+      isInternetReachable: true,
+    } as never);
+  });
+
+  it('requires an explicitly connected and internet-reachable network for Gold', () => {
+    expect(hasVerifiedInternet({isConnected: true, isInternetReachable: true} as never)).toBe(true);
+    expect(hasVerifiedInternet({isConnected: false, isInternetReachable: true} as never)).toBe(false);
+    expect(hasVerifiedInternet({isConnected: true, isInternetReachable: false} as never)).toBe(false);
+    expect(hasVerifiedInternet({isConnected: null, isInternetReachable: null} as never)).toBe(true);
+  });
   it('builds the required mobile game score payload with sanitized values', () => {
     expect(
       buildGameScorePayload({
@@ -86,5 +107,34 @@ describe('gameSession helpers', () => {
         nonce: 'nonce-1',
       }),
     );
+  });
+
+  it('does not create or submit a Gold session while offline', async () => {
+    jest.mocked(startGameSession).mockClear();
+    jest.mocked(submitGameScore).mockClear();
+    jest.mocked(NetInfo.fetch).mockResolvedValue({
+      isConnected: false,
+      isInternetReachable: false,
+    } as never);
+    const game = {
+      id: 'server-game-offline',
+      slug: 'tetris',
+      title: 'Tetris',
+      point_rate: 10,
+      daily_point_limit: 500,
+      metadata: {rewards_enabled: true, awards_gold: true},
+    };
+
+    prepareVerifiedGameRound(game, 'offline-round');
+    await expect(
+      submitMobileGameScore({
+        game,
+        score: 100,
+        clientRoundId: 'offline-round',
+        startedAt: 1,
+      }),
+    ).resolves.toEqual({points_awarded: 0, offline: true});
+    expect(startGameSession).not.toHaveBeenCalled();
+    expect(submitGameScore).not.toHaveBeenCalled();
   });
 });

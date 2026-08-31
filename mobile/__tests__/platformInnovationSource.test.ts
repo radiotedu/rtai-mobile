@@ -53,6 +53,7 @@ describe('innovative media surfaces', () => {
     expect(wearManifest).toContain('RadioTeduTileService');
     expect(wearManifest).toContain('RadioTeduComplicationService');
     expect(live).toContain('Notification.ProgressStyle');
+    expect(live).toContain('android.requestPromotedOngoing');
     expect(live).toContain('radiotedu://voting');
     expect(live.toLowerCase()).not.toContain('juke');
   });

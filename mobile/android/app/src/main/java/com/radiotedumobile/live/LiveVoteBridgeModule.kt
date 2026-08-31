@@ -46,7 +46,10 @@ class LiveVoteBridgeModule(private val context: ReactApplicationContext) :
             .setProgress(progress)
             .addProgressSegment(Notification.ProgressStyle.Segment(100).setColor(Color.rgb(227, 30, 36)))
         val extras = Bundle().apply {
-            putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, true)
+            // The public constant was added in the Android 36.1 SDK extension.
+            // Use its documented stable value so compileSdk 36 builds can opt in;
+            // platform 36.1+ consumes it and earlier Android 16 builds ignore it.
+            putBoolean(PROMOTED_ONGOING_EXTRA, true)
         }
         val notification = Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.car_tile_charts)
@@ -72,5 +75,6 @@ class LiveVoteBridgeModule(private val context: ReactApplicationContext) :
     private companion object {
         const val CHANNEL_ID = "radiotedu_live_vote"
         const val NOTIFICATION_ID = 8842
+        const val PROMOTED_ONGOING_EXTRA = "android.requestPromotedOngoing"
     }
 }

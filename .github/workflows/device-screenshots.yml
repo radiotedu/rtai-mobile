@@ -161,7 +161,8 @@ jobs:
           retention-days: 7
 
   ios:
-    runs-on: macos-14
+    # Keep screenshot builds aligned with Firebase 11.15 / Swift 6.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

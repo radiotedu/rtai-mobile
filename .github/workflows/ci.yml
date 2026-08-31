@@ -76,7 +76,9 @@ jobs:
           --no-daemon
 
   ios:
-    runs-on: macos-14
+    # Firebase 11.15 uses Swift 6 language features (for example `sending`).
+    # macos-15 provides an Xcode 16+ toolchain while keeping iOS 15 targets valid.
+    runs-on: macos-15
 
     steps:
       - uses: actions/checkout@v4

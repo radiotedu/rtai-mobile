@@ -38,4 +38,9 @@ describe('playback recovery intent', () => {
     expect(selectImmediateLowRecovery(fallbacks, fallbacks[2].url)).toBe(fallbacks[3]);
     expect(selectImmediateLowRecovery(fallbacks, fallbacks[3].url)).toBeUndefined();
   });
+
+  it('reconnects the same stream when a channel publishes no low mount', () => {
+    const aiOnly = [{quality: 'normal', url: 'https://stream.radiotedu.com/en'}] as const;
+    expect(selectImmediateLowRecovery(aiOnly, aiOnly[0].url)).toBe(aiOnly[0]);
+  });
 });

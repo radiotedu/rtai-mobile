@@ -38,7 +38,16 @@ export function selectImmediateLowRecovery<T extends RecoveryCandidate>(
     return fallbacks[lowIndex];
   }
 
-  return fallbacks[currentIndex + 1];
+  const next = fallbacks[currentIndex + 1];
+  if (next) {
+    return next;
+  }
+
+  // Some live channels (currently AI EN/FR) intentionally publish no low
+  // mount. Re-opening the same URL is safer than synthesizing a dead `-low`.
+  return lowIndex === -1 && currentIndex !== -1
+    ? fallbacks[currentIndex]
+    : undefined;
 }
 
 export function resetPlaybackIntentForTests(): void {

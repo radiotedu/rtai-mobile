@@ -62,6 +62,14 @@ private const val CAT_PODCASTS = "cat_podcasts"
 private const val PODCAST_SERIES_PREFIX = "podcast-series:"
 private const val HIFI_MEDIA_ID_SUFFIX = ":hifi"
 private const val LOW_MEDIA_ID_SUFFIX = ":low"
+private val LOW_RECOVERY_MOUNT_PATHS = setOf(
+    "/radio",
+    "/classic",
+    "/cazz",
+    "/lofi",
+    "/energize",
+    "/rock",
+)
 private val ROOT_CATEGORY_IDS = listOf(CAT_RADIO, CAT_PODCASTS)
 
 /**
@@ -544,17 +552,18 @@ class RadioTeduCarService : MediaLibraryService() {
         val current = activeCatalogItem
             ?: player.currentMediaItem?.mediaId?.let(::findItem)
             ?: return false
-        val low = current.toLowVariant() ?: return false
+        val recovery = current.toLowVariant() ?: current.toSameStreamRecoveryVariant()
+            ?: return false
 
         lowRecoveryAttempts += 1
         internalRecoveryInFlight = true
-        activeCatalogItem = low
+        activeCatalogItem = recovery
         Log.i(
             TAG,
             "Recovering ${baseCatalogId(current.id)} on low stream " +
                 "($trigger, attempt $lowRecoveryAttempts)",
         )
-        player.setMediaItem(low.toMediaItem(playable = true))
+        player.setMediaItem(recovery.toMediaItem(playable = true))
         player.prepare()
         player.playWhenReady = true
         updateHiFiButton()
@@ -1341,6 +1350,7 @@ class RadioTeduCarService : MediaLibraryService() {
         if (!parsed.host.equals("stream.radiotedu.com", ignoreCase = true)) return null
         val currentPath = parsed.path?.takeIf { it.isNotBlank() } ?: return null
         val basePath = currentPath.removeSuffix("-flac").removeSuffix("-low")
+        if (basePath !in LOW_RECOVERY_MOUNT_PATHS) return null
         val lowUrl = parsed.buildUpon().path("$basePath-low").build().toString()
         return copy(
             id = baseCatalogId(id) + LOW_MEDIA_ID_SUFFIX,
@@ -1348,6 +1358,14 @@ class RadioTeduCarService : MediaLibraryService() {
             quality = "low",
             audioFormat = "HE-AAC v2",
         )
+    }
+
+    private fun CatalogItem.toSameStreamRecoveryVariant(): CatalogItem? {
+        if (seriesId != null) return null
+        val parsed = Uri.parse(url)
+        if (!parsed.scheme.equals("https", ignoreCase = true)) return null
+        if (!parsed.host.equals("stream.radiotedu.com", ignoreCase = true)) return null
+        return copy(id = baseCatalogId(id))
     }
 
     private fun switchCarQuality(item: CatalogItem) {

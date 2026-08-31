@@ -67,7 +67,7 @@ test('RTAI is English, sourced, scoped and uses its logo', () => {
 test('Global navigation and footer expose AI and Ankara Studios', () => {
   assert.match(header, /home_url\('\/rtai\/'\)/);
   assert.match(header, />AI<\/a>/);
-  assert.match(header, /home_url\('\/llms\.txt'\)/);
+  assert.match(header, /home_url\('\/llms-ai\.txt'\)/);
   assert.match(footer, /RadioTEDU Ankara Studios/);
   assert.match(footer, /RadioTEDU Ankara Stüdyoları/);
   assert.match(footer, /Ziya Gökalp Cad\. No:48/);

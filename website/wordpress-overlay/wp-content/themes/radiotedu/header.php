@@ -3,7 +3,7 @@ declare(strict_types=1);
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
-    <link rel="alternate" type="text/plain" href="<?php echo esc_url(home_url('/llms.txt')); ?>" title="RadioTEDU LLM-readable site summary">
+    <link rel="alternate" type="text/plain" href="<?php echo esc_url(home_url('/llms-ai.txt')); ?>" title="RadioTEDU LLM-readable site summary">
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ed1c24">

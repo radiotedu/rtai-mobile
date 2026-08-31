@@ -45,6 +45,7 @@ describe('innovative media surfaces', () => {
     const rootGradle = read(mobile, 'android/build.gradle');
     const wearGradle = read(mobile, 'android/wear/build.gradle');
     const wearManifest = read(mobile, 'android/wear/src/main/AndroidManifest.xml');
+    const complication = read(mobile, 'android/wear/src/main/java/com/radiotedumobile/wear/RadioTeduComplicationService.kt');
     const live = read(mobile, 'android/app/src/main/java/com/radiotedumobile/live/LiveVoteBridgeModule.kt');
     expect(rootGradle).toContain('kotlinVersion = "1.9.24"');
     expect(gradle).toContain('play-services-cast-framework:22.0.0');
@@ -52,6 +53,7 @@ describe('innovative media surfaces', () => {
     expect(wearGradle).toContain('androidx.wear.protolayout:protolayout:1.3.0');
     expect(wearManifest).toContain('RadioTeduTileService');
     expect(wearManifest).toContain('RadioTeduComplicationService');
+    expect(complication).toContain('ComplicationDataSourceService.ComplicationRequestListener');
     expect(live).toContain('Notification.ProgressStyle');
     expect(live).toContain('android.requestPromotedOngoing');
     expect(live).toContain('radiotedu://voting');

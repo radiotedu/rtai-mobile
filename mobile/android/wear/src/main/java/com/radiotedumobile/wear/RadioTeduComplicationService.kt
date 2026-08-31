@@ -7,8 +7,8 @@ import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceService
+import androidx.wear.watchface.complications.datasource.ComplicationDataSourceService.ComplicationRequestListener
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
-import androidx.wear.watchface.complications.datasource.ComplicationRequestListener
 
 class RadioTeduComplicationService : ComplicationDataSourceService() {
     override fun onComplicationRequest(

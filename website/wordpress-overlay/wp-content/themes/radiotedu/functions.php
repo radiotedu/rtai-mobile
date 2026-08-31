@@ -361,7 +361,7 @@ function radiotedu_theme_translation(string $translated, string $original, strin
         return $translated;
     }
     $translations = [
-        '15 saniye geri' => 'Back 15 seconds', '30 saniye ileri' => 'Forward 30 seconds', 'Akış' => 'Schedule',
+        '15 saniye geri' => 'Back 15 seconds', '30 saniye ileri' => 'Forward 30 seconds', 'Akış' => 'Schedule', 'Amazon’da ara' => 'Search on Amazon', 'Apple’dan satın al' => 'Buy on Apple Music',
         'Alt menü' => 'Footer menu', 'Ana menü' => 'Main menu', 'Ana sayfaya dön' => 'Back to home', 'Ara' => 'Search',
         'Aradığın sayfa taşınmış veya yayından kaldırılmış olabilir. Müzik çalmaya devam ediyor; sen ana sayfaya dönebilirsin.' => 'The page may have moved or gone off air. The music is still playing; head back home.',
         'Arama' => 'Search', 'Aramayı aç' => 'Open search', 'Başka bir radyo, podcast veya bölüm adı deneyin.' => 'Try another station, podcast or episode name.',
@@ -371,11 +371,11 @@ function radiotedu_theme_translation(string $translated, string $original, strin
         'Canlı yayın' => 'Live radio', 'Ders arasında, yolda veya gecenin tam ortasında: altı farklı kanal ve RadioTEDU stüdyolarından çıkan podcastler tek yerde.' => 'Between classes, on the road or late at night: six stations and podcasts from the RadioTEDU studios in one place.',
         'Detay' => 'Details', 'Devamını oku' => 'Read more', 'Dil seçimi' => 'Language selection', 'Dinle' => 'Listen', 'Duraklat' => 'Pause', 'Duyurular' => 'Announcements', 'Etkinlik' => 'Event', 'Etkinlikler' => 'Events',
         'Farklı hisset.' => 'Feel different.', 'Farkı dinle.' => 'Hear the difference.', 'Favoriye ekle' => 'Add to favorites', 'Giriş' => 'Sign in', 'Gizlilik' => 'Privacy',
-        'Hakkımızda' => 'About', 'Hesap bilgileri yükleniyor…' => 'Loading account…', 'Kampüs kültüründen spora, ekonomiden gündelik hayata uzanan RadioTEDU podcast arşivi.' => 'The RadioTEDU podcast archive spans campus culture, sports, economics and everyday life.',
+        'Hakkımızda' => 'About', 'Hesap bilgileri yükleniyor…' => 'Loading account…', 'Hızlı bağlantılar' => 'Quick links', 'Kampüs kültüründen spora, ekonomiden gündelik hayata uzanan RadioTEDU podcast arşivi.' => 'The RadioTEDU podcast archive spans campus culture, sports, economics and everyday life.',
         'Kanalını seç, haftanın tamamını gör. Program saatleri Türkiye saatiyle gösterilir.' => 'Choose a station and see the full week. Times are shown in Türkiye time.',
-        'Kullanım koşulları' => 'Terms of use', 'Menüyü aç' => 'Open menu', 'Oynat' => 'Play', 'Oynatma konumu' => 'Playback position', 'Podcast' => 'Podcast',
+        'Kullanım koşulları' => 'Terms of use', 'Menü' => 'Menu', 'Menüyü aç' => 'Open menu', 'Oynat' => 'Play', 'Oynatma konumu' => 'Playback position', 'Podcast' => 'Podcast',
         'Listeler' => 'Playlists', 'Podcastler' => 'Podcasts', 'Podcastleri keşfet' => 'Explore podcasts', 'Programlı yayın yok' => 'No scheduled show', 'RadioTEDU Podcast' => 'RadioTEDU Podcast',
-        'RadioTEDU oynatıcı' => 'RadioTEDU player', 'RadioTEDU’da ara' => 'Search RadioTEDU', 'Radyo seçimi' => 'Station picker', 'Radyo, podcast, bölüm…' => 'Station, podcast, episode…',
+        'RadioTEDU oynatıcı' => 'RadioTEDU player', 'RadioTEDU’da ara' => 'Search RadioTEDU', 'Radyo seçimi' => 'Station picker', 'Radyo, podcast, bölüm…' => 'Station, podcast, episode…', 'Radyolar' => 'Stations',
         'Ruh halini seç. Kanalı aç. Sayfalar arasında gezerken müzik çalmaya devam etsin.' => 'Pick your mood, tune in and keep the music playing as you explore.',
         'Seriyi favorile' => 'Favorite show', 'Seriyi keşfet' => 'Explore show', 'Ses başlatılamadı. Lütfen tekrar deneyin.' => 'Audio could not start. Please try again.', 'Ses seviyesi' => 'Volume',
         'Son bölümler' => 'Latest episodes', 'Son çalanlar' => 'Recently played', 'Sonuç bulunamadı' => 'No results', 'Spotify’da dinle' => 'Listen on Spotify', 'Gelecek etkinlikler' => 'Upcoming events', 'Geçmiş etkinlikler' => 'Past events',
@@ -384,7 +384,7 @@ function radiotedu_theme_translation(string $translated, string $original, strin
         'Tüm bölümler' => 'All episodes', 'Tüm radyolar' => 'All stations', 'Tüm seriler' => 'All shows', 'Yakında' => 'Coming soon', 'Yayın Akışı' => 'Schedule',
         'Yayın akışı' => 'Schedule', 'Yayın akışını aç' => 'Open schedule', 'Yayın bilgisi bekleniyor' => 'Waiting for broadcast info', 'Yayın geçici olarak çevrimdışı' => 'Broadcast temporarily offline',
         'Yeni' => 'New', 'Yükleniyor' => 'Loading', 'Çerezler' => 'Cookies', 'İletişim' => 'Contact', 'İçerik yolu' => 'Breadcrumb', 'İçeriğe geç' => 'Skip to content', 'Planlanmış etkinlik bulunmuyor.' => 'No events are scheduled yet.', 'Bilet sistemi güncellendiğinde yeni etkinlikler burada görünecek.' => 'New events will appear here when the ticket system is updated.',
-        'Şarkı geçmişi yayına döndüğünde burada görünecek.' => 'Recently played tracks will appear here when the stream returns.', 'Şimdi dinle' => 'Listen now', 'Şu an' => 'Now',
+        'Şarkı geçmişi yayına döndüğünde burada görünecek.' => 'Recently played tracks will appear here when the stream returns.', 'Şarkıyı satın al' => 'Buy this track', 'Şimdi dinle' => 'Listen now', 'Şu an' => 'Now',
         'RadioTEDU ana sayfa' => 'RadioTEDU home',
     ];
     return $translations[$original] ?? $translated;

@@ -62,3 +62,18 @@ test('playlists route contains every non-empty public RadioTEDU playlist', () =>
     assert.match(header, /home_url\('\/listeler\/'\)/);
     assert.match(header, /Listeler/);
 });
+
+test('playlists copy and English site chrome are localized', () => {
+    const page = read(join(theme, 'page-listeler.php'));
+    const functions = read(join(theme, 'functions.php'));
+    const player = read(join(theme, 'template-parts', 'player.php'));
+
+    assert.match(page, /Kolejin ritminden gece kampüs koridorlarına; RadioTEDU seçkileri anlar, mevsimler ve hikâyeler için hazırlandı\./);
+    assert.match(page, /From the rhythm of Kolej to late-night campus corridors, RadioTEDU selections are curated for moments, seasons, and stories\./);
+    assert.match(functions, /'Radyolar' => 'Stations'/);
+    assert.match(functions, /'Menü' => 'Menu'/);
+    assert.match(functions, /'Şarkıyı satın al' => 'Buy this track'/);
+    assert.match(player, /RadioTEDU oynatıcı/);
+    assert.match(player, /Bir kanal seç ve dinlemeye başla/);
+    assert.doesNotMatch(player, /Ä|Å|â(?:€™|ˆ|€)/);
+});

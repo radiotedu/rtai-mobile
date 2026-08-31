@@ -38,7 +38,7 @@ get_header();
         <div class="rt-playlists__hero-copy">
             <p class="rt-kicker">RadioTEDU / Spotify</p>
             <h1><?php echo esc_html($isEnglish ? 'A different frequency for every mood.' : 'Her ruh hâline ayrı bir frekans.'); ?></h1>
-            <p><?php echo esc_html($isEnglish ? 'From the rhythm of Kolej to late-night campus corridors, these RadioTEDU selections are curated for moments, seasons and stories—not algorithms.' : 'Kolej’in ritminden gece kampüs koridorlarına; RadioTEDU seçkileri algoritmalar için değil, anlar, mevsimler ve hikâyeler için hazırlandı.'); ?></p>
+            <p><?php echo esc_html($isEnglish ? 'From the rhythm of Kolej to late-night campus corridors, RadioTEDU selections are curated for moments, seasons, and stories.' : 'Kolejin ritminden gece kampüs koridorlarına; RadioTEDU seçkileri anlar, mevsimler ve hikâyeler için hazırlandı.'); ?></p>
             <a class="rt-button rt-button--dark" href="https://open.spotify.com/user/31qub2lbtxckv7cjzuxgcv7qes4a/playlists" target="_blank" rel="noopener noreferrer" data-no-pjax><?php echo esc_html($isEnglish ? 'Follow on Spotify' : 'Spotify’da takip et'); ?></a>
         </div>
         <div class="rt-playlists__hero-stat" aria-label="<?php echo esc_attr($isEnglish ? 'Playlist count' : 'Liste sayısı'); ?>">

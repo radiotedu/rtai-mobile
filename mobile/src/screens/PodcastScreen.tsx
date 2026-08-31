@@ -30,7 +30,9 @@ import {
   PODCAST_ID_PREFIX,
   buildPodcastTrack,
   ensureBrowsableQueue,
+  pausePlaybackByUser,
   playTrackById,
+  resumePlaybackByUser,
   setCachedPodcasts,
 } from '../services/playbackQueue';
 import {resolveCurrentStreamPreferences} from '../services/streamPreferences';
@@ -119,9 +121,9 @@ const PodcastScreen = () => {
     if (activeTrack?.id === trackId) {
       const {state} = await TrackPlayer.getPlaybackState();
       if (state === State.Playing) {
-        await TrackPlayer.pause();
+        await pausePlaybackByUser();
       } else {
-        await TrackPlayer.play();
+        await resumePlaybackByUser();
       }
       return;
     }
@@ -155,7 +157,7 @@ const PodcastScreen = () => {
         await TrackPlayer.add(track);
         await playTrackById(trackId);
       }
-      await TrackPlayer.play();
+      await resumePlaybackByUser();
     } catch (error) {
       logSafeError('podcasts.play', error);
       Alert.alert(copy('common.error'), copy('podcast.playError'));

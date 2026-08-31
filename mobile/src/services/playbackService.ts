@@ -9,8 +9,11 @@ import {
   playAdjacentQueueItem,
   playChannelById,
   playTrackById,
+  pausePlaybackByUser,
   rebuildBrowsableQueue,
+  resumePlaybackByUser,
   setCachedPodcasts,
+  stopPlaybackByUser,
 } from './playbackQueue';
 import {fetchPodcasts} from './podcastService';
 import {resolveCurrentStreamPreferences} from './streamPreferences';
@@ -119,9 +122,9 @@ export async function handleRemotePlaySearch(query: string): Promise<void> {
 
 export const PlaybackService = async function () {
   // Transport controls (notification, lock screen, car, headset, Bluetooth).
-  TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
-  TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
-  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.stop());
+  TrackPlayer.addEventListener(Event.RemotePlay, resumePlaybackByUser);
+  TrackPlayer.addEventListener(Event.RemotePause, pausePlaybackByUser);
+  TrackPlayer.addEventListener(Event.RemoteStop, stopPlaybackByUser);
   TrackPlayer.addEventListener(Event.RemoteNext, () =>
     playAdjacentQueueItem(1),
   );

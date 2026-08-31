@@ -1,5 +1,5 @@
 import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
-import TrackPlayer from 'react-native-track-player';
+import {pausePlaybackByUser} from './playbackQueue';
 
 const CastBridge = NativeModules.RadioTeduCastBridge as
   | {
@@ -59,7 +59,7 @@ export function initOutputRouting(): () => void {
     return () => {};
   }
   const subscription = DeviceEventEmitter.addListener('RadioTeduCastSessionStarted', () => {
-    TrackPlayer.pause().catch(() => {});
+    pausePlaybackByUser().catch(() => {});
   });
   return () => subscription.remove();
 }

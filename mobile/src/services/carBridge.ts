@@ -30,7 +30,10 @@ import {
   playAdjacentQueueItem,
   playChannelById,
   playTrackById,
+  pausePlaybackByUser,
   PODCAST_ID_PREFIX,
+  resumePlaybackByUser,
+  stopPlaybackByUser,
 } from './playbackQueue';
 import {resolveCurrentStreamPreferences} from './streamPreferences';
 
@@ -286,13 +289,13 @@ async function handleCommand(action: string, mediaId: string | null) {
   try {
     switch (action) {
       case 'play':
-        await TrackPlayer.play();
+        await resumePlaybackByUser();
         break;
       case 'pause':
-        await TrackPlayer.pause();
+        await pausePlaybackByUser();
         break;
       case 'stop':
-        await TrackPlayer.stop();
+        await stopPlaybackByUser();
         break;
       case 'next':
         await playAdjacentQueueItem(1);

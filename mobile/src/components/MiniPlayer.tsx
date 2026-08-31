@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import TrackPlayer, {
+import {
   usePlaybackState,
   State,
   useActiveTrack,
@@ -17,7 +17,11 @@ import TrackPlayer, {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS} from '../theme/theme';
 import {useNavigation, useNavigationState} from '@react-navigation/native';
-import {playChannelById} from '../services/playbackQueue';
+import {
+  pausePlaybackByUser,
+  playChannelById,
+  resumePlaybackByUser,
+} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioChannels';
@@ -204,9 +208,9 @@ const MiniPlayer = () => {
 
   const togglePlayback = async () => {
     if (state === State.Playing) {
-      await TrackPlayer.pause();
+      await pausePlaybackByUser();
     } else {
-      await TrackPlayer.play();
+      await resumePlaybackByUser();
     }
   };
 

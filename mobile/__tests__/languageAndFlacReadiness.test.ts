@@ -53,7 +53,7 @@ describe('language and FLAC readiness', () => {
     expect(source).toMatch(/backBuffer:\s*5/);
 
     const queueSource = fs.readFileSync(path.join(__dirname, '../src/services/playbackQueue.ts'), 'utf8');
-    expect(queueSource).toMatch(/NORMAL_CONNECT_TIMEOUT_MS = 20000/);
-    expect(queueSource).toMatch(/FLAC_CONNECT_TIMEOUT_MS = 45000/);
+    expect(queueSource).toMatch(/NORMAL_CONNECT_TIMEOUT_MS = 8000/);
+    expect(queueSource).toMatch(/FLAC_CONNECT_TIMEOUT_MS = 15000/);
   });
 });

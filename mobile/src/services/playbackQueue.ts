@@ -30,6 +30,13 @@ import {logSafeError} from '../utils/safeLog';
 import {Analytics} from './analyticsService';
 import type {Podcast} from './podcastService';
 import {
+  markPlaybackPaused,
+  markPlaybackRequested,
+  markPlaybackStopped,
+  selectImmediateLowRecovery,
+  shouldAutoRecoverPlayback,
+} from './playbackIntent';
+import {
   isCellularNetwork,
   resolveCurrentStreamPreferences,
 } from './streamPreferences';
@@ -220,6 +227,7 @@ export async function playTrackById(id: string): Promise<boolean> {
     Analytics.interaction(id.startsWith('podcast:') ? 'podcast' : 'radio', 'play', 'not_found');
     return false;
   }
+  markPlaybackRequested();
   const activeTrack = await TrackPlayer.getActiveTrack();
   if (activeTrack?.id === id && activeTrack?.url === queue[index]?.url) {
     await TrackPlayer.play();
@@ -259,7 +267,7 @@ export async function playAdjacentQueueItem(offset: -1 | 1): Promise<boolean> {
   }
 
   await TrackPlayer.skip(targetIndex);
-  await TrackPlayer.play();
+  await resumePlaybackByUser();
   recordRecent(target).catch(() => {});
   return true;
 }
@@ -290,8 +298,8 @@ function confirmFlacOnCellular(channel: RadioChannel): Promise<boolean> {
 // The player intentionally fills a five-second start buffer. Leave enough
 // headroom for that buffer plus slower mobile/TLS startup before treating a
 // healthy stream as unavailable. PlaybackError still triggers immediately.
-export const NORMAL_CONNECT_TIMEOUT_MS = 20000;
-export const FLAC_CONNECT_TIMEOUT_MS = 45000;
+export const NORMAL_CONNECT_TIMEOUT_MS = 8000;
+export const FLAC_CONNECT_TIMEOUT_MS = 15000;
 let connectionWatchdogTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function clearConnectionWatchdog(): void {
@@ -307,6 +315,9 @@ export function startConnectionWatchdog(
   timeoutMs?: number,
 ): void {
   clearConnectionWatchdog();
+  if (!shouldAutoRecoverPlayback()) {
+    return;
+  }
 
   const effectiveTimeout =
     timeoutMs ?? (quality === 'flac' ? FLAC_CONNECT_TIMEOUT_MS : NORMAL_CONNECT_TIMEOUT_MS);
@@ -317,6 +328,7 @@ export function startConnectionWatchdog(
       const activeTrack = await TrackPlayer.getActiveTrack();
 
       if (
+        shouldAutoRecoverPlayback() &&
         activeTrack?.id === channel.id &&
         state !== State.Playing
       ) {
@@ -362,6 +374,8 @@ export async function playChannelById(
   ) {
     return {played: false, cancelled: true, quality};
   }
+
+  markPlaybackRequested();
 
   await ensureBrowsableQueue(quality);
   await replaceChannelTrack(channel, quality);
@@ -417,6 +431,9 @@ export async function replaceChannelTrack(
  */
 export async function fallbackActiveChannelStream(): Promise<boolean> {
   clearConnectionWatchdog();
+  if (!shouldAutoRecoverPlayback()) {
+    return false;
+  }
   const track = await TrackPlayer.getActiveTrack();
   const channelId = String(track?.id ?? '');
   const channel = RADIO_CHANNELS.find(item => item.id === channelId);
@@ -426,8 +443,7 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
   }
 
   const currentUrl = String(track?.url ?? '');
-  const currentIndex = fallbacks.findIndex(item => item.url === currentUrl);
-  const next = fallbacks[currentIndex + 1];
+  const next = selectImmediateLowRecovery(fallbacks, currentUrl);
   if (!next) {
     return false;
   }
@@ -445,6 +461,24 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
   await TrackPlayer.play();
   startConnectionWatchdog(channel, next.quality);
   return true;
+}
+
+/** User/transport control wrappers keep recovery from overriding pause/stop. */
+export async function resumePlaybackByUser(): Promise<void> {
+  markPlaybackRequested();
+  await TrackPlayer.play();
+}
+
+export async function pausePlaybackByUser(): Promise<void> {
+  markPlaybackPaused();
+  clearConnectionWatchdog();
+  await TrackPlayer.pause();
+}
+
+export async function stopPlaybackByUser(): Promise<void> {
+  markPlaybackStopped();
+  clearConnectionWatchdog();
+  await TrackPlayer.stop();
 }
 
 /**

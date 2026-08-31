@@ -61,6 +61,7 @@ private const val CAT_RADIO = "cat_radio"
 private const val CAT_PODCASTS = "cat_podcasts"
 private const val PODCAST_SERIES_PREFIX = "podcast-series:"
 private const val HIFI_MEDIA_ID_SUFFIX = ":hifi"
+private const val LOW_MEDIA_ID_SUFFIX = ":low"
 private val ROOT_CATEGORY_IDS = listOf(CAT_RADIO, CAT_PODCASTS)
 
 /**
@@ -113,7 +114,8 @@ class RadioTeduCarService : MediaLibraryService() {
 
         private const val HTTP_CONNECT_TIMEOUT_MS = 15_000
         private const val HTTP_READ_TIMEOUT_MS = 15_000
-        private const val BUFFERING_WATCHDOG_MS = 20_000L
+        private const val BUFFERING_WATCHDOG_MS = 6_000L
+        private const val MAX_LOW_RECOVERY_ATTEMPTS = 3
         private const val MIN_BUFFER_MS = 5_000
         private const val MAX_BUFFER_MS = 30_000
         private const val PLAY_BUFFER_MS = 4_000
@@ -152,6 +154,9 @@ class RadioTeduCarService : MediaLibraryService() {
     private var activeArtworkLookupKey: String? = null
     private var pendingHiFiMediaId: String? = null
     private var pendingHiFiUntilMs = 0L
+    private var autoRecoveryAllowed = false
+    private var internalRecoveryInFlight = false
+    private var lowRecoveryAttempts = 0
     private val hiFiCommand = SessionCommand(ACTION_TOGGLE_HIFI, Bundle.EMPTY)
 
     override fun onCreate() {
@@ -246,11 +251,30 @@ class RadioTeduCarService : MediaLibraryService() {
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
                 Player.STATE_BUFFERING -> armBufferingWatchdog()
-                Player.STATE_READY, Player.STATE_IDLE -> cancelBufferingWatchdog()
+                Player.STATE_READY -> {
+                    cancelBufferingWatchdog()
+                    lowRecoveryAttempts = 0
+                    internalRecoveryInFlight = false
+                }
+                Player.STATE_IDLE -> {
+                    cancelBufferingWatchdog()
+                    if (!internalRecoveryInFlight && player.playerError == null) {
+                        autoRecoveryAllowed = false
+                    }
+                }
                 Player.STATE_ENDED -> {
                     cancelBufferingWatchdog()
                     savePodcastProgress(completed = true)
                 }
+            }
+        }
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (playWhenReady) {
+                autoRecoveryAllowed = true
+            } else if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST) {
+                autoRecoveryAllowed = false
+                cancelBufferingWatchdog()
             }
         }
 
@@ -286,6 +310,9 @@ class RadioTeduCarService : MediaLibraryService() {
             cancelBufferingWatchdog()
             cancelProgressTicker(save = true)
             Log.w(TAG, "Playback failed", error)
+            if (recoverRadioToLowIfAllowed("player_error")) {
+                return
+            }
             sendSessionError(
                 SessionError.ERROR_IO,
                 localizedString(R.string.car_playback_error),
@@ -486,9 +513,14 @@ class RadioTeduCarService : MediaLibraryService() {
 
     private fun armBufferingWatchdog() {
         cancelBufferingWatchdog()
+        if (!autoRecoveryAllowed) return
         val runnable = Runnable {
             bufferingWatchdog = null
-            if (player.playbackState == Player.STATE_BUFFERING) {
+            if (
+                player.playbackState == Player.STATE_BUFFERING &&
+                autoRecoveryAllowed &&
+                !recoverRadioToLowIfAllowed("buffer_timeout")
+            ) {
                 player.stop()
                 sendSessionError(
                     SessionError.ERROR_IO,
@@ -498,6 +530,36 @@ class RadioTeduCarService : MediaLibraryService() {
         }
         bufferingWatchdog = runnable
         mainHandler.postDelayed(runnable, BUFFERING_WATCHDOG_MS)
+    }
+
+    /**
+     * Keep the selected station and recover its socket on the low-bandwidth
+     * mount. Pause/stop disables this path; transient connectivity failures do
+     * not. A bounded retry prevents a dead server from creating a hot loop.
+     */
+    private fun recoverRadioToLowIfAllowed(trigger: String): Boolean {
+        if (!autoRecoveryAllowed || lowRecoveryAttempts >= MAX_LOW_RECOVERY_ATTEMPTS) {
+            return false
+        }
+        val current = activeCatalogItem
+            ?: player.currentMediaItem?.mediaId?.let(::findItem)
+            ?: return false
+        val low = current.toLowVariant() ?: return false
+
+        lowRecoveryAttempts += 1
+        internalRecoveryInFlight = true
+        activeCatalogItem = low
+        Log.i(
+            TAG,
+            "Recovering ${baseCatalogId(current.id)} on low stream " +
+                "($trigger, attempt $lowRecoveryAttempts)",
+        )
+        player.setMediaItem(low.toMediaItem(playable = true))
+        player.prepare()
+        player.playWhenReady = true
+        updateHiFiButton()
+        mainHandler.post { internalRecoveryInFlight = false }
+        return true
     }
 
     private fun cancelBufferingWatchdog() {
@@ -648,7 +710,7 @@ class RadioTeduCarService : MediaLibraryService() {
             }
 
             if (active.quality == "flac") {
-                val normal = findItem(active.id.removeSuffix(HIFI_MEDIA_ID_SUFFIX))
+                val normal = findItem(baseCatalogId(active.id))
                 if (normal != null) switchCarQuality(normal)
                 return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
             }
@@ -1248,18 +1310,43 @@ class RadioTeduCarService : MediaLibraryService() {
 
     private fun findItem(mediaId: String): CatalogItem? {
         val wantsHiFi = mediaId.endsWith(HIFI_MEDIA_ID_SUFFIX)
-        val baseId = mediaId.removeSuffix(HIFI_MEDIA_ID_SUFFIX)
+        val wantsLow = mediaId.endsWith(LOW_MEDIA_ID_SUFFIX)
+        val baseId = baseCatalogId(mediaId)
         val base = allPlayableItems().firstOrNull { it.id == baseId }
             ?: if (baseId == FALLBACK_RADIO_ID) fallbackRadioItem() else null
-        return if (wantsHiFi) base?.toHiFiVariant() else base
+        return when {
+            wantsHiFi -> base?.toHiFiVariant()
+            wantsLow -> base?.toLowVariant()
+            else -> base
+        }
     }
+
+    private fun baseCatalogId(mediaId: String): String = mediaId
+        .removeSuffix(HIFI_MEDIA_ID_SUFFIX)
+        .removeSuffix(LOW_MEDIA_ID_SUFFIX)
 
     private fun CatalogItem.toHiFiVariant(): CatalogItem? = hiFiUrl?.let { losslessUrl ->
         copy(
-            id = id.removeSuffix(HIFI_MEDIA_ID_SUFFIX) + HIFI_MEDIA_ID_SUFFIX,
+            id = baseCatalogId(id) + HIFI_MEDIA_ID_SUFFIX,
             url = losslessUrl,
             quality = "flac",
             audioFormat = "FLAC",
+        )
+    }
+
+    private fun CatalogItem.toLowVariant(): CatalogItem? {
+        if (seriesId != null) return null
+        val parsed = Uri.parse(url)
+        if (!parsed.scheme.equals("https", ignoreCase = true)) return null
+        if (!parsed.host.equals("stream.radiotedu.com", ignoreCase = true)) return null
+        val currentPath = parsed.path?.takeIf { it.isNotBlank() } ?: return null
+        val basePath = currentPath.removeSuffix("-flac").removeSuffix("-low")
+        val lowUrl = parsed.buildUpon().path("$basePath-low").build().toString()
+        return copy(
+            id = baseCatalogId(id) + LOW_MEDIA_ID_SUFFIX,
+            url = lowUrl,
+            quality = "low",
+            audioFormat = "HE-AAC v2",
         )
     }
 
@@ -1417,7 +1504,7 @@ class RadioTeduCarService : MediaLibraryService() {
     }
 
     private fun carAnalyticsBundle(item: CatalogItem) = Bundle().apply {
-        putString("content_id", item.id.removeSuffix(HIFI_MEDIA_ID_SUFFIX))
+        putString("content_id", baseCatalogId(item.id))
         putString("content_type", if (item.seriesId == null) "radio" else "podcast")
         putString("station", item.title)
         putString("quality", if (item.quality == "flac") "hifi" else (item.quality ?: "normal"))

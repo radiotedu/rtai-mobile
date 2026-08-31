@@ -30,8 +30,11 @@ jest.mock('../src/services/playbackQueue', () => ({
   playAdjacentQueueItem: jest.fn(),
   playChannelById: jest.fn(),
   playTrackById: jest.fn(),
+  pausePlaybackByUser: jest.fn(),
   rebuildBrowsableQueue: jest.fn(),
+  resumePlaybackByUser: jest.fn(),
   setCachedPodcasts: jest.fn(),
+  stopPlaybackByUser: jest.fn(),
 }));
 
 jest.mock('../src/services/podcastService', () => ({

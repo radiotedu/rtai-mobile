@@ -25,6 +25,7 @@ import {
   ensureBrowsableQueue,
   setCachedPodcasts,
 } from './src/services/playbackQueue';
+import {markPlaybackStopped} from './src/services/playbackIntent';
 import { fetchAllPodcasts } from './src/services/podcastService';
 import {createRunOnceWhenActive} from './src/services/playerForegroundBootstrap';
 import { initI18n } from './src/i18n';
@@ -193,6 +194,7 @@ function App(): React.JSX.Element {
       stopOutputRouting?.();
       if (playerReady) {
         // reset() clears the queue, which should remove the notification.
+        markPlaybackStopped();
         TrackPlayer.reset().catch(() => {});
       }
     };

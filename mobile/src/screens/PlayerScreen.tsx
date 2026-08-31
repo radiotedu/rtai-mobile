@@ -29,7 +29,12 @@ import {
   StreamQuality,
   shouldUseStationOnlyPresentation,
 } from '../data/radioChannels';
-import {isPodcastId, playChannelById} from '../services/playbackQueue';
+import {
+  isPodcastId,
+  pausePlaybackByUser,
+  playChannelById,
+  resumePlaybackByUser,
+} from '../services/playbackQueue';
 import {
   loadFavoriteChannelIds,
   saveFavoriteChannelIds,
@@ -188,9 +193,9 @@ const PlayerScreen = ({route}: any) => {
   const togglePlayback = async () => {
     const {state: current} = await TrackPlayer.getPlaybackState();
     if (current === State.Playing) {
-      await TrackPlayer.pause();
+      await pausePlaybackByUser();
     } else {
-      await TrackPlayer.play();
+      await resumePlaybackByUser();
     }
   };
 

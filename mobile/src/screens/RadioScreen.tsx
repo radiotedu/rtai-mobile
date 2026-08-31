@@ -30,7 +30,7 @@ import {
   isStationOnlyChannel,
   shouldUseStationOnlyPresentation,
 } from '../data/radioChannels';
-import {playChannelById} from '../services/playbackQueue';
+import {pausePlaybackByUser, playChannelById} from '../services/playbackQueue';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 import {Analytics} from '../services/analyticsService';
@@ -153,7 +153,7 @@ const RadioScreen = () => {
   const togglePlayback = async () => {
     const currentState = await TrackPlayer.getState();
     if (currentState === State.Playing) {
-      await TrackPlayer.pause();
+      await pausePlaybackByUser();
     } else {
       await playChannel(selectedChannel);
     }

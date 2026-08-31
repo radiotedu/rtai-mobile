@@ -34,6 +34,12 @@ describe('Android form-factor delivery', () => {
     expect(service).toContain('DefaultRenderersFactory');
     expect(service).toContain('.setEnableDecoderFallback(true)');
     expect(service).toContain('EXTENSION_RENDERER_MODE_PREFER');
+    expect(service).toContain('PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST');
+    expect(service).toContain('recoverRadioToLowIfAllowed("player_error")');
+    expect(service).toContain('recoverRadioToLowIfAllowed("buffer_timeout")');
+    expect(service).toContain('private const val BUFFERING_WATCHDOG_MS = 6_000L');
+    expect(service).toContain('private fun CatalogItem.toLowVariant()');
+    expect(service).toContain('MAX_LOW_RECOVERY_ATTEMPTS = 3');
     expect(gradle).toContain('kotlinaudio-v2.1.0-radiotedu.aar');
     expect(gradle).toContain('exoplayer-flac-2.19.0-radiotedu.aar');
     expect(

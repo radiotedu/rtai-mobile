@@ -35,6 +35,13 @@ test('production releases are main-only and cannot reuse a tag for another commi
   }
 });
 
+test('Android release verifies AAB integrity without rejecting the pinned self-signed upload key', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/android-release.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /EXPECTED_ANDROID_CERT_SHA256/);
+  assert.match(workflow, /jarsigner -verify "\$aab"/);
+  assert.doesNotMatch(workflow, /jarsigner -verify -strict/);
+});
+
 test('Android QA release is unmistakably debug-signed and includes Android Auto, TV, and Wear', async () => {
   const workflow = await readFile(new URL('../.github/workflows/android-qa-release.yml', import.meta.url), 'utf8');
   assert.match(workflow, /:app:assembleDebug/);

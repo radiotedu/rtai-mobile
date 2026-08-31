@@ -16,4 +16,6 @@
   Ogg/Opus, and FLAC.
 
 Local Android and iOS binaries are not built by the source preparation process;
-signed artifacts are produced by the repository release workflows.
+signed artifacts are produced by the repository release workflows. Android AAB
+integrity is verified after the pinned release certificate check without
+misclassifying the expected self-signed Play upload key as a CA-chain failure.

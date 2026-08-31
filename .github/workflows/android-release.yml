@@ -183,7 +183,11 @@ jobs:
               exit 1
             }
             "$apksigner" verify --verbose --print-certs "$apk"
-            jarsigner -verify -strict "$aab"
+            # Play upload keys are commonly self-signed. The keystore
+            # fingerprint was pinned above; here jarsigner must verify bundle
+            # integrity without treating the expected private CA chain as a
+            # strict-validation failure.
+            jarsigner -verify "$aab"
             cp "$apk" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.apk"
             cp "$aab" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.aab"
           done

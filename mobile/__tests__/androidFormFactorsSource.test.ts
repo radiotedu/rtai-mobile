@@ -26,6 +26,39 @@ describe('Android form-factor delivery', () => {
     expect(podcastIcon).toContain('a10,10');
   });
 
+  it('binds Android Auto artwork and controls to packaged icon resources', () => {
+    const service = read(
+      'app/src/main/java/com/radiotedumobile/car/RadioTeduCarService.kt',
+    );
+    const drawableRoot = path.join(root, 'app/src/main/res/drawable-nodpi');
+    const stationIcons = [
+      'radiotedu',
+      'classic',
+      'cazz',
+      'lofi',
+      'energize',
+      'rock',
+      'en',
+      'fr',
+    ];
+
+    expect(service).toContain('.setCustomIconResId(R.drawable.car_format_hifi)');
+    expect(service).toContain('.applyArtwork(artwork)');
+    expect(service).toContain('"car_tile_radio" -> R.drawable.car_tile_radio');
+    expect(service).toContain(
+      '"car_tile_podcasts" -> R.drawable.car_tile_podcasts',
+    );
+
+    for (const station of stationIcons) {
+      expect(service).toContain(
+        `"car_station_${station}" -> R.drawable.car_station_${station}_thumb`,
+      );
+      expect(
+        fs.existsSync(path.join(drawableRoot, `car_station_${station}_thumb.png`)),
+      ).toBe(true);
+    }
+  });
+
   it('publishes TV under the same package with TV-only targeting', () => {
     const gradle = read('tv/build.gradle');
     const manifest = read('tv/src/main/AndroidManifest.xml');

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RadioTEDU Ekosistem Rehberi</title>
+  <style>
+    :root { color-scheme: dark; --bg:#080a0f; --card:#121620; --line:#283044; --text:#f5f7fb; --muted:#aab4c8; --red:#e31b23; --gold:#f2bf4b; --green:#44d19d; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; background:radial-gradient(circle at top right,#25131a,var(--bg) 38%); color:var(--text); }
+    main { width:min(1080px,calc(100% - 32px)); margin:auto; padding:48px 0 80px; }
+    header { border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:28px; }
+    h1 { margin:0 0 8px; font-size:clamp(2rem,5vw,3.6rem); line-height:1.05; }
+    h2 { margin:0 0 12px; font-size:1.35rem; }
+    h3 { margin:20px 0 6px; font-size:1rem; }
+    p { margin:8px 0; }
+    a { color:#8fc8ff; }
+    code { color:#ffd982; overflow-wrap:anywhere; }
+    .eyebrow { color:var(--red); font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+    .lead,.muted { color:var(--muted); }
+    .lead { max-width:760px; font-size:1.08rem; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+    .card { background:linear-gradient(145deg,rgba(23,29,42,.96),rgba(13,17,25,.96)); border:1px solid var(--line); border-radius:18px; padding:22px; }
+    .wide { grid-column:1/-1; }
+    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:16px 0; }
+    .node { border:1px solid var(--line); border-radius:999px; padding:8px 12px; background:#0d1119; }
+    .arrow { color:var(--red); font-weight:800; }
+    .status { display:inline-block; border:1px solid #235b49; color:var(--green); background:#10271f; padding:2px 9px; border-radius:999px; font-size:.82rem; }
+    .gold { color:var(--gold); }
+    table { width:100%; border-collapse:collapse; }
+    th,td { text-align:left; vertical-align:top; padding:10px; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); }
+    ul,ol { padding-left:22px; }
+    .warning { border-left:4px solid var(--red); padding:10px 14px; background:#211016; }
+    @media (max-width:600px) { main { width:min(100% - 20px,1080px); padding-top:28px; } .card { padding:17px; } th,td { display:block; padding:7px 0; } th { display:none; } td:first-child { padding-top:14px; font-weight:700; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">RadioTEDU · Teknik ve işletim özeti</div>
+    <h1>Ekosistem rehberi</h1>
+    <p class="lead">Web sitesi, mobil uygulama, ortak hesap ve <span class="gold">Gold</span>, Voting, Social ve kampüs içi Juke‑Local bileşenlerinin nerede çalıştığını ve birbirine nasıl bağlandığını açıklar.</p>
+  </header>
+
+  <section class="grid">
+    <article class="card wide">
+      <h2>Tek bakışta mimari</h2>
+      <div class="flow" aria-label="RadioTEDU veri akışı">
+        <span class="node">Web / Mobil / Social</span><span class="arrow">→</span>
+        <span class="node">radiotedu.com API</span><span class="arrow">→</span>
+        <span class="node">Ortak hesap + Gold defteri</span><span class="arrow">→</span>
+        <span class="node">Voting / Juke‑Local / oyunlar</span>
+      </div>
+      <p>Mobil istemcinin kimlik doğrulamalı REST tabanı <code>https://radiotedu.com/jukebox/api/v1</code> adresidir. Voting ve Juke‑Local ayrı kullanıcı arayüzleridir; aynı hesabı kullanabilseler de protokolleri tek bir route altında birleştirilmez.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Ortak kimlik</span>
+      <h2>RadioTEDU hesabı</h2>
+      <p>Giriş tokenı korumalı API çağrılarının tek kimlik kaynağıdır. Profil, rol, Gold bakiyesi ve uygulamalar arası kullanıcı eşlemesi aynı hesap kimliği üzerinden yürür.</p>
+      <p>Mobil uygulamada giriş yapıldıktan sonra kullanıcının <code>display_name</code> değeri ortak üst barda görünür; eski hesap yanıtlarında e-posta kullanıcı adı güvenli geri dönüş değeridir.</p>
+      <p>Yönetim hesabı: <code>tuna.ozsari@tedu.edu.tr</code>. Parola ve erişim tokenları bu rehberde veya repoda tutulmaz.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Ortak bakiye</span>
+      <h2><span class="gold">Gold</span> sistemi</h2>
+      <p>Mobil oyun, Social veya diğer doğrulanmış etkinliklerden kazanılan Gold merkezi deftere yazılır. İstemciler yerel, bağımsız bakiye üretmez; API’den dönen güncel harcanabilir bakiye ekosistemin tamamında gösterilir.</p>
+      <p>Sunucuda kayıtlı mobil oyunlar oturum + nonce ile skor gönderir. Yalnızca sunucu kaydı bulunamayan <code>builtin:</code> oyunları ödülsüz pratik modunda kalır.</p>
+      <p>Harcama örnekleri: market ve avatar öğeleri, Social bilgisayar yükseltmeleri veya kontrollü Juke‑Local boost seçenekleri. Her harcama sunucuda doğrulanmalı ve aynı deftere işlenmelidir.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Canlı seçim</span>
+      <h2>Voting</h2>
+      <p>Mobil uygulama <code>https://radiotedu.com/vote/</code> arayüzünü açar. Canlı olaylar <code>/jukebox/socket.io</code> yolundan gelir. Adaylar ve tur durumu backend’den alınır; mobil uygulama sahte tur veya yerel aday üretmez.</p>
+      <p>Backend’in Music/Services PC ile çalışan mevcut iletişimi korunur. Mobil cihaz kampüs PC’sine doğrudan bağlanmaz.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Cihaz başına kuyruk</span>
+      <h2>Juke‑Local ve telefon bağlantısı</h2>
+      <p>Her kiosk bilgisayarı kendi oturum/cihaz kimliğiyle açılır ve kendi içeriğini çalar. Ekrandaki QR kod telefonla okutulduğunda <code>https://radiotedu.com/juke-local/controller/</code> denetleyicisi ilgili cihaza bağlanır.</p>
+      <ol>
+        <li>Kiosk, atanmış cihaz hesabıyla oturum açar.</li>
+        <li>Kullanıcı QR kodu telefonundan açar.</li>
+        <li>Arama, sıra ve istekler yalnızca eşleşen kiosk oturumuna gider.</li>
+        <li>Services PC medya kataloğu ve sunucu rolünü sürdürür; iki kiosk birbirinin sesini veya kuyruğunu devralmaz.</li>
+      </ol>
+      <p>Yönetici hesabı destek ve bakım için kullanılabilir; kiosk parolaları kaynak koduna veya bu belgeye yazılmaz.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Paylaşılan ilerleme</span>
+      <h2>Social ve Study</h2>
+      <p>Social/Study oturumu mobil hesabın web köprüsüyle eşlenir. Kazanılan Gold merkezi bakiyeye gider; avatar envanteri ve satın alımlar aynı hesap kimliğiyle geri okunur.</p>
+      <p>Çok oyunculu hareketlerde diğer kullanıcıların konumu ara karelerle yumuşatılır. Kullanıcı deneyimi anlık ışınlanma yerine Habbo benzeri sürekli hareket hedefler.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Kesintisiz medya</span>
+      <h2>Web player ve Android Auto</h2>
+      <p>Web player sayfa geçişlerinde canlı yayın veya podcast oturumunu korur. Icecast metadata’sı desteklenen canlı kanallarda gösterilir; kapak araması ve mağaza bağlantıları oynatmayı, favorileri veya podcast davranışını kesmez.</p>
+      <p>Android Auto aynı telefon paketindeki MediaBrowser servisini kullanır. Radyo/podcast kategori ikonları, tüm istasyon küçük resimleri ve Hi‑Fi kontrol ikonu paketlenmiş kaynaklardan metadata’ya bağlanır.</p>
+    </article>
+
+    <article class="card">
+      <span class="status">Ayrı sınır</span>
+      <h2>ERP ve Sesli Kütüphane</h2>
+      <p>ERP, RadioTEDU hesabına giriş/eşleme sağlayabilen ayrı kurumsal sistemdir. RadioTEDU servisleri ERP verisini yeniden yazmaz; doğrulama gerektiğinde salt okunur ve bildirimsiz kontroller tercih edilir.</p>
+      <p class="warning"><strong>Sesli Kütüphane kapsam dışıdır.</strong> Bu ekosistem işlemleri sırasında veri, servis veya içeriklerine müdahale edilmez.</p>
+    </article>
+
+    <article class="card wide">
+      <h2>Üretim güvenliği ve doğrulama</h2>
+      <table>
+        <thead><tr><th>Alan</th><th>Güvenli kontrol</th><th>Kaçınılacak işlem</th></tr></thead>
+        <tbody>
+          <tr><td>Hesap/API</td><td>Şema, yetki, token yenileme ve salt okunur profil kontrolleri</td><td>Gerçek kullanıcı parolasını/log tokenını kaydetmek</td></tr>
+          <tr><td>Gold</td><td>Testlerde mock; üretimde yalnızca ayrılmış disposable hesap</td><td>Yönetici/öğrenci bakiyesini test için değiştirmek</td></tr>
+          <tr><td>Voting/Juke</td><td>Route, Socket.IO ve cihaz eşleşmesini bildirimsiz smoke test etmek</td><td>Canlı kuyruğu, turu veya Services PC bağlantısını bozmak</td></tr>
+          <tr><td>Veritabanı</td><td>Yedekli, geri alınabilir ve hedefli migration</td><td>DB nuke, toplu silme veya kontrolsüz seed</td></tr>
+          <tr><td>İletişim</td><td>Mock/dry-run adaptörleri</td><td>E-posta, push notification veya kullanıcı bildirimi göndermek</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">Mobil kaynak doğrulaması: Jest testleri ve <code>tsc --noEmit</code>. Android/Gradle build yalnızca uygun CI veya release ortamında yapılır.</p>
+    </article>
+  </section>
+</main>
+</body>
+</html>

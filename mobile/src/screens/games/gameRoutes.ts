@@ -22,10 +22,7 @@ export function getGameRouteForSlug(slug?: string | null): GameRouteName | null 
 }
 
 export function isPracticeGame(game?: {id?: string | null; slug?: string | null} | null): boolean {
-  return (
-    String(game?.id ?? '').startsWith('builtin:') ||
-    getGameRouteForSlug(game?.slug) !== null
-  );
+  return String(game?.id ?? '').startsWith('builtin:');
 }
 
 /**
@@ -33,7 +30,8 @@ export function isPracticeGame(game?: {id?: string | null; slug?: string | null}
  * Games screen (even when the backend arcade-games registry is empty), and are
  * enriched with the server record — real id + daily point limit — whenever a
  * matching slug exists on the backend. That enrichment is presentation-only:
- * bundled native routes always run as local practice and never award Gold.
+ * a built-in fallback id stays in practice mode; a matching server id enables
+ * the verified session and Gold flow.
  */
 export interface BuiltinGame {
   slug: string;

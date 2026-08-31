@@ -39,7 +39,7 @@ describe('gameSession helpers', () => {
     expect(getGameResultMessage(0, 0, 'Skor')).toBe('Skor 0 · +0 Gold');
   });
 
-  it('ignores registry reward metadata for bundled practice rounds', async () => {
+  it('submits a server-registered bundled game through the verified Gold flow', async () => {
     jest.mocked(startGameSession).mockClear();
     jest.mocked(submitGameScore).mockClear();
     const game = {
@@ -51,16 +51,40 @@ describe('gameSession helpers', () => {
       metadata: {rewards_enabled: true, awards_gold: true},
     };
 
-    prepareVerifiedGameRound(game, 'practice-round');
+    jest.mocked(startGameSession).mockResolvedValue({
+      session: {
+        id: 'session-1',
+        game_id: game.id,
+        client_round_id: 'verified-round',
+        started_at: new Date(1).toISOString(),
+      },
+      nonce: 'nonce-1',
+      minimum_play_seconds: 3,
+      expires_after_seconds: 1200,
+    });
+    jest.mocked(submitGameScore).mockResolvedValue({
+      points_awarded: 3,
+      spendable_points: 23,
+    } as never);
+
+    prepareVerifiedGameRound(game, 'verified-round');
     await expect(
       submitMobileGameScore({
         game,
         score: 250,
-        clientRoundId: 'practice-round',
+        clientRoundId: 'verified-round',
         startedAt: 1,
       }),
-    ).resolves.toEqual({points_awarded: 0, practice: true});
-    expect(startGameSession).not.toHaveBeenCalled();
-    expect(submitGameScore).not.toHaveBeenCalled();
+    ).resolves.toEqual({points_awarded: 3, spendable_points: 23});
+    expect(startGameSession).toHaveBeenCalledWith(game.id, 'verified-round');
+    expect(submitGameScore).toHaveBeenCalledWith(
+      game.id,
+      expect.objectContaining({
+        score: 250,
+        client_round_id: 'verified-round',
+        session_id: 'session-1',
+        nonce: 'nonce-1',
+      }),
+    );
   });
 });

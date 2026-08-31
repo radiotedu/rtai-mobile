@@ -224,6 +224,14 @@
         return score;
     };
 
+    const lyricsLookupIdentity = (track, artist) => {
+        if (artist) return { track, artist };
+        const separated = String(track || '').match(/^(.+?)\s+[-–—]\s+(.+)$/);
+        return separated
+            ? { artist: separated[1].trim(), track: separated[2].trim() }
+            : { track, artist: '' };
+    };
+
     const loadLyrics = async (track, artist, startedAt, trackKey) => {
         clearLyrics();
         if (!els.lyrics || !track || state.kind !== 'station' || isLofiStation()) return;
@@ -231,7 +239,9 @@
         const controller = new AbortController();
         state.lyricsController = controller;
         try {
-            const query = new URLSearchParams({ track_name: track, artist_name: artist });
+            const identity = lyricsLookupIdentity(track, artist);
+            const query = new URLSearchParams({ track_name: identity.track });
+            if (identity.artist) query.set('artist_name', identity.artist);
             const response = await fetch(`https://lrclib.net/api/search?${query}`, {
                 signal: controller.signal,
                 headers: { 'Accept': 'application/json' },
@@ -241,7 +251,7 @@
             if (!Array.isArray(results) || state.lyricsTrackKey !== trackKey) return;
             const match = results
                 .filter((candidate) => !candidate.instrumental && candidate.syncedLyrics)
-                .map((candidate) => ({ candidate, score: lyricsMatchScore(candidate, track, artist) }))
+                .map((candidate) => ({ candidate, score: lyricsMatchScore(candidate, identity.track, identity.artist) }))
                 .filter((entry) => entry.score >= 8)
                 .sort((left, right) => right.score - left.score)[0]?.candidate;
             if (!match || state.lyricsTrackKey !== trackKey) return;

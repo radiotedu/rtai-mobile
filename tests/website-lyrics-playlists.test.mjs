@@ -15,6 +15,7 @@ test('live player exposes automatic synchronized lyrics without an API key', () 
 
     assert.match(script, /https:\/\/lrclib\.net\/api\/search/);
     assert.match(script, /parseSyncedLyrics/);
+    assert.match(script, /lyricsLookupIdentity/);
     assert.match(script, /window\.setInterval\(renderLyrics, 250\)/);
     assert.match(script, /candidate\.syncedLyrics/);
     assert.match(script, /isLofiStation\(\)/);

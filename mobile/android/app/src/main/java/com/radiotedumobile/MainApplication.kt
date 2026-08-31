@@ -15,6 +15,8 @@ import com.radiotedumobile.car.CarBridgePackage
 import com.radiotedumobile.analytics.AnalyticsBridgePackage
 import com.radiotedumobile.analytics.AnalyticsBridgeModule
 import com.radiotedumobile.notifications.NotificationBridgePackage
+import com.radiotedumobile.cast.CastBridgePackage
+import com.radiotedumobile.live.LiveVoteBridgePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -26,6 +28,8 @@ class MainApplication : Application(), ReactApplication {
           packages.add(CarBridgePackage())
           packages.add(AnalyticsBridgePackage())
           packages.add(NotificationBridgePackage())
+          packages.add(CastBridgePackage())
+          packages.add(LiveVoteBridgePackage())
           return packages
         }
 

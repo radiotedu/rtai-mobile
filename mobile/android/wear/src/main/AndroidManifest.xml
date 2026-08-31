@@ -36,5 +36,33 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </service>
+
+        <service
+            android:name=".RadioTeduTileService"
+            android:exported="true"
+            android:label="RadioTEDU">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/app_icon" />
+        </service>
+
+        <service
+            android:name=".RadioTeduComplicationService"
+            android:exported="true"
+            android:label="RadioTEDU"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
+                <meta-data
+                    android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                    android:value="0" />
+        </service>
     </application>
 </manifest>

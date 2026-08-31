@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import TrackPlayer, {
   usePlaybackState,
   State,
   useActiveTrack,
+  useProgress,
 } from 'react-native-track-player';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS} from '../theme/theme';
@@ -20,6 +22,8 @@ import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
 import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioChannels';
 import {logSafeError} from '../utils/safeLog';
+import AirPlayRoutePicker from './AirPlayRoutePicker';
+import {clearOutputMedia, showCastRoutePicker, updateOutputMedia} from '../services/outputRouting';
 
 const IMMERSIVE_GAME_ROUTES = new Set([
   'SnakeGame',
@@ -68,6 +72,7 @@ const MiniPlayer = () => {
   const {metadata} = useMetadata();
   const {activeChannels} = useChannels();
   const [isChangingChannel, setIsChangingChannel] = React.useState(false);
+  const progress = useProgress(5);
 
   const activeRouteName = useNavigationState(getDeepestActiveRouteName);
   const shouldHideForRoute = shouldHideMiniPlayerForRoute(activeRouteName);
@@ -88,6 +93,25 @@ const MiniPlayer = () => {
   const displayTrack = track || lastTrack;
   const displayChannel = RADIO_CHANNELS.find(channel => channel.id === String(displayTrack?.id ?? ''));
   const stationOnlyPresentation = shouldUseStationOnlyPresentation(displayChannel, (displayTrack as any)?.streamQuality);
+
+  React.useEffect(() => {
+    if (!displayTrack) {
+      clearOutputMedia();
+      return;
+    }
+    const title = stationOnlyPresentation ? displayChannel?.name || 'RadioTEDU' : metadata?.title || String(displayTrack.title || 'RadioTEDU');
+    const artist = stationOnlyPresentation ? '' : metadata?.artist || String(displayTrack.artist || 'RadioTEDU');
+    const artwork = stationOnlyPresentation ? displayTrack.artwork : metadata?.artwork || displayTrack.artwork;
+    updateOutputMedia({
+      id: String(displayTrack.id || ''),
+      url: String(displayTrack.url || ''),
+      title,
+      artist,
+      artwork: typeof artwork === 'string' ? artwork : '',
+      live: !String(displayTrack.id || '').startsWith('podcast'),
+      positionSeconds: progress.position,
+    });
+  }, [displayChannel?.name, displayTrack, metadata?.artist, metadata?.artwork, metadata?.title, progress.position, stationOnlyPresentation]);
 
   // Simplified visibility: Show if we have ANY track info (current or last known)
   // Only hide on specific screens.
@@ -212,6 +236,13 @@ const MiniPlayer = () => {
         </TouchableOpacity>
 
         <View style={styles.controls}>
+          {Platform.OS === 'ios' ? (
+            <AirPlayRoutePicker style={styles.routePicker} />
+          ) : Platform.OS === 'android' ? (
+            <TouchableOpacity onPress={showCastRoutePicker} style={styles.iconButton} accessibilityLabel="Cast">
+              <Icon name="cast" size={24} color="#fff" />
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity onPress={skipToPrevious} style={styles.iconButton}>
             <Icon name="skip-previous" size={28} color="#fff" />
           </TouchableOpacity>
@@ -293,6 +324,10 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
+  },
+  routePicker: {
+    width: 36,
+    height: 36,
   },
   playButton: {
     width: 36,

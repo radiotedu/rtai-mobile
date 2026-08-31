@@ -95,9 +95,15 @@ The readiness layer and audit cover:
 
 - Explicit playback is fulfilled through the standard Media3 session/search contract; a separate App Actions shortcut is not required for these media requests.
 - RadioTEDU cannot force Gemini, Assistant, or Google to recommend it for a generic request such as “play something.” Ranking and recommendation remain Google-controlled.
-- Android AppFunctions is not shipped in production. The current API is still an alpha (`1.0.0-alpha10` as of 2026-08-14), uses a new compile-time service-entry-point architecture, and is not required for standard media playback. RadioTEDU keeps explicit Gemini/Assistant playback on the stable MediaSession search path until AppFunctions is compatible with this React Native/Kotlin toolchain and passes a separate closed-track review.
+- Android AppFunctions is not shipped in the production APK. The current API is an experimental EAP (`1.0.0-alpha11` as of 2026-08-26) and its KSP/compiler line is isolated under `android/appfunctions-preview`; production Gemini/Assistant playback stays on Media3 until Google admits the app to the EAP and the preview passes a separate closed-track build/review.
 - Google Media Actions/catalog onboarding is a separate verified-web-feed task. The Android client must not claim onboarding until Google accepts a public catalog with real deep links, availability, artwork, language, and podcast RSS data.
 - Car App Library templated media beta is restricted to internal/closed Play testing. Production keeps the standard MediaLibraryService UI so every supported host has a safe fallback.
+
+## Connected output and glanceable surfaces
+
+- Google Cast uses the official Android Sender SDK with the Default Media Receiver; selecting a receiver transfers the current live stream or podcast and pauses local playback after the Cast session starts.
+- Wear OS ships a standalone media library plus a launcher Tile and watch-face complication. They open the watch-native station picker; playback remains owned by the shared Media3 service.
+- Android 16 promoted Live Updates are reserved for an explicit, active Voting round emitted by the trusted Voting WebView. They never expose a Juke queue, ordinary playback, Gold, account data or remote pushes.
 
 ## Media3 Compatibility
 

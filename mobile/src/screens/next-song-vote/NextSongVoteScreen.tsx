@@ -32,6 +32,7 @@ import {
   parseVotingWebViewMessage,
   type VotingWebViewAuthState,
 } from '../../services/votingWebViewService';
+import {updateLiveVotingActivity} from '../../services/liveVotingActivity';
 import {COLORS, SPACING} from '../../theme/theme';
 import {screenCopy} from '../../i18n/screenCopy';
 import {Analytics} from '../../services/analyticsService';
@@ -197,7 +198,14 @@ export default function NextSongVoteScreen() {
   const handleVotingMessage = useCallback(
     (event: WebViewMessageEvent) => {
       const message = parseVotingWebViewMessage(event.nativeEvent.data);
-      if (!message || message.type !== 'radiotedu.voting.ready') {
+      if (!message) {
+        return;
+      }
+      if (message.type === 'radiotedu.voting.round') {
+        updateLiveVotingActivity(message);
+        return;
+      }
+      if (message.type !== 'radiotedu.voting.ready') {
         return;
       }
 

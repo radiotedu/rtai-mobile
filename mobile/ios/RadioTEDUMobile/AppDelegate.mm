@@ -6,6 +6,24 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
 
+static NSURL *RadioTeduURLForUserActivity(NSUserActivity *activity)
+{
+  if ([activity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
+    return activity.webpageURL;
+  }
+  if (![activity.activityType isEqualToString:@"com.radiotedumobile.playback"]) {
+    return nil;
+  }
+  NSString *mediaID = [activity.userInfo[@"media_id"] isKindOfClass:NSString.class]
+      ? activity.userInfo[@"media_id"]
+      : @"";
+  NSString *route = [mediaID hasPrefix:@"podcast"]
+      ? @"radiotedu://podcasts"
+      : [NSString stringWithFormat:@"radiotedu://play/%@",
+            [mediaID stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLPathAllowedCharacterSet]];
+  return [NSURL URLWithString:route];
+}
+
 @interface RadioTEDUSceneDelegate : UIResponder <UIWindowSceneDelegate>
 @property (strong, nonatomic) UIWindow *window;
 - (void)forwardURLToReactNative:(NSURL *)URL;
@@ -62,9 +80,7 @@
     [self forwardURLToReactNative:urlContext.URL];
   }
   for (NSUserActivity *userActivity in connectionOptions.userActivities) {
-    if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
-      [self forwardURLToReactNative:userActivity.webpageURL];
-    }
+    [self forwardURLToReactNative:RadioTeduURLForUserActivity(userActivity)];
   }
 }
 
@@ -77,14 +93,46 @@
 
 - (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity
 {
-  [RCTLinkingManager application:UIApplication.sharedApplication
-            continueUserActivity:userActivity
-              restorationHandler:^(NSArray<id<UIUserActivityRestoring>> *restorableObjects) {}];
+  [self forwardURLToReactNative:RadioTeduURLForUserActivity(userActivity)];
 }
 
 @end
 
 @implementation AppDelegate
+
+- (void)consumePendingAppIntent
+{
+  NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
+  NSString *pendingURL = [defaults stringForKey:@"radiotedu.pending_app_intent_url"];
+  if (pendingURL.length == 0) {
+    return;
+  }
+  [defaults removeObjectForKey:@"radiotedu.pending_app_intent_url"];
+  NSURL *URL = [NSURL URLWithString:pendingURL];
+  if (URL == nil) {
+    return;
+  }
+  if (self.bridge != nil && self.bridge.loading) {
+    __block id observer = nil;
+    observer = [[NSNotificationCenter defaultCenter]
+        addObserverForName:RCTJavaScriptDidLoadNotification
+                    object:nil
+                     queue:NSOperationQueue.mainQueue
+                usingBlock:^(__unused NSNotification *notification) {
+                  [RCTLinkingManager application:UIApplication.sharedApplication
+                                         openURL:URL
+                                         options:@{}];
+                  [[NSNotificationCenter defaultCenter] removeObserver:observer];
+                }];
+    return;
+  }
+  [RCTLinkingManager application:UIApplication.sharedApplication openURL:URL options:@{}];
+}
+
+- (void)radioTeduDidBecomeActive:(__unused NSNotification *)notification
+{
+  [self consumePendingAppIntent];
+}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
@@ -102,7 +150,21 @@
     [AnalyticsBridge revokeStaleConsent];
   }
 
-  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+  BOOL launched = [super application:application didFinishLaunchingWithOptions:launchOptions];
+  [[NSNotificationCenter defaultCenter]
+      addObserver:self
+         selector:@selector(radioTeduDidBecomeActive:)
+             name:UIApplicationDidBecomeActiveNotification
+           object:nil];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self consumePendingAppIntent];
+  });
+  return launched;
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (BOOL)application:(UIApplication *)application
@@ -116,6 +178,10 @@
 continueUserActivity:(NSUserActivity *)userActivity
   restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *restorableObjects))restorationHandler
 {
+  NSURL *URL = RadioTeduURLForUserActivity(userActivity);
+  if (URL != nil) {
+    return [RCTLinkingManager application:application openURL:URL options:@{}];
+  }
   return [RCTLinkingManager application:application
                     continueUserActivity:userActivity
                       restorationHandler:restorationHandler];

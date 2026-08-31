@@ -57,6 +57,18 @@ describe('Voting WebView security contract', () => {
       roundId: 'round-1',
       candidateId: 'candidate-2',
     });
+    expect(
+      parseVotingWebViewMessage(
+        '{"type":"radiotedu.voting.round","roundId":"round-2","title":"Next song","startedAt":"2026-08-31T10:00:00Z","endsAt":"2026-08-31T10:02:00Z","active":true}',
+      ),
+    ).toEqual({
+      type: 'radiotedu.voting.round',
+      roundId: 'round-2',
+      title: 'Next song',
+      startedAt: '2026-08-31T10:00:00Z',
+      endsAt: '2026-08-31T10:02:00Z',
+      active: true,
+    });
     expect(parseVotingWebViewMessage('{"type":"unknown"}')).toBeNull();
     expect(parseVotingWebViewMessage('{not-json')).toBeNull();
     expect(

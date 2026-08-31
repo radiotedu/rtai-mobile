@@ -36,6 +36,7 @@ import { initCarBridge, pushCarCatalog } from './src/services/carBridge';
 import {normalizeJukeLocalAppPath} from './src/services/jukeLocalWebViewService';
 import {startStreamQualityController} from './src/services/streamQualityController';
 import {resolveCurrentStreamPreferences} from './src/services/streamPreferences';
+import {initOutputRouting} from './src/services/outputRouting';
 
 const linking: any = {
   prefixes: ['radiotedu://', 'https://radiotedu.com', 'https://radiotedu.com/jukebox'],
@@ -45,9 +46,13 @@ const linking: any = {
     screens: {
       MainTabs: {
         screens: {
+          Radio: 'radio',
+          Podcasts: 'podcasts',
           Jukebox: 'jukebox/:deviceCode?',
         },
       },
+      Player: 'play/:stationId?',
+      NextSongVote: 'voting',
       Events: 'events/qr/:qrCode',
       Profile: 'profile',
       Focus: 'focus',
@@ -73,6 +78,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     let playerReady = false;
     let stopStreamQualityController: (() => void) | null = null;
+    let stopOutputRouting: (() => void) | null = null;
     const setupPlayer = async () => {
       if (!playerReady) {
         await TrackPlayer.setupPlayer({
@@ -151,6 +157,7 @@ function App(): React.JSX.Element {
 
         // Wire the native Android Auto / Automotive car browser (Android only).
         initCarBridge();
+        stopOutputRouting = initOutputRouting();
       } catch (e) {
         console.log('Player post-setup initialization failed:', e);
         throw e;
@@ -183,6 +190,7 @@ function App(): React.JSX.Element {
       appStateSubscription.remove();
       initialSetupTask.cancel();
       stopStreamQualityController?.();
+      stopOutputRouting?.();
       if (playerReady) {
         // reset() clears the queue, which should remove the notification.
         TrackPlayer.reset().catch(() => {});

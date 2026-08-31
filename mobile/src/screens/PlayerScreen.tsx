@@ -61,7 +61,7 @@ const QUALITY_OPTIONS: Array<{
  * the song + artist beneath it, quality switcher, golden FLAC indicator,
  * and transport controls.
  */
-const PlayerScreen = () => {
+const PlayerScreen = ({route}: any) => {
   const navigation = useNavigation<any>();
   const activeTrack = useActiveTrack();
   const playbackState = usePlaybackState();
@@ -86,6 +86,16 @@ const PlayerScreen = () => {
   }, []);
 
   const channelList = activeChannels.length ? activeChannels : RADIO_CHANNELS;
+
+  useEffect(() => {
+    const requestedStationId = String(route?.params?.stationId ?? '').trim();
+    if (!requestedStationId || !channelList.some(channel => channel.id === requestedStationId)) {
+      return;
+    }
+    playChannelById(requestedStationId).catch(error => {
+      logSafeError('player.voiceIntent', error);
+    });
+  }, [channelList, route?.params?.stationId]);
 
   // The station currently playing (null when a podcast is playing).
   const currentChannel: RadioChannel | undefined = useMemo(() => {

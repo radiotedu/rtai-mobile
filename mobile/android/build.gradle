@@ -7,9 +7,10 @@ buildscript {
         compileSdkVersion = 36
         targetSdkVersion = 36
         ndkVersion = "26.1.10909125"
-        // Wear Tiles 1.6 and the current Cast stack publish Kotlin 2.1
-        // metadata, so the app compiler must understand the same ABI.
-        kotlinVersion = "2.1.0"
+        // React Native 0.76's Gradle plugin is compiled against Kotlin 1.9.
+        // Keep platform libraries on their newest Kotlin-1.9-compatible lines
+        // below instead of loading the binary-incompatible Kotlin 2.1 plugin.
+        kotlinVersion = "1.9.24"
     }
     repositories {
         google()

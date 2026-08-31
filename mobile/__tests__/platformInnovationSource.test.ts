@@ -32,17 +32,24 @@ describe('innovative media surfaces', () => {
     const intents = read(mobile, 'ios/RadioTEDUMobile/RadioTEDUAppIntents.swift');
     const picker = read(mobile, 'ios/RadioTEDUMobile/AirPlayRoutePickerManager.mm');
     const continuity = read(mobile, 'ios/RadioTEDUMobile/ContinuityBridge.mm');
+    const project = read(mobile, 'ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
     expect(intents).toContain('struct PlayRadioTEDUIntent: AppIntent');
     expect(intents).toContain('struct RadioTEDUAppShortcuts: AppShortcutsProvider');
     expect(picker).toContain('AVRoutePickerView');
+    expect(project).toContain('AVKit.framework in Frameworks');
     expect(continuity).toContain('eligibleForHandoff = YES');
   });
 
   it('ships Cast, Wear glance surfaces and voting-only Android live updates', () => {
     const gradle = read(mobile, 'android/app/build.gradle');
+    const rootGradle = read(mobile, 'android/build.gradle');
+    const wearGradle = read(mobile, 'android/wear/build.gradle');
     const wearManifest = read(mobile, 'android/wear/src/main/AndroidManifest.xml');
     const live = read(mobile, 'android/app/src/main/java/com/radiotedumobile/live/LiveVoteBridgeModule.kt');
-    expect(gradle).toContain('play-services-cast-framework:22.3.1');
+    expect(rootGradle).toContain('kotlinVersion = "1.9.24"');
+    expect(gradle).toContain('play-services-cast-framework:22.0.0');
+    expect(wearGradle).toContain('androidx.wear.tiles:tiles:1.5.0');
+    expect(wearGradle).toContain('androidx.wear.protolayout:protolayout:1.3.0');
     expect(wearManifest).toContain('RadioTeduTileService');
     expect(wearManifest).toContain('RadioTeduComplicationService');
     expect(live).toContain('Notification.ProgressStyle');

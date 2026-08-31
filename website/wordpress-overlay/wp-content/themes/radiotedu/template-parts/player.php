@@ -40,7 +40,10 @@ declare(strict_types=1);
     <aside class="rt-player__lyrics" data-rt-player-lyrics hidden>
         <div class="rt-player__lyrics-head">
             <span><?php echo esc_html(radiotedu_current_language() === 'en' ? 'LIVE LYRICS' : 'CANLI SÖZLER'); ?></span>
-            <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer">LRCLIB</a>
+            <span class="rt-player__lyrics-actions">
+                <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer">LRCLIB</a>
+                <button type="button" data-rt-lyrics-close aria-label="<?php echo esc_attr(radiotedu_current_language() === 'en' ? 'Close live lyrics' : 'Canlı sözleri kapat'); ?>">×</button>
+            </span>
         </div>
         <div class="rt-player__lyrics-lines" aria-live="polite" aria-atomic="true">
             <p class="rt-player__lyrics-previous" data-rt-lyrics-previous></p>

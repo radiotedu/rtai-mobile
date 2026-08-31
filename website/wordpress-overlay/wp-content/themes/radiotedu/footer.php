@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 ?>
+<?php do_action('radiotedu_before_footer'); ?>
 </main>
 <footer class="rt-footer" data-rt-shell>
     <div class="rt-footer__signal" aria-hidden="true"><span></span><span></span><span></span></div>

@@ -16,6 +16,14 @@ RadioTEDU Technology Lab is an end-to-end media laboratory. It adopts emerging t
 4. Every Surface: mobile and tablet apps, Android Auto, Google Cast, Android TV, Wear OS, system media controls and offline podcasts.
 5. Research and Access: academic broadcast-engineering studies and the RadioTEDU Sesli Kütüphane public accessibility initiative.
 
+## Verified project links
+
+- Situation Room source: https://github.com/akgularda/situation-room
+- RTSAS stream server source: https://github.com/radiotedu/rtsas
+- RadioTEDU Ticket: https://radiotedu.com/bilet/
+- RadioTEDU Audio Library: https://radiotedu.com/seslikutuphane/
+- The Audio Library contributes to SDG 4 (Quality Education), SDG 10 (Reduced Inequalities), and SDG 17 (Partnerships for the Goals).
+
 ## Research
 
 - Determining Optimal Audio Encoders for Internet Radio Broadcasting. Author: Arda Akgül. Date: 24 August 2025. PDF: https://radiotedu.com/technology/research/determining-optimal-audio-encoders.pdf

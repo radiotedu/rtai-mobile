@@ -16,7 +16,8 @@ Media attention, production and discovery are moving toward social video, podcas
 
 - AI Radio: an experimental continuous station exploring machine-assisted selection, context and presentation while keeping its experimental status explicit. https://radiotedu.com/ai/
 - RTAI Jingle: a guided creative system that turns a production brief into station-aligned audio identity while leaving taste and approval to people.
-- Situation Room: a monitoring and decision surface that gathers operational signals into a readable, sourced context for faster human response.
+- Situation Room: a monitoring and decision surface that gathers operational signals into a readable, sourced context for faster human response. Source: https://github.com/akgularda/situation-room
+- RTSAS: the open-source stream-server layer that carries ICY metadata and resilient listener delivery. Source: https://github.com/radiotedu/rtsas
 - Capability areas: editorial copilots, multilingual context, voice and assistant interfaces, metadata intelligence, audience signal analysis and responsible automation.
 
 ## Method and principles
@@ -34,3 +35,5 @@ Observe, prototype, measure, operate and document. Human editorial authority, so
 
 - Technology Lab: https://radiotedu.com/technology/
 - RadioTEDU: https://radiotedu.com/
+- Situation Room source: https://github.com/akgularda/situation-room
+- RTSAS source: https://github.com/radiotedu/rtsas

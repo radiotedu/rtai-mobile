@@ -154,12 +154,12 @@ async function renderStudyHome(
       </header>
       <main>
         <section class="home-hero" aria-labelledby="home-title">
-          <img src="assets/rooms/library-wide.png" alt="" />
+          <img src="assets/rooms/radiotedu-studio-dashboard-v1.png" alt="" fetchpriority="high" />
           <span class="home-hero-shade"></span>
           <div class="home-hero-copy">
             <p><i></i><span id="home-live-count"></span> students live on campus</p>
-            <h1 id="home-title">Your campus.<br />Your focus room.</h1>
-            <span>Meet friends, choose a desk, listen live and build your verified study streak.</span>
+            <h1 id="home-title">From studio signal<br />to campus world.</h1>
+            <span>The real RadioTEDU Ankara studio anchors a campus where you can meet, listen live, choose a desk and build a verified study streak.</span>
             <div><button id="home-enter-primary" type="button"><i data-lucide="book-open" aria-hidden="true"></i><b>Enter Library</b><small>Continue studying</small><i data-lucide="arrow-right" aria-hidden="true"></i></button><a href="#home-rooms"><i data-lucide="map" aria-hidden="true"></i>Explore rooms</a></div>
           </div>
           <aside class="home-focus-card" aria-label="Your study progress">

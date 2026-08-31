@@ -45,8 +45,8 @@ The technology pages document these projects and systems:
 
 - [RadioTEDU Focus](https://radiotedu.com/focus/): A focus-first listening space combining Lo-Fi, Jazz, and Classical streams with a Pomodoro timer and nature sounds.
 - [Autonomous AI radio](https://radiotedu.com/ai): An English/French listener page backed by station-scoped, signed broadcast status. The AI host uses live track data, station identity, and broadcast context between songs.
-- [RadioTEDU Situation Room](https://radiotedu.com/en/situation/): A 3D-globe interface for source-grounded news summaries and country-level news density.
-- [RTAI Jingle on GitHub](https://github.com/radiotedu/rtai-jingle): An open-source local QwenTTS studio for narration, automatic music ducking, and jingle production.
+- [RadioTEDU Situation Room](https://radiotedu.com/situation/): A 3D-globe interface for source-grounded news summaries and country-level news density. [Source](https://github.com/akgularda/situation-room).
+- RTAI Jingle: A local QwenTTS studio for narration, automatic music ducking, and jingle production.
 - [RTAI technical showcase](https://radiotedu.com/rtai/): Documents RTAI Jingle's local QwenTTS and FFmpeg production chain, its explicit local-model tradeoffs, and the public station-status API boundary. The public platform has no playout controls.
 - [RadioTEDU Social](https://radiotedu.com/social/): An interactive virtual campus with shared live rooms, synchronized avatars, study sessions, moderated room chat, safe reactions, events, games, customisation, and server-authoritative Gold and inventory actions.
 - [RadioTEDU Radioverse](https://radiotedu.com/radioverse/): A browser-native 3D portal concourse with avatar movement, collision, mobile and gamepad controls, RadioTEDU listening, and six verified Social campus scenes. Its concourse is an interface, not a geographic campus map.
@@ -57,7 +57,7 @@ The technology pages document these projects and systems:
 - RadioTEDU OnAir: The separate playout and broadcast automation application that prepares broadcast outputs and sends the programmed broadcast to the server layer.
 - RadioTEDU Ticket: Event listings, capacity tracking, attendee registration, and QR-assisted admission control.
 - RadioTEDU Hub: An ERP system for staff and membership lifecycles, tasks, calendars, training, resources, and operations.
-- Sesli Kütüphane: A volunteer project producing an accessible audiobook collection for children with visual impairments through recording, editing, and quality control.
+- Sesli Kütüphane: A volunteer project producing an accessible audiobook collection for children with visual impairments through recording, editing, and quality control; it supports SDG 4, SDG 10, and SDG 17.
 
 RTSAS and RadioTEDU OnAir have different roles. RTSAS serves streams. RadioTEDU OnAir handles scheduling, playout, and broadcast automation.
 
@@ -101,9 +101,8 @@ Each series page is the canonical source for its published episodes and metadata
 
 ## Open-source and technical references
 
-- [RadioTEDU on GitHub](https://github.com/radiotedu): Official organization repositories.
 - [RTSAS](https://github.com/radiotedu/rtsas): Stream-server project.
-- [RTAI Jingle](https://github.com/radiotedu/rtai-jingle): Local AI voice and jingle-production project.
+- [Situation Room](https://github.com/akgularda/situation-room): Source-grounded monitoring and 3D-globe interface project.
 - [RTAI technical showcase](https://radiotedu.com/rtai/): Human-readable architecture, production pipeline, local-model rationale, constraints, and links to source documentation.
 - [RadioTEDU AI listener](https://radiotedu.com/ai): Public autonomous-radio listener page.
 - [RadioTEDU AI public API schema](https://radiotedu.com/openapi.json): Public schema for sanitized station status ingestion and retrieval. The API exposes no playout controls.

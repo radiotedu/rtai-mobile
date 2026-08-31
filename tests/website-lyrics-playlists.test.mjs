@@ -6,6 +6,7 @@ import test from 'node:test';
 const root = process.cwd();
 const theme = join(root, 'website', 'wordpress-overlay', 'wp-content', 'themes', 'radiotedu');
 const plugin = join(root, 'website', 'wordpress-overlay', 'wp-content', 'plugins', 'radiotedu-core', 'includes', 'class-radiotedu-rest.php');
+const metadataClock = join(root, 'ops', 'website', 'live-metadata-clock.ps1');
 const read = (path) => readFileSync(path, 'utf8');
 
 test('live player exposes automatic synchronized lyrics without an API key', () => {
@@ -16,14 +17,31 @@ test('live player exposes automatic synchronized lyrics without an API key', () 
     assert.match(script, /https:\/\/lrclib\.net\/api\/search/);
     assert.match(script, /parseSyncedLyrics/);
     assert.match(script, /lyricsLookupIdentity/);
+    assert.match(script, /lyricsSearchRequests/);
+    assert.match(script, /searchLyrics/);
+    assert.match(script, /track_name: request\.track/);
     assert.match(script, /window\.setInterval\(renderLyrics, 250\)/);
+    assert.match(script, /recalibrateLyricsClock/);
+    assert.match(script, /estimatedLivePlaybackLag/);
+    assert.match(script, /sampledLyricsClock/);
+    assert.match(script, /performance\.now\(\)/);
+    assert.match(script, /audio\.addEventListener\('waiting'/);
+    assert.match(script, /lyricsDismissedTrackKey/);
     assert.match(script, /candidate\.syncedLyrics/);
     assert.match(script, /isLofiStation\(\)/);
     assert.match(player, /data-rt-player-lyrics hidden/);
     assert.match(player, /data-rt-lyrics-current/);
+    assert.match(player, /data-rt-lyrics-close/);
     assert.match(player, /https:\/\/lrclib\.net/);
     assert.match(rest, /'track_started_at' => null/);
     assert.match(rest, /rt_track_clock_/);
+    assert.match(rest, /time\(\) - 2/);
+    assert.match(rest, /get_param\('clock'\)/);
+    assert.match(rest, /\$clockOnly \? 2 : 5/);
+    assert.match(rest, /normalize_metadata_text/);
+    assert.match(rest, /Windows-1254/);
+    assert.match(read(metadataClock), /live\?clock=1/);
+    assert.match(read(metadataClock), /radiotedu-spark/);
 });
 
 test('playlists route contains every non-empty public RadioTEDU playlist', () => {

@@ -1,0 +1,9 @@
+<!-- Place these rules before the ERP directory and WordPress catch-all rules. -->
+<rule name="RADIOTEDU_NEWSLETTER_PREFERENCES_EN" stopProcessing="true">
+  <match url="^en/erp/newsletter/?$" ignoreCase="true" />
+  <action type="Rewrite" url="/index.php?rt_newsletter_manage=1&amp;rt_lang=en" appendQueryString="true" />
+</rule>
+<rule name="RADIOTEDU_NEWSLETTER_PREFERENCES_TR" stopProcessing="true">
+  <match url="^erp/newsletter/?$" ignoreCase="true" />
+  <action type="Rewrite" url="/index.php?rt_newsletter_manage=1&amp;rt_lang=tr" appendQueryString="true" />
+</rule>

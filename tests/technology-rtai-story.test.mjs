@@ -25,6 +25,12 @@ test('Technology pages retain every ecosystem cluster', () => {
   for (const token of required) assert.ok(technology.includes(token), `missing ${token}`);
   const turkishRequired = ['OnAir', 'RTSAS', 'Focus', 'AI Radio', 'RTAI Jingle', 'Situation Room', 'Voting', 'Juke Local', 'Gold', 'Bilet', 'Hub', 'Social', 'Android Auto', 'Google Cast', 'Android TV', 'Wear OS', 'Sesli Kütüphane'];
   for (const token of turkishRequired) assert.ok(teknoloji.includes(token), `Turkish page missing ${token}`);
+  for (const page of [technology, teknoloji]) {
+    for (const goal of ['SDG 4', 'SDG 10', 'SDG 17']) assert.match(page, new RegExp(goal));
+    assert.match(page, /github\.com\/akgularda\/situation-room/);
+    assert.match(page, /github\.com\/radiotedu\/rtsas/);
+    assert.doesNotMatch(page, /github\.com\/radiotedu\/(?:RadioTEDU-OnAir|rtai-jingle|rtai-mobile)/);
+  }
 });
 
 test('Both papers are presented with Arda Akgül and downloadable files', () => {
@@ -61,6 +67,8 @@ test('RTAI is English, sourced, scoped and uses its logo', () => {
   assert.match(rtai, /Reuters Institute/);
   assert.match(rtai, /Edison Research/);
   assert.match(rtai, /Deloitte/);
+  assert.match(rtai, /github\.com\/akgularda\/situation-room/);
+  assert.match(rtai, /github\.com\/radiotedu\/rtsas/);
   assert.doesNotMatch(rtai, /Teknoloji Laboratuvarı|Yapay zekâ|Yazar:|Stüdyoları/);
 });
 
@@ -78,9 +86,15 @@ test('Search and AI discovery files describe the new public surface', () => {
     assert.match(text, /https:\/\/radiotedu\.com\/rtai\//);
     assert.match(text, /https:\/\/radiotedu\.com\/technology\//);
     assert.match(text, /Arda Akgül/);
+    assert.match(text, /github\.com\/akgularda\/situation-room/);
+    assert.match(text, /github\.com\/radiotedu\/rtsas/);
+    assert.doesNotMatch(text, /github\.com\/radiotedu\/rtai-jingle/);
   }
   assert.equal(llmsAiTxt, rootLlms);
-  assert.match(read('website/iis/radiotedu-llm-discovery-rule.xml'), /\^llms\\\.txt\$/);
+  const discoveryRule = read('website/iis/radiotedu-llm-discovery-rule.xml');
+  assert.match(discoveryRule, /\^llms\\\.txt\$/);
+  assert.match(discoveryRule, /radiotedu-llms\.php/);
+  assert.match(read('website/root-discovery/radiotedu-llms.php'), /Content-Type: text\/plain; charset=utf-8/);
   assert.match(read('website/iis/technology-server.js'), /'\.pdf': 'application\/pdf'/);
   for (const route of ['rtai', 'technology', 'teknoloji']) {
     assert.equal((sitemap.match(new RegExp(`<loc>https://radiotedu\\.com/${route}/</loc>`, 'g')) || []).length, 1, `${route} sitemap entry must be unique`);

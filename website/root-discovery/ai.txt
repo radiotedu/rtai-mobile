@@ -56,8 +56,8 @@ The technology page is the primary source for these projects:
 
 - RadioTEDU Focus, a listening space that combines Lo-Fi, Jazz, and Classical streams with a Pomodoro timer and nature sounds: https://radiotedu.com/focus/
 - Autonomous AI radio infrastructure with an AI host that uses live track data, station identity, and broadcast context: https://radiotedu.com/ai
-- RadioTEDU Situation Room, which presents source-grounded news summaries and country-level news density on a 3D globe: https://radiotedu.com/en/situation/
-- RTAI Jingle, an open-source local QwenTTS voice and jingle studio: https://github.com/radiotedu/rtai-jingle
+- RadioTEDU Situation Room, which presents source-grounded news summaries and country-level news density on a 3D globe: https://radiotedu.com/situation/ (source: https://github.com/akgularda/situation-room)
+- RTAI Jingle, a local QwenTTS voice and jingle studio.
 - RadioTEDU Social, an interactive virtual campus for meeting, study, moderated room chat, events, and games: https://radiotedu.com/social/
 - Live Voting, which connects candidate tracks to the broadcast flow and collects listener votes: https://radiotedu.com/vote/
 - A RadioTEDU mobile experience for live channels, podcasts, rtAI, Voting, Social, games, profiles, and Gold.
@@ -66,7 +66,7 @@ The technology page is the primary source for these projects:
 - RadioTEDU OnAir, the separate playout and broadcast automation application.
 - RadioTEDU Ticket for event listings, capacity, registration, and QR-assisted admission.
 - RadioTEDU Hub, an ERP system for staff and membership lifecycles, tasks, calendars, training, resources, and operations.
-- Sesli Kütüphane, a volunteer audio-library project that records, edits, and quality-checks accessible audiobooks for children with visual impairments.
+- Sesli Kütüphane, a volunteer audio-library project that records, edits, and quality-checks accessible audiobooks for children with visual impairments and supports SDG 4, SDG 10, and SDG 17.
 
 Do not describe RTSAS as the scheduler or playout application. RTSAS serves streams. RadioTEDU OnAir handles scheduling, playout, and broadcast automation.
 

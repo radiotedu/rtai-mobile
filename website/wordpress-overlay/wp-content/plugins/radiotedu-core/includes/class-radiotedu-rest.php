@@ -84,14 +84,17 @@ final class RadioTEDU_REST
     {
         $station = $this->find_by_stable_id('rt_station', (string) $request['id']);
         if (!$station) {
-            return new WP_Error('station_not_found', 'Radyo bulunamadÄ±.', ['status' => 404]);
+            return new WP_Error('station_not_found', 'Radyo bulunamadı.', ['status' => 404]);
         }
 
         $includePlayerMetadata = rest_sanitize_boolean($request->get_param('player'));
+        $clockOnly = rest_sanitize_boolean($request->get_param('clock'));
+        $includeStreamMetadata = $includePlayerMetadata || $clockOnly;
         $stationStableId = (string) get_post_meta($station->ID, '_rt_stable_id', true);
         $stationIdentity = strtolower($stationStableId . ' ' . $station->post_title);
         $isLofi = str_contains($stationIdentity, 'lofi') || str_contains($stationIdentity, 'lo-fi');
-        $cacheKey = 'rt_live_' . md5((string) $request['id']) . ($includePlayerMetadata ? '_player' : '');
+        $cacheSuffix = $includePlayerMetadata ? '_player' : ($clockOnly ? '_clock' : '');
+        $cacheKey = 'rt_live_' . md5((string) $request['id']) . $cacheSuffix;
         $cached = get_transient($cacheKey);
         if (is_array($cached)) {
             return rest_ensure_response($cached);
@@ -125,7 +128,7 @@ final class RadioTEDU_REST
                     $payload['listeners'] = $metadata['listeners'];
                 }
             }
-        } elseif ($includePlayerMetadata && !$isLofi && $streamUrl !== '') {
+        } elseif ($includeStreamMetadata && !$isLofi && $streamUrl !== '') {
             $metadata = $this->read_icy_metadata($streamUrl);
             if ($metadata !== []) {
                 $payload['online'] = true;
@@ -134,10 +137,12 @@ final class RadioTEDU_REST
             }
         }
 
-        if ($includePlayerMetadata && !$isLofi && $payload['track']) {
-            $catalog = $this->lookup_track_catalog((string) ($payload['artist'] ?? ''), (string) $payload['track']);
-            $payload['artwork_url'] = $catalog['artwork_url'];
-            $payload['purchase'] = $catalog['purchase'];
+        if ($includeStreamMetadata && !$isLofi && $payload['track']) {
+            if ($includePlayerMetadata) {
+                $catalog = $this->lookup_track_catalog((string) ($payload['artist'] ?? ''), (string) $payload['track']);
+                $payload['artwork_url'] = $catalog['artwork_url'];
+                $payload['purchase'] = $catalog['purchase'];
+            }
             $payload['track_started_at'] = $this->track_started_at(
                 $stationStableId,
                 (string) ($payload['artist'] ?? ''),
@@ -146,7 +151,7 @@ final class RadioTEDU_REST
         }
 
         $payload = apply_filters('radiotedu_station_live_payload', $payload, $station);
-        set_transient($cacheKey, $payload, 5);
+        set_transient($cacheKey, $payload, $clockOnly ? 2 : 5);
         return rest_ensure_response($payload);
     }
 
@@ -154,7 +159,7 @@ final class RadioTEDU_REST
     {
         $station = $this->find_by_stable_id('rt_station', (string) $request['id']);
         if (!$station) {
-            return new WP_Error('station_not_found', 'Radyo bulunamadÄ±.', ['status' => 404]);
+            return new WP_Error('station_not_found', 'Radyo bulunamadı.', ['status' => 404]);
         }
         $weekday = $request->get_param('weekday');
         $slots = RadioTEDU_Schedule::get_slots($station->ID, $weekday === null ? null : absint($weekday));
@@ -201,7 +206,7 @@ final class RadioTEDU_REST
             $show = $candidate instanceof WP_Post && $candidate->post_type === 'rt_podcast_show' ? $candidate : null;
         }
         if (!$show) {
-            return new WP_Error('podcast_not_found', 'Podcast serisi bulunamadÄ±.', ['status' => 404]);
+            return new WP_Error('podcast_not_found', 'Podcast serisi bulunamadı.', ['status' => 404]);
         }
 
         $page = max(1, absint($request->get_param('page') ?: 1));
@@ -274,8 +279,8 @@ final class RadioTEDU_REST
             if (!is_array($candidate)) {
                 continue;
             }
-            $artist = sanitize_text_field((string) ($candidate['artist'] ?? ''));
-            $track = sanitize_text_field((string) ($candidate['track'] ?? $candidate['title'] ?? $candidate['song'] ?? ''));
+            $artist = $this->normalize_metadata_text((string) ($candidate['artist'] ?? ''));
+            $track = $this->normalize_metadata_text((string) ($candidate['track'] ?? $candidate['title'] ?? $candidate['song'] ?? ''));
             if ($track === '') {
                 continue;
             }
@@ -401,7 +406,8 @@ final class RadioTEDU_REST
 
     private function parse_stream_title(string $streamTitle): array
     {
-        $streamTitle = sanitize_text_field(str_replace(['â€”', 'â€“'], '-', $streamTitle));
+        $streamTitle = $this->normalize_metadata_text(html_entity_decode($streamTitle, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $streamTitle = str_replace(['—', '–'], '-', $streamTitle);
         if ($streamTitle === '') {
             return [];
         }
@@ -409,6 +415,35 @@ final class RadioTEDU_REST
             return ['artist' => trim($matches[1]), 'track' => trim($matches[2])];
         }
         return ['artist' => null, 'track' => $streamTitle];
+    }
+
+    private function normalize_metadata_text(string $value): string
+    {
+        $value = trim(str_replace("\0", '', $value));
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('//u', $value) !== 1 && function_exists('iconv')) {
+            foreach (['Windows-1254', 'ISO-8859-9', 'Windows-1252', 'ISO-8859-1'] as $sourceEncoding) {
+                $converted = @iconv($sourceEncoding, 'UTF-8//IGNORE', $value);
+                if (is_string($converted) && $converted !== '' && preg_match('//u', $converted) === 1) {
+                    $value = $converted;
+                    break;
+                }
+            }
+        }
+
+        $value = strtr($value, [
+            "\u{00C3}\u{2021}" => 'Ç', "\u{00C3}\u{2013}" => 'Ö', "\u{00C3}\u{0153}" => 'Ü',
+            "\u{00C3}\u{00A7}" => 'ç', "\u{00C3}\u{00B6}" => 'ö', "\u{00C3}\u{00BC}" => 'ü',
+            "\u{00C4}\u{00B1}" => 'ı', "\u{00C4}\u{00B0}" => 'İ', "\u{00C4}\u{0178}" => 'ğ', "\u{00C4}\u{017D}" => 'Ğ',
+            "\u{00C5}\u{0178}" => 'ş', "\u{00C5}\u{017E}" => 'Ş',
+            "\u{00E2}\u{20AC}\u{2122}" => '’', "\u{00E2}\u{20AC}\u{02DC}" => '‘',
+            "\u{00E2}\u{20AC}\u{0153}" => '“', "\u{00E2}\u{20AC}\u{009D}" => '”',
+        ]);
+
+        return sanitize_text_field(wp_check_invalid_utf8($value, true));
     }
 
     private function lookup_track_catalog(string $artist, string $track): array
@@ -503,7 +538,7 @@ final class RadioTEDU_REST
 
     private function normalize_catalog_term(string $value): string
     {
-        $value = strtolower(remove_accents(str_replace(["'", 'â€™', 'â€˜', '`'], '', $value)));
+        $value = strtolower(remove_accents(str_replace(["'", '’', '‘', '`'], '', $value)));
         $value = (string) preg_replace('/[^a-z0-9]+/u', ' ', $value);
         return trim((string) preg_replace('/\s+/u', ' ', $value));
     }
@@ -550,7 +585,10 @@ final class RadioTEDU_REST
         if (!is_array($clock) || !hash_equals((string) ($clock['fingerprint'] ?? ''), $fingerprint)) {
             $clock = [
                 'fingerprint' => $fingerprint,
-                'started_at' => time(),
+                // The ICY title is observed after transport and polling latency.
+                // A small bounded correction keeps timestamped lyrics closer to
+                // the audio listeners actually hear without guessing song length.
+                'started_at' => max(0, time() - 2),
             ];
             set_transient($cacheKey, $clock, 12 * HOUR_IN_SECONDS);
         }

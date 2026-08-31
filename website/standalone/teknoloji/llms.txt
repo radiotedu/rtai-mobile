@@ -16,6 +16,14 @@ RadioTEDU Teknoloji Laboratuvarı uçtan uca bir medya laboratuvarıdır. Yeni t
 4. Her Ekran: mobil ve tablet uygulamaları, Android Auto, Google Cast, Android TV, Wear OS, sistem medya kontrolleri ve çevrimdışı podcastler.
 5. Araştırma ve Erişim: akademik yayın mühendisliği çalışmaları ve RadioTEDU Sesli Kütüphane erişilebilirlik girişimi.
 
+## Doğrulanmış proje bağlantıları
+
+- Situation Room kaynak kodu: https://github.com/akgularda/situation-room
+- RTSAS yayın sunucusu kaynak kodu: https://github.com/radiotedu/rtsas
+- RadioTEDU Bilet: https://radiotedu.com/bilet/
+- RadioTEDU Sesli Kütüphane: https://radiotedu.com/seslikutuphane/
+- Sesli Kütüphane; SDG 4 (Nitelikli Eğitim), SDG 10 (Eşitsizliklerin Azaltılması) ve SDG 17'ye (Amaçlar için Ortaklıklar) katkı sağlar.
+
 ## Akademik çalışmalar
 
 - Determining Optimal Audio Encoders for Internet Radio Broadcasting. Yazar: Arda Akgül. Tarih: 24 Ağustos 2025. PDF: https://radiotedu.com/technology/research/determining-optimal-audio-encoders.pdf

@@ -1,0 +1,36 @@
+# RTAI
+
+Canonical URL: https://radiotedu.com/rtai/
+Full name: RadioTEDU Applied Media Intelligence
+Parent organization: RadioTEDU, TED University, Ankara, Türkiye
+
+## Identity
+
+RTAI is RadioTEDU's applied media intelligence studio. It is not presented as a separate legal corporation. It operates like a compact research and development company inside a student-run radio station, turning responsible AI prototypes into useful broadcast, podcast and audience systems.
+
+## Thesis
+
+Media attention, production and discovery are moving toward social video, podcasts, voice interfaces, intelligent discovery and participatory systems. Radio retains the value of a live human voice, shared moments and editorial trust. RTAI combines those strengths with measurable, human-led machine assistance.
+
+## Work
+
+- AI Radio: an experimental continuous station exploring machine-assisted selection, context and presentation while keeping its experimental status explicit. https://radiotedu.com/ai/
+- RTAI Jingle: a guided creative system that turns a production brief into station-aligned audio identity while leaving taste and approval to people.
+- Situation Room: a monitoring and decision surface that gathers operational signals into a readable, sourced context for faster human response.
+- Capability areas: editorial copilots, multilingual context, voice and assistant interfaces, metadata intelligence, audience signal analysis and responsible automation.
+
+## Method and principles
+
+Observe, prototype, measure, operate and document. Human editorial authority, source visibility, measurable output and privacy by design are non-negotiable principles.
+
+## Public industry context used on the page
+
+- McKinsey & Company, 2024: estimated generative AI economic impact of $80B to $130B for the media segment. This is a potential value-pool estimate. https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/beyond-the-hype-capturing-the-potential-of-ai-and-gen-ai-in-tmt
+- Reuters Institute Digital News Report 2025, 48 markets: social video news consumption rose from 52% in 2020 to 65% in 2025; any video news use rose from 67% to 75%. https://reutersinstitute.politics.ox.ac.uk/digital-news-report/2025/dnr-executive-summary
+- Edison Research, The Podcast Consumer 2025, US population age 12+: video podcast consumption was 51% ever, 37% monthly and 26% weekly. https://www.edisonresearch.com/the-podcast-consumer-2025/
+- Deloitte Digital Media Trends 2025, US survey: respondents average about six hours of media and entertainment daily across competing formats. https://www2.deloitte.com/us/en/insights/industry/technology/digital-media-trends-consumption-habits-survey/2025.html
+
+## Related pages
+
+- Technology Lab: https://radiotedu.com/technology/
+- RadioTEDU: https://radiotedu.com/

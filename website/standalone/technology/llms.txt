@@ -1,0 +1,33 @@
+# RadioTEDU Technology Lab
+
+Canonical URL: https://radiotedu.com/technology/
+Turkish version: https://radiotedu.com/teknoloji/
+Owner: RadioTEDU, the student-run radio and media laboratory of TED University in Ankara, Türkiye.
+
+## Purpose
+
+RadioTEDU Technology Lab is an end-to-end media laboratory. It adopts emerging technology early, tests beta capabilities in context, measures their operational value, and documents what reaches production. The editorial thesis is that live radio, podcasts, intelligent discovery and audience participation can coexist in one resilient public media system.
+
+## Technology clusters
+
+1. Broadcast Core: RadioTEDU OnAir, RadioTEDU Smart Audio Switch (RTSAS), shared PCM and measured AAC-LC, HE-AAC v2 and FLAC output tiers, RadioTEDU Focus.
+2. Media Intelligence: AI Radio, RTAI Jingle, Situation Room and the RTAI applied media intelligence studio.
+3. Participation: RadioTEDU Voting, Juke Local, shared account and Gold economy, Tickets, Hub and Social.
+4. Every Surface: mobile and tablet apps, Android Auto, Google Cast, Android TV, Wear OS, system media controls and offline podcasts.
+5. Research and Access: academic broadcast-engineering studies and the RadioTEDU Sesli Kütüphane public accessibility initiative.
+
+## Research
+
+- Determining Optimal Audio Encoders for Internet Radio Broadcasting. Author: Arda Akgül. Date: 24 August 2025. PDF: https://radiotedu.com/technology/research/determining-optimal-audio-encoders.pdf
+- Layered Audio Delivery for Efficient and Resilient Multi-Station Internet Radio: A Case Study of RadioTEDU. Author: Arda Akgül. Date: 29 August 2026. PDF: https://radiotedu.com/technology/research/layered-audio-delivery-radiotedu.pdf
+
+## Method
+
+Observe a real problem, prototype the smallest useful beta, measure quality and resilience, operate the proven capability in a real workflow, and document results and uncertainty. Human editorial authority remains explicit.
+
+## Related pages
+
+- RTAI: https://radiotedu.com/rtai/
+- AI Radio: https://radiotedu.com/ai/
+- Turkish Technology Lab: https://radiotedu.com/teknoloji/
+- RadioTEDU: https://radiotedu.com/

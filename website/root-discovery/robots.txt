@@ -1,0 +1,40 @@
+# RadioTEDU public crawler policy
+# Public pages are available for search and AI-assisted discovery.
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+
+User-agent: GPTBot
+Allow: /
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+
+User-agent: Googlebot
+Allow: /
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+
+User-agent: *
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+Allow: /ai.txt
+Allow: /llms.txt
+Allow: /llms-ai.txt
+Allow: /rtai/
+Allow: /technology/
+Allow: /teknoloji/
+
+Sitemap: https://radiotedu.com/wp-sitemap.xml
+Sitemap: https://radiotedu.com/sitemap-radiotedu-products.xml

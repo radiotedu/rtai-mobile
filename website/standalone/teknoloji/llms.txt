@@ -1,0 +1,33 @@
+# RadioTEDU Teknoloji Laboratuvarı
+
+Kanonik adres: https://radiotedu.com/teknoloji/
+İngilizce sürüm: https://radiotedu.com/technology/
+Sahibi: Ankara'daki TED Üniversitesi öğrenci radyosu ve medya laboratuvarı RadioTEDU.
+
+## Amaç
+
+RadioTEDU Teknoloji Laboratuvarı uçtan uca bir medya laboratuvarıdır. Yeni teknolojileri erken benimser, beta özellikleri gerçek bağlamında test eder, operasyonel değerini ölçer ve yayına ulaşan sonuçları belgeler. Canlı radyo, podcast, akıllı keşif ve dinleyici katılımı tek bir dayanıklı medya ekosisteminde buluşur.
+
+## Teknoloji kümeleri
+
+1. Yayın Çekirdeği: RadioTEDU OnAir, RadioTEDU Smart Audio Switch (RTSAS), ortak PCM omurgası, ölçümlü AAC-LC, HE-AAC v2 ve FLAC katmanları, RadioTEDU Focus.
+2. Medya Zekâsı: AI Radio, RTAI Jingle, Situation Room ve RTAI uygulamalı medya zekâsı stüdyosu.
+3. Katılım: RadioTEDU Voting, Juke Local, ortak hesap ve Gold ekonomisi, Bilet, Hub ve Social.
+4. Her Ekran: mobil ve tablet uygulamaları, Android Auto, Google Cast, Android TV, Wear OS, sistem medya kontrolleri ve çevrimdışı podcastler.
+5. Araştırma ve Erişim: akademik yayın mühendisliği çalışmaları ve RadioTEDU Sesli Kütüphane erişilebilirlik girişimi.
+
+## Akademik çalışmalar
+
+- Determining Optimal Audio Encoders for Internet Radio Broadcasting. Yazar: Arda Akgül. Tarih: 24 Ağustos 2025. PDF: https://radiotedu.com/technology/research/determining-optimal-audio-encoders.pdf
+- Layered Audio Delivery for Efficient and Resilient Multi-Station Internet Radio: A Case Study of RadioTEDU. Yazar: Arda Akgül. Tarih: 29 Ağustos 2026. PDF: https://radiotedu.com/technology/research/layered-audio-delivery-radiotedu.pdf
+
+## Yöntem
+
+Gerçek problemi gözlemle, en küçük yararlı betayı üret, kalite ve dayanıklılığı ölç, kanıtlanan yeteneği gerçek iş akışında işlet ve sonuçlarla belirsizlikleri belgele. Editoryal yetki insanda kalır.
+
+## İlgili sayfalar
+
+- RTAI: https://radiotedu.com/rtai/
+- AI Radio: https://radiotedu.com/ai/
+- İngilizce Technology Lab: https://radiotedu.com/technology/
+- RadioTEDU: https://radiotedu.com/

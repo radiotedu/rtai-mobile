@@ -88,7 +88,7 @@ function radiotedu_network_menu_items(string $items, stdClass $args): string
     if (!str_contains($items, 'href="' . esc_url($playlistsUrl) . '"')) {
         $items .= '<li class="menu-item"><a href="' . esc_url($playlistsUrl) . '">' . esc_html__('Listeler', 'radiotedu') . '</a></li>';
     }
-    $aiUrl = home_url('/ai/');
+    $aiUrl = home_url('/rtai/');
     $situationUrl = home_url('/situation/');
     $links = [
         __('AI', 'radiotedu') => $aiUrl,

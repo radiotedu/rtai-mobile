@@ -3,6 +3,7 @@ declare(strict_types=1);
 ?><!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
+    <link rel="alternate" type="text/plain" href="<?php echo esc_url(home_url('/llms.txt')); ?>" title="RadioTEDU LLM-readable site summary">
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ed1c24">
@@ -19,6 +20,7 @@ declare(strict_types=1);
         </a>
         <nav class="rt-header__quick" aria-label="<?php esc_attr_e('Hızlı bağlantılar', 'radiotedu'); ?>">
             <a href="<?php echo esc_url(radiotedu_localized_url((string) get_post_type_archive_link('rt_station'))); ?>"><?php esc_html_e('Radyolar', 'radiotedu'); ?></a>
+            <a href="<?php echo esc_url(home_url('/rtai/')); ?>" data-no-pjax>AI</a>
             <a href="<?php echo esc_url(radiotedu_localized_url(home_url('/listeler/'))); ?>"><?php esc_html_e('Listeler', 'radiotedu'); ?></a>
             <a href="<?php echo esc_url(radiotedu_localized_url((string) get_post_type_archive_link('rt_podcast_show'))); ?>"><?php esc_html_e('Podcastler', 'radiotedu'); ?></a>
             <a href="<?php echo esc_url(radiotedu_localized_url(home_url('/yayin-akisi/'))); ?>"><?php esc_html_e('Yayın Akışı', 'radiotedu'); ?></a>

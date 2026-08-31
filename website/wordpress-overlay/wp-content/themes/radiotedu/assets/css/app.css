@@ -742,6 +742,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .rt-footer__technology-note a { color: var(--rt-white); font-weight: 750; text-decoration-line: underline; text-decoration-color: var(--rt-red); text-decoration-thickness: 2px; text-underline-offset: .22em; background: linear-gradient(to top, rgba(225, 27, 34, .2) 0 42%, transparent 42% 100%); }
 .rt-footer__technology-note a:hover { color: var(--rt-white); background-color: rgba(225, 27, 34, .14); }
 .rt-footer__technology-note a:focus-visible { outline: 2px solid var(--rt-white); outline-offset: 3px; }
+.rt-footer__address { display: grid; gap: 5px; margin: 0 0 18px; color: var(--rt-gray-300); font-size: .75rem; font-style: normal; line-height: 1.6; }
+.rt-footer__address strong { color: var(--rt-white); font-size: .68rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .rt-footer__links { columns: 2; gap: 30px; margin: 0; padding: 0; list-style: none; }
 .rt-footer__links li { margin-bottom: 12px; }
 .rt-footer__links a, .rt-footer__contact a { font-size: .78rem; font-weight: 800; text-transform: uppercase; text-decoration: none; }

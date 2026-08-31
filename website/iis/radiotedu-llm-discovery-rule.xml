@@ -1,0 +1,5 @@
+<!-- Place before reverse-proxy and WordPress catch-all rules. -->
+<rule name="RADIOTEDU_LLM_DISCOVERY" stopProcessing="true">
+  <match url="^llms\.txt$" ignoreCase="true" />
+  <action type="Rewrite" url="/llms-ai.txt" appendQueryString="false" />
+</rule>

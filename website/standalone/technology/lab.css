@@ -196,42 +196,54 @@ figure figcaption a, .system-lines a, .situation-band a, .participation-stage a,
   .surface-composition li { padding: 18px; border-right: 1px solid var(--line); }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   :root { --shell: min(100% - 28px, 1480px); }
   html { scroll-padding-top: 72px; }
-  h1 { font-size: clamp(2.75rem,14vw,4.5rem); }
-  h2 { font-size: clamp(2.2rem,11vw,3.7rem); }
+  h1 { font-size: clamp(2.55rem,12vw,3.4rem); }
+  h2 { font-size: clamp(2rem,9.5vw,2.8rem); }
+  h3 { line-height: 1; }
+  button { min-height: 44px; }
+  .lab-brand { min-height: 44px; }
   .lab-brand span { font-size: .62rem; }
   .lab-brand b { font-size: .86rem; }
+  .lab-menu { height: 44px; }
   .lab-header nav { grid-template-columns: 1fr; max-height: calc(100vh - 72px); overflow-y: auto; }
-  .lab-hero { gap: 58px; padding: 70px 0 90px; }
+  .lab-hero { gap: 42px; padding: 52px 0 68px; }
   .signal-ledger { padding-left: 30px; }
   .signal-ledger::before { box-shadow: none; }
-  .shift { grid-template-columns: 1fr; padding-block: 90px; }
+  .shift { grid-template-columns: 1fr; padding-block: 72px; }
   .shift__copy { padding-top: 0; }
-  .cluster-map { padding-block: 90px; }
+  .cluster-map { padding-block: 72px; }
   .cluster-map__rail { margin-top: 46px; }
   .cluster-map__rail a { grid-template-columns: 38px 1fr; gap: 10px; }
   .cluster-map__rail small { grid-column: 2; }
-  .cluster { padding-block: 100px; }
+  .cluster { padding-block: 76px; }
+  .cluster__intro { margin-bottom: 44px; }
   .cluster__intro--offset { margin-left: 0; }
   figure figcaption { grid-template-columns: 1fr; gap: 7px; }
   .system-lines, .papers { grid-template-columns: 1fr; }
   .system-lines article { min-height: 0; }
   .system-lines h3 { margin-top: 34px; }
   .duet, .situation-band, .participation-stage, .social-frame, .access-story { grid-template-columns: 1fr; }
-  .duet figure:nth-child(2), .surface-composition__car { margin-top: 40px !important; }
+  .cluster__media, .duet figure, .surface-composition figure { width: min(100%, clamp(310px, 62vw, 460px)); margin-inline: auto; }
+  .participation-stage__lead { width: min(100%, clamp(294px, 52vw, 390px)); margin-inline: auto; }
+  .situation-band > img, .social-frame > img, .access-story > img { width: min(100%, clamp(310px, 62vw, 460px)); margin-inline: auto; }
+  .duet figure:nth-child(2), .surface-composition__car { margin: 32px auto 0 !important; }
   .social-frame img { grid-row: 1; }
-  .cluster__media img, .duet img, .situation-band img, .participation-stage__lead img, .social-frame img, .surface-composition figure img, .access-story img { max-height: 360px; }
+  .cluster__media img, .duet img, .situation-band img, .participation-stage__lead img, .social-frame img, .surface-composition figure img, .access-story img { max-height: 320px; }
+  .situation-band, .social-frame, .access-story { margin-top: 72px; }
   .surface-composition { grid-template-columns: 1fr; }
-  .surface-composition__phone img { max-height: 520px; }
+  .surface-composition__phone img { max-height: 320px; }
   .surface-composition ul { grid-template-columns: 1fr; }
-  .field-lab { padding-block: 100px; }
+  .field-lab, .research { padding-block: 76px; }
   .field-lab li { grid-template-columns: 1fr; gap: 8px; }
-  .papers { margin-top: 52px; }
-  .papers article { min-height: 0; }
-  .papers dl { margin-top: 50px; }
-  .lab-footer { grid-template-columns: 1fr; }
+  .papers { margin-top: 40px; }
+  .papers article { min-height: 0; padding: 28px 20px; }
+  .papers h3 { margin-top: 32px; }
+  .papers dl { margin-top: 40px; }
+  .lab-close { padding-block: 78px; }
+  .source-row a, .lab-text-link, figure figcaption a, .system-lines a, .situation-band a, .participation-stage a, .social-frame a, .access-story a, .papers a, .lab-footer a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; }
+  .lab-footer { grid-template-columns: 1fr; padding: 52px 24px 96px; }
   .lab-footer > div:nth-child(2) { justify-content: flex-start; }
 }
 

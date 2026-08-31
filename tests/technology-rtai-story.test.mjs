@@ -110,3 +110,16 @@ test('New standalone pages avoid em dashes and retain progressive enhancement', 
   assert.match(read('website/standalone/technology/lab.js'), /classList\.toggle\('is-open'/);
   assert.match(read('website/standalone/rtai/rtai.js'), /IntersectionObserver/);
 });
+
+test('Technology pages use a compact, touch-safe mobile layout', () => {
+  const css = read('website/standalone/technology/lab.css');
+  const mobile = css.slice(css.indexOf('@media (max-width: 820px)'));
+
+  assert.match(mobile, /h1 \{ font-size: clamp\(2\.55rem,12vw,3\.4rem\); \}/);
+  assert.match(mobile, /\.cluster \{ padding-block: 76px; \}/);
+  assert.match(mobile, /width: min\(100%, clamp\(310px, 62vw, 460px\)\)/);
+  assert.match(mobile, /\.participation-stage__lead \{ width: min\(100%, clamp\(294px, 52vw, 390px\)\)/);
+  assert.match(mobile, /max-height: 320px/);
+  assert.match(mobile, /min-width: 44px/);
+  assert.match(mobile, /min-height: 44px/);
+});

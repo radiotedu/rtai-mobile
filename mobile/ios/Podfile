@@ -19,6 +19,10 @@ target 'RadioTEDUMobile' do
 
   # Add iOS as a second Firebase/GA4 app stream. Core excludes IDFA support;
   # collection remains off until the app's existing consent gate enables it.
+  # FirebaseCoreInternal is Swift while GoogleUtilities is Objective-C. Generate
+  # a module map for that dependency so CocoaPods can integrate the graph as
+  # the default static libraries used by React Native.
+  pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseAnalytics/Core', '~> 11.15.0'
 
   use_react_native!(

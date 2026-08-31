@@ -34,6 +34,14 @@ describe('iOS release readiness', () => {
     expect(delegate.match(/RCTLinkingManager application:/g)?.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('makes the Firebase Swift dependency graph modular for CocoaPods CI', () => {
+    const podfile = read('ios/Podfile');
+    expect(podfile).toContain(
+      "pod 'GoogleUtilities', :modular_headers => true",
+    );
+    expect(podfile).toContain("pod 'FirebaseAnalytics/Core', '~> 11.15.0'");
+  });
+
   it('uses secure transport, required permissions, audio, and deep links', () => {
     const plist = read('ios/RadioTEDUMobile/Info.plist').replace(/\r\n/g, '\n');
     expect(plist).toContain('<key>NSAllowsArbitraryLoads</key>\n\t\t<false/>');

@@ -5,7 +5,7 @@ import test from 'node:test';
 import {verifyReleaseVersion} from '../scripts/verify-release-version.mjs';
 
 test('release tag matches mobile, TV, Wear, and iOS versions', async () => {
-  assert.deepEqual(await verifyReleaseVersion('v1.3.0'), {tag: 'v1.3.0', version: '1.3.0'});
+  assert.deepEqual(await verifyReleaseVersion('v1.3.1'), {tag: 'v1.3.1', version: '1.3.1'});
   await assert.rejects(verifyReleaseVersion('v1.0.0'), /does not match/);
   await assert.rejects(verifyReleaseVersion('latest'), /vMAJOR\.MINOR\.PATCH/);
 });

@@ -127,11 +127,19 @@ export async function verifyProductionAccount({
     if (typeof gameSession.id !== 'string' || typeof gameStarted.nonce !== 'string') {
       throw new Error('Game start did not return a session id and nonce.');
     }
+    const minimumPlaySeconds = Number(gameStarted.minimum_play_seconds ?? 0);
+    if (!Number.isFinite(minimumPlaySeconds) || minimumPlaySeconds < 0 || minimumPlaySeconds > 120) {
+      throw new Error('Game start returned an invalid minimum play duration.');
+    }
+    const verifiedPlayDurationMs = Math.max(10_000, Math.ceil(minimumPlaySeconds + 1) * 1_000);
+    if (minimumPlaySeconds > 0) {
+      await new Promise(resolve => setTimeout(resolve, verifiedPlayDurationMs));
+    }
     const gameResult = assertRecord(await request(`/gamification/games/${encodeURIComponent(game.id)}/score`, {
       body: {
         score: 1,
         client_round_id: clientRoundId,
-        play_duration_ms: 10_000,
+        play_duration_ms: verifiedPlayDurationMs,
         submission_source: 'mobile_game',
         session_id: gameSession.id,
         nonce: gameStarted.nonce,

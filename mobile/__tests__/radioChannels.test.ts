@@ -58,6 +58,7 @@ describe('radio channel catalog', () => {
       spark,
     ]);
     expect(spark.streams.low).toBeUndefined();
+    expect(RADIO_CHANNELS.at(-1)?.id).toBe('radiotedu-spark');
   });
 
   it('adds Energize and Rock with their recommended normal mounts (no suffix)', () => {

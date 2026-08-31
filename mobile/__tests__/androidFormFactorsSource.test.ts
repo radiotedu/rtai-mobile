@@ -28,6 +28,9 @@ describe('Android form-factor delivery', () => {
     expect(gradle).toContain('def media3Version = "1.10.1"');
     expect(gradle).toContain('androidx.media3:media3-session:${media3Version}');
     expect(service).toContain('class RadioTeduCarService : MediaLibraryService()');
+    expect(service).toContain(
+      'MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS',
+    );
     expect(service).toContain('override fun onSearch(');
     expect(service).toContain('override fun onGetSearchResult(');
     expect(service).toContain('requestMetadata.searchQuery');
@@ -98,7 +101,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('tv/build.gradle');
     const manifest = read('tv/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 13001');
+    expect(gradle).toContain('versionCode 13011');
     expect(manifest).toContain('android.software.leanback');
     expect(manifest).toContain('android.intent.category.LEANBACK_LAUNCHER');
     expect(manifest).toContain('android.hardware.touchscreen');
@@ -109,7 +112,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('wear/build.gradle');
     const manifest = read('wear/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 13002');
+    expect(gradle).toContain('versionCode 13012');
     expect(gradle).toContain('targetSdkVersion 35');
     expect(manifest).toContain('android.hardware.type.watch');
     expect(manifest).toContain('com.google.android.wearable.standalone');

@@ -37,6 +37,16 @@ declare(strict_types=1);
         <label class="rt-volume"><span class="screen-reader-text"><?php esc_html_e('Ses seviyesi', 'radiotedu'); ?></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"></path></svg><input type="range" min="0" max="1" value="0.8" step="0.01" data-rt-volume></label>
         <button type="button" class="rt-player__expand" data-rt-player-expand aria-expanded="false"><?php esc_html_e('Detay', 'radiotedu'); ?></button>
     </div>
+    <aside class="rt-player__lyrics" data-rt-player-lyrics hidden>
+        <div class="rt-player__lyrics-head">
+            <span><?php echo esc_html(radiotedu_current_language() === 'en' ? 'LIVE LYRICS' : 'CANLI SÖZLER'); ?></span>
+            <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer">LRCLIB</a>
+        </div>
+        <div class="rt-player__lyrics-lines" aria-live="polite" aria-atomic="true">
+            <p class="rt-player__lyrics-previous" data-rt-lyrics-previous></p>
+            <p class="rt-player__lyrics-current" data-rt-lyrics-current></p>
+            <p class="rt-player__lyrics-next" data-rt-lyrics-next></p>
+        </div>
+    </aside>
     <p class="rt-player__status" role="status" aria-live="polite" data-rt-player-status></p>
 </section>
-

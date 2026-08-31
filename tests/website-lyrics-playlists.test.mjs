@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import test from 'node:test';
+
+const root = process.cwd();
+const theme = join(root, 'website', 'wordpress-overlay', 'wp-content', 'themes', 'radiotedu');
+const plugin = join(root, 'website', 'wordpress-overlay', 'wp-content', 'plugins', 'radiotedu-core', 'includes', 'class-radiotedu-rest.php');
+const read = (path) => readFileSync(path, 'utf8');
+
+test('live player exposes automatic synchronized lyrics without an API key', () => {
+    const script = read(join(theme, 'assets', 'js', 'app.js'));
+    const player = read(join(theme, 'template-parts', 'player.php'));
+    const rest = read(plugin);
+
+    assert.match(script, /https:\/\/lrclib\.net\/api\/search/);
+    assert.match(script, /parseSyncedLyrics/);
+    assert.match(script, /window\.setInterval\(renderLyrics, 250\)/);
+    assert.match(script, /candidate\.syncedLyrics/);
+    assert.match(script, /isLofiStation\(\)/);
+    assert.match(player, /data-rt-player-lyrics hidden/);
+    assert.match(player, /data-rt-lyrics-current/);
+    assert.match(player, /https:\/\/lrclib\.net/);
+    assert.match(rest, /'track_started_at' => null/);
+    assert.match(rest, /rt_track_clock_/);
+});
+
+test('playlists route contains every non-empty public RadioTEDU playlist', () => {
+    const page = read(join(theme, 'page-listeler.php'));
+    const functions = read(join(theme, 'functions.php'));
+    const header = read(join(theme, 'header.php'));
+    const ids = [...page.matchAll(/\['id' => '([A-Za-z0-9]+)'/g)].map((match) => match[1]);
+
+    assert.equal(ids.length, 23);
+    assert.equal(new Set(ids).size, 23);
+    assert.ok(!ids.includes('662HYAxPWv3BDwtt0gCTc9'), 'empty Classical playlist must stay excluded');
+    assert.equal((page.match(/'tr' =>/g) || []).length, 23);
+    assert.equal((page.match(/'en' =>/g) || []).length, 23);
+    assert.match(page, /open\.spotify\.com\/embed\/playlist/);
+    assert.match(page, /loading="lazy"/);
+    assert.match(functions, /\['listeler', 'en\/playlists'\]/);
+    assert.match(functions, /page-listeler\.php/);
+    assert.match(header, /home_url\('\/listeler\/'\)/);
+    assert.match(header, /Listeler/);
+});

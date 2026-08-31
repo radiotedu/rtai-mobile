@@ -106,6 +106,7 @@ final class RadioTEDU_REST
             'title' => $station->post_title,
             'track' => null,
             'artist' => null,
+            'track_started_at' => null,
             'listeners' => null,
             'artwork_url' => null,
             'purchase' => ['apple' => null, 'amazon' => null],
@@ -137,10 +138,15 @@ final class RadioTEDU_REST
             $catalog = $this->lookup_track_catalog((string) ($payload['artist'] ?? ''), (string) $payload['track']);
             $payload['artwork_url'] = $catalog['artwork_url'];
             $payload['purchase'] = $catalog['purchase'];
+            $payload['track_started_at'] = $this->track_started_at(
+                $stationStableId,
+                (string) ($payload['artist'] ?? ''),
+                (string) $payload['track']
+            );
         }
 
         $payload = apply_filters('radiotedu_station_live_payload', $payload, $station);
-        set_transient($cacheKey, $payload, 20);
+        set_transient($cacheKey, $payload, 5);
         return rest_ensure_response($payload);
     }
 
@@ -533,6 +539,23 @@ final class RadioTEDU_REST
             'posts_per_page' => 1,
         ]);
         return $posts[0] ?? null;
+    }
+
+    private function track_started_at(string $stationId, string $artist, string $track): string
+    {
+        $cacheKey = 'rt_track_clock_' . md5($stationId);
+        $fingerprint = hash('sha256', strtolower(trim($artist) . "\n" . trim($track)));
+        $clock = get_transient($cacheKey);
+
+        if (!is_array($clock) || !hash_equals((string) ($clock['fingerprint'] ?? ''), $fingerprint)) {
+            $clock = [
+                'fingerprint' => $fingerprint,
+                'started_at' => time(),
+            ];
+            set_transient($cacheKey, $clock, 12 * HOUR_IN_SECONDS);
+        }
+
+        return gmdate(DATE_ATOM, (int) $clock['started_at']);
     }
 
     private function station_payload(WP_Post $post): array

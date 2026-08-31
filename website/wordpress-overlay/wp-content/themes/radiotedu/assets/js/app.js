@@ -29,6 +29,12 @@
         liveMetadata: null,
         metadataTimer: null,
         metadataController: null,
+        lyricsController: null,
+        lyricsTimer: null,
+        lyricsLines: [],
+        lyricsTrackKey: null,
+        lyricsBaseAudioTime: null,
+        lyricsStartedAtMs: null,
         analyticsQuartiles: new Set(),
         analyticsTrackKey: null,
     };
@@ -51,6 +57,10 @@
         storeMenu: player.querySelector('[data-rt-player-store-menu]'),
         buyApple: player.querySelector('[data-rt-buy-apple]'),
         buyAmazon: player.querySelector('[data-rt-buy-amazon]'),
+        lyrics: player.querySelector('[data-rt-player-lyrics]'),
+        lyricsPrevious: player.querySelector('[data-rt-lyrics-previous]'),
+        lyricsCurrent: player.querySelector('[data-rt-lyrics-current]'),
+        lyricsNext: player.querySelector('[data-rt-lyrics-next]'),
         progress: document.querySelector('.rt-route-progress'),
     };
     const defaultPlayerArtwork = els.art.currentSrc || els.art.src;
@@ -131,6 +141,128 @@
     };
 
     const isLofiStation = () => state.kind === 'station' && /lo-?fi/i.test(`${state.id || ''} ${state.title || ''}`);
+
+    const normalizeLyricsValue = (value) => String(value || '')
+        .toLocaleLowerCase('en-US')
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
+        .replace(/\b(feat|featuring|ft)\.?\b.*$/i, ' ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
+    const parseSyncedLyrics = (source) => {
+        const lines = [];
+        String(source || '').split(/\r?\n/).forEach((row) => {
+            const text = row.replace(/\[(?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d{1,3})?\]/g, '').trim();
+            if (!text) return;
+            const stamps = [...row.matchAll(/\[(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g)];
+            stamps.forEach((match) => {
+                const hours = Number(match[1] || 0);
+                const minutes = Number(match[2] || 0);
+                const seconds = Number(match[3] || 0);
+                const fraction = Number(`0.${match[4] || 0}`);
+                lines.push({ at: (hours * 3600) + (minutes * 60) + seconds + fraction, text });
+            });
+        });
+        return lines.sort((left, right) => left.at - right.at);
+    };
+
+    const clearLyrics = () => {
+        state.lyricsController?.abort();
+        state.lyricsController = null;
+        window.clearInterval(state.lyricsTimer);
+        state.lyricsTimer = null;
+        state.lyricsLines = [];
+        state.lyricsTrackKey = null;
+        state.lyricsBaseAudioTime = null;
+        state.lyricsStartedAtMs = null;
+        if (els.lyrics) els.lyrics.hidden = true;
+        [els.lyricsPrevious, els.lyricsCurrent, els.lyricsNext].forEach((line) => {
+            if (line) line.textContent = '';
+        });
+    };
+
+    const currentLyricsTime = () => {
+        if (Number.isFinite(state.lyricsBaseAudioTime) && Number.isFinite(audio.currentTime)) {
+            return Math.max(0, audio.currentTime - state.lyricsBaseAudioTime);
+        }
+        if (Number.isFinite(state.lyricsStartedAtMs)) {
+            return Math.max(0, (Date.now() - state.lyricsStartedAtMs) / 1000);
+        }
+        return 0;
+    };
+
+    const renderLyrics = () => {
+        if (!els.lyrics || !state.lyricsLines.length) return;
+        const position = currentLyricsTime();
+        let low = 0;
+        let high = state.lyricsLines.length - 1;
+        let active = -1;
+        while (low <= high) {
+            const middle = Math.floor((low + high) / 2);
+            if (state.lyricsLines[middle].at <= position + 0.12) {
+                active = middle;
+                low = middle + 1;
+            } else {
+                high = middle - 1;
+            }
+        }
+        if (els.lyricsPrevious) els.lyricsPrevious.textContent = active > 0 ? state.lyricsLines[active - 1].text : '';
+        if (els.lyricsCurrent) els.lyricsCurrent.textContent = active >= 0 ? state.lyricsLines[active].text : '…';
+        if (els.lyricsNext) els.lyricsNext.textContent = state.lyricsLines[active + 1]?.text || '';
+    };
+
+    const lyricsMatchScore = (candidate, track, artist) => {
+        const wantedTrack = normalizeLyricsValue(track);
+        const wantedArtist = normalizeLyricsValue(artist);
+        const resultTrack = normalizeLyricsValue(candidate.trackName || candidate.name);
+        const resultArtist = normalizeLyricsValue(candidate.artistName);
+        if (!wantedTrack || !resultTrack) return -1;
+        let score = resultTrack === wantedTrack ? 12 : (resultTrack.includes(wantedTrack) || wantedTrack.includes(resultTrack) ? 5 : -8);
+        if (wantedArtist) score += resultArtist === wantedArtist ? 8 : (resultArtist.includes(wantedArtist) || wantedArtist.includes(resultArtist) ? 3 : -5);
+        return score;
+    };
+
+    const loadLyrics = async (track, artist, startedAt, trackKey) => {
+        clearLyrics();
+        if (!els.lyrics || !track || state.kind !== 'station' || isLofiStation()) return;
+        state.lyricsTrackKey = trackKey;
+        const controller = new AbortController();
+        state.lyricsController = controller;
+        try {
+            const query = new URLSearchParams({ track_name: track, artist_name: artist });
+            const response = await fetch(`https://lrclib.net/api/search?${query}`, {
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' },
+            });
+            if (!response.ok) return;
+            const results = await response.json();
+            if (!Array.isArray(results) || state.lyricsTrackKey !== trackKey) return;
+            const match = results
+                .filter((candidate) => !candidate.instrumental && candidate.syncedLyrics)
+                .map((candidate) => ({ candidate, score: lyricsMatchScore(candidate, track, artist) }))
+                .filter((entry) => entry.score >= 8)
+                .sort((left, right) => right.score - left.score)[0]?.candidate;
+            if (!match || state.lyricsTrackKey !== trackKey) return;
+            const lines = parseSyncedLyrics(match.syncedLyrics);
+            if (!lines.length) return;
+            const parsedStart = Date.parse(startedAt || '');
+            const startedAtMs = Number.isFinite(parsedStart) ? parsedStart : Date.now();
+            const elapsed = Math.max(0, (Date.now() - startedAtMs) / 1000);
+            state.lyricsLines = lines;
+            state.lyricsStartedAtMs = startedAtMs;
+            state.lyricsBaseAudioTime = Number.isFinite(audio.currentTime) ? audio.currentTime - elapsed : null;
+            els.lyrics.hidden = false;
+            renderLyrics();
+            state.lyricsTimer = window.setInterval(renderLyrics, 250);
+            trackPlayerAnalytics('lyrics_available', { lyrics_provider: 'lrclib', lyrics_synced: true });
+        } catch (error) {
+            if (error.name !== 'AbortError') clearLyrics();
+        } finally {
+            if (state.lyricsController === controller) state.lyricsController = null;
+        }
+    };
 
     const displayMedia = () => ({
         title: state.kind === 'station' && state.liveMetadata?.track ? state.liveMetadata.track : (state.title || 'RadioTEDU'),
@@ -225,6 +357,7 @@
                 track,
                 artist,
                 artwork: String(data.artwork_url || '').trim(),
+                startedAt: String(data.track_started_at || data.checked_at || '').trim(),
                 purchase: {
                     apple: String(data.purchase?.apple || '').trim(),
                     amazon: String(data.purchase?.amazon || '').trim(),
@@ -232,6 +365,11 @@
             } : null;
             updatePlayer();
             const trackKey = track ? `${artist}\n${track}` : '';
+            if (!trackKey) {
+                clearLyrics();
+            } else if (trackKey !== state.lyricsTrackKey) {
+                loadLyrics(track, artist, state.liveMetadata?.startedAt, trackKey);
+            }
             if (trackKey && trackKey !== state.analyticsTrackKey) {
                 state.analyticsTrackKey = trackKey;
                 trackPlayerAnalytics('radio_track_change', {
@@ -250,7 +388,7 @@
         stopStationMetadata();
         if (state.kind !== 'station' || isLofiStation()) return;
         refreshStationMetadata();
-        state.metadataTimer = window.setInterval(refreshStationMetadata, 20_000);
+        state.metadataTimer = window.setInterval(refreshStationMetadata, 5_000);
     };
 
     const recordHistory = async (eventType = 'play') => {
@@ -301,6 +439,7 @@
         const changed = state.src !== data.src;
         Object.assign(state, data);
         state.liveMetadata = null;
+        clearLyrics();
         if (changed) {
             state.analyticsQuartiles = new Set();
             state.analyticsTrackKey = null;
@@ -1279,4 +1418,3 @@
     if (consent.analytics) loadAnalytics();
     if (!consent.decided) banner.hidden = false;
 })();
-

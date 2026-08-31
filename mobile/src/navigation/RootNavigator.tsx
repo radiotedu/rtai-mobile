@@ -17,7 +17,6 @@ import EventsScreen from '../screens/EventsScreen';
 import GamesScreen from '../screens/GamesScreen';
 import MarketScreen from '../screens/MarketScreen';
 import SocialWebViewScreen from '../screens/social/SocialWebViewScreen';
-import EcosystemScreen from '../screens/EcosystemScreen';
 import StudyHomeScreen from '../screens/study/StudyHomeScreen';
 import AvatarClosetScreen from '../screens/study/AvatarClosetScreen';
 import LibraryStudyWebView from '../screens/study/LibraryStudyWebView';
@@ -201,7 +200,6 @@ export function RootNavigator() {
       <Stack.Screen name="MyTickets" component={MyTicketsScreen} />
       <Stack.Screen name="RoomQr" component={RoomQrScreen} />
       <Stack.Screen name="Social" component={SocialWebViewScreen} />
-      <Stack.Screen name="Ecosystem" component={EcosystemScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="LibraryStudyWeb" component={LibraryStudyWebView} />
       <Stack.Screen name="StudyRoom" component={LibraryStudyWebView} />

@@ -15,6 +15,9 @@ const themeFunctions = read('website/wordpress-overlay/wp-content/themes/radiote
 const rootLlms = read('website/root-discovery/llms.txt');
 const aiTxt = read('website/root-discovery/ai.txt');
 const llmsAiTxt = read('website/root-discovery/llms-ai.txt');
+const rtaiLlms = read('website/standalone/rtai/llms.txt');
+const technologyLlms = read('website/standalone/technology/llms.txt');
+const teknolojiLlms = read('website/standalone/teknoloji/llms.txt');
 const sitemap = read('website/root-discovery/sitemap-radiotedu-products.xml');
 
 test('Technology pages retain every ecosystem cluster', () => {
@@ -92,6 +95,11 @@ test('Search and AI discovery files describe the new public surface', () => {
     assert.doesNotMatch(text, /github\.com\/radiotedu\/rtai-jingle/);
   }
   assert.equal(llmsAiTxt, rootLlms);
+  for (const text of [rootLlms, aiTxt, rtaiLlms, technologyLlms, teknolojiLlms]) {
+    assert.match(text, /RadioTEDU Mobile 1\.3\.1/);
+    assert.match(text, /13010/);
+    assert.match(text, /Android Auto/);
+  }
   const discoveryRule = read('website/iis/radiotedu-llm-discovery-rule.xml');
   assert.match(discoveryRule, /\^llms\\\.txt\$/);
   assert.match(discoveryRule, /radiotedu-llms\.php/);

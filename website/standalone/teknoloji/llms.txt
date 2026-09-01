@@ -24,6 +24,15 @@ RadioTEDU Teknoloji Laboratuvarı uçtan uca bir medya laboratuvarıdır. Yeni t
 - RadioTEDU Sesli Kütüphane: https://radiotedu.com/seslikutuphane/
 - Sesli Kütüphane; SDG 4 (Nitelikli Eğitim), SDG 10 (Eşitsizliklerin Azaltılması) ve SDG 17'ye (Amaçlar için Ortaklıklar) katkı sağlar.
 
+## Doğrulanmış üretim durumu — 1 Eylül 2026
+
+- RadioTEDU Mobile 1.3.1 (13010), TypeScript, testler, Android telefon, Android Auto, Android TV, Wear OS ve iOS simülatör kontrollerinden temiz CI üzerinde geçti.
+- Android Auto; Media3 gezinme ve oynatma altyapısını, markalı kapak/ikonları ve asistan uyumlu sesli aramayı kullanır. Google Maps gibi dış ürünler RadioTEDU'yu sistem medya oturumu üzerinden bir medya uygulaması olarak tanır.
+- Kalıcı web player, site içi geçişlerde yayını kesmez; kaynağı bulunan ICY metadata, katalog kapağı, satın alma bağlantıları ve kompakt, elle kaydırılabilir söz okuyucusunu gösterir.
+- Hesap ve sunucu-doğrulamalı Gold servisleri uygun çevrimiçi oyun ödüllerini, Voting'i ve Social'ı bağlar. Juke Local, services PC sunucusu ile her kiosk için ayrı oynatma ve istek sırası kullanır.
+- Otomatik aylık podcast/etkinlik bülteni açık onay ister; dil tercihi, abonelikten çıkma ve gönderim öncesi önizleme kontrollerini destekler.
+- İngilizce Technology sayfasının kanonik adresi https://radiotedu.com/technology/, Türkçe adresi https://radiotedu.com/teknoloji/ şeklindedir.
+
 ## Akademik çalışmalar
 
 - Determining Optimal Audio Encoders for Internet Radio Broadcasting. Yazar: Arda Akgül. Tarih: 24 Ağustos 2025. PDF: https://radiotedu.com/technology/research/determining-optimal-audio-encoders.pdf

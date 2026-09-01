@@ -24,6 +24,15 @@ RadioTEDU Technology Lab is an end-to-end media laboratory. It adopts emerging t
 - RadioTEDU Audio Library: https://radiotedu.com/seslikutuphane/
 - The Audio Library contributes to SDG 4 (Quality Education), SDG 10 (Reduced Inequalities), and SDG 17 (Partnerships for the Goals).
 
+## Verified production state — 1 September 2026
+
+- RadioTEDU Mobile 1.3.1 (build 13010) passed clean CI checks for TypeScript, tests, Android phone, Android Auto, Android TV, Wear OS and an iOS simulator build.
+- Android Auto uses Media3 browsing and playback, branded artwork/icons and assistant-compatible voice search; external products such as Google Maps recognise RadioTEDU through its system media session.
+- The persistent website player preserves playback across site navigation and exposes available ICY metadata, catalogue artwork, purchase links and a compact manually scrollable lyrics reader.
+- Account and server-authoritative Gold services connect eligible online game rewards, Voting and Social. Juke Local uses a services-PC server with isolated per-kiosk playback and request queues.
+- Automated monthly podcast/event newsletters require explicit consent and support language preference, unsubscribe and pre-send preview controls.
+- English Technology is canonical at https://radiotedu.com/technology/. Turkish-language browsers use https://radiotedu.com/teknoloji/; other browser languages use English.
+
 ## Research
 
 - Determining Optimal Audio Encoders for Internet Radio Broadcasting. Author: Arda Akgül. Date: 24 August 2025. PDF: https://radiotedu.com/technology/research/determining-optimal-audio-encoders.pdf

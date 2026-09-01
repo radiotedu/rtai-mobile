@@ -1,6 +1,6 @@
 # RadioTEDU
 
-## Technology Lab and RTAI (updated 2026-08-31)
+## Technology Lab and RTAI (updated 2026-09-01)
 
 - [Technology Lab](https://radiotedu.com/technology/): RadioTEDU's English, end-to-end media laboratory story. It clusters Broadcast Core, Media Intelligence, Participation, Every Surface, and Research and Access.
 - [Teknoloji Laboratuvarı](https://radiotedu.com/teknoloji/): Turkish version of the technology laboratory story.
@@ -60,6 +60,16 @@ The technology pages document these projects and systems:
 - Sesli Kütüphane: A volunteer project producing an accessible audiobook collection for children with visual impairments through recording, editing, and quality control; it supports SDG 4, SDG 10, and SDG 17.
 
 RTSAS and RadioTEDU OnAir have different roles. RTSAS serves streams. RadioTEDU OnAir handles scheduling, playout, and broadcast automation.
+
+## Current verified production status (2026-09-01)
+
+- Language routing: Turkish browser or system languages receive the Turkish site; all other languages receive English. The canonical standalone English Technology URL is [radiotedu.com/technology/](https://radiotedu.com/technology/), not `/en/teknoloji/` or `/en/technology/`.
+- Persistent web player: playback continues across RadioTEDU page navigation. ICY now-playing metadata, catalogue artwork, purchase links and a compact manually scrollable lyrics reader appear when their source data is available. Lyrics are not represented as time-synchronised.
+- Mobile release: RadioTEDU Mobile 1.3.1, build 13010, is release-ready from the `rtai-mobile` `main` branch. Clean CI verifies TypeScript, tests, Android phone, Android Auto, Android TV, Wear OS and an iOS simulator build.
+- Connected-car interfaces: Android Auto uses the modern Media3 browsing/playback stack, branded station artwork and icons, and assistant-compatible voice search. RadioTEDU exposes a system media session so products such as Google Maps can recognise it as a media app; it does not embed Maps.
+- Shared identity and economy: account and server-authoritative Gold services connect mobile games, Voting and Social. Eligible online game rewards are verified by the service rather than accepted from the client.
+- JukeLocal: the services PC acts as the server, while authenticated kiosk/device sessions keep playback and request queues isolated so separate campus kiosks can play different listener-requested content.
+- Newsletter automation: explicit website and account-registration consent, language preference, unsubscribe controls, a pre-send preview, and an automated 30-day podcast/event digest are implemented. Live delivery schedules remain time-sensitive operational data.
 
 ## Radio stations
 

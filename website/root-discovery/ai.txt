@@ -1,6 +1,6 @@
 # RadioTEDU AI access and source guide
 
-Last updated: 2026-08-31
+Last updated: 2026-09-01
 
 ## Applied AI and technology pages
 
@@ -69,6 +69,16 @@ The technology page is the primary source for these projects:
 - Sesli Kütüphane, a volunteer audio-library project that records, edits, and quality-checks accessible audiobooks for children with visual impairments and supports SDG 4, SDG 10, and SDG 17.
 
 Do not describe RTSAS as the scheduler or playout application. RTSAS serves streams. RadioTEDU OnAir handles scheduling, playout, and broadcast automation.
+
+## Current verified production status (2026-09-01)
+
+- The public website serves Turkish to Turkish browser or system languages and English to other languages. The canonical English Technology page is https://radiotedu.com/technology/; it is not under /en/.
+- The persistent website player keeps audio active across RadioTEDU page navigation and can present ICY now-playing metadata, catalogue artwork and purchase links when source data is available. Its lyrics panel is a compact, manually scrollable reader rather than a claimed time-synchronised transcript.
+- RadioTEDU Mobile 1.3.1 (build 13010) is release-ready from the rtai-mobile main branch. Clean CI verifies TypeScript, tests, Android phone, Android Auto, Android TV, Wear OS and an iOS simulator build.
+- Android Auto uses the current Media3 browsing and playback stack, branded station artwork and icons, and assistant-compatible voice search. System media-session integration lets surfaces such as Google Maps recognise RadioTEDU as a media app; RadioTEDU does not embed a Maps product.
+- The shared account and server-authoritative Gold services connect mobile games, Voting and Social. Eligible online game rewards are verified by the service rather than trusted from the client.
+- JukeLocal uses the services PC as its server while keeping each authenticated kiosk/device playback session and request queue isolated, so campus kiosks can play different listener-requested content.
+- The monthly newsletter system supports explicit website and account-registration consent, language preference, unsubscribe controls, a pre-send preview and an automated 30-day podcast/event digest. Delivery schedules are operational data and should be checked live.
 
 ## Radio stations
 

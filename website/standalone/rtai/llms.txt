@@ -20,6 +20,13 @@ Media attention, production and discovery are moving toward social video, podcas
 - RTSAS: the open-source stream-server layer that carries ICY metadata and resilient listener delivery. Source: https://github.com/radiotedu/rtsas
 - Capability areas: editorial copilots, multilingual context, voice and assistant interfaces, metadata intelligence, audience signal analysis and responsible automation.
 
+## Verified integration state — 1 September 2026
+
+- RadioTEDU Mobile 1.3.1 (build 13010) passed clean CI checks across TypeScript, tests, Android phone, Android Auto, Android TV, Wear OS and an iOS simulator build.
+- Android Auto uses Media3 browsing/playback, branded station artwork and icons, and assistant-compatible voice search. System media sessions expose RadioTEDU to external media surfaces without embedding those products.
+- Public RTAI and AI-radio status interfaces remain bounded, source-aware and non-controlling: they do not expose playout, private account or administration controls.
+- Live-player metadata, catalogue enrichment and the manually scrollable lyrics reader are availability-dependent presentation layers; they do not override the broadcast source or editorial authority.
+
 ## Method and principles
 
 Observe, prototype, measure, operate and document. Human editorial authority, source visibility, measurable output and privacy by design are non-negotiable principles.

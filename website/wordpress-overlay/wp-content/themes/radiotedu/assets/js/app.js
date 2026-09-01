@@ -435,19 +435,12 @@
             const trackNode = feature.querySelector('[data-rt-station-feature-track]');
             const artistNode = feature.querySelector('[data-rt-station-feature-artist]');
             const artworkNode = feature.querySelector('[data-rt-station-feature-artwork]');
-            const statusNode = feature.querySelector('[data-rt-station-feature-status]');
             if (trackNode) trackNode.textContent = track || t('Yayın bilgisi bekleniyor', 'Waiting for broadcast info');
             if (artistNode) artistNode.textContent = artist || 'RadioTEDU';
             if (artworkNode && artwork) artworkNode.src = artwork;
-            if (statusNode) statusNode.textContent = t('Canlı yayın bilgisi otomatik olarak yenilenir.', 'Live broadcast information refreshes automatically.');
             feature.dataset.metadataState = track ? 'ready' : 'waiting';
         } catch (error) {
             if (error.name === 'AbortError' || !document.contains(feature)) return;
-            const statusNode = feature.querySelector('[data-rt-station-feature-status]');
-            if (statusNode) statusNode.textContent = t(
-                'Canlı yayın bilgisine şu an ulaşılamıyor. Kısa süre içinde yeniden denenecek.',
-                'Live broadcast information is temporarily unavailable. It will retry shortly.'
-            );
             feature.dataset.metadataState = 'error';
         } finally {
             if (state.stationFeatureController === controller) state.stationFeatureController = null;

@@ -63,7 +63,6 @@ if ($mainStation) {
                 <span class="rt-live-dot"><i></i><?php esc_html_e('Şu anda yayında', 'radiotedu'); ?></span>
                 <strong data-rt-station-feature-track><?php esc_html_e('Yayın bilgisi güncelleniyor.', 'radiotedu'); ?></strong>
                 <span data-rt-station-feature-artist>RadioTEDU</span>
-                <small data-rt-station-feature-status><?php esc_html_e('Canlı yayın bilgisi otomatik olarak yenilenir.', 'radiotedu'); ?></small>
             </div>
         </div>
     </section>

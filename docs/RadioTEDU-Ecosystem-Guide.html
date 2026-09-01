@@ -32,6 +32,7 @@
     th { color:var(--muted); }
     ul,ol { padding-left:22px; }
     .warning { border-left:4px solid var(--red); padding:10px 14px; background:#211016; }
+    pre { margin:12px 0; padding:14px; overflow:auto; border:1px solid var(--line); border-radius:10px; background:#090d14; color:#ffd982; }
     @media (max-width:600px) { main { width:min(100% - 20px,1080px); padding-top:28px; } .card { padding:17px; } th,td { display:block; padding:7px 0; } th { display:none; } td:first-child { padding-top:14px; font-weight:700; } }
   </style>
 </head>
@@ -125,6 +126,69 @@
         </tbody>
       </table>
       <p class="muted">Mobil kaynak doğrulaması: Jest testleri ve <code>tsc --noEmit</code>. Android/Gradle build yalnızca uygun CI veya release ortamında yapılır.</p>
+    </article>
+
+    <article class="card wide">
+      <span class="status">Canlı ve iki dilli</span>
+      <h2>Radyolar dizini ve sürekli RadioTEDU metadata</h2>
+      <p><a href="https://radiotedu.com/radyolar/">Türkçe Radyolar</a> ve <a href="https://radiotedu.com/en/stations/">English Stations</a> aynı arşiv şablonunu kullanır. RadioTEDU ana istasyon olarak sayfanın üstündedir; metadata kullanıcı oynatmaya basmasa da beş saniyede bir yenilenir. Diğer istasyonlar ikincil katalogda kalır ve hiçbir kart “Yakında / Coming soon” etiketi üretmez.</p>
+      <p>İstasyon görselleri 768×768 web varlıklarıdır. Ana logo masaüstünde en fazla 116 px, mobilde 72 px; katalog logoları 94/68 px ölçüsünde gösterilir. Bu sınırlar raster büyütmeyi, yatay taşmayı ve mobil başlık kırpılmasını engeller.</p>
+    </article>
+
+    <article class="card wide">
+      <h2>Doğrulanmış üretim topolojisi</h2>
+      <table>
+        <thead><tr><th>Port / servis</th><th>Rol</th><th>Public route</th></tr></thead>
+        <tbody>
+          <tr><td><code>3000</code></td><td>Account, Gold, gamification, event ve shared Social API</td><td><code>/jukebox/*</code></td></tr>
+          <tr><td><code>3010</code> · RadioTEDU-Juke-Local</td><td>Kiosk, controller, device queue ve media agent</td><td><code>/juke-local/*</code></td></tr>
+          <tr><td><code>8090</code></td><td>Dedicated next-song voting</td><td>Public compatibility route aynı aktif round’u sunar.</td></tr>
+          <tr><td><code>8080</code></td><td>Legacy/Amphitheatre compatibility</td><td>Çalışan proxy sözleşmesi gereksiz yere değiştirilmez.</td></tr>
+          <tr><td><code>8000</code></td><td>ERP</td><td>Ayrı no-write kurumsal sınır.</td></tr>
+          <tr><td><code>5078</code></td><td>Sesli Kütüphane</td><td>Kesin no-touch sınırı.</td></tr>
+          <tr><td><code>18083</code></td><td>AI web</td><td><code>/ai/</code> ve ilgili proxy.</td></tr>
+          <tr><td><code>4178</code></td><td>Study/Social oyun servisi</td><td><code>/study</code></td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card">
+      <h2>Juke kiosk runbook</h2>
+      <ol><li><code>/juke-local/health</code> ve Windows service state’i kontrol edilir.</li><li>Her PC benzersiz device ID ile <code>/juke-local/kiosk/</code> oturumu açar.</li><li>QR aynı device ID’yi taşır; telefon isteği yalnız o bilgisayarın kuyruğuna gider.</li><li>Media-agent status <code>connected: true</code> ve <code>transport: websocket</code> göstermelidir.</li><li><code>/jukebox/kiosk/</code> eski ve yanlış adrestir; kullanılmaz.</li></ol>
+      <p class="warning">Gerçek kiosk parolaları yalnız özel masaüstü rehberinde ve güvenli operatör tesliminde tutulur; Git deposuna eklenmez.</p>
+    </article>
+
+    <article class="card">
+      <h2>3D management</h2>
+      <p><a href="https://radiotedu.com/management/dashboard/">Management dashboard</a> fiziksel stüdyo girişindeki dokunmatik olmayan ekran içindir. Ekranda RadioTEDU logosu ve 3D plan vardır; form yoktur. Randevu CTA’sı sabit olarak <a href="https://radiotedu.com/erp/room/reservation">ERP room reservation</a> adresine gider.</p>
+      <p>Yönetim ekranının insan girişi özel operasyon tesliminde saklanır. JWT, DB, SMTP, signing ve servis secret’ları hiçbir HTML veya Git belgesine yazılmaz.</p>
+    </article>
+
+    <article class="card wide">
+      <span class="status">19/19 read-only kontrol</span>
+      <h2>1 Eylül 2026 final audit kanıtı</h2>
+      <table><thead><tr><th>Alan</th><th>Sonuç</th></tr></thead><tbody>
+        <tr><td>Account</td><td>103 hesap; e-posta/kullanıcı tekilliği ve rol referansları temiz.</td></tr>
+        <tr><td>Gold</td><td>11 bakiye, 18 ledger satırı, 6 etkin kural; negatif bakiye, yetim referans ve duplicate idempotency yok.</td></tr>
+        <tr><td>Oyun</td><td>6 etkin oyun; internet ve server-verified ödül sözleşmeleri test edildi.</td></tr>
+        <tr><td>Etkinlik</td><td>2 aktif etkinlik authenticated mobile events/home cevabında görünür.</td></tr>
+        <tr><td>Juke</td><td>3 aktif cihaz; device, queue ve vote referansları temiz; media agent bağlı.</td></tr>
+        <tr><td>Voting</td><td>Tek aktif round, 3 aday; ballot/candidate referansları temiz.</td></tr>
+        <tr><td>SSL</td><td>HTTP→HTTPS, HSTS 31536000, TLS 1.3 ve geçerli Let’s Encrypt sertifikası.</td></tr>
+        <tr><td>İletişim</td><td>Newsletter görevi Disabled; hiçbir e-posta veya notification gönderilmedi.</td></tr>
+      </tbody></table>
+    </article>
+
+    <article class="card wide">
+      <h2>Tekrarlanabilir doğrulama</h2>
+      <pre>node scripts/audit-production-db-readonly.cjs
+node scripts/verify-production-account-local-readonly.mjs
+node scripts/verify-live-services.mjs
+node scripts/verify-android-publish-readiness.mjs
+node scripts/verify-language-routing-readonly.mjs
+node scripts/verify-stations-page-readonly.mjs --output ./stations-page-verification</pre>
+      <p>Son sonuçlar: repo 46/46; mobile Jest 333/333; Android publish static audit 36/36; backend account/Gold/Juke/voting 257/257; Juke-Local 143/143; voting 68/68; Study/Social 227/227; terminal 3/3; sistem dili yönlendirmesi ve İngilizce menüler; Radyolar TR/EN desktop/mobile canlı testleri yeşil. Android build bu denetimde çalıştırılmadı.</p>
+      <p class="warning"><strong>Rollback:</strong> dosya/commit yedeği alın, yalnız değişen dosyayı geri koyun ve salt-okunur testleri tekrarlayın. ERP, Sesli Kütüphane, PostgreSQL data, uploads veya bütün workspace üzerinde reset, truncate ya da recursive delete kullanmayın.</p>
     </article>
   </section>
 </main>

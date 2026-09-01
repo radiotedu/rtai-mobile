@@ -67,8 +67,8 @@ function radiotedu_menu_fallback(): void
         [__('AI', 'radiotedu'), home_url('/ai/'), true],
         [__('Social', 'radiotedu'), home_url('/social/'), true],
             [__('RadioTEDU Situation Room', 'radiotedu'), home_url('/situation/'), true],
-        [__('Teknoloji', 'radiotedu'), home_url('/teknoloji/'), true],
-        [__('Etkinlikler', 'radiotedu'), home_url('/bilet/'), true],
+        [__('Teknoloji', 'radiotedu'), radiotedu_localized_url(home_url('/teknoloji/')), true],
+        [__('Etkinlikler', 'radiotedu'), radiotedu_localized_url(home_url('/bilet/')), true],
         [__('Hakkımızda', 'radiotedu'), radiotedu_localized_url(home_url('/hakkimizda/')), false],
         [__('İletişim', 'radiotedu'), radiotedu_localized_url(home_url('/iletisim/')), false],
     ];
@@ -93,8 +93,8 @@ function radiotedu_network_menu_items(string $items, stdClass $args): string
     $links = [
         __('AI', 'radiotedu') => $aiUrl,
         __('Social', 'radiotedu') => home_url('/social/'),
-        __('Teknoloji', 'radiotedu') => home_url('/teknoloji/'),
-        __('Etkinlikler', 'radiotedu') => home_url('/bilet/'),
+        __('Teknoloji', 'radiotedu') => radiotedu_localized_url(home_url('/teknoloji/')),
+        __('Etkinlikler', 'radiotedu') => radiotedu_localized_url(home_url('/bilet/')),
     ];
     foreach ($links as $label => $url) {
         if (!str_contains($items, 'href="' . esc_url($url) . '"')) {
@@ -137,12 +137,14 @@ function radiotedu_language_switcher(): void
         $languages = pll_the_languages(['raw' => 1, 'hide_if_empty' => 0]);
         foreach (is_array($languages) ? $languages : [] as $language) {
             $class = !empty($language['current_lang']) ? ' is-current' : '';
-            echo '<a class="rt-language__link' . esc_attr($class) . '" href="' . esc_url($language['url']) . '" hreflang="' . esc_attr($language['slug']) . '">' . esc_html(strtoupper($language['slug'])) . '</a>';
+            $url = add_query_arg('rt_language_choice', (string) $language['slug'], (string) $language['url']);
+            echo '<a class="rt-language__link' . esc_attr($class) . '" href="' . esc_url($url) . '" hreflang="' . esc_attr($language['slug']) . '" data-no-pjax>' . esc_html(strtoupper($language['slug'])) . '</a>';
         }
     } else {
         foreach (['tr' => 'TR', 'en' => 'EN'] as $slug => $label) {
             $class = radiotedu_current_language() === $slug ? ' is-current' : '';
-            echo '<a class="rt-language__link' . esc_attr($class) . '" href="' . esc_url(radiotedu_language_url($slug)) . '" hreflang="' . esc_attr($slug) . '">' . esc_html($label) . '</a>';
+            $url = add_query_arg('rt_language_choice', $slug, radiotedu_language_url($slug));
+            echo '<a class="rt-language__link' . esc_attr($class) . '" href="' . esc_url($url) . '" hreflang="' . esc_attr($slug) . '" data-no-pjax>' . esc_html($label) . '</a>';
         }
     }
     echo '</div>';
@@ -169,6 +171,27 @@ function radiotedu_card_image(int $postId, string $size = 'radiotedu-square'): s
         }
     }
     return get_template_directory_uri() . '/assets/images/radiotedu-logo.png';
+}
+
+function radiotedu_station_logo_url(int $postId): string
+{
+    $stableId = class_exists('RadioTEDU_Content')
+        ? RadioTEDU_Content::stable_id($postId)
+        : (string) get_post_meta($postId, '_rt_stable_id', true);
+    $logos = [
+        'radiotedu-main' => 'radiotedu-main.jpg',
+        'radiotedu-classic' => 'radiotedu-classic.jpg',
+        'radiotedu-jazz' => 'radiotedu-jazz.jpg',
+        'radiotedu-lofi' => 'radiotedu-lofi.jpg',
+        'radiotedu-spark' => 'radiotedu-energize.jpg',
+        'radiotedu-rock' => 'radiotedu-rock.jpg',
+        'radiotedu-ai-en' => 'radiotedu-ai-en.jpg',
+        'radiotedu-ai-fr' => 'radiotedu-ai-fr.jpg',
+    ];
+    if (isset($logos[$stableId])) {
+        return get_template_directory_uri() . '/assets/images/stations/' . $logos[$stableId];
+    }
+    return radiotedu_card_image($postId);
 }
 
 function radiotedu_episode_play_button(int $postId): void
@@ -235,6 +258,84 @@ function radiotedu_current_language(): string
     $path = (string) wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
     return preg_match('#^/en(?:/|$)#', $path) ? 'en' : 'tr';
 }
+
+function radiotedu_browser_language(string $acceptLanguage): ?string
+{
+    $bestLanguage = null;
+    $bestQuality = -1.0;
+    foreach (explode(',', $acceptLanguage) as $position => $candidate) {
+        $parts = array_map('trim', explode(';', $candidate));
+        $tag = strtolower((string) ($parts[0] ?? ''));
+        if ($tag === '' || $tag === '*') {
+            continue;
+        }
+        $quality = 1.0;
+        foreach (array_slice($parts, 1) as $parameter) {
+            if (preg_match('/^q=([0-9.]+)$/i', $parameter, $matches)) {
+                $quality = max(0.0, min(1.0, (float) $matches[1]));
+                break;
+            }
+        }
+        if ($quality <= 0.0 || $quality < $bestQuality) {
+            continue;
+        }
+        if ($quality === $bestQuality && $position > 0) {
+            continue;
+        }
+        $bestQuality = $quality;
+        $bestLanguage = explode('-', $tag)[0] === 'tr' ? 'tr' : 'en';
+    }
+    return $bestLanguage;
+}
+
+function radiotedu_set_language_preference(string $language): void
+{
+    if (!in_array($language, ['tr', 'en'], true) || headers_sent()) {
+        return;
+    }
+    setcookie('rt_language_preference', $language, [
+        'expires' => time() + YEAR_IN_SECONDS,
+        'path' => '/',
+        'secure' => is_ssl(),
+        'httponly' => false,
+        'samesite' => 'Lax',
+    ]);
+    $_COOKIE['rt_language_preference'] = $language;
+}
+
+function radiotedu_route_browser_language(): void
+{
+    if (is_admin() || wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
+        return;
+    }
+
+    header('Vary: Accept-Language, Cookie', false);
+    $choice = sanitize_key((string) ($_GET['rt_language_choice'] ?? ''));
+    if (in_array($choice, ['tr', 'en'], true)) {
+        radiotedu_set_language_preference($choice);
+        wp_safe_redirect(remove_query_arg('rt_language_choice'), 302, 'RadioTEDU language preference');
+        exit;
+    }
+
+    $requestPath = '/' . trim((string) wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+    $homePath = '/' . trim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
+    if ($requestPath !== $homePath) {
+        return;
+    }
+
+    $preference = sanitize_key((string) ($_COOKIE['rt_language_preference'] ?? ''));
+    if ($preference === 'tr') {
+        return;
+    }
+    $language = $preference === 'en'
+        ? 'en'
+        : radiotedu_browser_language((string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''));
+    if ($language === 'en') {
+        wp_safe_redirect(home_url('/en/'), 302, 'RadioTEDU browser language');
+        exit;
+    }
+}
+add_action('template_redirect', 'radiotedu_route_browser_language', 1);
 
 function radiotedu_route_slugs(): array
 {
@@ -349,11 +450,48 @@ function radiotedu_menu_language(array $atts): array
 }
 add_filter('nav_menu_link_attributes', 'radiotedu_menu_language');
 
+function radiotedu_menu_title_language(string $title): string
+{
+    if (is_admin() || radiotedu_current_language() !== 'en') {
+        return $title;
+    }
+    $plain = trim(wp_strip_all_tags(html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    $key = function_exists('mb_strtolower') ? mb_strtolower($plain, 'UTF-8') : strtolower($plain);
+    $translations = [
+        'ana sayfa' => 'Home',
+        'dinle' => 'Listen',
+        'radyolar' => 'Stations',
+        'listeler' => 'Playlists',
+        'podcastler' => 'Podcasts',
+        'programlar' => 'Programs',
+        'yayın akışı' => 'Schedule',
+        'duyurular' => 'Announcements',
+        'teknoloji' => 'Technology',
+        'etkinlikler' => 'Events',
+        'hakkımızda' => 'About',
+        'iletişim' => 'Contact',
+        'giriş' => 'Log in',
+        'giriş yap' => 'Log in',
+    ];
+    return $translations[$key] ?? $title;
+}
+add_filter('nav_menu_item_title', 'radiotedu_menu_title_language', 10, 1);
+
 function radiotedu_english_locale(string $locale): string
 {
     return !is_admin() && radiotedu_current_language() === 'en' ? 'en_US' : $locale;
 }
 add_filter('locale', 'radiotedu_english_locale');
+
+function radiotedu_document_language_attributes(string $output): string
+{
+    $language = radiotedu_current_language() === 'en' ? 'en-US' : 'tr-TR';
+    if (preg_match('/lang=("|\')[^"\']*("|\')/i', $output)) {
+        return (string) preg_replace('/lang=("|\')[^"\']*("|\')/i', 'lang="' . $language . '"', $output, 1);
+    }
+    return trim($output . ' lang="' . $language . '"');
+}
+add_filter('language_attributes', 'radiotedu_document_language_attributes', 10, 1);
 
 function radiotedu_theme_translation(string $translated, string $original, string $domain): string
 {
@@ -382,6 +520,10 @@ function radiotedu_theme_translation(string $translated, string $original, strin
         'Stüdyodan çıkanlar' => 'From the studio', 'Sırada ne var?' => 'What’s next?', 'TED Üniversitesi’nin sesi' => 'The voice of TED University', 'Teknoloji' => 'Technology', 'Tüm etkinlikleri gör' => 'View all events',
         'TED Üniversitesi’nin öğrenci radyosu. Farkı dinle, farklı hisset.' => 'TED University’s student radio. Hear the difference, feel different.',
         'Tüm bölümler' => 'All episodes', 'Tüm radyolar' => 'All stations', 'Tüm seriler' => 'All shows', 'Yakında' => 'Coming soon', 'Yayın Akışı' => 'Schedule',
+        'Ana istasyon' => 'Flagship station', 'Şu anda yayında' => 'On air now', 'Diğer radyolar' => 'Other stations', 'Radyo' => 'Station',
+        'Yayın bilgisi güncelleniyor.' => 'Updating broadcast information.', 'Canlı yayın bilgisi otomatik olarak yenilenir.' => 'Live broadcast information refreshes automatically.',
+        'Canlı yayın bilgisine şu an ulaşılamıyor. Kısa süre içinde yeniden denenecek.' => 'Live broadcast information is temporarily unavailable. It will retry shortly.',
+        'RadioTEDU’nun farklı ruh hâlleri için hazırlanan diğer kanallarını keşfet.' => 'Explore RadioTEDU’s other channels, each shaped for a different mood.',
         'Yayın akışı' => 'Schedule', 'Yayın akışını aç' => 'Open schedule', 'Yayın bilgisi bekleniyor' => 'Waiting for broadcast info', 'Yayın geçici olarak çevrimdışı' => 'Broadcast temporarily offline',
         'Yeni' => 'New', 'Yükleniyor' => 'Loading', 'Çerezler' => 'Cookies', 'İletişim' => 'Contact', 'İçerik yolu' => 'Breadcrumb', 'İçeriğe geç' => 'Skip to content', 'Planlanmış etkinlik bulunmuyor.' => 'No events are scheduled yet.', 'Bilet sistemi güncellendiğinde yeni etkinlikler burada görünecek.' => 'New events will appear here when the ticket system is updated.',
         'Şarkı geçmişi yayına döndüğünde burada görünecek.' => 'Recently played tracks will appear here when the stream returns.', 'Şarkıyı satın al' => 'Buy this track', 'Şimdi dinle' => 'Listen now', 'Şu an' => 'Now',
@@ -421,7 +563,7 @@ function radiotedu_language_alternates(): void
     if (is_admin()) return;
     echo '<link rel="alternate" hreflang="tr" href="' . esc_url(radiotedu_language_url('tr')) . '">' . "\n";
     echo '<link rel="alternate" hreflang="en" href="' . esc_url(radiotedu_language_url('en')) . '">' . "\n";
-    echo '<link rel="alternate" hreflang="x-default" href="' . esc_url(radiotedu_language_url('tr')) . '">' . "\n";
+    echo '<link rel="alternate" hreflang="x-default" href="' . esc_url(radiotedu_language_url('en')) . '">' . "\n";
 }
 add_action('wp_head', 'radiotedu_language_alternates', 2);
 

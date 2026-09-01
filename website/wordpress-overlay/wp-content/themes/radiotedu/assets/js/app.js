@@ -29,6 +29,8 @@
         liveMetadata: null,
         metadataTimer: null,
         metadataController: null,
+        stationFeatureTimer: null,
+        stationFeatureController: null,
         lyricsController: null,
         lyricsLines: [],
         lyricsTrackKey: null,
@@ -405,6 +407,60 @@
         state.metadataTimer = window.setInterval(refreshStationMetadata, 5_000);
     };
 
+    const stopStationFeatureMetadata = () => {
+        window.clearInterval(state.stationFeatureTimer);
+        state.stationFeatureTimer = null;
+        state.stationFeatureController?.abort();
+        state.stationFeatureController = null;
+    };
+
+    const refreshStationFeatureMetadata = async () => {
+        const feature = document.querySelector('[data-rt-station-feature]');
+        if (!feature || document.hidden) return;
+        const stationId = feature.dataset.stationId;
+        if (!stationId) return;
+        state.stationFeatureController?.abort();
+        const controller = new AbortController();
+        state.stationFeatureController = controller;
+        try {
+            const response = await fetch(`${config.restBase}stations/${encodeURIComponent(stationId)}/live?player=1`, {
+                signal: controller.signal,
+                headers: { 'Accept': 'application/json' },
+            });
+            const data = await apiData(response);
+            if (!document.contains(feature)) return;
+            const track = String(data.track || '').trim();
+            const artist = String(data.artist || '').trim();
+            const artwork = String(data.artwork_url || '').trim() || feature.dataset.fallbackArtwork || '';
+            const trackNode = feature.querySelector('[data-rt-station-feature-track]');
+            const artistNode = feature.querySelector('[data-rt-station-feature-artist]');
+            const artworkNode = feature.querySelector('[data-rt-station-feature-artwork]');
+            const statusNode = feature.querySelector('[data-rt-station-feature-status]');
+            if (trackNode) trackNode.textContent = track || t('Yayın bilgisi bekleniyor', 'Waiting for broadcast info');
+            if (artistNode) artistNode.textContent = artist || 'RadioTEDU';
+            if (artworkNode && artwork) artworkNode.src = artwork;
+            if (statusNode) statusNode.textContent = t('Canlı yayın bilgisi otomatik olarak yenilenir.', 'Live broadcast information refreshes automatically.');
+            feature.dataset.metadataState = track ? 'ready' : 'waiting';
+        } catch (error) {
+            if (error.name === 'AbortError' || !document.contains(feature)) return;
+            const statusNode = feature.querySelector('[data-rt-station-feature-status]');
+            if (statusNode) statusNode.textContent = t(
+                'Canlı yayın bilgisine şu an ulaşılamıyor. Kısa süre içinde yeniden denenecek.',
+                'Live broadcast information is temporarily unavailable. It will retry shortly.'
+            );
+            feature.dataset.metadataState = 'error';
+        } finally {
+            if (state.stationFeatureController === controller) state.stationFeatureController = null;
+        }
+    };
+
+    const startStationFeatureMetadata = () => {
+        stopStationFeatureMetadata();
+        if (!document.querySelector('[data-rt-station-feature]')) return;
+        refreshStationFeatureMetadata();
+        state.stationFeatureTimer = window.setInterval(refreshStationFeatureMetadata, 5_000);
+    };
+
     const recordHistory = async (eventType = 'play') => {
         if (!state.session || !state.id || !state.kind) return;
         try {
@@ -561,6 +617,7 @@
 
     audio.addEventListener('play', () => {
         player.classList.add('is-playing');
+        els.toggle.setAttribute('aria-label', t('Duraklat', 'Pause'));
         startProgressTimer();
         startVerifiedListening();
         trackPlayerAnalytics('playback_start', {
@@ -570,12 +627,14 @@
     });
     audio.addEventListener('pause', () => {
         player.classList.remove('is-playing');
+        els.toggle.setAttribute('aria-label', t('Oynat', 'Play'));
         trackPlayerAnalytics('playback_pause', { position_seconds: Math.max(0, Math.floor(audio.currentTime || 0)) });
         saveProgress();
         stopVerifiedListening();
     });
     audio.addEventListener('ended', () => {
         player.classList.remove('is-playing');
+        els.toggle.setAttribute('aria-label', t('Oynat', 'Play'));
         trackPlayerAnalytics('playback_complete', {
             duration_seconds: Number.isFinite(audio.duration) ? Math.max(0, Math.floor(audio.duration)) : 0,
         });
@@ -585,6 +644,7 @@
     });
     audio.addEventListener('error', () => {
         player.classList.remove('is-playing');
+        els.toggle.setAttribute('aria-label', t('Oynat', 'Play'));
         trackPlayerAnalytics('playback_error', { media_error_code: Number(audio.error?.code || 0) });
         stopVerifiedListening();
         showStatus(config.labels?.offline || 'Yayın geçici olarak çevrimdışı');
@@ -1233,6 +1293,7 @@
         trackHistory();
         renderAccountPage();
         restartHeroTicker();
+        startStationFeatureMetadata();
     };
 
     if (document.fonts?.ready) document.fonts.ready.then(restartHeroTicker).catch(() => {});

@@ -7,6 +7,32 @@ declare(strict_types=1);
     <meta charset="<?php bloginfo('charset'); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ed1c24">
+    <script id="radiotedu-language-router">
+    (() => {
+        try {
+            const preferenceName = 'rt_language_preference';
+            const choiceName = 'rt_language_choice';
+            const currentUrl = new URL(window.location.href);
+            const requestedChoice = currentUrl.searchParams.get(choiceName);
+            if (requestedChoice === 'tr' || requestedChoice === 'en') {
+                document.cookie = `${preferenceName}=${requestedChoice}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+                currentUrl.searchParams.delete(choiceName);
+                history.replaceState(history.state, '', currentUrl.href);
+            }
+            const homeUrl = new URL(<?php echo wp_json_encode(home_url('/')); ?>);
+            if (location.pathname.replace(/\/+$/, '/') !== homeUrl.pathname.replace(/\/+$/, '/')) return;
+            const cookieMatch = document.cookie.match(new RegExp(`(?:^|;\\s*)${preferenceName}=(tr|en)(?:;|$)`));
+            const preference = requestedChoice || (cookieMatch ? cookieMatch[1] : '');
+            const browserLanguage = String((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+            if (preference === 'tr' || (!preference && (!browserLanguage || /^tr(?:-|$)/.test(browserLanguage)))) return;
+            const englishUrl = new URL(<?php echo wp_json_encode(home_url('/en/')); ?>);
+            englishUrl.search = currentUrl.search;
+            location.replace(englishUrl.href);
+        } catch (error) {
+            // The server-side language route remains the no-JavaScript fallback.
+        }
+    })();
+    </script>
     <?php wp_head(); ?>
 </head>
 <body <?php body_class(); ?>>
@@ -15,7 +41,7 @@ declare(strict_types=1);
 <div class="rt-route-progress" aria-hidden="true"></div>
 <header class="rt-header" data-rt-shell>
     <div class="rt-header__inner">
-            <a class="rt-logo" href="<?php echo esc_url(home_url('/')); ?>" aria-label="<?php esc_attr_e('RadioTEDU ana sayfa', 'radiotedu'); ?>">
+            <a class="rt-logo" href="<?php echo esc_url(radiotedu_localized_url(home_url('/'))); ?>" aria-label="<?php esc_attr_e('RadioTEDU ana sayfa', 'radiotedu'); ?>">
             <?php echo radiotedu_logo(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
         </a>
         <nav class="rt-header__quick" aria-label="<?php esc_attr_e('Hızlı bağlantılar', 'radiotedu'); ?>">
@@ -68,7 +94,7 @@ declare(strict_types=1);
     <button class="rt-account-modal__backdrop" type="button" data-rt-account-close tabindex="-1" aria-label="<?php esc_attr_e('Hesap penceresini kapat', 'radiotedu'); ?>"></button>
     <section class="rt-account-modal__panel" role="dialog" aria-modal="true" aria-labelledby="rt-account-modal-title" tabindex="-1">
         <aside class="rt-account-modal__intro">
-            <a class="rt-account-modal__brand" href="<?php echo esc_url(home_url('/')); ?>" aria-label="RadioTEDU">
+            <a class="rt-account-modal__brand" href="<?php echo esc_url(radiotedu_localized_url(home_url('/'))); ?>" aria-label="RadioTEDU">
                 <span>Radio</span>TEDU<i aria-hidden="true"></i>
             </a>
             <div class="rt-account-modal__intro-copy">

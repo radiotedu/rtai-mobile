@@ -145,3 +145,10 @@ test('Technology pages expose ERP, ticketing and ESG-linked Audio Library media'
   assert.match(script, /removeFailedImage/);
   assert.match(script, /media-unavailable/);
 });
+
+test('Technology pages version immutable layout assets so mobile fixes reach returning visitors', () => {
+    for (const page of [technology, teknoloji]) {
+        assert.match(page, /\/technology\/lab\.css\?v=20260901-r2/);
+        assert.match(page, /\/technology\/lab\.js\?v=20260901-r2/);
+    }
+});

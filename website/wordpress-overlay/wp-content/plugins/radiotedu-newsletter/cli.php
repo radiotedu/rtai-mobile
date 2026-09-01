@@ -28,17 +28,25 @@ try {
         echo wp_json_encode(RadioTEDU_Newsletter::run_scheduled(), JSON_UNESCAPED_SLASHES), "\n";
     } elseif ($command === 'test') {
         $recipient = (string) ($argv[2] ?? '');
-        $ok = RadioTEDU_Newsletter::send_test($recipient);
+        $windowDays = (int) ($argv[3] ?? 30);
+        if (!in_array($windowDays, [30, 90], true)) {
+            throw new InvalidArgumentException('Test window must be 30 or 90 days.');
+        }
+        $ok = RadioTEDU_Newsletter::send_test($recipient, $windowDays);
         echo $ok ? "Test message accepted by wp_mail.\n" : "Test message failed.\n";
         exit($ok ? 0 : 1);
     } elseif ($command === 'render-preview') {
         $language = ($argv[2] ?? 'tr') === 'en' ? 'en' : 'tr';
+        $windowDays = (int) ($argv[3] ?? 30);
+        if (!in_array($windowDays, [30, 90], true)) {
+            throw new InvalidArgumentException('Preview window must be 30 or 90 days.');
+        }
         $directory = 'C:/RadioTEDU/artifacts/newsletter';
         if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
             throw new RuntimeException('Could not create newsletter preview directory.');
         }
-        $path = $directory . '/monthly-podcast-preview-' . $language . '.html';
-        if (file_put_contents($path, RadioTEDU_Newsletter::render_preview_html($language), LOCK_EX) === false) {
+        $path = $directory . '/monthly-podcast-preview-' . $language . '-' . $windowDays . 'd.html';
+        if (file_put_contents($path, RadioTEDU_Newsletter::render_preview_html($language, $windowDays), LOCK_EX) === false) {
             throw new RuntimeException('Could not write newsletter preview.');
         }
         echo $path, "\n";

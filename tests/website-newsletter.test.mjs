@@ -5,6 +5,7 @@ import test from 'node:test';
 const root = new URL('../', import.meta.url);
 const paths = {
   plugin: new URL('website/wordpress-overlay/wp-content/plugins/radiotedu-newsletter/includes/class-radiotedu-newsletter.php', root),
+  cli: new URL('website/wordpress-overlay/wp-content/plugins/radiotedu-newsletter/cli.php', root),
   header: new URL('website/wordpress-overlay/wp-content/themes/radiotedu/header.php', root),
   footer: new URL('website/wordpress-overlay/wp-content/themes/radiotedu/footer.php', root),
   css: new URL('website/wordpress-overlay/wp-content/themes/radiotedu/assets/css/app.css', root),
@@ -30,6 +31,14 @@ test('every issue is a fixed 30-day podcast snapshot with direct episode present
   assert.match(entries.plugin, /episode_ids/);
   assert.match(entries.plugin, /BÖLÜME GİT/);
   assert.match(entries.plugin, /get_the_post_thumbnail_url/);
+});
+
+test('manual test mail can explicitly use the safe one-time 90-day fallback', () => {
+  assert.match(entries.cli, /in_array\(\$windowDays, \[30, 90\], true\)/);
+  assert.match(entries.plugin, /send_test\(string \$recipient, int \$windowDays = 30\)/);
+  assert.match(entries.plugin, /\$windowDays === 90 \? 90 : 30/);
+  assert.match(entries.plugin, /90 GÜNLÜK TEST SEÇKİSİ/);
+  assert.match(entries.plugin, /Manual newsletter tests are restricted to the configured test recipient/);
 });
 
 test('consent, encrypted addresses, language choice and unsubscribe are implemented', () => {

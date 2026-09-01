@@ -355,13 +355,14 @@ final class RadioTEDU_Newsletter
         return ['paused' => false, 'queued' => $queued, 'sent' => $sent];
     }
 
-    public static function send_test(string $recipient): bool
+    public static function send_test(string $recipient, int $windowDays = 30): bool
     {
         global $wpdb;
         $recipient = strtolower(sanitize_email($recipient));
         if (!hash_equals(strtolower((string) self::$config['test_recipient']), $recipient)) {
             throw new RuntimeException('Manual newsletter tests are restricted to the configured test recipient.');
         }
+        $windowDays = $windowDays === 90 ? 90 : 30;
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul'));
         $issueDate = $now->setTime((int) self::$config['send_hour'], 0);
         $issueKey = $issueDate->format('Y-m-d');
@@ -374,8 +375,8 @@ final class RadioTEDU_Newsletter
         if ($existing) {
             return true;
         }
-        $episodes = self::episode_snapshot($issueDate->modify('-30 days'), $issueDate);
-        $ok = self::send_message($recipient, 'tr', $issueDate, $episodes, 'test', 'TEST / ');
+        $episodes = self::episode_snapshot($issueDate->modify('-' . $windowDays . ' days'), $issueDate);
+        $ok = self::send_message($recipient, 'tr', $issueDate, $episodes, 'test', 'TEST / ', $windowDays);
         $wpdb->query($wpdb->prepare(
             "INSERT INTO " . self::deliveries_table() . " (issue_key,subscriber_id,recipient_hash,kind,language,status,attempt_count,scheduled_at,sent_at,last_error) VALUES (%s,0,%s,'test','tr',%s,1,%s,%s,%s) ON DUPLICATE KEY UPDATE status=VALUES(status),attempt_count=attempt_count+1,sent_at=VALUES(sent_at),last_error=VALUES(last_error)",
             $issueKey,
@@ -388,13 +389,14 @@ final class RadioTEDU_Newsletter
         return $ok;
     }
 
-    public static function render_preview_html(string $language): string
+    public static function render_preview_html(string $language, int $windowDays = 30): string
     {
         $language = self::language($language);
+        $windowDays = $windowDays === 90 ? 90 : 30;
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul'));
-        $episodes = self::episode_snapshot($now->modify('-30 days'), $now);
+        $episodes = self::episode_snapshot($now->modify('-' . $windowDays . ' days'), $now);
         $manageUrl = self::manage_url(str_repeat('0', 64), $language);
-        return self::email_html($language, $now, $episodes, $manageUrl, 'preview');
+        return self::email_html($language, $now, $episodes, $manageUrl, 'preview', $windowDays);
     }
 
     public static function status(): array
@@ -514,7 +516,7 @@ final class RadioTEDU_Newsletter
         return $ok;
     }
 
-    private static function send_message(string $recipient, string $language, DateTimeImmutable $issueDate, array $episodes, string $kind, string $subjectPrefix = ''): bool
+    private static function send_message(string $recipient, string $language, DateTimeImmutable $issueDate, array $episodes, string $kind, string $subjectPrefix = '', int $windowDays = 30): bool
     {
         $recipient = strtolower(sanitize_email($recipient));
         if (!is_email($recipient)) {
@@ -536,10 +538,13 @@ final class RadioTEDU_Newsletter
         $token = is_array($subscriber) ? self::ensure_management_token((int) $subscriber['id']) : self::temporary_token($recipient);
         $manageUrl = self::manage_url($token, $language);
         $unsubscribeApi = add_query_arg('token', rawurlencode($token), rest_url('radiotedu/v1/newsletter/unsubscribe'));
-        $subject = $subjectPrefix . ($language === 'en'
-            ? 'RadioTEDU Monthly Podcasts · ' . $issueDate->format('F Y')
-            : 'RadioTEDU Aylık Podcastler · ' . wp_date('F Y', $issueDate->getTimestamp(), new DateTimeZone('Europe/Istanbul')));
-        $html = self::email_html($language, $issueDate, $episodes, $manageUrl, $kind);
+        $windowDays = $windowDays === 90 ? 90 : 30;
+        $subject = $subjectPrefix . ($kind === 'test' && $windowDays === 90
+            ? ($language === 'en' ? 'RadioTEDU Podcast Selection · The Latest 90 Days' : 'RadioTEDU Podcast Seçkisi · Son 90 Gün')
+            : ($language === 'en'
+                ? 'RadioTEDU Monthly Podcasts · ' . $issueDate->format('F Y')
+                : 'RadioTEDU Aylık Podcastler · ' . wp_date('F Y', $issueDate->getTimestamp(), new DateTimeZone('Europe/Istanbul'))));
+        $html = self::email_html($language, $issueDate, $episodes, $manageUrl, $kind, $windowDays);
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
             'List-Unsubscribe: <' . esc_url_raw($unsubscribeApi) . '>',
@@ -548,14 +553,15 @@ final class RadioTEDU_Newsletter
         return wp_mail($recipient, $subject, $html, $headers);
     }
 
-    private static function email_html(string $language, DateTimeImmutable $issueDate, array $episodes, string $manageUrl, string $kind): string
+    private static function email_html(string $language, DateTimeImmutable $issueDate, array $episodes, string $manageUrl, string $kind, int $windowDays = 30): string
     {
         $english = $language === 'en';
+        $windowDays = $windowDays === 90 ? 90 : 30;
         $technologyUrl = home_url($english ? '/technology/' : '/teknoloji/');
         $logo = get_theme_file_uri('/assets/images/radiotedu-logo.png');
         $windowEnd = $kind === 'preview' ? new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul')) : $issueDate;
-        $windowStart = $windowEnd->modify('-30 days');
-        $title = $english ? 'The latest 30 days in podcasts.' : 'Podcastlerle son 30 gün.';
+        $windowStart = $windowEnd->modify('-' . $windowDays . ' days');
+        $title = $english ? 'The latest ' . $windowDays . ' days in podcasts.' : 'Podcastlerle son ' . $windowDays . ' gün.';
         $period = $windowStart->format('d.m.Y') . ' · ' . $windowEnd->format('d.m.Y');
 
         ob_start();
@@ -572,7 +578,7 @@ final class RadioTEDU_Newsletter
                 </td></tr>
                 <tr><td style="padding:36px 36px 18px;border-bottom:1px solid #11100f;"><img src="<?php echo esc_url($logo); ?>" width="220" alt="RadioTEDU" style="display:block;max-width:220px;width:100%;height:auto;"></td></tr>
                 <tr><td style="padding:38px 36px 32px;">
-                    <p style="margin:0 0 10px;color:#ed1c24;font-size:12px;font-weight:700;letter-spacing:1.5px;"><?php echo esc_html($kind === 'preview' ? ($english ? 'EDITORIAL PREVIEW' : 'EDİTORYAL ÖNİZLEME') : ($english ? 'MONTHLY PODCAST LETTER' : 'AYLIK PODCAST MEKTUBU')); ?></p>
+                    <p style="margin:0 0 10px;color:#ed1c24;font-size:12px;font-weight:700;letter-spacing:1.5px;"><?php echo esc_html($kind === 'preview' ? ($english ? 'EDITORIAL PREVIEW' : 'EDİTORYAL ÖNİZLEME') : ($kind === 'test' && $windowDays === 90 ? ($english ? '90-DAY TEST SELECTION' : '90 GÜNLÜK TEST SEÇKİSİ') : ($english ? 'MONTHLY PODCAST LETTER' : 'AYLIK PODCAST MEKTUBU'))); ?></p>
                     <h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-size:42px;line-height:1.02;font-weight:400;letter-spacing:-1.5px;"><?php echo esc_html($title); ?></h1>
                     <p style="margin:0;color:#66615a;font-size:15px;"><?php echo esc_html($period); ?> · <?php echo esc_html($english ? count($episodes) . ' episodes' : count($episodes) . ' bölüm'); ?></p>
                 </td></tr>

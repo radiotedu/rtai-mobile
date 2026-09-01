@@ -407,6 +407,17 @@ function radiotedu_localized_url(string $url): string
         return $url;
     }
     $path = trim((string) ($parts['path'] ?? ''), '/');
+    if ($path === 'technology') {
+        return $url;
+    }
+    if ($path === 'teknoloji') {
+        $origin = isset($parts['scheme'], $parts['host'])
+            ? $parts['scheme'] . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '')
+            : '';
+        return $origin . '/technology/'
+            . (isset($parts['query']) ? '?' . $parts['query'] : '')
+            . (isset($parts['fragment']) ? '#' . $parts['fragment'] : '');
+    }
     $segments = $path === '' ? [] : explode('/', $path);
     if ($segments && isset(radiotedu_route_slugs()[$segments[0]])) {
         $segments[0] = radiotedu_route_slugs()[$segments[0]];

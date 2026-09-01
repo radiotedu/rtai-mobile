@@ -11,6 +11,7 @@ const teknoloji = read('website/standalone/teknoloji/index.html');
 const rtai = read('website/standalone/rtai/index.html');
 const header = read('website/wordpress-overlay/wp-content/themes/radiotedu/header.php');
 const footer = read('website/wordpress-overlay/wp-content/themes/radiotedu/footer.php');
+const themeFunctions = read('website/wordpress-overlay/wp-content/themes/radiotedu/functions.php');
 const rootLlms = read('website/root-discovery/llms.txt');
 const aiTxt = read('website/root-discovery/ai.txt');
 const llmsAiTxt = read('website/root-discovery/llms-ai.txt');
@@ -151,4 +152,10 @@ test('Technology pages version immutable layout assets so mobile fixes reach ret
         assert.match(page, /\/technology\/lab\.css\?v=20260901-r2/);
         assert.match(page, /\/technology\/lab\.js\?v=20260901-r2/);
     }
+});
+
+test('English menus route Technology to the standalone English page', () => {
+    assert.match(themeFunctions, /\$path === 'teknoloji'/);
+    assert.match(themeFunctions, /return \$origin \. '\/technology\/'/);
+    assert.match(themeFunctions, /\$path === 'technology'/);
 });

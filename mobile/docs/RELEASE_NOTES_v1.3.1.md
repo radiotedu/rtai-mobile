@@ -11,5 +11,9 @@
   the existing metered-network confirmation.
 - Makes production Gold verification respect the server-provided minimum play
   duration before score submission.
+- Adds the compact, scrollable three-line lyrics reader to the mobile player
+  and keeps game direction controls clear of phone system navigation areas.
+- Keeps monthly-newsletter consent opt-in scoped to new account registration;
+  ordinary sign-in never changes the listener's subscription preference.
 - Includes the latest website synchronized-lyrics and Spotify playlist fixes
   from `main`.

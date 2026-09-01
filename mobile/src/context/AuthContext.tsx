@@ -370,9 +370,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 {timeout: AUTH_REQUEST_TIMEOUT_MS},
             );
             await persistSession(response.data.data);
-            if (options.newsletterOptIn) {
-                await subscribeToMonthlyNewsletter(email, getCurrentLanguage()).catch(() => false);
-            }
         } catch (error: any) {
             throw new Error(error.response?.data?.error || 'Login failed');
         }
@@ -393,6 +390,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 {timeout: AUTH_REQUEST_TIMEOUT_MS},
             );
             await persistSession(response.data.data);
+            if (options.newsletterOptIn) {
+                await subscribeToMonthlyNewsletter(email, getCurrentLanguage()).catch(() => false);
+            }
         } catch (error: any) {
             throw new Error(error.response?.data?.error || 'Registration failed');
         }

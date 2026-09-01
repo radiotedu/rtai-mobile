@@ -1,19 +1,19 @@
 import axios from 'axios';
+import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {
   newsletterLanguage,
   subscribeToMonthlyNewsletter,
 } from '../src/services/newsletterService';
 
-jest.mock('axios', () => ({
-  __esModule: true,
-  default: {post: jest.fn()},
-}));
+jest.mock('axios');
 
 const mockedPost = axios.post as jest.MockedFunction<typeof axios.post>;
 
 describe('registration newsletter consent', () => {
-  beforeEach(() => mockedPost.mockReset());
+  beforeEach(() => {
+    mockedPost.mockReset();
+  });
 
   it('uses Turkish only for Turkish locales and English for every other locale', () => {
     expect(newsletterLanguage('tr-TR')).toBe('tr');

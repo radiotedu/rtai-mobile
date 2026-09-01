@@ -1,0 +1,41 @@
+name: NPM Terminal Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v1.3.2
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify main release commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" ]]
+          git fetch origin main --tags
+          [[ "$(git rev-parse origin/main)" == "$GITHUB_SHA" ]]
+          [[ "$(git rev-list -n 1 "${{ inputs.tag }}")" == "$GITHUB_SHA" ]]
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Verify package
+        run: |
+          node scripts/verify-release-version.mjs "${{ inputs.tag }}"
+          npm test --prefix terminal
+          npm run check --prefix terminal
+      - name: Publish radiotedu
+        run: npm publish ./terminal --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

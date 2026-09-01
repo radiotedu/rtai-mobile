@@ -4,10 +4,12 @@ const crypto = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {STATIONS, getStation, streamUrl, codecFor, listStations} = require('./stations');
 const {loadAuth, saveStudy, loadStudy, clearStudy} = require('./store');
-const {login, me, logout, startErpLogin, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
+const {login, me, gamificationHome, logout, startErpLogin, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
 const {readIcecastMetadata, isLive} = require('./metadata');
 const {Player} = require('./player');
+const {ListeningGold} = require('./gold');
 const {runTui} = require('./tui');
+const {version} = require('../package.json');
 
 function prompt(question) {
   return new Promise(resolve => { const rl = readline.createInterface({input: process.stdin, output: process.stdout}); rl.question(question, answer => { rl.close(); resolve(answer.trim()); }); });
@@ -24,7 +26,7 @@ function secretPrompt(question) {
       const key = chunk.toString();
       if (key === '\r' || key === '\n') { stdin.setRawMode?.(wasRaw || false); stdin.removeListener('data', onData); process.stdout.write('\n'); resolve(value); }
       else if (key === '\u0003') { stdin.setRawMode?.(wasRaw || false); stdin.removeListener('data', onData); process.stdout.write('\n'); resolve(''); }
-      else if (key === '\u007f') value = value.slice(0, -1);
+      else if (key === '\u007f' || key === '\b') value = value.slice(0, -1);
       else if (!key.startsWith('\x1b')) { value += key; process.stdout.write('*'); }
     };
     stdin.on('data', onData);
@@ -47,27 +49,45 @@ async function commandLogin(args) {
     const url = new URL(callback);
     const code = url.searchParams.get('erp_code');
     if (!code) throw new Error('Callback URL did not contain erp_code.');
-    console.log(`Signed in as ${(await exchangeErpCode(code)).display_name || 'RadioTEDU user'}.`);
-    return;
+    const user = await exchangeErpCode(code);
+    console.log(`Signed in as ${user.display_name || 'RadioTEDU user'}.`);
+    return user;
   }
   const email = await prompt('Email: ');
   const password = await secretPrompt('Password: ');
   const user = await login(email, password);
   console.log(`Signed in as ${user?.display_name || user?.email || 'RadioTEDU user'}.`);
+  return user;
+}
+
+async function accountSummary() {
+  if (!loadAuth()?.access_token) return {label: 'Guest', gold: null};
+  const [user, home] = await Promise.all([me(), gamificationHome()]);
+  return {label: user?.display_name || user?.email || 'RadioTEDU user', gold: Number(home?.points?.spendable_points ?? 0)};
 }
 
 async function commandPlay(args) {
   const station = getStation(args[0]);
   const qualityArg = args.find(arg => arg.startsWith('--quality='));
+  const playerArg = args.find(arg => arg.startsWith('--player='));
   const quality = qualityArg ? qualityArg.split('=')[1] : 'normal';
   if (quality === 'flac' && !args.includes('--allow-metered')) {
     const answer = await prompt('FLAC may use substantial data. Continue? [y/N] ');
     if (answer.toLowerCase() !== 'y') return;
   }
   const url = streamUrl(station, quality);
-  const player = new Player();
+  if (station.liveCheck && !(await isLive(url))) throw new Error(`${station.name} is not currently live.`);
+  const player = new Player(playerArg?.split('=')[1]);
+  const gold = new ListeningGold({
+    isPlaying: () => player.playing,
+    onUpdate: ({reward, balance, error}) => {
+      if (error) return process.stderr.write(`\nGold heartbeat warning: ${error.message}\n`);
+      if (reward?.applied) process.stdout.write(`\n+${reward.awarded} Gold${balance !== null ? ` · balance ${balance}` : ''}\n`);
+    },
+  });
   player.start(url, station.name);
-  console.log(`Playing ${station.name} · ${quality.toUpperCase()} · ${codecFor(quality)}`);
+  await gold.start(station.goldId || station.id).catch(() => false);
+  console.log(`Playing ${station.name} · ${quality.toUpperCase()} · ${codecFor(quality, station)} · ${player.name}`);
   let stopped = false;
   const update = async () => {
     const metadata = await readIcecastMetadata(url);
@@ -75,7 +95,7 @@ async function commandPlay(args) {
   };
   await update();
   const timer = setInterval(update, 30000);
-  const stop = () => { if (stopped) return; stopped = true; clearInterval(timer); player.stop(); process.stdout.write('\n'); process.exitCode = 0; };
+  const stop = () => { if (stopped) return; stopped = true; clearInterval(timer); gold.stop(); player.stop(); process.stdout.write('\n'); process.exitCode = 0; };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
   await new Promise(resolve => { const wait = setInterval(() => { if (!player.playing) { clearInterval(wait); resolve(); } }, 500); });
   stop();
@@ -120,29 +140,57 @@ async function runInteractive() {
   let activeStation = null;
   let quality = 'normal';
   let metadataTimer = null;
+  let activeState = null;
+  const gold = new ListeningGold({
+    isPlaying: () => player.playing,
+    onUpdate: ({reward, balance, error}) => {
+      if (!activeState) return;
+      if (error) { activeState.status = `Gold sync warning: ${error.message}`; activeState.requestRender?.(); return; }
+      if (balance !== null && activeState.account) activeState.account.gold = balance;
+      if (reward?.applied) activeState.status = `+${reward.awarded} Gold earned by listening`;
+      activeState.requestRender?.();
+    },
+  });
   await runTui({
     stations: listStations(),
     initialQuality: quality,
+    initialAccount: await accountSummary().catch(() => ({label: 'Guest', gold: null})),
+    playerName: player.name,
     onPlay: async (station, state) => {
-      if (quality === 'flac' && !station.flac) quality = 'normal';
+      activeState = state;
+      if (!station.qualities.includes(quality)) quality = 'normal';
       const url = streamUrl(station, quality);
       if (station.liveCheck && !(await isLive(url))) { state.status = 'Station is not currently live.'; return; }
       if (quality === 'flac') state.status = 'FLAC selected · confirm data plan';
       if (metadataTimer) clearInterval(metadataTimer);
-      player.start(url, station.name); activeStation = station; state.active = station; state.codec = codecFor(quality); state.metadata = (await readIcecastMetadata(url)).title || null; state.status = `Playing ${quality.toUpperCase()}`;
-      metadataTimer = setInterval(async () => { if (state.active?.id === station.id) state.metadata = (await readIcecastMetadata(url)).title || state.metadata; }, 30000);
+      gold.stop(); player.start(url, station.name); activeStation = station; state.active = station; state.codec = codecFor(quality, station); state.metadata = (await readIcecastMetadata(url)).title || null; state.status = `Playing ${quality.toUpperCase()}`;
+      await gold.start(station.goldId || station.id).catch(() => { state.status += ' · sign in to earn Gold'; });
+      metadataTimer = setInterval(async () => {
+        if (state.active?.id === station.id) {
+          state.metadata = (await readIcecastMetadata(url)).title || state.metadata;
+          state.requestRender?.();
+        }
+      }, 30000);
     },
     onQuality: state => {
       const station = activeStation || state.stations[state.selected];
-      const choices = station.flac ? ['normal', 'low', 'flac'] : ['normal', 'low'];
+      const choices = station.qualities;
       quality = choices[(choices.indexOf(quality) + 1) % choices.length];
-      state.codec = codecFor(quality); return quality;
+      state.codec = codecFor(quality, station); return quality;
     },
-    onPause: () => player.pause(),
+    onPause: async state => {
+      const paused = player.pause();
+      gold.stop();
+      if (!paused && activeStation) await gold.start(activeStation.goldId || activeStation.id).catch(() => false);
+      state.status = paused ? 'Paused' : 'Playback resumed';
+      return paused;
+    },
     onStudy: async state => { const current = loadStudy(); return current ? Math.floor((Date.now() - current.startedAt) / 60000) : null; },
-    onAccount: async () => { try { const user = await me(); return user?.display_name || user?.email || 'signed in'; } catch { return 'guest'; } },
-    onQuit: () => { if (metadataTimer) clearInterval(metadataTimer); player.stop(); },
-    onTick: () => {},
+    onAccount: async () => accountSummary().catch(() => ({label: 'Guest', gold: null})),
+    onLogin: async () => { await commandLogin([]); return accountSummary(); },
+    onLogout: async () => { gold.stop(); await logout(); return {label: 'Guest', gold: null}; },
+    onQuit: () => { if (metadataTimer) clearInterval(metadataTimer); gold.stop(); player.stop(); },
+    onTick: state => { activeState = state; },
   });
 }
 
@@ -150,14 +198,14 @@ async function main() {
   const args = process.argv.slice(2);
   if (!args.length) return runInteractive();
   const [command, ...rest] = args;
-  if (command === '--version' || command === '-v') return console.log('RadioTEDU terminal 0.1.0');
+  if (command === '--version' || command === '-v') return console.log(`RadioTEDU terminal ${version}`);
   if (command === 'stations') return rest.includes('--json') ? console.log(JSON.stringify(listStations(), null, 2)) : listStations().forEach(item => console.log(`${item.id.padEnd(8)} ${item.name.padEnd(22)} ${item.qualities.join(', ')}`));
   if (command === 'login') return commandLogin(rest);
   if (command === 'logout') { await logout(); return console.log('Signed out.'); }
-  if (command === 'account') return console.log(JSON.stringify(await me(), null, 2));
+  if (command === 'account' || command === 'gold') return console.log(JSON.stringify(await accountSummary(), null, 2));
   if (command === 'play') return commandPlay(rest);
   if (command === 'study') return commandStudy(rest);
-  if (command === 'help') return console.log('radiotedu [stations|play|login|logout|account|study]');
+  if (command === 'help') return console.log('radiotedu [stations|play|login|logout|account|gold|study]');
   throw new Error(`Unknown command: ${command}`);
 }
 

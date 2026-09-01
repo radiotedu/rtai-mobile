@@ -13,8 +13,9 @@ export async function verifyReleaseVersion(tag, repositoryRoot = root) {
   if (!match) throw new Error('Release tag must use vMAJOR.MINOR.PATCH format.');
   const version = match[1];
   const read = relative => readFile(path.join(repositoryRoot, relative), 'utf8');
-  const [mobilePackage, appGradle, tvGradle, wearGradle, xcodeProject] = await Promise.all([
+  const [mobilePackage, terminalPackage, appGradle, tvGradle, wearGradle, xcodeProject] = await Promise.all([
     read('mobile/package.json'),
+    read('terminal/package.json'),
     read('mobile/android/app/build.gradle'),
     read('mobile/android/tv/build.gradle'),
     read('mobile/android/wear/build.gradle'),
@@ -22,6 +23,7 @@ export async function verifyReleaseVersion(tag, repositoryRoot = root) {
   ]);
   const versions = {
     'mobile/package.json': JSON.parse(mobilePackage).version,
+    'terminal/package.json': JSON.parse(terminalPackage).version,
     'Android mobile': uniqueMatches(appGradle, /versionName\s+["']([^"']+)["']/g)[0],
     'Android TV': uniqueMatches(tvGradle, /versionName\s+["']([^"']+)["']/g)[0],
     'Android Wear': uniqueMatches(wearGradle, /versionName\s+["']([^"']+)["']/g)[0],

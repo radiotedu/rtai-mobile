@@ -57,6 +57,15 @@ async function login(email, password) {
 }
 
 async function me() { return request('/auth/me'); }
+async function gamificationHome() { return request('/gamification/home'); }
+
+async function startListening(channelId, clientSessionId) {
+  return request('/economy/listening/start', {method: 'POST', body: JSON.stringify({channel_id: channelId, client_session_id: clientSessionId})});
+}
+
+async function heartbeatListening(sessionId, nonce) {
+  return request('/economy/listening/heartbeat', {method: 'POST', body: JSON.stringify({session_id: sessionId, nonce, is_playing: true})});
+}
 
 async function logout() {
   try { await request('/auth/logout', {method: 'POST'}); } finally { clearAuth(); }
@@ -85,4 +94,4 @@ async function finishStudySession(sessionId, nonce) {
   return request(`/study/sessions/${encodeURIComponent(sessionId)}/finish`, {method: 'POST', body: JSON.stringify({nonce})});
 }
 
-module.exports = {API_BASE, request, login, me, logout, startErpLogin, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession};
+module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession};

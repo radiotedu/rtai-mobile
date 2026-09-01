@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -159,6 +160,8 @@ class RadioTeduCarService : MediaLibraryService() {
     private val tileArtworkCache = mutableMapOf<Int, ByteArray>()
     private val artworkExecutor = Executors.newSingleThreadExecutor()
     private val trackArtworkCache = ConcurrentHashMap<String, TrackArtwork>()
+    private val remoteArtworkCache = ConcurrentHashMap<String, ByteArray>()
+    private val pendingRemoteArtwork = ConcurrentHashMap.newKeySet<String>()
     private var activeArtworkLookupKey: String? = null
     private var pendingHiFiMediaId: String? = null
     private var pendingHiFiUntilMs = 0L
@@ -219,11 +222,13 @@ class RadioTeduCarService : MediaLibraryService() {
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR)
 
         CarBridge.onCatalogChanged = {
+            preloadCatalogArtwork()
             mainHandler.post { notifyCatalogChanged() }
         }
         CarBridge.onNowPlaying = { _, _, _, _ ->
             // Native Media3 player/session are the only playback state source.
         }
+        preloadCatalogArtwork()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession =
@@ -445,8 +450,9 @@ class RadioTeduCarService : MediaLibraryService() {
         if (current.mediaId != mediaId) return
         val index = player.currentMediaItemIndex
         if (index == C.INDEX_UNSET) return
+        val cachedUri = cachedCarArtworkUri(this, artwork.uri) ?: Uri.parse(artwork.uri)
         val metadata = current.mediaMetadata.buildUpon()
-            .setArtworkUri(Uri.parse(artwork.uri))
+            .setArtworkUri(cachedUri)
             .setArtworkData(artwork.data, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
             .build()
         replaceCurrentMetadata(index, current, metadata)
@@ -487,7 +493,9 @@ class RadioTeduCarService : MediaLibraryService() {
         } finally {
             image.disconnect()
         }
-        TrackArtwork(artworkUri, bytes)
+        val thumbnail = normalizeRemoteArtwork(bytes) ?: return@runCatching null
+        cacheCarArtwork(this, artworkUri, thumbnail)
+        TrackArtwork(artworkUri, thumbnail)
     }.getOrNull()
 
     private fun openArtworkConnection(url: URL): HttpURLConnection =
@@ -497,6 +505,92 @@ class RadioTeduCarService : MediaLibraryService() {
             instanceFollowRedirects = true
             setRequestProperty("Accept", "application/json,image/*")
         }
+
+    /**
+     * Some Android Auto/AAOS hosts do not dereference remote artwork URIs.
+     * Fetch each distinct catalog cover once and attach its bytes to Media3.
+     */
+    private fun preloadCatalogArtwork() {
+        val urls = mutableSetOf<String>()
+        fun collect(json: JSONObject) {
+            json.optString("artwork")
+                .takeIf { it.startsWith("https://") }
+                ?.let(urls::add)
+            json.optJSONArray("items")?.let { items ->
+                for (index in 0 until items.length()) {
+                    items.optJSONObject(index)?.let(::collect)
+                }
+            }
+        }
+        readCatalog().optJSONArray("categories")?.let { categories ->
+            for (index in 0 until categories.length()) {
+                categories.optJSONObject(index)?.let(::collect)
+            }
+        }
+        urls.filter {
+            cachedCarArtworkUri(this, it) == null &&
+                !remoteArtworkCache.containsKey(it) &&
+                pendingRemoteArtwork.add(it)
+        }
+            .forEach { artwork ->
+                artworkExecutor.execute {
+                    val bytes = downloadArtwork(artwork)
+                    pendingRemoteArtwork.remove(artwork)
+                    if (bytes != null) {
+                        cacheCarArtwork(this, artwork, bytes)
+                        remoteArtworkCache[artwork] = bytes
+                        mainHandler.post { notifyCatalogChanged() }
+                    }
+                }
+            }
+    }
+
+    private fun downloadArtwork(uri: String): ByteArray? = runCatching {
+        val connection = openArtworkConnection(URL(uri))
+        try {
+            if (connection.responseCode !in 200..299) return@runCatching null
+            if (!connection.contentType.orEmpty().startsWith("image/")) return@runCatching null
+            connection.inputStream.use { input ->
+                val output = ByteArrayOutputStream()
+                val buffer = ByteArray(8 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    if (output.size() + count > TRACK_ARTWORK_MAX_BYTES) return@runCatching null
+                    output.write(buffer, 0, count)
+                }
+                normalizeRemoteArtwork(output.toByteArray())
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }.getOrNull()
+
+    private fun normalizeRemoteArtwork(source: ByteArray): ByteArray? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(source, 0, source.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (bounds.outWidth / sample > CAR_TILE_SIZE_PX * 2 ||
+            bounds.outHeight / sample > CAR_TILE_SIZE_PX * 2
+        ) {
+            sample *= 2
+        }
+        val decoded = BitmapFactory.decodeByteArray(
+            source,
+            0,
+            source.size,
+            BitmapFactory.Options().apply { inSampleSize = sample },
+        ) ?: return null
+        val scaled = Bitmap.createScaledBitmap(decoded, CAR_TILE_SIZE_PX, CAR_TILE_SIZE_PX, true)
+        if (scaled !== decoded) decoded.recycle()
+        val bytes = ByteArrayOutputStream().use { output ->
+            scaled.compress(Bitmap.CompressFormat.JPEG, 88, output)
+            output.toByteArray()
+        }
+        scaled.recycle()
+        return bytes.takeIf { it.size <= CAR_TILE_MAX_BYTES }
+    }
 
     private data class TrackArtwork(val uri: String, val data: ByteArray)
 
@@ -1422,13 +1516,19 @@ class RadioTeduCarService : MediaLibraryService() {
     private fun MediaMetadata.Builder.applyArtwork(artwork: String): MediaMetadata.Builder = apply {
         if (artwork.isBlank()) return@apply
 
-        // Keep the original URI so in-process/current Media3 hosts can load the
-        // full 2048 px resource. Also attach a tiny deterministic thumbnail for
-        // hosts that cannot dereference resources owned by another package.
-        runCatching { setArtworkUri(Uri.parse(artwork)) }
         val tileData = bundledTileResource(artwork)?.let(::renderBundledTile)
-        if (tileData != null) {
-            setArtworkData(tileData, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+        val remoteData = remoteArtworkCache[artwork]
+        val cachedRemoteUri = cachedCarArtworkUri(this@RadioTeduCarService, artwork)
+        if (cachedRemoteUri != null) {
+            runCatching { setArtworkUri(cachedRemoteUri) }
+            if (remoteData != null) {
+                runCatching { setArtworkData(remoteData, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
+            }
+        } else {
+            runCatching { setArtworkUri(Uri.parse(artwork)) }
+            if (tileData != null) {
+                runCatching { setArtworkData(tileData, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
+            }
         }
     }
 

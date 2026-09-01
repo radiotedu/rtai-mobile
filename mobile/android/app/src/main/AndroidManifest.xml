@@ -129,6 +129,13 @@
           android:value="true" />
       </service>
 
+      <!-- Public, read-only cached podcast covers for Android Auto/AAOS hosts.
+           Filenames are strict SHA-256 values; no private app files are exposed. -->
+      <provider
+        android:name=".car.CarArtworkProvider"
+        android:authorities="com.radiotedumobile.carartwork"
+        android:exported="true" />
+
       <receiver
         android:name=".notifications.ListeningReminderReceiver"
         android:exported="false" />

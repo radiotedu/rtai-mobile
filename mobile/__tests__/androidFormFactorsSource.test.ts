@@ -65,8 +65,12 @@ describe('Android form-factor delivery', () => {
   });
 
   it('binds Android Auto artwork and controls to packaged icon resources', () => {
+    const manifest = read('app/src/main/AndroidManifest.xml');
     const service = read(
       'app/src/main/java/com/radiotedumobile/car/RadioTeduCarService.kt',
+    );
+    const provider = read(
+      'app/src/main/java/com/radiotedumobile/car/CarArtworkProvider.kt',
     );
     const drawableRoot = path.join(root, 'app/src/main/res/drawable-nodpi');
     const stationIcons = [
@@ -86,6 +90,11 @@ describe('Android form-factor delivery', () => {
     expect(service).toContain(
       '"car_tile_podcasts" -> R.drawable.car_tile_podcasts',
     );
+    expect(service).toContain('normalizeRemoteArtwork');
+    expect(service).toContain('cachedCarArtworkUri');
+    expect(manifest).toContain('.car.CarArtworkProvider');
+    expect(provider).toContain('SAFE_ARTWORK_NAME');
+    expect(provider).toContain('ParcelFileDescriptor.MODE_READ_ONLY');
 
     for (const station of stationIcons) {
       expect(service).toContain(
@@ -101,7 +110,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('tv/build.gradle');
     const manifest = read('tv/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 13011');
+    expect(gradle).toContain('versionCode 13021');
     expect(manifest).toContain('android.software.leanback');
     expect(manifest).toContain('android.intent.category.LEANBACK_LAUNCHER');
     expect(manifest).toContain('android.hardware.touchscreen');
@@ -112,7 +121,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('wear/build.gradle');
     const manifest = read('wear/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 13012');
+    expect(gradle).toContain('versionCode 13022');
     expect(gradle).toContain('targetSdkVersion 35');
     expect(manifest).toContain('android.hardware.type.watch');
     expect(manifest).toContain('com.google.android.wearable.standalone');

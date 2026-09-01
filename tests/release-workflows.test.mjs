@@ -4,8 +4,8 @@ import test from 'node:test';
 
 import {verifyReleaseVersion} from '../scripts/verify-release-version.mjs';
 
-test('release tag matches mobile, TV, Wear, and iOS versions', async () => {
-  assert.deepEqual(await verifyReleaseVersion('v1.3.1'), {tag: 'v1.3.1', version: '1.3.1'});
+test('release tag matches mobile, terminal, TV, Wear, and iOS versions', async () => {
+  assert.deepEqual(await verifyReleaseVersion('v1.3.2'), {tag: 'v1.3.2', version: '1.3.2'});
   await assert.rejects(verifyReleaseVersion('v1.0.0'), /does not match/);
   await assert.rejects(verifyReleaseVersion('latest'), /vMAJOR\.MINOR\.PATCH/);
 });
@@ -40,6 +40,8 @@ test('Android release verifies AAB integrity without rejecting the pinned self-s
   assert.match(workflow, /EXPECTED_ANDROID_CERT_SHA256/);
   assert.match(workflow, /jarsigner -verify "\$aab"/);
   assert.doesNotMatch(workflow, /jarsigner -verify -strict/);
+  assert.match(workflow, /RadioTEDU-Terminal-\$\{RELEASE_TAG\}\.zip/);
+  assert.match(workflow, /terminal_version/);
 });
 
 test('Android QA release is unmistakably debug-signed and includes Android Auto, TV, and Wear', async () => {
@@ -51,6 +53,16 @@ test('Android QA release is unmistakably debug-signed and includes Android Auto,
   assert.match(workflow, /debug-signed/);
   assert.match(workflow, /prerelease: true/);
   assert.doesNotMatch(workflow, /bundleRelease|assembleRelease/);
+});
+
+test('terminal release publishes the radiotedu command to npm from main', async () => {
+  const packageJson = JSON.parse(await readFile(new URL('../terminal/package.json', import.meta.url), 'utf8'));
+  assert.equal(packageJson.name, 'radiotedu');
+  assert.equal(packageJson.bin.radiotedu, 'src/index.js');
+  const workflow = await readFile(new URL('../.github/workflows/npm-terminal-release.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /npm publish \.\/terminal --access public/);
+  assert.match(workflow, /secrets\.NPM_TOKEN/);
+  assert.match(workflow, /origin\/main/);
 });
 
 test('device screenshots use native phone, tablet, TV, Wear, car, iPhone, and iPad hosts', async () => {

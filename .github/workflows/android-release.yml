@@ -192,6 +192,17 @@ jobs:
             cp "$aab" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.aab"
           done
 
+          terminal_version="$(node -p "require('./terminal/package.json').version")"
+          [[ "v${terminal_version}" == "$RELEASE_TAG" ]] || {
+            printf 'Terminal version %s does not match %s.\n' "$terminal_version" "$RELEASE_TAG" >&2
+            exit 1
+          }
+          zip -qr "$asset_dir/RadioTEDU-Terminal-${RELEASE_TAG}.zip" terminal \
+            -x 'terminal/node_modules/*' 'terminal/.DS_Store'
+          npm pack ./terminal --pack-destination "$asset_dir"
+          mv "$asset_dir/radiotedu-${terminal_version}.tgz" \
+            "$asset_dir/RadioTEDU-Terminal-${RELEASE_TAG}.tgz"
+
           (cd "$asset_dir" && sha256sum -- * > SHA256SUMS.txt)
           printf 'asset_dir=%s\n' "$asset_dir" >> "$GITHUB_OUTPUT"
 

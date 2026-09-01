@@ -1,8 +1,7 @@
 {
-  "name": "@radiotedu/terminal",
-  "version": "0.1.0",
-  "private": true,
-  "description": "RadioTEDU terminal player and study timer for Linux, macOS, and Windows",
+  "name": "radiotedu",
+  "version": "1.3.2",
+  "description": "Spotify-inspired RadioTEDU terminal radio, Gold and Study client",
   "type": "commonjs",
   "bin": {
     "radiotedu": "src/index.js"
@@ -10,8 +9,14 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/tui.js && node --check src/api.js && node --check src/stations.js && node --check src/store.js && node --check src/player.js"
+    "check": "node --check src/index.js && node --check src/tui.js && node --check src/api.js && node --check src/stations.js && node --check src/store.js && node --check src/player.js && node --check src/gold.js",
+    "prepublishOnly": "npm test && npm run check"
   },
+  "files": ["src", "README.md"],
+  "keywords": ["radiotedu", "radio", "terminal", "tui", "ffplay", "mpv"],
+  "homepage": "https://radiotedu.com",
+  "repository": {"type": "git", "url": "git+https://github.com/radiotedu/rtai-mobile.git", "directory": "terminal"},
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=18"
   }

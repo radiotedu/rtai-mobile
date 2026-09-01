@@ -194,6 +194,40 @@ function radiotedu_station_logo_url(int $postId): string
     return radiotedu_card_image($postId);
 }
 
+function radiotedu_station_summary(int $postId): string
+{
+    $stableId = class_exists('RadioTEDU_Content')
+        ? RadioTEDU_Content::stable_id($postId)
+        : (string) get_post_meta($postId, '_rt_stable_id', true);
+    $summaries = [
+        'radiotedu-classic' => [
+            'tr' => 'Klasik müziğin zamansız eserleri.',
+            'en' => 'Timeless works from the classical repertoire.',
+        ],
+        'radiotedu-jazz' => [
+            'tr' => 'Caz klasiklerinden yeni seslere.',
+            'en' => 'Jazz classics and fresh new sounds.',
+        ],
+        'radiotedu-lofi' => [
+            'tr' => 'Derslere ve sakin anlara lo-fi ritimler.',
+            'en' => 'Lo-fi beats for studying and slower moments.',
+        ],
+        'radiotedu-rock' => [
+            'tr' => 'Rock klasiklerinden alternatif seslere.',
+            'en' => 'Rock classics and alternative sounds.',
+        ],
+        'radiotedu-spark' => [
+            'tr' => 'Güne tempo katan yüksek enerjili seçkiler.',
+            'en' => 'High-energy picks to set the pace.',
+        ],
+    ];
+    $language = radiotedu_current_language() === 'en' ? 'en' : 'tr';
+    if (isset($summaries[$stableId][$language])) {
+        return $summaries[$stableId][$language];
+    }
+    return wp_trim_words(get_the_excerpt($postId), 16);
+}
+
 function radiotedu_episode_play_button(int $postId): void
 {
     $audio = (string) get_post_meta($postId, '_rt_audio_url', true);

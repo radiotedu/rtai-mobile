@@ -20,7 +20,7 @@ describe('manual lyrics reader', () => {
 
     expect(player).toContain('nestedScrollEnabled');
     expect(player).toContain('showsVerticalScrollIndicator');
-    expect(player).toContain('height: Math.min(300, Math.max(230, height * 0.32))');
+    expect(player).toContain('lyricsScroller: {flexGrow: 0, height: 124}');
     expect(player).not.toMatch(/lyricsStartedAt|activeLyric|setInterval/);
     expect(service).toContain('candidate.plainLyrics || candidate.syncedLyrics');
     expect(service).toContain('https://lrclib.net/api/search');

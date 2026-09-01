@@ -386,13 +386,13 @@ const styles = StyleSheet.create({
   goldenFoodCell: {backgroundColor: '#FF8A4C', borderColor: '#FFD4BA', shadowColor: '#FF8A4C', shadowOpacity: 0.8, shadowRadius: 5, elevation: 5},
   obstacleCell: {backgroundColor: '#33252B', borderColor: '#74505D', transform: [{scale: 0.82}]},
   obstacleCore: {width: 8, height: 8, borderRadius: 3, transform: [{rotate: '45deg'}], backgroundColor: '#B87A8E'},
-  controls: {alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg, gap: 4},
+  controls: {alignItems: 'center', justifyContent: 'center', marginTop: SPACING.xs, gap: 4},
   dpadTop: {alignItems: 'center'},
   dpadMiddle: {flexDirection: 'row', alignItems: 'center', gap: 4},
   dpadBottom: {alignItems: 'center'},
   controlButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#17221B', borderWidth: 1, borderColor: 'rgba(72,224,138,0.28)'},
   pauseButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#26B96B', shadowColor: '#48E08A', shadowOpacity: 0.32, shadowRadius: 10, elevation: 6},
-  helpText: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginTop: SPACING.md},
+  helpText: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center', marginTop: SPACING.sm},
 });
 
 export default SnakeScreen;

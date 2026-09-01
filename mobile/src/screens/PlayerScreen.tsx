@@ -410,7 +410,7 @@ const PlayerScreen = ({route}: any) => {
                 </View>
               </View>
               <ScrollView
-                style={[styles.lyricsScroller, {height: Math.min(300, Math.max(230, height * 0.32))}]}
+                style={styles.lyricsScroller}
                 contentContainerStyle={styles.lyricsContent}
                 nestedScrollEnabled
                 persistentScrollbar
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   lyricsHeaderActions: {flexDirection: 'row', alignItems: 'center', gap: SPACING.sm},
   lyricsProvider: {color: COLORS.textMuted, fontSize: 10, fontWeight: '800'},
   lyricsClose: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
-  lyricsScroller: {flexGrow: 0},
+  lyricsScroller: {flexGrow: 0, height: 124},
   lyricsContent: {paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, gap: 10},
   lyricsLine: {color: COLORS.text, fontSize: 16, lineHeight: 24},
   menuOverlay: {

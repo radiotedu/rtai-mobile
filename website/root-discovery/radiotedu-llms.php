@@ -11,6 +11,8 @@ if (!is_file($source) || !is_readable($source)) {
 }
 
 header('Content-Type: text/plain; charset=utf-8');
-header('Cache-Control: public, max-age=300, must-revalidate');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 header('X-Content-Type-Options: nosniff');
 readfile($source);

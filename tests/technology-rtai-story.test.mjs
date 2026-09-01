@@ -103,7 +103,10 @@ test('Search and AI discovery files describe the new public surface', () => {
   const discoveryRule = read('website/iis/radiotedu-llm-discovery-rule.xml');
   assert.match(discoveryRule, /\^llms\\\.txt\$/);
   assert.match(discoveryRule, /radiotedu-llms\.php/);
-  assert.match(read('website/root-discovery/radiotedu-llms.php'), /Content-Type: text\/plain; charset=utf-8/);
+  assert.match(discoveryRule, /revision=20260901/);
+  const discoveryHandler = read('website/root-discovery/radiotedu-llms.php');
+  assert.match(discoveryHandler, /Content-Type: text\/plain; charset=utf-8/);
+  assert.match(discoveryHandler, /Cache-Control: no-cache, no-store, must-revalidate/);
   assert.match(read('website/iis/technology-server.js'), /'\.pdf': 'application\/pdf'/);
   for (const route of ['rtai', 'technology', 'teknoloji']) {
     assert.equal((sitemap.match(new RegExp(`<loc>https://radiotedu\\.com/${route}/</loc>`, 'g')) || []).length, 1, `${route} sitemap entry must be unique`);

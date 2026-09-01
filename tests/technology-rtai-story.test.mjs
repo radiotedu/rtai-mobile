@@ -19,11 +19,11 @@ const sitemap = read('website/root-discovery/sitemap-radiotedu-products.xml');
 test('Technology pages retain every ecosystem cluster', () => {
   const required = [
     'OnAir', 'RTSAS', 'Focus', 'AI Radio', 'RTAI Jingle', 'Situation Room',
-    'Voting', 'Juke Local', 'Gold', 'tickets', 'Hub', 'Social', 'Android Auto',
+    'Voting', 'Juke Local', 'Gold', 'tickets', 'Hub', 'ERP', 'ESG', 'Social', 'Android Auto',
     'Google Cast', 'Android TV', 'Wear OS', 'Offline podcasts', 'Sesli Kütüphane'
   ];
   for (const token of required) assert.ok(technology.includes(token), `missing ${token}`);
-  const turkishRequired = ['OnAir', 'RTSAS', 'Focus', 'AI Radio', 'RTAI Jingle', 'Situation Room', 'Voting', 'Juke Local', 'Gold', 'Bilet', 'Hub', 'Social', 'Android Auto', 'Google Cast', 'Android TV', 'Wear OS', 'Sesli Kütüphane'];
+  const turkishRequired = ['OnAir', 'RTSAS', 'Focus', 'AI Radio', 'RTAI Jingle', 'Situation Room', 'Voting', 'Juke Local', 'Gold', 'Bilet', 'Hub', 'ERP', 'ESG', 'Social', 'Android Auto', 'Google Cast', 'Android TV', 'Wear OS', 'Sesli Kütüphane'];
   for (const token of turkishRequired) assert.ok(teknoloji.includes(token), `Turkish page missing ${token}`);
   for (const page of [technology, teknoloji]) {
     for (const goal of ['SDG 4', 'SDG 10', 'SDG 17']) assert.match(page, new RegExp(goal));
@@ -48,7 +48,7 @@ test('Both papers are presented with Arda Akgül and downloadable files', () => 
 test('Every local Technology image and research link ships with the release', () => {
   const references = [...technology.matchAll(/(?:src|href)="(\/technology\/(?:assets|research)\/[^"?#]+)"/g)]
     .map((match) => match[1]);
-  assert.ok(references.length >= 10);
+  assert.ok(references.length >= 14);
   for (const reference of references) {
     const local = reference.replace('/technology/', 'website/standalone/technology/');
     assert.ok(fs.existsSync(path.join(root, local)), `missing release asset ${reference}`);
@@ -117,9 +117,31 @@ test('Technology pages use a compact, touch-safe mobile layout', () => {
 
   assert.match(mobile, /h1 \{ font-size: clamp\(2\.55rem,12vw,3\.4rem\); \}/);
   assert.match(mobile, /\.cluster \{ padding-block: 76px; \}/);
-  assert.match(mobile, /width: min\(100%, clamp\(310px, 62vw, 460px\)\)/);
-  assert.match(mobile, /\.participation-stage__lead \{ width: min\(100%, clamp\(294px, 52vw, 390px\)\)/);
-  assert.match(mobile, /max-height: 320px/);
+  assert.match(mobile, /width: min\(100%, 560px\)/);
+  assert.match(mobile, /\.participation-stage__lead \{ width: min\(100%, 460px\)/);
+  assert.match(mobile, /max-height: 360px/);
+  assert.match(mobile, /\.js \[data-reveal\] \{ opacity: 1; transform: none; transition: none; \}/);
+  assert.match(mobile, /@media \(max-width: 560px\)/);
+  assert.match(mobile, /object-fit: cover/);
   assert.match(mobile, /min-width: 44px/);
   assert.match(mobile, /min-height: 44px/);
+});
+
+test('Technology pages expose ERP, ticketing and ESG-linked Audio Library media', () => {
+  const css = read('website/standalone/technology/lab.css');
+  const script = read('website/standalone/technology/lab.js');
+  for (const page of [technology, teknoloji]) {
+    assert.match(page, /class="operations-story"/);
+    assert.match(page, /radiotedu-hub-signed-in-safe\.png/);
+    assert.match(page, /ERP/);
+    assert.match(page, /bilet|ticket/i);
+    assert.match(page, /ESG/);
+    assert.match(page, /sesli-kutuphane\.png/);
+    for (const image of ['sdg-04-quality-education.png', 'sdg-10-reduced-inequalities.png', 'sdg-17-partnerships.png']) {
+      assert.match(page, new RegExp(image.replace('.', '\\.')));
+    }
+  }
+  assert.match(css, /\.sdg-logos/);
+  assert.match(script, /removeFailedImage/);
+  assert.match(script, /media-unavailable/);
 });

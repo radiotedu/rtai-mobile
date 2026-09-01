@@ -22,6 +22,21 @@
     if (event.key === 'Escape') setMenu(false);
   });
 
+  const removeFailedImage = (image) => {
+    const goal = image.closest('.sdg-logos li');
+    if (goal) {
+      goal.remove();
+      return;
+    }
+    image.hidden = true;
+    image.closest('figure, .situation-band, .operations-story, .social-frame, .access-story')?.classList.add('media-unavailable');
+  };
+
+  document.querySelectorAll('img').forEach((image) => {
+    image.addEventListener('error', () => removeFailedImage(image), { once: true });
+    if (image.complete && image.naturalWidth === 0) removeFailedImage(image);
+  });
+
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const reveals = [...document.querySelectorAll('[data-reveal]')];
   if (reducedMotion || !('IntersectionObserver' in window)) {

@@ -378,31 +378,37 @@ const AUTH_FIX_COPY: Record<AppLanguage, Record<string, string>> = {
     'login.requestError': 'Sign-in failed. Check your details and connection, then try again.',
     'login.resetSubject': 'RadioTEDU account password reset',
     'register.requestError': 'Your account could not be created. Check your details and connection, then try again.',
+    'register.newsletter': 'I want to receive the monthly RadioTEDU podcast newsletter and upcoming events by email. I can unsubscribe at any time.',
   },
   tr: {
     'login.requestError': 'Giriş yapılamadı. Bilgilerini ve bağlantını kontrol edip tekrar dene.',
     'login.resetSubject': 'RadioTEDU hesap şifresi sıfırlama',
     'register.requestError': 'Hesabın oluşturulamadı. Bilgilerini ve bağlantını kontrol edip tekrar dene.',
+    'register.newsletter': 'Aylık RadioTEDU podcast bültenini ve gelecek etkinlikleri e-posta ile almak istiyorum. İstediğim zaman abonelikten çıkabilirim.',
   },
   ru: {
     'login.requestError': 'Не удалось войти. Проверьте данные и соединение, затем повторите попытку.',
     'login.resetSubject': 'Сброс пароля аккаунта RadioTEDU',
     'register.requestError': 'Не удалось создать аккаунт. Проверьте данные и соединение, затем повторите попытку.',
+    'register.newsletter': 'Я хочу получать ежемесячную рассылку RadioTEDU о подкастах и предстоящих событиях. Отписаться можно в любое время.',
   },
   ar: {
     'login.requestError': 'تعذر تسجيل الدخول. تحقق من البيانات والاتصال ثم حاول مجدداً.',
     'login.resetSubject': 'إعادة تعيين كلمة مرور حساب RadioTEDU',
     'register.requestError': 'تعذر إنشاء الحساب. تحقق من البيانات والاتصال ثم حاول مجدداً.',
+    'register.newsletter': 'أرغب في تلقي نشرة RadioTEDU الشهرية للبودكاست والفعاليات القادمة عبر البريد الإلكتروني. يمكنني إلغاء الاشتراك في أي وقت.',
   },
   de: {
     'login.requestError': 'Anmeldung fehlgeschlagen. Prüfe deine Angaben und Verbindung und versuche es erneut.',
     'login.resetSubject': 'Passwort des RadioTEDU-Kontos zurücksetzen',
     'register.requestError': 'Dein Konto konnte nicht erstellt werden. Prüfe deine Angaben und Verbindung und versuche es erneut.',
+    'register.newsletter': 'Ich möchte den monatlichen RadioTEDU-Podcast-Newsletter und Hinweise auf kommende Veranstaltungen per E-Mail erhalten. Ich kann mich jederzeit abmelden.',
   },
   fr: {
     'login.requestError': 'Connexion impossible. Vérifiez vos informations et votre connexion, puis réessayez.',
     'login.resetSubject': 'Réinitialisation du mot de passe du compte RadioTEDU',
     'register.requestError': 'Impossible de créer votre compte. Vérifiez vos informations et votre connexion, puis réessayez.',
+    'register.newsletter': 'Je souhaite recevoir par e-mail la newsletter mensuelle des podcasts RadioTEDU et les événements à venir. Je peux me désabonner à tout moment.',
   },
 };
 

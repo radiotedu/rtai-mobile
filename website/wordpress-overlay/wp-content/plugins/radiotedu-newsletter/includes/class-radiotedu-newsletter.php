@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 
 final class RadioTEDU_Newsletter
 {
-    private const CONSENT_VERSION = 'newsletter-2026-08-31';
+    private const CONSENT_VERSION = 'newsletter-2026-09-01';
     private const MAX_BATCH = 5;
 
     private static array $config = [];
@@ -325,6 +325,41 @@ final class RadioTEDU_Newsletter
         return ['seen' => $seen];
     }
 
+    public static function sync_upcoming_events(array $events): array
+    {
+        $clean = [];
+        foreach (array_slice($events, 0, 12) as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+            $id = sanitize_text_field((string) ($event['id'] ?? ''));
+            $title = sanitize_text_field((string) ($event['title'] ?? ''));
+            $startsAt = sanitize_text_field((string) ($event['starts_at'] ?? ''));
+            if ($id === '' || $title === '' || $startsAt === '') {
+                continue;
+            }
+            try {
+                $start = new DateTimeImmutable($startsAt);
+                $endValue = sanitize_text_field((string) ($event['ends_at'] ?? ''));
+                $end = $endValue !== '' ? new DateTimeImmutable($endValue) : $start;
+            } catch (Throwable) {
+                continue;
+            }
+            $clean[] = [
+                'id' => substr($id, 0, 64),
+                'title' => substr($title, 0, 190),
+                'description' => wp_trim_words(wp_strip_all_tags((string) ($event['description'] ?? '')), 30),
+                'starts_at' => $start->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
+                'ends_at' => $end->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
+                'location' => substr(sanitize_text_field((string) ($event['location'] ?? '')), 0, 190),
+                'image_url' => esc_url_raw((string) ($event['image_url'] ?? '')),
+            ];
+        }
+        usort($clean, static fn(array $left, array $right): int => strcmp($left['starts_at'], $right['starts_at']));
+        update_option('radiotedu_newsletter_upcoming_events', $clean, false);
+        return ['seen' => count($clean)];
+    }
+
     public static function run_scheduled(?DateTimeImmutable $clock = null): array
     {
         $timezone = new DateTimeZone('Europe/Istanbul');
@@ -396,7 +431,7 @@ final class RadioTEDU_Newsletter
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul'));
         $episodes = self::episode_snapshot($now->modify('-' . $windowDays . ' days'), $now);
         $manageUrl = self::manage_url(str_repeat('0', 64), $language);
-        return self::email_html($language, $now, $episodes, $manageUrl, 'preview', $windowDays);
+        return self::email_html($language, $now, $episodes, self::upcoming_events(), $manageUrl, 'preview', $windowDays);
     }
 
     public static function status(): array
@@ -407,6 +442,7 @@ final class RadioTEDU_Newsletter
             'production_start' => (string) self::$config['production_start'],
             'active_subscribers' => (int) $wpdb->get_var("SELECT COUNT(*) FROM " . self::subscribers_table() . " WHERE status = 'active' AND (source_web = 1 OR source_erp = 1)"),
             'queued_deliveries' => (int) $wpdb->get_var("SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE status = 'queued'"),
+            'upcoming_events' => count(self::upcoming_events()),
         ];
     }
 
@@ -544,7 +580,7 @@ final class RadioTEDU_Newsletter
             : ($language === 'en'
                 ? 'RadioTEDU Monthly Podcasts · ' . $issueDate->format('F Y')
                 : 'RadioTEDU Aylık Podcastler · ' . wp_date('F Y', $issueDate->getTimestamp(), new DateTimeZone('Europe/Istanbul'))));
-        $html = self::email_html($language, $issueDate, $episodes, $manageUrl, $kind, $windowDays);
+        $html = self::email_html($language, $issueDate, $episodes, self::upcoming_events(), $manageUrl, $kind, $windowDays);
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
             'List-Unsubscribe: <' . esc_url_raw($unsubscribeApi) . '>',
@@ -553,11 +589,12 @@ final class RadioTEDU_Newsletter
         return wp_mail($recipient, $subject, $html, $headers);
     }
 
-    private static function email_html(string $language, DateTimeImmutable $issueDate, array $episodes, string $manageUrl, string $kind, int $windowDays = 30): string
+    private static function email_html(string $language, DateTimeImmutable $issueDate, array $episodes, array $events, string $manageUrl, string $kind, int $windowDays = 30): string
     {
         $english = $language === 'en';
         $windowDays = $windowDays === 90 ? 90 : 30;
-        $technologyUrl = home_url($english ? '/technology/' : '/teknoloji/');
+        $technologyUrl = home_url($english ? '/en/technology/' : '/teknoloji/');
+        $eventsUrl = home_url($english ? '/en/events/' : '/bilet/');
         $logo = get_theme_file_uri('/assets/images/radiotedu-logo.png');
         $windowEnd = $kind === 'preview' ? new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul')) : $issueDate;
         $windowStart = $windowEnd->modify('-' . $windowDays . ' days');
@@ -599,6 +636,33 @@ final class RadioTEDU_Newsletter
                         </td></tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                <?php if ($events !== []): ?>
+                    <tr><td style="padding:34px 36px 14px;border-top:3px solid #11100f;">
+                        <p style="margin:0 0 8px;color:#ed1c24;font-size:11px;font-weight:700;letter-spacing:1px;"><?php echo esc_html($english ? 'NEXT ON CAMPUS' : 'KAMPÜSTE SIRADA'); ?></p>
+                        <h2 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.08;font-weight:400;"><?php echo esc_html($english ? 'Upcoming events' : 'Gelecek etkinlikler'); ?></h2>
+                    </td></tr>
+                    <?php foreach ($events as $event): ?>
+                        <?php
+                        try {
+                            $eventStart = (new DateTimeImmutable((string) $event['starts_at']))->setTimezone(new DateTimeZone('Europe/Istanbul'));
+                            $eventDate = wp_date($english ? 'F j, Y · H:i' : 'd.m.Y · H:i', $eventStart->getTimestamp(), new DateTimeZone('Europe/Istanbul'));
+                        } catch (Throwable) {
+                            $eventDate = '';
+                        }
+                        ?>
+                        <tr><td style="padding:20px 36px;border-top:1px solid #d4cec4;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
+                                <?php if (!empty($event['image_url'])): ?><td width="104" valign="top" style="padding-right:20px;"><a href="<?php echo esc_url($eventsUrl); ?>"><img src="<?php echo esc_url((string) $event['image_url']); ?>" width="104" height="104" alt="" style="display:block;width:104px;height:104px;object-fit:cover;background:#11100f;"></a></td><?php endif; ?>
+                                <td valign="top">
+                                    <h3 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.1;font-weight:400;"><?php echo esc_html((string) $event['title']); ?></h3>
+                                    <p style="margin:0 0 8px;color:#ed1c24;font-size:12px;font-weight:700;"><?php echo esc_html($eventDate); ?><?php if (!empty($event['location'])): ?> · <?php echo esc_html((string) $event['location']); ?><?php endif; ?></p>
+                                    <?php if (!empty($event['description'])): ?><p style="margin:0 0 11px;color:#66615a;font-size:13px;line-height:1.45;"><?php echo esc_html((string) $event['description']); ?></p><?php endif; ?>
+                                    <a href="<?php echo esc_url($eventsUrl); ?>" style="display:inline-block;border:1px solid #11100f;color:#11100f;text-decoration:none;padding:9px 13px;font-size:11px;font-weight:700;"><?php echo esc_html($english ? 'VIEW EVENTS' : 'ETKİNLİKLERİ GÖR'); ?></a>
+                                </td>
+                            </tr></table>
+                        </td></tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
                 <tr><td style="padding:30px 36px;background:#11100f;color:#ffffff;font-size:12px;line-height:1.6;">
                     <p style="margin:0 0 14px;"><strong>RadioTEDU Ankara <?php echo esc_html($english ? 'Studios' : 'Stüdyoları'); ?></strong><br>TED Üniversitesi, Ziya Gökalp Cad. No:48, Kolej, Çankaya, Ankara</p>
                     <p style="margin:0 0 8px;"><a href="<?php echo esc_url(add_query_arg('mode', 'unsubscribe', $manageUrl)); ?>" style="color:#ffffff;"><?php echo esc_html($english ? 'Unsubscribe' : 'Abonelikten çık'); ?></a> · <a href="<?php echo esc_url(add_query_arg('mode', 'language', $manageUrl)); ?>" style="color:#ffffff;"><?php echo esc_html($english ? 'Change language' : 'Dili değiştir'); ?></a></p>
@@ -626,6 +690,28 @@ final class RadioTEDU_Newsletter
             ]],
         ]);
         return array_map([self::class, 'episode_payload'], $posts);
+    }
+
+    private static function upcoming_events(): array
+    {
+        $events = get_option('radiotedu_newsletter_upcoming_events', []);
+        if (!is_array($events)) {
+            return [];
+        }
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $upcoming = array_values(array_filter($events, static function ($event) use ($now): bool {
+            if (!is_array($event) || empty($event['title']) || empty($event['starts_at'])) {
+                return false;
+            }
+            try {
+                $end = new DateTimeImmutable((string) ($event['ends_at'] ?? $event['starts_at']));
+                return $end >= $now;
+            } catch (Throwable) {
+                return false;
+            }
+        }));
+        usort($upcoming, static fn(array $left, array $right): int => strcmp((string) $left['starts_at'], (string) $right['starts_at']));
+        return array_slice($upcoming, 0, 8);
     }
 
     private static function episodes_by_ids(array $ids): array

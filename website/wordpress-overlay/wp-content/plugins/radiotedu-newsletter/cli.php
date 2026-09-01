@@ -22,8 +22,12 @@ try {
         $rawPayload = (string) stream_get_contents(STDIN);
         $rawPayload = preg_replace('/^\xEF\xBB\xBF/', '', $rawPayload) ?? $rawPayload;
         $payload = json_decode($rawPayload, true, 512, JSON_THROW_ON_ERROR);
-        $result = RadioTEDU_Newsletter::sync_erp(is_array($payload) ? $payload : []);
-        echo 'ERP sync complete: ' . (int) ($result['seen'] ?? 0) . " verified identities.\n";
+        $members = is_array($payload) && array_is_list($payload) ? $payload : (array) ($payload['members'] ?? []);
+        $events = is_array($payload) && !array_is_list($payload) ? (array) ($payload['events'] ?? []) : [];
+        $result = RadioTEDU_Newsletter::sync_erp($members);
+        $eventResult = RadioTEDU_Newsletter::sync_upcoming_events($events);
+        echo 'ERP sync complete: ' . (int) ($result['seen'] ?? 0) . ' verified identities; '
+            . (int) ($eventResult['seen'] ?? 0) . " upcoming events.\n";
     } elseif ($command === 'run') {
         echo wp_json_encode(RadioTEDU_Newsletter::run_scheduled(), JSON_UNESCAPED_SLASHES), "\n";
     } elseif ($command === 'test') {

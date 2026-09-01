@@ -19,7 +19,7 @@ const pool = new Pool({ connectionString: env.DATABASE_URL });
   const client = await pool.connect();
   try {
     await client.query('BEGIN READ ONLY');
-    const result = await client.query(`
+    const members = await client.query(`
       SELECT u.id::text AS id,
              LOWER(u.email) AS email,
              CASE WHEN LOWER(COALESCE(u.preferred_language, '')) = 'en' THEN 'en' ELSE 'tr' END AS preferred_language
@@ -32,7 +32,22 @@ const pool = new Pool({ connectionString: env.DATABASE_URL });
         AND u.email IS NOT NULL
       ORDER BY u.id
     `);
-    process.stdout.write(JSON.stringify(result.rows));
+    const events = await client.query(`
+      SELECT id::text AS id,
+             title,
+             description,
+             starts_at,
+             ends_at,
+             location,
+             image_url
+      FROM app_events
+      WHERE is_active = TRUE
+        AND COALESCE(ends_at, starts_at) >= NOW()
+        AND starts_at < NOW() + INTERVAL '120 days'
+      ORDER BY starts_at ASC
+      LIMIT 12
+    `);
+    process.stdout.write(JSON.stringify({members: members.rows, events: events.rows}));
     await client.query('ROLLBACK');
   } finally {
     client.release();

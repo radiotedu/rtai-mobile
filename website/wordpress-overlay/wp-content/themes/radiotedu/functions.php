@@ -527,7 +527,7 @@ function radiotedu_theme_translation(string $translated, string $original, strin
         'Yayın akışı' => 'Schedule', 'Yayın akışını aç' => 'Open schedule', 'Yayın bilgisi bekleniyor' => 'Waiting for broadcast info', 'Yayın geçici olarak çevrimdışı' => 'Broadcast temporarily offline',
         'Yeni' => 'New', 'Yükleniyor' => 'Loading', 'Çerezler' => 'Cookies', 'İletişim' => 'Contact', 'İçerik yolu' => 'Breadcrumb', 'İçeriğe geç' => 'Skip to content', 'Planlanmış etkinlik bulunmuyor.' => 'No events are scheduled yet.', 'Bilet sistemi güncellendiğinde yeni etkinlikler burada görünecek.' => 'New events will appear here when the ticket system is updated.',
         'Şarkı geçmişi yayına döndüğünde burada görünecek.' => 'Recently played tracks will appear here when the stream returns.', 'Şarkıyı satın al' => 'Buy this track', 'Şimdi dinle' => 'Listen now', 'Şu an' => 'Now',
-        'RadioTEDU ana sayfa' => 'RadioTEDU home',
+        'RadioTEDU ana sayfa' => 'RadioTEDU home', 'Hesap penceresini kapat' => 'Close account dialog', 'Hesap işlemleri' => 'Account actions', 'Kapat' => 'Close',
     ];
     return $translations[$original] ?? $translated;
 }

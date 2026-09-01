@@ -43,7 +43,7 @@ describe('arcade visual upgrade', () => {
       expect(source).toContain('dpadTop');
       expect(source).toContain('dpadMiddle');
       expect(source).toContain('dpadBottom');
-      expect(source).toContain('marginTop: SPACING.xs');
+      expect(source).toContain('marginTop: -SPACING.sm');
     }
   });
 });

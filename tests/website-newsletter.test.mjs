@@ -12,6 +12,7 @@ const paths = {
   js: new URL('website/wordpress-overlay/wp-content/themes/radiotedu/assets/js/app.js', root),
   exporter: new URL('ops/newsletter/export-erp-subscribers.cjs', root),
   runner: new URL('ops/newsletter/run-newsletter.ps1', root),
+  installer: new URL('ops/newsletter/install-newsletter-task.ps1', root),
   pause: new URL('ops/newsletter/pause-newsletter.ps1', root),
   iis: new URL('website/iis/newsletter-preferences-rule.xml', root),
 };
@@ -23,6 +24,7 @@ test('newsletter starts in October, skips September and limits pre-production te
   assert.match(entries.plugin, /preview_recipient' => 'tuna\.ozsari@tedu\.edu\.tr'/);
   assert.match(entries.plugin, /\$now < \$start->modify\('-2 days'\)/);
   assert.match(entries.plugin, /\$kind === 'issue' && \$now < \$start/);
+  assert.match(entries.installer, /2026-09-29T10:00:00/);
 });
 
 test('every issue is a fixed 30-day podcast snapshot with direct episode presentation', () => {
@@ -31,6 +33,16 @@ test('every issue is a fixed 30-day podcast snapshot with direct episode present
   assert.match(entries.plugin, /episode_ids/);
   assert.match(entries.plugin, /BÖLÜME GİT/);
   assert.match(entries.plugin, /get_the_post_thumbnail_url/);
+});
+
+test('newsletter includes a read-only upcoming-event snapshot without blocking the podcast issue', () => {
+  assert.match(entries.exporter, /BEGIN READ ONLY/);
+  assert.match(entries.exporter, /FROM app_events/);
+  assert.match(entries.exporter, /COALESCE\(ends_at, starts_at\) >= NOW\(\)/);
+  assert.match(entries.plugin, /sync_upcoming_events/);
+  assert.match(entries.plugin, /radiotedu_newsletter_upcoming_events/);
+  assert.match(entries.plugin, /Gelecek etkinlikler/);
+  assert.match(entries.plugin, /Upcoming events/);
 });
 
 test('manual test mail can explicitly use the safe one-time 90-day fallback', () => {
@@ -73,6 +85,13 @@ test('technology ribbon stays in email while the site exposes an accessible news
   assert.match(entries.plugin, /type="checkbox"[^>]+required/);
   assert.match(entries.js, /data-rt-newsletter-form/);
   assert.match(entries.css, /@media \(max-width: 620px\)/);
+});
+
+test('RadioTEDU account registration offers an optional newsletter consent', () => {
+  assert.match(entries.js, /name="newsletter_opt_in" value="1"/);
+  assert.match(entries.js, /subscribeRegistrationNewsletter/);
+  assert.match(entries.js, /newsletter\/subscribe/);
+  assert.match(entries.js, /delete values\.newsletter_opt_in/);
 });
 
 test('ERP-prefixed preference routes remain functional for non-ERP subscribers', () => {

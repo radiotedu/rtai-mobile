@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   miniRow: {flexDirection: 'row'},
   miniCell: {width: 14, height: 14, margin: 1, borderRadius: 4, backgroundColor: '#1B303D'},
   pauseButton: {width: 54, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1479A3'},
-  controls: {alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: SPACING.xs},
+  controls: {alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: -SPACING.sm},
   dpadTop: {alignItems: 'center'},
   dpadMiddle: {flexDirection: 'row', alignItems: 'center', gap: 4},
   dpadBottom: {alignItems: 'center'},

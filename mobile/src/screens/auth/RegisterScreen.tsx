@@ -34,6 +34,7 @@ const RegisterScreen = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [age, setAge] = useState('');
     const [legalAccepted, setLegalAccepted] = useState(false);
+    const [newsletterOptIn, setNewsletterOptIn] = useState(false);
 
     const { register } = useAuth();
     const navigation = useNavigation<any>();
@@ -68,6 +69,7 @@ const RegisterScreen = () => {
             await register(email, password, displayName, {
                 legalAccepted,
                 age: requiresAdultAge ? numericAge : undefined,
+                newsletterOptIn,
             });
             Alert.alert(copy('register.successTitle'), copy('register.success'));
         } catch (error: any) {
@@ -166,6 +168,22 @@ const RegisterScreen = () => {
                                 <Text style={styles.legalLink}>{copy('register.privacy')}</Text>
                             </TouchableOpacity>
                         </View>
+
+                        <TouchableOpacity
+                            style={styles.legalRow}
+                            onPress={() => setNewsletterOptIn((accepted) => !accepted)}
+                            accessibilityRole="checkbox"
+                            accessibilityState={{checked: newsletterOptIn}}
+                        >
+                            <Icon
+                                name={newsletterOptIn ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                                size={24}
+                                color={newsletterOptIn ? COLORS.primary : COLORS.textMuted}
+                            />
+                            <Text style={styles.legalText}>
+                                {copy('register.newsletter')}
+                            </Text>
+                        </TouchableOpacity>
 
                         <View style={styles.inputContainer}>
                             <Icon name="lock-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />

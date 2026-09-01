@@ -7,7 +7,10 @@ $newsletterWord = 'B' + [char]0x00FC + 'lteni'
 $startWord = 'Ba' + [char]0x015F + 'lat'
 
 $action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '//B //NoLogo "C:\RadioTEDU\newsletter\run-newsletter-hidden.vbs"'
-$firstRun = (Get-Date).Date.AddDays(1).AddMinutes(1)
+$firstRun = [datetime]'2026-09-29T10:00:00'
+if ($firstRun -le (Get-Date)) {
+    $firstRun = (Get-Date).AddMinutes(1)
+}
 $trigger = New-ScheduledTaskTrigger -Once -At $firstRun -RepetitionInterval (New-TimeSpan -Minutes 15) -RepetitionDuration (New-TimeSpan -Days 3650)
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User 'SYSTEM' -RunLevel Highest -Description 'Syncs verified ERP identities read-only and sends only the RadioTEDU monthly podcast newsletter.' -Force | Out-Null

@@ -927,8 +927,22 @@
     };
 
     const authMessage = (text = '') => `<p class="rt-form__message" role="status" aria-live="polite">${escapeHtml(text)}</p>`;
+    const subscribeRegistrationNewsletter = async (email) => {
+        try {
+            const response = await fetch(`${config.restBase || '/wp-json/radiotedu/v1/'}newsletter/subscribe`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {Accept: 'application/json', 'Content-Type': 'application/json'},
+                body: JSON.stringify({email, language: config.language === 'en' ? 'en' : 'tr', consent: '1'}),
+            });
+            const payload = await response.json().catch(() => null);
+            return Boolean(response.ok && payload?.ok);
+        } catch (_) {
+            return false;
+        }
+    };
     const authMarkup = (mode) => mode === 'kayit'
-        ? `<section class="rt-auth-card"><div class="rt-auth-card__intro"><h3>${t('Hesabını oluştur', 'Create your account')}</h3><p>${t('Favorilerin ve dinleme geçmişin her cihazda seninle olsun.', 'Keep your favourites and listening history across devices.')}</p></div><form class="rt-form" data-rt-auth="register"><label><span>${t('Görünen ad', 'Display name')}</span><span class="rt-field"><input type="text" name="display_name" autocomplete="name" required maxlength="60"></span></label><label><span>${t('E-posta adresi', 'Email address')}</span><span class="rt-field"><input type="email" name="email" autocomplete="email" inputmode="email" required data-rt-registration-email></span></label><label class="rt-registration-age" data-rt-registration-age hidden><span>${t('Yaşınız', 'Your age')}</span><span class="rt-field"><input type="number" name="age" min="18" max="120" step="1" inputmode="numeric" disabled></span><small class="rt-form__age-note">${t('TEDU dışındaki e-posta adresleriyle kayıt için 18 yaşında veya daha büyük olmalısınız.', 'You must be 18 or older to register with a non-TEDU email address.')}</small></label><label><span>${t('Şifre', 'Password')}</span><span class="rt-field"><input type="password" name="password" autocomplete="new-password" required minlength="8" data-rt-password-input><button class="rt-password-toggle" type="button" data-rt-password-toggle aria-label="${t('Şifreyi göster', 'Show password')}">${t('Göster', 'Show')}</button></span></label><small class="rt-form__hint">${t('En az 8 karakter kullan.', 'Use at least 8 characters.')}</small><label class="rt-form__legal"><input type="checkbox" name="legal_acknowledgement" required><span>${t('', 'I accept the ')}<a href="${route('kullanim-kosullari', 'terms')}" target="_blank" rel="noopener">${t('Kullanım Koşulları’nı', 'Terms of Use')}</a>${t(' kabul ediyor ve ', ' and acknowledge that I have read the ')}<a href="${route('gizlilik-politikasi', 'privacy')}" target="_blank" rel="noopener">${t('Gizlilik Politikası’nı', 'Privacy Notice')}</a>${t(' okuduğumu onaylıyorum.', '.')}</span></label><input type="hidden" name="terms_version" value="2026-08-11"><input type="hidden" name="privacy_version" value="2026-08-11">${authMessage()}<button class="rt-button rt-button--primary" type="submit"><span>${t('Hesap oluştur', 'Create account')}</span><i aria-hidden="true">→</i></button></form><p class="rt-auth-card__switch">${t('Zaten hesabın var mı?', 'Already have an account?')} <a data-rt-account-switch href="${route('giris', 'login')}">${t('Giriş yap', 'Sign in')}</a></p></section>`
+        ? `<section class="rt-auth-card"><div class="rt-auth-card__intro"><h3>${t('Hesabını oluştur', 'Create your account')}</h3><p>${t('Favorilerin ve dinleme geçmişin her cihazda seninle olsun.', 'Keep your favourites and listening history across devices.')}</p></div><form class="rt-form" data-rt-auth="register"><label><span>${t('Görünen ad', 'Display name')}</span><span class="rt-field"><input type="text" name="display_name" autocomplete="name" required maxlength="60"></span></label><label><span>${t('E-posta adresi', 'Email address')}</span><span class="rt-field"><input type="email" name="email" autocomplete="email" inputmode="email" required data-rt-registration-email></span></label><label class="rt-registration-age" data-rt-registration-age hidden><span>${t('Yaşınız', 'Your age')}</span><span class="rt-field"><input type="number" name="age" min="18" max="120" step="1" inputmode="numeric" disabled></span><small class="rt-form__age-note">${t('TEDU dışındaki e-posta adresleriyle kayıt için 18 yaşında veya daha büyük olmalısınız.', 'You must be 18 or older to register with a non-TEDU email address.')}</small></label><label><span>${t('Şifre', 'Password')}</span><span class="rt-field"><input type="password" name="password" autocomplete="new-password" required minlength="8" data-rt-password-input><button class="rt-password-toggle" type="button" data-rt-password-toggle aria-label="${t('Şifreyi göster', 'Show password')}">${t('Göster', 'Show')}</button></span></label><small class="rt-form__hint">${t('En az 8 karakter kullan.', 'Use at least 8 characters.')}</small><label class="rt-form__legal"><input type="checkbox" name="legal_acknowledgement" required><span>${t('', 'I accept the ')}<a href="${route('kullanim-kosullari', 'terms')}" target="_blank" rel="noopener">${t('Kullanım Koşulları’nı', 'Terms of Use')}</a>${t(' kabul ediyor ve ', ' and acknowledge that I have read the ')}<a href="${route('gizlilik-politikasi', 'privacy')}" target="_blank" rel="noopener">${t('Gizlilik Politikası’nı', 'Privacy Notice')}</a>${t(' okuduğumu onaylıyorum.', '.')}</span></label><label class="rt-form__legal rt-form__newsletter"><input type="checkbox" name="newsletter_opt_in" value="1"><span>${t('Aylık RadioTEDU podcast bültenini ve gelecek etkinlikleri e-posta ile almak istiyorum. İstediğim zaman abonelikten çıkabilirim.', 'I want to receive the monthly RadioTEDU podcast newsletter and upcoming events by email. I can unsubscribe at any time.')}</span></label><input type="hidden" name="terms_version" value="2026-08-11"><input type="hidden" name="privacy_version" value="2026-08-11">${authMessage()}<button class="rt-button rt-button--primary" type="submit"><span>${t('Hesap oluştur', 'Create account')}</span><i aria-hidden="true">→</i></button></form><p class="rt-auth-card__switch">${t('Zaten hesabın var mı?', 'Already have an account?')} <a data-rt-account-switch href="${route('giris', 'login')}">${t('Giriş yap', 'Sign in')}</a></p></section>`
         : `<section class="rt-auth-card"><div class="rt-auth-card__intro"><h3>${t('Hesabınla devam et', 'Continue with your account')}</h3><p>${t('Favorilerine ve kaldığın bölümlere yeniden ulaş.', 'Return to your favourites and unfinished episodes.')}</p></div><form class="rt-form" data-rt-auth="login"><label><span>${t('E-posta adresi', 'Email address')}</span><span class="rt-field"><input type="email" name="email" autocomplete="email" inputmode="email" required></span></label><label><span>${t('Şifre', 'Password')}</span><span class="rt-field"><input type="password" name="password" autocomplete="current-password" required minlength="8" data-rt-password-input><button class="rt-password-toggle" type="button" data-rt-password-toggle aria-label="${t('Şifreyi göster', 'Show password')}">${t('Göster', 'Show')}</button></span></label><p class="rt-form__legal-note">${t('Devam ederek ', 'By continuing, you accept the ')}<a href="${route('kullanim-kosullari', 'terms')}" target="_blank" rel="noopener">${t('Kullanım Koşulları’nı', 'Terms of Use')}</a>${t(' kabul eder ve ', ' and acknowledge that you have read the ')}<a href="${route('gizlilik-politikasi', 'privacy')}" target="_blank" rel="noopener">${t('Gizlilik Politikası’nı', 'Privacy Notice')}</a>${t(' okuduğunuzu onaylarsınız.', '.')}</p>${authMessage()}<button class="rt-button rt-button--primary" type="submit"><span>${t('Giriş yap', 'Sign in')}</span><i aria-hidden="true">→</i></button></form><div class="rt-auth-divider"><span>${t('ekip girişi', 'team sign-in')}</span></div><button class="rt-button rt-button--ghost" type="button" data-rt-erp-login><span class="rt-erp-mark" aria-hidden="true">R</span><span>${t('RadioTEDU ekibinden misin?', 'Are you on the RadioTEDU team?')}</span></button><p class="rt-auth-card__switch">${t('Hesabın yok mu?', 'New here?')} <a data-rt-account-switch href="${route('kayit', 'register')}">${t('Kayıt ol', 'Create account')}</a></p></section>`;
 
     const isTeduEmailAddress = (email) => {
@@ -1210,11 +1224,16 @@
         if (!form) return;
         event.preventDefault();
         const values = Object.fromEntries(new FormData(form).entries());
+        let newsletterOptIn = false;
+        let registrationEmail = '';
         if (form.dataset.rtAuth === 'register') {
+            newsletterOptIn = values.newsletter_opt_in === '1';
+            registrationEmail = String(values.email || '');
             const legalAcknowledged = values.legal_acknowledgement === 'on';
             values.terms_accepted = legalAcknowledged;
             values.privacy_acknowledged = legalAcknowledged;
             delete values.legal_acknowledgement;
+            delete values.newsletter_opt_in;
             if (values.age) values.age = Number(values.age);
             else delete values.age;
         }
@@ -1230,13 +1249,20 @@
         target.textContent = t('İşleniyor…', 'Working…');
         try {
             await accountFetch(`auth/web/${form.dataset.rtAuth}`, { method: 'POST', body: JSON.stringify(values) });
+            const newsletterSaved = form.dataset.rtAuth !== 'register' || !newsletterOptIn
+                ? true
+                : await subscribeRegistrationNewsletter(registrationEmail);
             await session();
             if (completeErpPopup()) return;
             if (completeAccountLoginPopup()) return;
             if (continueToAccountReturn()) return;
             if (form.closest('[data-rt-account-modal]')) {
                 closeAccountModal();
-                showStatus(form.dataset.rtAuth === 'register' ? t('Hesabın hazır.', 'Your account is ready.') : t('Giriş yapıldı.', 'Signed in.'));
+                showStatus(form.dataset.rtAuth === 'register'
+                    ? (newsletterSaved
+                        ? t('Hesabın hazır.', 'Your account is ready.')
+                        : t('Hesabın hazır; bülten aboneliği kaydedilemedi. Ana sayfanın altındaki formdan yeniden deneyebilirsin.', 'Your account is ready, but the newsletter subscription could not be saved. You can retry from the form at the bottom of the home page.'))
+                    : t('Giriş yapıldı.', 'Signed in.'));
             } else {
                 await navigate(route('profilim', 'profile'));
             }

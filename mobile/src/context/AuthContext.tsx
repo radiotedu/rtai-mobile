@@ -20,6 +20,7 @@ import {
 import {clearPendingErpLoginPkce} from '../services/erpLoginPkce';
 import {buildRegistrationPolicy} from '../services/registrationPolicy';
 import {Analytics} from '../services/analyticsService';
+import {subscribeToMonthlyNewsletter} from '../services/newsletterService';
 import api, {isDefinitiveAuthRejection} from '../services/api';
 import {
     clearAuthTokens,
@@ -47,7 +48,7 @@ export interface User {
     last_super_vote_at?: string | null;
 }
 
-export type RegistrationOptions = {legalAccepted: boolean; age?: number};
+export type RegistrationOptions = {legalAccepted: boolean; age?: number; newsletterOptIn?: boolean};
 
 const BACKEND_PREFERRED_LANGUAGES = [
     'en',
@@ -369,6 +370,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 {timeout: AUTH_REQUEST_TIMEOUT_MS},
             );
             await persistSession(response.data.data);
+            if (options.newsletterOptIn) {
+                await subscribeToMonthlyNewsletter(email, getCurrentLanguage()).catch(() => false);
+            }
         } catch (error: any) {
             throw new Error(error.response?.data?.error || 'Login failed');
         }

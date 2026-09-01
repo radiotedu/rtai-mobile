@@ -482,6 +482,33 @@ const LOCALE_FIX_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
   },
 };
 
+const LYRICS_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
+  en: {
+    'player.lyrics': 'Song lyrics',
+    'player.lyricsClose': 'Close song lyrics',
+  },
+  tr: {
+    'player.lyrics': 'Şarkı sözleri',
+    'player.lyricsClose': 'Şarkı sözlerini kapat',
+  },
+  ru: {
+    'player.lyrics': 'Текст песни',
+    'player.lyricsClose': 'Закрыть текст песни',
+  },
+  ar: {
+    'player.lyrics': 'كلمات الأغنية',
+    'player.lyricsClose': 'إغلاق كلمات الأغنية',
+  },
+  de: {
+    'player.lyrics': 'Songtext',
+    'player.lyricsClose': 'Songtext schließen',
+  },
+  fr: {
+    'player.lyrics': 'Paroles',
+    'player.lyricsClose': 'Fermer les paroles',
+  },
+};
+
 const APP_COPY_TABLES = [
   COPY,
   SOCIAL_COPY,
@@ -493,6 +520,7 @@ const APP_COPY_TABLES = [
   GAME_UI_COPY,
   GAME_V2_COPY,
   LOCALE_FIX_COPY,
+  LYRICS_COPY,
 ];
 
 export function missingAppCopyKeys(language: AppLanguage): string[] {
@@ -506,6 +534,6 @@ export function missingAppCopyKeys(language: AppLanguage): string[] {
 
 export function appCopy(language: string | undefined, key: string, values: Record<string, string | number> = {}): string {
   const lang = (language ?? 'en').split(/[-_]/)[0] as AppLanguage;
-  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? key;
+  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? LYRICS_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? LYRICS_COPY.en[key] ?? key;
   return typeof value === 'function' ? value(values) : value;
 }

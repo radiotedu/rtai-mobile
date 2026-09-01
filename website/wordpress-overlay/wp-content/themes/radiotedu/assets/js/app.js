@@ -30,15 +30,9 @@
         metadataTimer: null,
         metadataController: null,
         lyricsController: null,
-        lyricsTimer: null,
         lyricsLines: [],
         lyricsTrackKey: null,
         lyricsDismissedTrackKey: null,
-        lyricsStartedAtMs: null,
-        lyricsClockPosition: null,
-        lyricsClockSampledAt: null,
-        lyricsClockRunning: false,
-        lyricsPlaybackLag: 0,
         analyticsQuartiles: new Set(),
         analyticsTrackKey: null,
     };
@@ -63,9 +57,7 @@
         buyAmazon: player.querySelector('[data-rt-buy-amazon]'),
         lyrics: player.querySelector('[data-rt-player-lyrics]'),
         lyricsClose: player.querySelector('[data-rt-lyrics-close]'),
-        lyricsPrevious: player.querySelector('[data-rt-lyrics-previous]'),
-        lyricsCurrent: player.querySelector('[data-rt-lyrics-current]'),
-        lyricsNext: player.querySelector('[data-rt-lyrics-next]'),
+        lyricsLines: player.querySelector('[data-rt-lyrics-lines]'),
         progress: document.querySelector('.rt-route-progress'),
     };
     const defaultPlayerArtwork = els.art.currentSrc || els.art.src;
@@ -156,125 +148,39 @@
         .replace(/[^a-z0-9]+/g, ' ')
         .trim();
 
-    const parseSyncedLyrics = (source) => {
-        const lines = [];
-        String(source || '').split(/\r?\n/).forEach((row) => {
-            const text = row.replace(/\[(?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d{1,3})?\]/g, '').trim();
-            if (!text) return;
-            const stamps = [...row.matchAll(/\[(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g)];
-            stamps.forEach((match) => {
-                const hours = Number(match[1] || 0);
-                const minutes = Number(match[2] || 0);
-                const seconds = Number(match[3] || 0);
-                const fraction = Number(`0.${match[4] || 0}`);
-                lines.push({ at: (hours * 3600) + (minutes * 60) + seconds + fraction, text });
-            });
-        });
-        return lines.sort((left, right) => left.at - right.at);
-    };
+    const parseLyrics = (source) => String(source || '')
+        .split(/\r?\n/)
+        .map((row) => row.replace(/\[(?:\d{1,2}:)?\d{1,2}:\d{2}(?:\.\d{1,3})?\]/g, '').trim())
+        .filter(Boolean)
+        .slice(0, 500);
 
     const clearLyrics = () => {
         state.lyricsController?.abort();
         state.lyricsController = null;
-        window.clearInterval(state.lyricsTimer);
-        state.lyricsTimer = null;
         state.lyricsLines = [];
         state.lyricsTrackKey = null;
         state.lyricsDismissedTrackKey = null;
-        state.lyricsStartedAtMs = null;
-        state.lyricsClockPosition = null;
-        state.lyricsClockSampledAt = null;
-        state.lyricsClockRunning = false;
-        state.lyricsPlaybackLag = 0;
         if (els.lyrics) els.lyrics.hidden = true;
-        [els.lyricsPrevious, els.lyricsCurrent, els.lyricsNext].forEach((line) => {
-            if (line) line.textContent = '';
-        });
-    };
-
-    const estimatedLivePlaybackLag = () => {
-        if (state.kind !== 'station' || !Number.isFinite(audio.currentTime) || !audio.buffered?.length) return 0;
-        for (let index = 0; index < audio.buffered.length; index += 1) {
-            const start = audio.buffered.start(index);
-            const end = audio.buffered.end(index);
-            if (audio.currentTime >= start - 0.25 && audio.currentTime <= end + 0.25) {
-                return Math.min(15, Math.max(0, end - audio.currentTime));
-            }
-        }
-        return 0;
-    };
-
-    const sampledLyricsClock = () => {
-        if (!Number.isFinite(state.lyricsClockPosition)) return null;
-        const elapsed = state.lyricsClockRunning && Number.isFinite(state.lyricsClockSampledAt)
-            ? Math.max(0, (performance.now() - state.lyricsClockSampledAt) / 1000)
-            : 0;
-        return Math.max(0, state.lyricsClockPosition + elapsed);
-    };
-
-    const anchorLyricsClock = (position, running = !audio.paused) => {
-        state.lyricsClockPosition = Math.max(0, Number(position) || 0);
-        state.lyricsClockSampledAt = performance.now();
-        state.lyricsClockRunning = Boolean(running);
-    };
-
-    const setLyricsClockRunning = (running) => {
-        const position = sampledLyricsClock();
-        if (!Number.isFinite(position)) return;
-        anchorLyricsClock(position, running);
-    };
-
-    const recalibrateLyricsClock = (startedAt, { hard = false } = {}) => {
-        const parsedStart = Date.parse(startedAt || '');
-        if (!Number.isFinite(parsedStart)) return;
-        const playbackLag = estimatedLivePlaybackLag();
-        const target = Math.max(0, ((Date.now() - parsedStart) / 1000) - playbackLag);
-        const current = sampledLyricsClock();
-        const delta = Number.isFinite(current) ? target - current : 0;
-        const correction = hard || !Number.isFinite(current) || Math.abs(delta) > 8
-            ? delta
-            : Math.max(-0.75, Math.min(0.75, delta));
-        state.lyricsStartedAtMs = parsedStart;
-        state.lyricsPlaybackLag = playbackLag;
-        anchorLyricsClock(Number.isFinite(current) ? current + correction : target, !audio.paused && audio.readyState >= 2);
+        if (els.lyricsLines) els.lyricsLines.replaceChildren();
     };
 
     const dismissLyrics = () => {
         if (!els.lyrics) return;
         state.lyricsDismissedTrackKey = state.lyricsTrackKey;
-        window.clearInterval(state.lyricsTimer);
-        state.lyricsTimer = null;
         els.lyrics.hidden = true;
         els.lyricsClose?.blur();
     };
 
-    const currentLyricsTime = () => {
-        const sampled = sampledLyricsClock();
-        if (Number.isFinite(sampled)) return sampled;
-        if (Number.isFinite(state.lyricsStartedAtMs)) {
-            return Math.max(0, ((Date.now() - state.lyricsStartedAtMs) / 1000) - state.lyricsPlaybackLag);
-        }
-        return 0;
-    };
-
     const renderLyrics = () => {
-        if (!els.lyrics || !state.lyricsLines.length) return;
-        const position = currentLyricsTime();
-        let low = 0;
-        let high = state.lyricsLines.length - 1;
-        let active = -1;
-        while (low <= high) {
-            const middle = Math.floor((low + high) / 2);
-            if (state.lyricsLines[middle].at <= position) {
-                active = middle;
-                low = middle + 1;
-            } else {
-                high = middle - 1;
-            }
-        }
-        if (els.lyricsPrevious) els.lyricsPrevious.textContent = active > 0 ? state.lyricsLines[active - 1].text : '';
-        if (els.lyricsCurrent) els.lyricsCurrent.textContent = active >= 0 ? state.lyricsLines[active].text : '…';
-        if (els.lyricsNext) els.lyricsNext.textContent = state.lyricsLines[active + 1]?.text || '';
+        if (!els.lyricsLines || !state.lyricsLines.length) return;
+        const fragment = document.createDocumentFragment();
+        state.lyricsLines.forEach((text) => {
+            const line = document.createElement('p');
+            line.textContent = text;
+            fragment.appendChild(line);
+        });
+        els.lyricsLines.replaceChildren(fragment);
+        els.lyricsLines.scrollTop = 0;
     };
 
     const lyricsMatchScore = (candidate, track, artist) => {
@@ -336,14 +242,14 @@
             });
             if (candidates.some((candidate) => (
                 !candidate.instrumental
-                && candidate.syncedLyrics
+                && (candidate.plainLyrics || candidate.syncedLyrics)
                 && lyricsMatchScore(candidate, identity.track, identity.artist) >= 8
             ))) break;
         }
         return candidates;
     };
 
-    const loadLyrics = async (track, artist, startedAt, trackKey) => {
+    const loadLyrics = async (track, artist, _startedAt, trackKey) => {
         clearLyrics();
         if (!els.lyrics || !track || state.kind !== 'station' || isLofiStation()) return;
         state.lyricsTrackKey = trackKey;
@@ -354,23 +260,17 @@
             const results = await searchLyrics(identity, controller.signal);
             if (!Array.isArray(results) || state.lyricsTrackKey !== trackKey) return;
             const match = results
-                .filter((candidate) => !candidate.instrumental && candidate.syncedLyrics)
+                .filter((candidate) => !candidate.instrumental && (candidate.plainLyrics || candidate.syncedLyrics))
                 .map((candidate) => ({ candidate, score: lyricsMatchScore(candidate, identity.track, identity.artist) }))
                 .filter((entry) => entry.score >= 8)
                 .sort((left, right) => right.score - left.score)[0]?.candidate;
             if (!match || state.lyricsTrackKey !== trackKey) return;
-            const lines = parseSyncedLyrics(match.syncedLyrics);
+            const lines = parseLyrics(match.plainLyrics || match.syncedLyrics);
             if (!lines.length) return;
             state.lyricsLines = lines;
-            recalibrateLyricsClock(startedAt, { hard: true });
-            if (!Number.isFinite(state.lyricsStartedAtMs)) {
-                state.lyricsStartedAtMs = Date.now();
-                anchorLyricsClock(0, !audio.paused && audio.readyState >= 2);
-            }
             els.lyrics.hidden = state.lyricsDismissedTrackKey === trackKey;
             renderLyrics();
-            if (!els.lyrics.hidden) state.lyricsTimer = window.setInterval(renderLyrics, 250);
-            trackPlayerAnalytics('lyrics_available', { lyrics_provider: 'lrclib', lyrics_synced: true });
+            trackPlayerAnalytics('lyrics_available', { lyrics_provider: 'lrclib', lyrics_synced: false });
         } catch (error) {
             if (error.name !== 'AbortError') clearLyrics();
         } finally {
@@ -483,8 +383,6 @@
                 clearLyrics();
             } else if (trackKey !== state.lyricsTrackKey) {
                 loadLyrics(track, artist, state.liveMetadata?.startedAt, trackKey);
-            } else if (state.lyricsLines.length && trackKey !== state.lyricsDismissedTrackKey) {
-                recalibrateLyricsClock(state.liveMetadata?.startedAt);
             }
             if (trackKey && trackKey !== state.analyticsTrackKey) {
                 state.analyticsTrackKey = trackKey;
@@ -663,9 +561,6 @@
 
     audio.addEventListener('play', () => {
         player.classList.add('is-playing');
-        if (state.lyricsLines.length && state.lyricsTrackKey !== state.lyricsDismissedTrackKey) {
-            recalibrateLyricsClock(state.liveMetadata?.startedAt);
-        }
         startProgressTimer();
         startVerifiedListening();
         trackPlayerAnalytics('playback_start', {
@@ -673,23 +568,13 @@
             playback_mode: state.kind === 'podcast' ? 'on_demand' : 'live',
         });
     });
-    audio.addEventListener('playing', () => {
-        setLyricsClockRunning(true);
-        if (state.lyricsLines.length && state.lyricsTrackKey !== state.lyricsDismissedTrackKey) {
-            recalibrateLyricsClock(state.liveMetadata?.startedAt);
-            renderLyrics();
-        }
-    });
-    audio.addEventListener('waiting', () => setLyricsClockRunning(false));
     audio.addEventListener('pause', () => {
-        setLyricsClockRunning(false);
         player.classList.remove('is-playing');
         trackPlayerAnalytics('playback_pause', { position_seconds: Math.max(0, Math.floor(audio.currentTime || 0)) });
         saveProgress();
         stopVerifiedListening();
     });
     audio.addEventListener('ended', () => {
-        setLyricsClockRunning(false);
         player.classList.remove('is-playing');
         trackPlayerAnalytics('playback_complete', {
             duration_seconds: Number.isFinite(audio.duration) ? Math.max(0, Math.floor(audio.duration)) : 0,
@@ -699,7 +584,6 @@
         stopVerifiedListening();
     });
     audio.addEventListener('error', () => {
-        setLyricsClockRunning(false);
         player.classList.remove('is-playing');
         trackPlayerAnalytics('playback_error', { media_error_code: Number(audio.error?.code || 0) });
         stopVerifiedListening();

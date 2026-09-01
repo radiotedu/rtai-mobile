@@ -46,6 +46,7 @@ import {useStreamPreferences} from '../hooks/useStreamPreferences';
 import type {StreamQualityPreference} from '../services/streamPreferences';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
+import {fetchScrollableLyrics} from '../services/lyricsService';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
 
@@ -81,6 +82,8 @@ const PlayerScreen = ({route}: any) => {
   const [isSwitchingQuality, setIsSwitchingQuality] = useState(false);
   const [pendingQuality, setPendingQuality] = useState<StreamQualityPreference | null>(null);
   const [qualityMenuVisible, setQualityMenuVisible] = useState(false);
+  const [lyricsLines, setLyricsLines] = useState<string[]>([]);
+  const [lyricsDismissedTrackKey, setLyricsDismissedTrackKey] = useState<string | null>(null);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
 
@@ -134,9 +137,32 @@ const PlayerScreen = ({route}: any) => {
     : metadata?.title || activeTrack?.title || currentChannel?.name || 'RadioTEDU';
   const displayArtist =
     stationOnlyPresentation ? '' : metadata?.artist || (activeTrack?.artist as string) || currentChannel?.description || 'RadioTEDU';
+  const lyricsTrackTitle = stationOnlyPresentation ? '' : String(metadata?.title || '').trim();
+  const lyricsTrackArtist = stationOnlyPresentation ? '' : String(metadata?.artist || '').trim();
+  const lyricsTrackKey = lyricsTrackTitle ? `${lyricsTrackArtist}\n${lyricsTrackTitle}` : '';
 
   const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
   const isFlacActive = currentQuality === 'flac';
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLyricsLines([]);
+    if (!currentChannel || !lyricsTrackTitle) {
+      return () => controller.abort();
+    }
+    fetchScrollableLyrics({
+      track: lyricsTrackTitle,
+      artist: lyricsTrackArtist,
+      signal: controller.signal,
+    })
+      .then(lines => setLyricsLines(lines))
+      .catch(error => {
+        if (error?.name !== 'AbortError') {
+          logSafeError('player.lyrics', error);
+        }
+      });
+    return () => controller.abort();
+  }, [currentChannel, lyricsTrackArtist, lyricsTrackTitle]);
 
   const dismissPlayer = useCallback(() => {
     Animated.timing(dismissY, {
@@ -368,6 +394,36 @@ const PlayerScreen = ({route}: any) => {
             <View style={styles.spacer} />
           )}
 
+          {lyricsLines.length > 0 && lyricsDismissedTrackKey !== lyricsTrackKey ? (
+            <View style={styles.lyricsPanel}>
+              <View style={styles.lyricsHeader}>
+                <Text style={styles.lyricsTitle}>{copy('player.lyrics')}</Text>
+                <View style={styles.lyricsHeaderActions}>
+                  <Text style={styles.lyricsProvider}>LRCLIB</Text>
+                  <TouchableOpacity
+                    onPress={() => setLyricsDismissedTrackKey(lyricsTrackKey)}
+                    style={styles.lyricsClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={copy('player.lyricsClose')}>
+                    <Icon name="close" size={20} color={COLORS.text} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <ScrollView
+                style={[styles.lyricsScroller, {height: Math.min(300, Math.max(230, height * 0.32))}]}
+                contentContainerStyle={styles.lyricsContent}
+                nestedScrollEnabled
+                persistentScrollbar
+                showsVerticalScrollIndicator>
+                {lyricsLines.map((line, index) => (
+                  <Text key={`${index}-${line}`} selectable style={styles.lyricsLine}>
+                    {line}
+                  </Text>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
           <View style={styles.controls}>
             <TouchableOpacity
               onPress={() => currentChannel ? goToOffset(-1) : seekPodcastBy(-15)}
@@ -551,6 +607,39 @@ const styles = StyleSheet.create({
   liveBar: {flex: 1, height: 4, borderRadius: 2, backgroundColor: COLORS.border, overflow: 'hidden'},
   liveBarFill: {width: '100%', height: '100%', backgroundColor: COLORS.primary, opacity: 0.5},
   spacer: {height: SPACING.md},
+  lyricsPanel: {
+    marginTop: SPACING.lg,
+    borderWidth: 1,
+    borderLeftWidth: 3,
+    borderColor: COLORS.border,
+    borderLeftColor: COLORS.primary,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    overflow: 'hidden',
+  },
+  lyricsHeader: {
+    minHeight: 54,
+    paddingLeft: SPACING.md,
+    paddingRight: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  lyricsTitle: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+  },
+  lyricsHeaderActions: {flexDirection: 'row', alignItems: 'center', gap: SPACING.sm},
+  lyricsProvider: {color: COLORS.textMuted, fontSize: 10, fontWeight: '800'},
+  lyricsClose: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
+  lyricsScroller: {flexGrow: 0},
+  lyricsContent: {paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, gap: 10},
+  lyricsLine: {color: COLORS.text, fontSize: 16, lineHeight: 24},
   menuOverlay: {
     flex: 1,
     justifyContent: 'flex-end',

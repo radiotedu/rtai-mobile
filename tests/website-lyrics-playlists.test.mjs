@@ -9,30 +9,32 @@ const plugin = join(root, 'website', 'wordpress-overlay', 'wp-content', 'plugins
 const metadataClock = join(root, 'ops', 'website', 'live-metadata-clock.ps1');
 const read = (path) => readFileSync(path, 'utf8');
 
-test('live player exposes automatic synchronized lyrics without an API key', () => {
+test('live player exposes larger manually scrollable lyrics without an API key', () => {
     const script = read(join(theme, 'assets', 'js', 'app.js'));
     const player = read(join(theme, 'template-parts', 'player.php'));
+    const styles = read(join(theme, 'assets', 'css', 'app.css'));
     const rest = read(plugin);
 
     assert.match(script, /https:\/\/lrclib\.net\/api\/search/);
-    assert.match(script, /parseSyncedLyrics/);
+    assert.match(script, /parseLyrics/);
     assert.match(script, /lyricsLookupIdentity/);
     assert.match(script, /lyricsSearchRequests/);
     assert.match(script, /searchLyrics/);
     assert.match(script, /track_name: request\.track/);
-    assert.match(script, /window\.setInterval\(renderLyrics, 250\)/);
-    assert.match(script, /recalibrateLyricsClock/);
-    assert.match(script, /estimatedLivePlaybackLag/);
-    assert.match(script, /sampledLyricsClock/);
-    assert.match(script, /performance\.now\(\)/);
-    assert.match(script, /audio\.addEventListener\('waiting'/);
+    assert.match(script, /candidate\.plainLyrics \|\| candidate\.syncedLyrics/);
+    assert.match(script, /replaceChildren\(fragment\)/);
+    assert.doesNotMatch(script, /setInterval\(renderLyrics/);
+    assert.doesNotMatch(script, /recalibrateLyricsClock|estimatedLivePlaybackLag|sampledLyricsClock/);
     assert.match(script, /lyricsDismissedTrackKey/);
-    assert.match(script, /candidate\.syncedLyrics/);
     assert.match(script, /isLofiStation\(\)/);
     assert.match(player, /data-rt-player-lyrics hidden/);
-    assert.match(player, /data-rt-lyrics-current/);
+    assert.match(player, /data-rt-lyrics-lines tabindex="0" role="region"/);
     assert.match(player, /data-rt-lyrics-close/);
     assert.match(player, /https:\/\/lrclib\.net/);
+    assert.match(styles, /width: min\(780px, calc\(100vw - 32px\)\)/);
+    assert.match(styles, /overflow-y: auto/);
+    assert.match(styles, /overscroll-behavior: contain/);
+    assert.match(styles, /max-height: min\(50dvh, 360px\)/);
     assert.match(rest, /'track_started_at' => null/);
     assert.match(rest, /rt_track_clock_/);
     assert.match(rest, /time\(\) - 2/);

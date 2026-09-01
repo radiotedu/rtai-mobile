@@ -33,6 +33,8 @@ describe('six-language source audit fixes', () => {
       'player.pause',
       'player.next',
       'player.flacDescription',
+      'player.lyrics',
+      'player.lyricsClose',
       'votePanel.seconds',
     ];
     const authKeys = ['login.requestError', 'login.resetSubject', 'register.requestError'];

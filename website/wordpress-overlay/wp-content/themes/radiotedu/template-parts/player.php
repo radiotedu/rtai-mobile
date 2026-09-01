@@ -45,11 +45,7 @@ declare(strict_types=1);
                 <button type="button" data-rt-lyrics-close aria-label="<?php echo esc_attr(radiotedu_current_language() === 'en' ? 'Close live lyrics' : 'Canlı sözleri kapat'); ?>">×</button>
             </span>
         </div>
-        <div class="rt-player__lyrics-lines" aria-live="polite" aria-atomic="true">
-            <p class="rt-player__lyrics-previous" data-rt-lyrics-previous></p>
-            <p class="rt-player__lyrics-current" data-rt-lyrics-current></p>
-            <p class="rt-player__lyrics-next" data-rt-lyrics-next></p>
-        </div>
+        <div class="rt-player__lyrics-lines" data-rt-lyrics-lines tabindex="0" role="region" aria-label="<?php echo esc_attr(radiotedu_current_language() === 'en' ? 'Scrollable song lyrics' : 'Kaydırılabilir şarkı sözleri'); ?>"></div>
     </aside>
     <p class="rt-player__status" role="status" aria-live="polite" data-rt-player-status></p>
 </section>

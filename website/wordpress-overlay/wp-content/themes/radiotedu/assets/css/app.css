@@ -71,7 +71,7 @@
 .rt-player__lyrics-head a:hover, .rt-player__lyrics-head a:focus-visible { color: var(--rt-white); }
 .rt-player__lyrics-head button { display: inline-grid; width: 44px; height: 44px; padding: 0; place-items: center; border: 1px solid rgba(255,255,255,.32); border-radius: 0; background: transparent; color: var(--rt-white); font: 800 1.1rem/1 Arial,sans-serif; cursor: pointer; }
 .rt-player__lyrics-head button:hover, .rt-player__lyrics-head button:focus-visible { border-color: var(--rt-red); background: var(--rt-red); }
-.rt-player__lyrics-lines { display: grid; gap: 9px; min-height: 220px; max-height: min(48vh, 450px); padding: 4px 12px 8px 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-color: var(--rt-red) rgba(255,255,255,.12); scrollbar-width: thin; }
+.rt-player__lyrics-lines { display: grid; gap: 9px; height: 7.2rem; min-height: 0; max-height: 7.2rem; padding: 4px 12px 8px 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-color: var(--rt-red) rgba(255,255,255,.12); scrollbar-width: thin; }
 .rt-player__lyrics-lines::-webkit-scrollbar { width: 8px; }
 .rt-player__lyrics-lines::-webkit-scrollbar-track { background: rgba(255,255,255,.12); }
 .rt-player__lyrics-lines::-webkit-scrollbar-thumb { background: var(--rt-red); }
@@ -107,7 +107,6 @@
 
 @media (max-width: 900px) {
     .rt-player__lyrics { bottom: calc(100% + 10px); width: min(720px, calc(100vw - 24px)); max-height: min(60dvh, 520px); padding: 16px 18px 18px; box-shadow: 6px 6px 0 rgba(237,28,36,.9); }
-    .rt-player__lyrics-lines { min-height: 210px; max-height: min(46dvh, 390px); }
     .rt-playlists { padding-top: 24px; }
     .rt-playlists__hero, .rt-playlists__intro { grid-template-columns: 1fr; }
     .rt-playlists__hero { min-height: 500px; align-content: end; }
@@ -119,7 +118,7 @@
 @media (max-width: 560px) {
     .rt-player__lyrics { width: calc(100vw - 16px); max-height: min(64dvh, 470px); padding: 14px 14px 16px; }
     .rt-player__lyrics-head { gap: 10px; }
-    .rt-player__lyrics-lines { min-height: 230px; max-height: min(50dvh, 360px); padding-right: 8px; }
+    .rt-player__lyrics-lines { height: 6.6rem; max-height: 6.6rem; padding-right: 8px; }
     .rt-playlists__hero { min-height: 520px; padding: 28px 22px; }
     .rt-playlists__hero::before { width: 280px; height: 280px; right: -100px; top: -120px; border-width: 48px; }
     .rt-playlists__hero-stat { right: 22px; top: 32px; }

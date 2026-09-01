@@ -9,7 +9,7 @@ const plugin = join(root, 'website', 'wordpress-overlay', 'wp-content', 'plugins
 const metadataClock = join(root, 'ops', 'website', 'live-metadata-clock.ps1');
 const read = (path) => readFileSync(path, 'utf8');
 
-test('live player exposes larger manually scrollable lyrics without an API key', () => {
+test('live player exposes a three-line manually scrollable lyrics window without an API key', () => {
     const script = read(join(theme, 'assets', 'js', 'app.js'));
     const player = read(join(theme, 'template-parts', 'player.php'));
     const styles = read(join(theme, 'assets', 'css', 'app.css'));
@@ -34,7 +34,9 @@ test('live player exposes larger manually scrollable lyrics without an API key',
     assert.match(styles, /width: min\(780px, calc\(100vw - 32px\)\)/);
     assert.match(styles, /overflow-y: auto/);
     assert.match(styles, /overscroll-behavior: contain/);
-    assert.match(styles, /max-height: min\(50dvh, 360px\)/);
+    assert.match(styles, /height: 7\.2rem; min-height: 0; max-height: 7\.2rem/);
+    assert.match(styles, /height: 6\.6rem; max-height: 6\.6rem; padding-right: 8px/);
+    assert.doesNotMatch(styles, /\.rt-player__lyrics-lines \{ min-height: 2(?:10|20|30)px/);
     assert.match(rest, /'track_started_at' => null/);
     assert.match(rest, /rt_track_clock_/);
     assert.match(rest, /time\(\) - 2/);

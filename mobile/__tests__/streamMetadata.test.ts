@@ -21,10 +21,16 @@ describe('Icecast stream metadata', () => {
     ).toEqual({title: 'Song', artist: 'Artist'});
   });
 
-  it('accepts common metadata and ignores empty events', () => {
-    expect(
-      parseTrackPlayerMetadataEvent({metadata: {title: 'Song', artist: 'Artist'}}),
-    ).toEqual({title: 'Song', artist: 'Artist'});
-    expect(parseTrackPlayerMetadataEvent({metadata: []})).toBeNull();
+  it('identifies and formats jingles and station identifiers cleanly', () => {
+    expect(parseTrackPlayerMetadataEvent({title: 'TEDU_4'})).toEqual({
+      title: 'RadioTEDU Jingle',
+      artist: 'RadioTEDU',
+      isJingle: true,
+    });
+    expect(parseTrackPlayerMetadataEvent({title: 'RadioTEDU ID - Station Sweeper'})).toEqual({
+      title: 'RadioTEDU Jingle',
+      artist: 'RadioTEDU',
+      isJingle: true,
+    });
   });
 });

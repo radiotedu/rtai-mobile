@@ -74,15 +74,14 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
         artist,
         artwork: parsed.artwork || fallbackArtwork,
       };
-      // Update the app, lock screen and notification immediately. Artwork is
-      // optional enrichment and must never delay streamed title/artist data.
+      // Update the app, lock screen and notification immediately with clean fallback/parsed artwork.
       updateMetadata(immediate);
       const index = await TrackPlayer.getActiveTrackIndex();
       if (index !== undefined) {
         await TrackPlayer.updateMetadataForTrack(index, immediate);
       }
 
-      if (parsed.artwork) {
+      if (parsed.artwork || parsed.isJingle) {
         return;
       }
       const fetchedArtwork = await fetchAlbumArtwork(`${artist} ${parsed.title}`);

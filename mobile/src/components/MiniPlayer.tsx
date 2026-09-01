@@ -15,6 +15,7 @@ import {
   useProgress,
 } from 'react-native-track-player';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {COLORS} from '../theme/theme';
 import {useNavigation, useNavigationState} from '@react-navigation/native';
 import {
@@ -69,10 +70,13 @@ export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean 
   );
 }
 
+const TAB_ROUTES = new Set(['Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);
+
 const MiniPlayer = () => {
   const playbackState = usePlaybackState();
   const track = useActiveTrack();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const {metadata} = useMetadata();
   const {activeChannels} = useChannels();
   const [isChangingChannel, setIsChangingChannel] = React.useState(false);
@@ -125,6 +129,11 @@ const MiniPlayer = () => {
   ) {
     return null;
   }
+
+  const isTabRoute = !!activeRouteName && TAB_ROUTES.has(activeRouteName);
+  const bottomPosition = isTabRoute
+    ? (Platform.OS === 'ios' ? 88 : 80)
+    : Math.max(insets.bottom, 10) + 8;
 
   const skipToPrevious = async () => {
     console.log(
@@ -221,22 +230,25 @@ const MiniPlayer = () => {
   const displayArtworkSource = typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {bottom: bottomPosition}]}>
       <View style={styles.content}>
-        <View style={styles.artworkContainer}>
-          {displayArtworkSource &&
-          displayArtwork !== 'https://radiotedu.com/logo.png' ? (
-            <Image source={displayArtworkSource} style={styles.artwork} />
-          ) : <View style={styles.placeholderArtwork} />}
-        </View>
-
         <TouchableOpacity
-          style={styles.infoContainer}
+          style={styles.touchableArea}
+          activeOpacity={0.85}
           onPress={() => navigation.navigate('Player')}>
-          <Text style={styles.title} numberOfLines={1}>
-            {displayTitle}
-          </Text>
-          {displayArtist ? <Text style={styles.artist} numberOfLines={1}>{displayArtist}</Text> : null}
+          <View style={styles.artworkContainer}>
+            {displayArtworkSource &&
+            displayArtwork !== 'https://radiotedu.com/logo.png' ? (
+              <Image source={displayArtworkSource} style={styles.artwork} />
+            ) : <View style={styles.placeholderArtwork} />}
+          </View>
+
+          <View style={styles.infoContainer}>
+            <Text style={styles.title} numberOfLines={1}>
+              {displayTitle}
+            </Text>
+            {displayArtist ? <Text style={styles.artist} numberOfLines={1}>{displayArtist}</Text> : null}
+          </View>
         </TouchableOpacity>
 
         <View style={styles.controls}>
@@ -275,7 +287,6 @@ const MiniPlayer = () => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 90, // Raised to clear the Total Tab Bar (approx 60-80px)
     left: 8,
     right: 8,
     backgroundColor: '#282828',
@@ -291,6 +302,12 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  touchableArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 4,
   },
   artworkContainer: {
     marginRight: 12,

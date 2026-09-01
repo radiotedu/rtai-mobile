@@ -235,3 +235,19 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - No Android build was performed.
 - No email/notification was sent during these changes.
 - ERP and the Audio Library were not modified.
+
+## 2026-09-02 mobile UX handoff snapshot
+
+- Jingle detection without iTunes fetch and stale artwork clearing were implemented in `MetadataContext.tsx` & `streamMetadata.ts`.
+- MiniPlayer full hitbox and dynamic stack/tab bottom positioning were implemented in `MiniPlayer.tsx`.
+- PlayerScreen station branding, clean live pulse bar, and Sleep Timer modal were implemented in `PlayerScreen.tsx` & `sleepTimer.ts`.
+- Audio focus ducking and auto-resume on interruption were implemented in `playbackService.ts`.
+- Smooth volume ramp on channel switches was implemented in `playbackQueue.ts`.
+- Music-first Home Screen with 5-station shelf (*"Bugün ne dinliyoruz?"*) was implemented in `HomeScreen.tsx`.
+- Guest profile welcome hero card was implemented in `ProfileScreen.tsx`.
+- Bottom list clearances were updated in `FocusScreen.tsx` & `LeaderboardScreen.tsx`.
+- Tests: Mobile Jest 90/90 suites (338/338 tests), Android publish audit 36/36, Study/Social 46/46 files (227/227 tests), Root 15/15.
+- Jukebox & Market screens were preserved without modifications.
+- No email/notification was sent during these changes.
+- ERP and the Audio Library were not modified.
+

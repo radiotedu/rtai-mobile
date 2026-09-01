@@ -157,6 +157,46 @@ export const PlaybackService = async function () {
     }
   });
 
+  let wasPlayingBeforeDuck = false;
+
+  TrackPlayer.addEventListener(
+    Event.RemoteDuck,
+    async ({paused, permanent, ducking}: any) => {
+      try {
+        const {state} = await TrackPlayer.getPlaybackState();
+        const isCurrentlyPlaying = state === State.Playing;
+
+        if (permanent) {
+          wasPlayingBeforeDuck = false;
+          await pausePlaybackByUser();
+          return;
+        }
+
+        if (paused) {
+          if (isCurrentlyPlaying) {
+            wasPlayingBeforeDuck = true;
+          }
+          await TrackPlayer.pause();
+          return;
+        }
+
+        if (ducking) {
+          await TrackPlayer.setVolume(0.35);
+          return;
+        }
+
+        // Interruption / ducking ended
+        await TrackPlayer.setVolume(1.0);
+        if (wasPlayingBeforeDuck) {
+          wasPlayingBeforeDuck = false;
+          await resumePlaybackByUser();
+        }
+      } catch (error) {
+        logSafeError('playback.remoteDuck', error);
+      }
+    },
+  );
+
   TrackPlayer.addEventListener(Event.PlaybackState, ({state}) => {
     if (state === State.Playing) {
       clearConnectionWatchdog();

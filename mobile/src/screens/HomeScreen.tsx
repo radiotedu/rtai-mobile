@@ -27,6 +27,8 @@ import {
   fetchGamificationHome,
 } from '../services/gamificationService';
 import {logSafeError} from '../utils/safeLog';
+import {RADIO_CHANNELS} from '../data/radioChannels';
+import {playChannelById} from '../services/playbackQueue';
 import {
   ErpIdentityStatus,
   fetchErpIdentityStatus,
@@ -172,12 +174,29 @@ const HomeScreen = () => {
                 homeData.events.slice(0, 3).map((event) => <EventPreview key={event.id} event={event} />)
               )}
 
-              <SectionHeader title={copy('home.arcade')} action={copy('home.play')} onPress={() => navigation.navigate('Games')} />
-              {homeData.games.length === 0 ? (
-                <EmptyCard text={copy('home.noGames')} />
-              ) : (
-                homeData.games.slice(0, 3).map((game) => <GamePreview key={game.id} game={game} />)
-              )}
+              <SectionHeader
+                title={i18n.language.startsWith('tr') ? 'Bugün ne dinliyoruz?' : 'What are we listening to today?'}
+                action={copy('home.all')}
+                onPress={() => navigation.navigate('Radio')}
+              />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stationShelf}>
+                {RADIO_CHANNELS.map((channel) => (
+                  <TouchableOpacity
+                    key={channel.id}
+                    style={styles.stationCard}
+                    activeOpacity={0.8}
+                    onPress={() => playChannelById(channel.id)}>
+                    <View style={[styles.stationColorBar, {backgroundColor: channel.color || COLORS.primary}]} />
+                    <View style={styles.stationInfo}>
+                      <Text style={styles.stationName} numberOfLines={1}>{channel.name}</Text>
+                      <Text style={styles.stationDesc} numberOfLines={2}>{channel.description}</Text>
+                    </View>
+                    <View style={[styles.stationPlayBtn, {backgroundColor: channel.color || COLORS.primary}]}>
+                      <Icon name="play" size={16} color="#fff" />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
               <SectionHeader title={copy('home.marketShowcase')} action={copy('home.marketItems')} onPress={() => navigation.navigate('Market')} />
               {homeData.market.length === 0 ? (
@@ -375,6 +394,54 @@ const styles = StyleSheet.create({
   marketCost: {color: COLORS.primary, fontSize: 12, fontWeight: '900', marginTop: SPACING.sm},
   emptyCard: {padding: SPACING.lg, borderRadius: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border},
   emptyText: {color: COLORS.textMuted, textAlign: 'center'},
+  stationShelf: {
+    paddingVertical: SPACING.xs,
+    gap: SPACING.sm,
+  },
+  stationCard: {
+    width: 220,
+    borderRadius: 18,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.md,
+    position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'space-between',
+    minHeight: 104,
+  },
+  stationColorBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+  },
+  stationInfo: {
+    paddingTop: 4,
+    paddingRight: 36,
+  },
+  stationName: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  stationDesc: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  stationPlayBtn: {
+    position: 'absolute',
+    bottom: SPACING.md,
+    right: SPACING.md,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export default HomeScreen;

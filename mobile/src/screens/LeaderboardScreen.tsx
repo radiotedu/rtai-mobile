@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   categoryChipText: {color: COLORS.textMuted, fontSize: 12, fontWeight: '800'},
   categoryChipTextActive: {color: COLORS.text},
   center: {flex: 1, justifyContent: 'center', alignItems: 'center'},
-  listContent: {padding: SPACING.md},
+  listContent: {padding: SPACING.md, paddingBottom: 100},
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {color: COLORS.text, fontSize: 18, fontWeight: 'bold', textAlign: 'center'},
   headerSubtitle: {color: COLORS.textMuted, fontSize: 12, textAlign: 'center'},
-  list: {padding: SPACING.md, paddingBottom: SPACING.xl},
+  list: {padding: SPACING.md, paddingBottom: 100},
   timerCard: {
     backgroundColor: COLORS.card,
     borderRadius: 20,

@@ -47,6 +47,7 @@ import type {StreamQualityPreference} from '../services/streamPreferences';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 import {fetchScrollableLyrics} from '../services/lyricsService';
+import {useSleepTimer} from '../services/sleepTimer';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
 
@@ -78,10 +79,17 @@ const PlayerScreen = ({route}: any) => {
   const copy = (key: string) => appCopy(i18n.language, key);
   const {width, height} = useWindowDimensions();
 
+  const {
+    remainingSeconds: sleepRemaining,
+    setTimer: setSleep,
+    cancelTimer: cancelSleep,
+    isActive: isSleepActive,
+  } = useSleepTimer();
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [isSwitchingQuality, setIsSwitchingQuality] = useState(false);
   const [pendingQuality, setPendingQuality] = useState<StreamQualityPreference | null>(null);
   const [qualityMenuVisible, setQualityMenuVisible] = useState(false);
+  const [sleepMenuVisible, setSleepMenuVisible] = useState(false);
   const [lyricsLines, setLyricsLines] = useState<string[]>([]);
   const [lyricsDismissedTrackKey, setLyricsDismissedTrackKey] = useState<string | null>(null);
   const dismissY = useRef(new Animated.Value(0)).current;
@@ -320,15 +328,36 @@ const PlayerScreen = ({route}: any) => {
             accessibilityLabel={copy('player.close')}>
             <Icon name="chevron-down" size={30} color={COLORS.text} />
           </TouchableOpacity>
-          <Text style={styles.topLabel} numberOfLines={1}>
-            {isLive ? copy('player.live') : copy('player.playing')}
-          </Text>
-          {currentChannel ? <TouchableOpacity
-            onPress={() => setQualityMenuVisible(true)}
-            style={styles.topButton}
-            accessibilityLabel={copy('player.qualityMenu')}>
-            <Icon name="tune-variant" size={23} color={COLORS.text} />
-          </TouchableOpacity> : <View style={styles.topButton} />}
+          <View style={styles.topLabelContainer}>
+            <Text style={styles.topLabel} numberOfLines={1}>
+              {currentChannel ? `RadioTEDU · ${currentChannel.name}` : isLive ? copy('player.live') : copy('player.playing')}
+            </Text>
+            {isSleepActive && sleepRemaining !== null ? (
+              <Text style={styles.sleepBadgeText}>
+                🌙 {Math.floor(sleepRemaining / 60)}:{(sleepRemaining % 60).toString().padStart(2, '0')}
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.topRightActions}>
+            <TouchableOpacity
+              onPress={() => setSleepMenuVisible(true)}
+              style={styles.topButton}
+              accessibilityLabel="Sleep Timer">
+              <Icon
+                name={isSleepActive ? 'timer-sand' : 'timer-outline'}
+                size={23}
+                color={isSleepActive ? COLORS.primary : COLORS.text}
+              />
+            </TouchableOpacity>
+            {currentChannel ? (
+              <TouchableOpacity
+                onPress={() => setQualityMenuVisible(true)}
+                style={styles.topButton}
+                accessibilityLabel={copy('player.qualityMenu')}>
+                <Icon name="tune-variant" size={23} color={COLORS.text} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         <ScrollView
@@ -351,6 +380,12 @@ const PlayerScreen = ({route}: any) => {
 
           <View style={styles.metaRow}>
             <View style={styles.metaText}>
+              {currentChannel ? (
+                <View style={styles.stationTag}>
+                  <View style={[styles.stationTagDot, {backgroundColor: currentChannel.color || COLORS.primary}]} />
+                  <Text style={styles.stationTagText}>{currentChannel.name}</Text>
+                </View>
+              ) : null}
               <Text style={styles.title} numberOfLines={2}>
                 {displayTitle}
               </Text>
@@ -377,14 +412,6 @@ const PlayerScreen = ({route}: any) => {
                 <View style={styles.liveDot} />
                 <Text style={styles.liveText}>{copy('player.live')}</Text>
               </View>
-
-              {/* Golden FLAC Symbol / Badge when FLAC is chosen */}
-              {isFlacActive ? (
-                <View style={styles.goldFlacBadge}>
-                  <Icon name="star-four-points" size={14} color="#FFD700" />
-                  <Text style={styles.goldFlacText}>Hi-Fi</Text>
-                </View>
-              ) : null}
 
               <View style={styles.liveBar}>
                 <View style={styles.liveBarFill} />
@@ -459,6 +486,57 @@ const PlayerScreen = ({route}: any) => {
       </SafeAreaView>
 
       <Modal
+        visible={sleepMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSleepMenuVisible(false)}>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.menuOverlay}
+          onPress={() => setSleepMenuVisible(false)}>
+          <View style={styles.qualityMenu} onStartShouldSetResponder={() => true}>
+            <View style={styles.menuHandle} />
+            <Text style={styles.menuTitle}>Uyku Zamanlayıcısı</Text>
+            <Text style={styles.menuSubtitle}>
+              {isSleepActive && sleepRemaining !== null
+                ? `Kalan süre: ${Math.floor(sleepRemaining / 60)} dakika ${sleepRemaining % 60} saniye`
+                : 'Belirlenen süre sonunda yayın otomatik durdurulur'}
+            </Text>
+
+            {[15, 30, 45, 60].map(minutes => (
+              <TouchableOpacity
+                key={minutes}
+                style={styles.menuOption}
+                onPress={() => {
+                  setSleep(minutes);
+                  setSleepMenuVisible(false);
+                }}>
+                <Icon name="timer-sand" size={22} color={COLORS.primary} />
+                <View style={styles.menuOptionText}>
+                  <Text style={styles.menuOptionTitle}>{minutes} Dakika</Text>
+                  <Text style={styles.menuOptionDescription}>{minutes} dakika sonra duraklat</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {isSleepActive ? (
+              <TouchableOpacity
+                style={[styles.menuOption, {marginTop: 6}]}
+                onPress={() => {
+                  cancelSleep();
+                  setSleepMenuVisible(false);
+                }}>
+                <Icon name="close-circle-outline" size={22} color="#ff4444" />
+                <View style={styles.menuOptionText}>
+                  <Text style={[styles.menuOptionTitle, {color: '#ff4444'}]}>Zamanlayıcıyı Kapat</Text>
+                </View>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal
         visible={qualityMenuVisible}
         transparent
         animationType="fade"
@@ -528,11 +606,45 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
   },
   topButton: {width: 40, height: 40, alignItems: 'center', justifyContent: 'center'},
+  topLabelContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xs,
+  },
+  topRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   topLabel: {
     color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+  },
+  sleepBadgeText: {
+    color: COLORS.primary,
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  stationTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  stationTagDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  stationTagText: {
+    color: COLORS.primary,
     fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   scrollBody: {
     flexGrow: 1,

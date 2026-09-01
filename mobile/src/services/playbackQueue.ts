@@ -232,8 +232,12 @@ export async function playTrackById(id: string): Promise<boolean> {
   if (activeTrack?.id === id && activeTrack?.url === queue[index]?.url) {
     await TrackPlayer.play();
   } else {
+    await TrackPlayer.setVolume(0.2).catch(() => {});
     await TrackPlayer.skip(index);
     await TrackPlayer.play();
+    setTimeout(() => {
+      TrackPlayer.setVolume(1.0).catch(() => {});
+    }, 150);
   }
   recordRecent(queue[index]).catch(() => {});
   Analytics.interaction(id.startsWith('podcast:') ? 'podcast' : 'radio', 'play', 'success');

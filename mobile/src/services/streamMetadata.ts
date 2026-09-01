@@ -2,7 +2,16 @@ export type ParsedStreamMetadata = {
   title: string;
   artist?: string;
   artwork?: string;
+  isJingle?: boolean;
 };
+
+const JINGLE_PATTERN = /^(TEDU[_-]?\d+|JINGLE|RADIOTEDU\s*ID|SWEEPER|STATION\s*ID|ANONS)/i;
+
+export function isJingleOrStationId(title: string, artist?: string): boolean {
+  const cleanTitle = (title || '').trim();
+  const cleanArtist = (artist || '').trim();
+  return JINGLE_PATTERN.test(cleanTitle) || JINGLE_PATTERN.test(`${cleanArtist} ${cleanTitle}`.trim());
+}
 
 const cleanText = (value: unknown): string => {
   if (typeof value !== 'string') {
@@ -61,6 +70,16 @@ export function parseTrackPlayerMetadataEvent(
     const split = splitArtistAndTitle(title);
     title = split.title;
     artist = split.artist || '';
+  }
+
+  const isJingle = isJingleOrStationId(title, artist);
+  if (isJingle) {
+    return {
+      title: 'RadioTEDU Jingle',
+      artist: 'RadioTEDU',
+      isJingle: true,
+      ...(artwork ? {artwork} : {}),
+    };
   }
 
   return {

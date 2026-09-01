@@ -447,96 +447,131 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{copy('profile.showcase')}</Text>
-          <View style={styles.showcaseCard}>
-            <Text style={styles.showcaseTitle}>
-              {profileCustomization.profile_headline || copy('profile.headlineEmpty')}
-            </Text>
-            <View style={styles.favoriteGrid}>
-              <FavoriteDisplay
-                icon="music-note"
-                label={copy('profile.favoriteSong')}
-                value={[
-                  profileCustomization.favorite_song_title,
-                  profileCustomization.favorite_song_artist,
-                ].filter(Boolean).join(' · ') || copy('profile.notSelected')}
-              />
-              <FavoriteDisplay
-                icon="account-music"
-                label={copy('profile.favoriteArtist')}
-                value={profileCustomization.favorite_artist_name || copy('profile.notSelected')}
-              />
-              <FavoriteDisplay
-                icon="podcast"
-                label={copy('profile.favoritePodcast')}
-                value={profileCustomization.favorite_podcast_title || copy('profile.notSelected')}
-              />
+        {!user || user.is_guest ? (
+          <View style={styles.section}>
+            <View style={styles.guestHeroCard}>
+              <View style={styles.guestIconWrap}>
+                <Icon name="account-star" size={32} color={COLORS.primary} />
+              </View>
+              <Text style={styles.guestHeroTitle}>RadioTEDU Topluluğuna Katılın</Text>
+              <Text style={styles.guestHeroText}>
+                Giriş yaparak canlı radyo dinlerken Gold biriktirebilir, rozetler kazanabilir, profilini özelleştirebilir ve kampüs etkinliklerine katılabilirsin.
+              </Text>
+
+              <View style={styles.guestFeaturesList}>
+                <View style={styles.guestFeatureRow}>
+                  <Icon name="check-circle" size={18} color="#4cd964" />
+                  <Text style={styles.guestFeatureText}>Canlı dinledikçe Gold kazanımı & Sıralama</Text>
+                </View>
+                <View style={styles.guestFeatureRow}>
+                  <Icon name="check-circle" size={18} color="#4cd964" />
+                  <Text style={styles.guestFeatureText}>Favori şarkı ve podcast rozetleri</Text>
+                </View>
+                <View style={styles.guestFeatureRow}>
+                  <Icon name="check-circle" size={18} color="#4cd964" />
+                  <Text style={styles.guestFeatureText}>Kampüs etkinlik biletleri ve ödüller</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.guestLoginButton}
+                onPress={() => navigation.navigate('Auth', {screen: 'Login'})}>
+                <Text style={styles.guestLoginButtonText}>Giriş Yap / Kayıt Ol</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>{copy('profile.showcase')}</Text>
+            <View style={styles.showcaseCard}>
+              <Text style={styles.showcaseTitle}>
+                {profileCustomization.profile_headline || copy('profile.headlineEmpty')}
+              </Text>
+              <View style={styles.favoriteGrid}>
+                <FavoriteDisplay
+                  icon="music-note"
+                  label={copy('profile.favoriteSong')}
+                  value={[
+                    profileCustomization.favorite_song_title,
+                    profileCustomization.favorite_song_artist,
+                  ].filter(Boolean).join(' · ') || copy('profile.notSelected')}
+                />
+                <FavoriteDisplay
+                  icon="account-music"
+                  label={copy('profile.favoriteArtist')}
+                  value={profileCustomization.favorite_artist_name || copy('profile.notSelected')}
+                />
+                <FavoriteDisplay
+                  icon="podcast"
+                  label={copy('profile.favoritePodcast')}
+                  value={profileCustomization.favorite_podcast_title || copy('profile.notSelected')}
+                />
+              </View>
+
+              <Text style={styles.badgesTitle}>{copy('profile.badges')}</Text>
+              {badges.length === 0 ? (
+                <Text style={styles.emptyText}>{copy('profile.noBadges')}</Text>
+              ) : (
+                <View style={styles.badgeWrap}>
+                  {badges.slice(0, 8).map((item) => (
+                    <View key={item.id} style={styles.profileBadge}>
+                      <Icon name={item.icon || 'shield-star-outline'} size={16} color={COLORS.primary} />
+                      <Text style={styles.profileBadgeText} numberOfLines={1}>{item.title}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
-            <Text style={styles.badgesTitle}>{copy('profile.badges')}</Text>
-            {badges.length === 0 ? (
-              <Text style={styles.emptyText}>{copy('profile.noBadges')}</Text>
-            ) : (
-              <View style={styles.badgeWrap}>
-                {badges.slice(0, 8).map((item) => (
-                  <View key={item.id} style={styles.profileBadge}>
-                    <Icon name={item.icon || 'shield-star-outline'} size={16} color={COLORS.primary} />
-                    <Text style={styles.profileBadgeText} numberOfLines={1}>{item.title}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+            <View style={styles.editCard}>
+              <Text style={styles.adminTitle}>{copy('profile.customize')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={copy('profile.headline')}
+                placeholderTextColor={COLORS.textMuted}
+                value={favoritesForm.profile_headline || ''}
+                onChangeText={(value) => updateFavoriteField('profile_headline', value)}
+              />
+              <TextInput
+                style={[styles.input, styles.inputSpacing]}
+                placeholder={copy('profile.favoriteSong')}
+                placeholderTextColor={COLORS.textMuted}
+                value={favoritesForm.favorite_song_title || ''}
+                onChangeText={(value) => updateFavoriteField('favorite_song_title', value)}
+              />
+              <TextInput
+                style={[styles.input, styles.inputSpacing]}
+                placeholder={copy('profile.favoriteArtist')}
+                placeholderTextColor={COLORS.textMuted}
+                value={favoritesForm.favorite_song_artist || ''}
+                onChangeText={(value) => updateFavoriteField('favorite_song_artist', value)}
+              />
+              <TextInput
+                style={[styles.input, styles.inputSpacing]}
+                placeholder={copy('profile.favoriteArtist')}
+                placeholderTextColor={COLORS.textMuted}
+                value={favoritesForm.favorite_artist_name || ''}
+                onChangeText={(value) => updateFavoriteField('favorite_artist_name', value)}
+              />
+              <TextInput
+                style={[styles.input, styles.inputSpacing]}
+                placeholder={copy('profile.favoritePodcast')}
+                placeholderTextColor={COLORS.textMuted}
+                value={favoritesForm.favorite_podcast_title || ''}
+                onChangeText={(value) => updateFavoriteField('favorite_podcast_title', value)}
+              />
+              <TouchableOpacity
+                style={[styles.saveProfileButton, isSavingProfile && styles.actionBtnDisabled]}
+                onPress={handleSaveFavorites}
+                disabled={isSavingProfile}
+              >
+                <Text style={styles.saveProfileButtonText}>
+                  {isSavingProfile ? t('common.loading') : copy('common.save')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <View style={styles.editCard}>
-            <Text style={styles.adminTitle}>{copy('profile.customize')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={copy('profile.headline')}
-              placeholderTextColor={COLORS.textMuted}
-              value={favoritesForm.profile_headline || ''}
-              onChangeText={(value) => updateFavoriteField('profile_headline', value)}
-            />
-            <TextInput
-              style={[styles.input, styles.inputSpacing]}
-              placeholder={copy('profile.favoriteSong')}
-              placeholderTextColor={COLORS.textMuted}
-              value={favoritesForm.favorite_song_title || ''}
-              onChangeText={(value) => updateFavoriteField('favorite_song_title', value)}
-            />
-            <TextInput
-              style={[styles.input, styles.inputSpacing]}
-              placeholder={copy('profile.favoriteArtist')}
-              placeholderTextColor={COLORS.textMuted}
-              value={favoritesForm.favorite_song_artist || ''}
-              onChangeText={(value) => updateFavoriteField('favorite_song_artist', value)}
-            />
-            <TextInput
-              style={[styles.input, styles.inputSpacing]}
-              placeholder={copy('profile.favoriteArtist')}
-              placeholderTextColor={COLORS.textMuted}
-              value={favoritesForm.favorite_artist_name || ''}
-              onChangeText={(value) => updateFavoriteField('favorite_artist_name', value)}
-            />
-            <TextInput
-              style={[styles.input, styles.inputSpacing]}
-              placeholder={copy('profile.favoritePodcast')}
-              placeholderTextColor={COLORS.textMuted}
-              value={favoritesForm.favorite_podcast_title || ''}
-              onChangeText={(value) => updateFavoriteField('favorite_podcast_title', value)}
-            />
-            <TouchableOpacity
-              style={[styles.saveProfileButton, isSavingProfile && styles.actionBtnDisabled]}
-              onPress={handleSaveFavorites}
-              disabled={isSavingProfile}
-            >
-              <Text style={styles.saveProfileButtonText}>
-                {isSavingProfile ? t('common.loading') : copy('common.save')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{copy('profile.androidSystem')}</Text>
@@ -1213,6 +1248,65 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '800',
+  },
+  guestHeroCard: {
+    padding: SPACING.lg,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(227, 30, 36, 0.25)',
+    alignItems: 'center',
+  },
+  guestIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(227, 30, 36, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+  },
+  guestHeroTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: SPACING.xs,
+  },
+  guestHeroText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+  },
+  guestFeaturesList: {
+    width: '100%',
+    gap: 8,
+    marginBottom: SPACING.lg,
+  },
+  guestFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guestFeatureText: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  guestLoginButton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestLoginButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '900',
   },
 });
 

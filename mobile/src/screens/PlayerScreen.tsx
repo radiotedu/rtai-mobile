@@ -451,14 +451,19 @@ const PlayerScreen = ({route}: any) => {
             <View style={styles.spacer} />
           )}
 
-          {lyricsLines.length > 0 && lyricsDismissedTrackKey !== lyricsTrackKey ? (
-            <View style={styles.lyricsPanel}>
+          {(lyricsLines.length > 0 || isLyricsLoading || manualLyricsRequestedKey === lyricsTrackKey) &&
+          lyricsDismissedTrackKey !== lyricsTrackKey &&
+          !stationOnlyPresentation ? (
+            <View style={styles.lyricsPanel} accessibilityLabel={copy('player.lyrics')}>
               <View style={styles.lyricsHeader}>
                 <Text style={styles.lyricsTitle}>{copy('player.lyrics')}</Text>
                 <View style={styles.lyricsHeaderActions}>
                   <Text style={styles.lyricsProvider}>LRCLIB</Text>
                   <TouchableOpacity
-                    onPress={() => setLyricsDismissedTrackKey(lyricsTrackKey)}
+                    onPress={() => {
+                      setLyricsDismissedTrackKey(lyricsTrackKey);
+                      setManualLyricsRequestedKey('');
+                    }}
                     style={styles.lyricsClose}
                     accessibilityRole="button"
                     accessibilityLabel={copy('player.lyricsClose')}>
@@ -466,18 +471,29 @@ const PlayerScreen = ({route}: any) => {
                   </TouchableOpacity>
                 </View>
               </View>
-              <ScrollView
-                style={styles.lyricsScroller}
-                contentContainerStyle={styles.lyricsContent}
-                nestedScrollEnabled
-                persistentScrollbar
-                showsVerticalScrollIndicator>
-                {lyricsLines.map((line, index) => (
-                  <Text key={`${index}-${line}`} selectable style={styles.lyricsLine}>
-                    {line}
-                  </Text>
-                ))}
-              </ScrollView>
+              {isLyricsLoading ? (
+                <View style={styles.lyricsStatusWrap}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.lyricsStatusText}>Şarkı sözleri yükleniyor...</Text>
+                </View>
+              ) : lyricsLines.length > 0 ? (
+                <ScrollView
+                  style={styles.lyricsScroller}
+                  contentContainerStyle={styles.lyricsContent}
+                  nestedScrollEnabled
+                  persistentScrollbar
+                  showsVerticalScrollIndicator>
+                  {lyricsLines.map((line, index) => (
+                    <Text key={`${index}-${line}`} selectable style={styles.lyricsLine}>
+                      {line}
+                    </Text>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.lyricsStatusWrap}>
+                  <Text style={styles.lyricsStatusText}>Bu parça için şarkı sözü bulunamadı.</Text>
+                </View>
+              )}
             </View>
           ) : !stationOnlyPresentation && (lyricsTrackTitle || displayTitle) ? (
             <View style={styles.cellularLyricsContainer}>
@@ -813,6 +829,19 @@ const styles = StyleSheet.create({
   lyricsScroller: {flexGrow: 0, height: 124},
   lyricsContent: {paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, gap: 10},
   lyricsLine: {color: COLORS.text, fontSize: 16, lineHeight: 24},
+  lyricsStatusWrap: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  lyricsStatusText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   cellularLyricsContainer: {
     marginTop: SPACING.sm,
     alignItems: 'center',

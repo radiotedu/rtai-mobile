@@ -127,7 +127,7 @@ export async function fetchScrollableLyrics({
   const match = [...candidates.values()]
     .filter(candidate => !candidate.instrumental && (candidate.plainLyrics || candidate.syncedLyrics))
     .map(candidate => ({candidate, score: matchScore(candidate, cleanTrack, cleanArtist)}))
-    .filter(entry => entry.score >= 8)
+    .filter(entry => entry.score >= 4)
     .sort((left, right) => right.score - left.score)[0]?.candidate;
 
   return parseScrollableLyrics(match?.plainLyrics || match?.syncedLyrics);

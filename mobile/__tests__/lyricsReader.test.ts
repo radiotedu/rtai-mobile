@@ -32,6 +32,6 @@ describe('manual lyrics reader', () => {
     expect(player).toContain("state.type === 'cellular'");
     expect(player).toContain('isCellular && manualLyricsRequestedKey !== lyricsTrackKey');
     expect(player).toContain('cellularLyricsButton');
-    expect(player).toContain('player.loadLyricsMobileData');
+    expect(player).toContain('LYRICS');
   });
 });

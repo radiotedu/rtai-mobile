@@ -490,17 +490,16 @@ const PlayerScreen = ({route}: any) => {
                 activeOpacity={0.8}
                 onPress={() => setManualLyricsRequestedKey(lyricsTrackKey)}
                 accessibilityRole="button"
-                accessibilityLabel={copy('player.loadLyricsMobileData')}>
-                <Icon name="text-box-search-outline" size={16} color={COLORS.primary} style={styles.cellularLyricsIcon} />
+                accessibilityLabel="LYRICS">
                 <Text style={styles.cellularLyricsButtonText}>
-                  {copy('player.loadLyricsMobileData')}
+                  LYRICS
                 </Text>
               </TouchableOpacity>
             </View>
           ) : isLyricsLoading ? (
             <View style={styles.lyricsLoadingContainer}>
               <ActivityIndicator size="small" color={COLORS.primary} style={styles.cellularLyricsIcon} />
-              <Text style={styles.lyricsLoadingText}>{copy('player.lyrics')}...</Text>
+              <Text style={styles.lyricsLoadingText}>LYRICS...</Text>
             </View>
           ) : null}
 
@@ -811,20 +810,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellularLyricsButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
-  cellularLyricsIcon: {marginRight: 6},
   cellularLyricsButtonText: {
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: '700',
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
   },
   lyricsLoadingContainer: {
     marginTop: SPACING.sm,

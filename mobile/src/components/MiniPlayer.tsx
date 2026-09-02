@@ -38,6 +38,26 @@ const IMMERSIVE_GAME_ROUTES = new Set([
   'WordGuessGame',
 ]);
 
+const HIDDEN_MINIPLAYER_ROUTES = new Set([
+  'MainTabs',
+  'Radio',
+  'Profile',
+  'Jukebox',
+  'Games',
+  'Social',
+  'Study',
+  'LibraryStudyWeb',
+  'StudyRoom',
+  'AvatarCloset',
+  'NextSongVote',
+  'Player',
+  'SnakeGame',
+  'MemoryGame',
+  'TetrisGame',
+  'RhythmTapGame',
+  'WordGuessGame',
+]);
+
 export function getDeepestActiveRouteName(state: any): string | undefined {
   let currentState = state;
   let activeRouteName: string | undefined;
@@ -57,17 +77,7 @@ export function getDeepestActiveRouteName(state: any): string | undefined {
 }
 
 export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean {
-  return (
-    !activeRouteName ||
-    activeRouteName === 'MainTabs' ||
-    activeRouteName === 'Radio' ||
-    activeRouteName === 'Profile' ||
-    activeRouteName === 'Jukebox' ||
-    activeRouteName === 'Games' ||
-    activeRouteName === 'Social' ||
-    activeRouteName === 'Player' ||
-    IMMERSIVE_GAME_ROUTES.has(activeRouteName)
-  );
+  return !activeRouteName || HIDDEN_MINIPLAYER_ROUTES.has(activeRouteName);
 }
 
 const TAB_ROUTES = new Set(['Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);

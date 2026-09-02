@@ -9,7 +9,7 @@
  * react-native-track-player v4 exposes the queue to the car as a single flat
  * list (no nested folders from JS), so channels and podcasts share one queue.
  */
-import TrackPlayer, {State, Track} from 'react-native-track-player';
+import TrackPlayer, {Capability, State, Track} from 'react-native-track-player';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
 import {Image} from 'react-native';
@@ -220,6 +220,77 @@ export async function ensureBrowsableQueue(
   }
 }
 
+let currentModeIsPodcast: boolean | null = null;
+
+export async function syncTrackPlayerCapabilities(isPodcast: boolean): Promise<void> {
+  if (currentModeIsPodcast === isPodcast) {
+    return;
+  }
+  currentModeIsPodcast = isPodcast;
+
+  try {
+    if (isPodcast) {
+      await TrackPlayer.updateOptions({
+        capabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.JumpBackward,
+          Capability.JumpForward,
+          Capability.SeekTo,
+          Capability.Stop,
+          Capability.PlayFromSearch,
+        ],
+        compactCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.JumpBackward,
+          Capability.JumpForward,
+        ],
+        // @ts-ignore
+        notificationCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.JumpBackward,
+          Capability.JumpForward,
+          Capability.SeekTo,
+          Capability.Stop,
+          Capability.PlayFromSearch,
+        ],
+        forwardJumpInterval: 30,
+        backwardJumpInterval: 15,
+      });
+    } else {
+      await TrackPlayer.updateOptions({
+        capabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+          Capability.Stop,
+          Capability.PlayFromSearch,
+        ],
+        compactCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+        ],
+        // @ts-ignore
+        notificationCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+          Capability.Stop,
+          Capability.PlayFromSearch,
+        ],
+      });
+    }
+  } catch (error) {
+    logSafeError('playback.syncCapabilities', error);
+  }
+}
+
 export async function playTrackById(id: string): Promise<boolean> {
   const queue = await TrackPlayer.getQueue();
   const index = queue.findIndex(track => track.id === id);
@@ -228,6 +299,9 @@ export async function playTrackById(id: string): Promise<boolean> {
     return false;
   }
   markPlaybackRequested();
+  const isPodcast = id.startsWith('podcast:');
+  await syncTrackPlayerCapabilities(isPodcast);
+
   const activeTrack = await TrackPlayer.getActiveTrack();
   if (activeTrack?.id === id && activeTrack?.url === queue[index]?.url) {
     await TrackPlayer.play();
@@ -240,7 +314,7 @@ export async function playTrackById(id: string): Promise<boolean> {
     }, 150);
   }
   recordRecent(queue[index]).catch(() => {});
-  Analytics.interaction(id.startsWith('podcast:') ? 'podcast' : 'radio', 'play', 'success');
+  Analytics.interaction(isPodcast ? 'podcast' : 'radio', 'play', 'success');
   return true;
 }
 

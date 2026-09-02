@@ -131,6 +131,26 @@ export const PlaybackService = async function () {
   TrackPlayer.addEventListener(Event.RemotePrevious, () =>
     playAdjacentQueueItem(-1),
   );
+  TrackPlayer.addEventListener(Event.RemoteJumpForward, async ({interval}: any) => {
+    try {
+      const track = await TrackPlayer.getActiveTrack();
+      if (track?.id && isPodcastId(String(track.id))) {
+        await TrackPlayer.seekBy(interval || 30);
+      }
+    } catch (error) {
+      logSafeError('playback.remoteJumpForward', error);
+    }
+  });
+  TrackPlayer.addEventListener(Event.RemoteJumpBackward, async ({interval}: any) => {
+    try {
+      const track = await TrackPlayer.getActiveTrack();
+      if (track?.id && isPodcastId(String(track.id))) {
+        await TrackPlayer.seekBy(-(interval || 15));
+      }
+    } catch (error) {
+      logSafeError('playback.remoteJumpBackward', error);
+    }
+  });
 
   // Android Auto / CarPlay: user tapped an item in the browse list.
   // The id is a channel id (e.g. "radiotedu-jazz") or "podcast:<id>".

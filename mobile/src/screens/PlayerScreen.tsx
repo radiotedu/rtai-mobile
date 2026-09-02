@@ -38,6 +38,7 @@ import {
 import {
   loadFavoriteChannelIds,
   saveFavoriteChannelIds,
+  subscribeFavoriteChannelIds,
   toggleFavoriteChannelId,
 } from '../services/radioFavorites';
 import {useMetadata} from '../context/MetadataContext';
@@ -48,6 +49,7 @@ import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 import {fetchScrollableLyrics} from '../services/lyricsService';
 import {useSleepTimer} from '../services/sleepTimer';
+import NetInfo from '@react-native-community/netinfo';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
 
@@ -92,13 +94,28 @@ const PlayerScreen = ({route}: any) => {
   const [sleepMenuVisible, setSleepMenuVisible] = useState(false);
   const [lyricsLines, setLyricsLines] = useState<string[]>([]);
   const [lyricsDismissedTrackKey, setLyricsDismissedTrackKey] = useState<string | null>(null);
+  const [isCellular, setIsCellular] = useState(false);
+  const [manualLyricsRequestedKey, setManualLyricsRequestedKey] = useState('');
+  const [isLyricsLoading, setIsLyricsLoading] = useState(false);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
 
   useEffect(() => {
+    const unsubscribeNet = NetInfo.addEventListener(state => {
+      setIsCellular(state.type === 'cellular');
+    });
+    NetInfo.fetch().then(state => {
+      setIsCellular(state.type === 'cellular');
+    }).catch(() => {});
+    return () => unsubscribeNet();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeFavoriteChannelIds(setFavoriteIds);
     loadFavoriteChannelIds()
       .then(setFavoriteIds)
       .catch(() => {});
+    return unsubscribe;
   }, []);
 
   const channelList = activeChannels.length ? activeChannels : RADIO_CHANNELS;
@@ -155,22 +172,35 @@ const PlayerScreen = ({route}: any) => {
   useEffect(() => {
     const controller = new AbortController();
     setLyricsLines([]);
+    setIsLyricsLoading(false);
+
     if (!currentChannel || !lyricsTrackTitle) {
       return () => controller.abort();
     }
+
+    // On cellular/mobile data, do not auto-download. Only fetch if user tapped manual load for this track.
+    if (isCellular && manualLyricsRequestedKey !== lyricsTrackKey) {
+      return () => controller.abort();
+    }
+
+    setIsLyricsLoading(true);
     fetchScrollableLyrics({
       track: lyricsTrackTitle,
       artist: lyricsTrackArtist,
       signal: controller.signal,
     })
-      .then(lines => setLyricsLines(lines))
+      .then(lines => {
+        setLyricsLines(lines);
+        setIsLyricsLoading(false);
+      })
       .catch(error => {
+        setIsLyricsLoading(false);
         if (error?.name !== 'AbortError') {
           logSafeError('player.lyrics', error);
         }
       });
     return () => controller.abort();
-  }, [currentChannel, lyricsTrackArtist, lyricsTrackTitle]);
+  }, [currentChannel, isCellular, lyricsTrackArtist, lyricsTrackKey, lyricsTrackTitle, manualLyricsRequestedKey]);
 
   const dismissPlayer = useCallback(() => {
     Animated.timing(dismissY, {
@@ -448,6 +478,29 @@ const PlayerScreen = ({route}: any) => {
                   </Text>
                 ))}
               </ScrollView>
+            </View>
+          ) : isCellular &&
+            manualLyricsRequestedKey !== lyricsTrackKey &&
+            lyricsTrackTitle &&
+            !stationOnlyPresentation &&
+            lyricsDismissedTrackKey !== lyricsTrackKey ? (
+            <View style={styles.cellularLyricsContainer}>
+              <TouchableOpacity
+                style={styles.cellularLyricsButton}
+                activeOpacity={0.8}
+                onPress={() => setManualLyricsRequestedKey(lyricsTrackKey)}
+                accessibilityRole="button"
+                accessibilityLabel={copy('player.loadLyricsMobileData')}>
+                <Icon name="text-box-search-outline" size={16} color={COLORS.primary} style={styles.cellularLyricsIcon} />
+                <Text style={styles.cellularLyricsButtonText}>
+                  {copy('player.loadLyricsMobileData')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : isLyricsLoading ? (
+            <View style={styles.lyricsLoadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.primary} style={styles.cellularLyricsIcon} />
+              <Text style={styles.lyricsLoadingText}>{copy('player.lyrics')}...</Text>
             </View>
           ) : null}
 
@@ -752,6 +805,38 @@ const styles = StyleSheet.create({
   lyricsScroller: {flexGrow: 0, height: 124},
   lyricsContent: {paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, gap: 10},
   lyricsLine: {color: COLORS.text, fontSize: 16, lineHeight: 24},
+  cellularLyricsContainer: {
+    marginTop: SPACING.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cellularLyricsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  cellularLyricsIcon: {marginRight: 6},
+  cellularLyricsButtonText: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  lyricsLoadingContainer: {
+    marginTop: SPACING.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  lyricsLoadingText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+  },
   menuOverlay: {
     flex: 1,
     justifyContent: 'flex-end',

@@ -35,20 +35,49 @@ export function buildFavoriteChannelOrder<T extends ChannelLike>(
   return {favorites, remaining};
 }
 
+let cachedFavoriteIds: string[] | null = null;
+const listeners = new Set<(ids: string[]) => void>();
+
+export function subscribeFavoriteChannelIds(listener: (ids: string[]) => void): () => void {
+  listeners.add(listener);
+  if (cachedFavoriteIds !== null) {
+    listener(cachedFavoriteIds);
+  }
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function getCachedFavoriteChannelIds(): string[] {
+  return cachedFavoriteIds ?? [];
+}
+
 export async function loadFavoriteChannelIds(): Promise<string[]> {
   const raw = await AsyncStorage.getItem(RADIO_FAVORITES_KEY);
   if (!raw) {
+    cachedFavoriteIds = [];
     return [];
   }
 
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
+    const ids = Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
+    cachedFavoriteIds = ids;
+    return ids;
   } catch {
+    cachedFavoriteIds = [];
     return [];
   }
 }
 
 export async function saveFavoriteChannelIds(favoriteIds: string[]) {
+  cachedFavoriteIds = favoriteIds;
   await AsyncStorage.setItem(RADIO_FAVORITES_KEY, JSON.stringify(favoriteIds));
+  listeners.forEach(listener => {
+    try {
+      listener(favoriteIds);
+    } catch {
+      // best-effort
+    }
+  });
 }

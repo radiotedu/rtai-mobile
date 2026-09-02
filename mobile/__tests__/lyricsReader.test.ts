@@ -25,4 +25,13 @@ describe('manual lyrics reader', () => {
     expect(service).toContain('candidate.plainLyrics || candidate.syncedLyrics');
     expect(service).toContain('https://lrclib.net/api/search');
   });
+
+  it('gates automatic lyrics fetching behind wifi and exposes a manual load button on mobile data', () => {
+    const player = readSource('src/screens/PlayerScreen.tsx');
+    expect(player).toContain('@react-native-community/netinfo');
+    expect(player).toContain("state.type === 'cellular'");
+    expect(player).toContain('isCellular && manualLyricsRequestedKey !== lyricsTrackKey');
+    expect(player).toContain('cellularLyricsButton');
+    expect(player).toContain('player.loadLyricsMobileData');
+  });
 });

@@ -8,11 +8,11 @@ const read = (relativePath: string) => fs.readFileSync(path.join(root, relativeP
 describe('requested playback and navigation fixes', () => {
   it('offers podcast rewind and forward controls in player and notifications', () => {
     const player = read('src/screens/PlayerScreen.tsx');
-    const app = read('App.tsx');
+    const queue = read('src/services/playbackQueue.ts');
     expect(player).toContain('seekPodcastBy(-15)');
     expect(player).toContain('seekPodcastBy(30)');
-    expect(app).toContain('Capability.JumpBackward');
-    expect(app).toContain('Capability.JumpForward');
+    expect(queue).toContain('Capability.JumpBackward');
+    expect(queue).toContain('Capability.JumpForward');
   });
 
   it('presents FLAC as High Quality while retaining codec detail', () => {

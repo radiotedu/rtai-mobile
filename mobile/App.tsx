@@ -104,9 +104,6 @@ function App(): React.JSX.Element {
             Capability.SkipToNext,
             Capability.SkipToPrevious,
             Capability.Stop,
-            Capability.SeekTo,
-            Capability.JumpBackward,
-            Capability.JumpForward,
             Capability.PlayFromSearch,
           ],
           compactCapabilities: [
@@ -122,8 +119,6 @@ function App(): React.JSX.Element {
             Capability.SkipToNext,
             Capability.SkipToPrevious,
             Capability.Stop,
-            Capability.JumpBackward,
-            Capability.JumpForward,
             Capability.PlayFromSearch,
           ],
           forwardJumpInterval: 30,

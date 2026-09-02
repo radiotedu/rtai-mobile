@@ -8,6 +8,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 import {
   buildFavoriteChannelOrder,
   orderVotingChannelLast,
+  saveFavoriteChannelIds,
+  subscribeFavoriteChannelIds,
   toggleFavoriteChannelId,
 } from '../src/services/radioFavorites';
 
@@ -16,6 +18,18 @@ describe('radioFavorites helpers', () => {
     expect(toggleFavoriteChannelId([], 'main')).toEqual(['main']);
     expect(toggleFavoriteChannelId(['main'], 'jazz')).toEqual(['main', 'jazz']);
     expect(toggleFavoriteChannelId(['main', 'jazz'], 'main')).toEqual(['jazz']);
+  });
+
+  it('notifies active subscribers when favorites are saved', async () => {
+    const received: string[][] = [];
+    const unsubscribe = subscribeFavoriteChannelIds(ids => received.push(ids));
+
+    await saveFavoriteChannelIds(['radiotedu-rock']);
+    expect(received).toContainEqual(['radiotedu-rock']);
+
+    unsubscribe();
+    await saveFavoriteChannelIds(['radiotedu-cazz']);
+    expect(received).not.toContainEqual(['radiotedu-cazz']);
   });
 
   it('orders favorites first while keeping the full channel catalog available', () => {

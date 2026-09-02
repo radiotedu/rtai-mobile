@@ -50,6 +50,11 @@ describe('MiniPlayer route visibility', () => {
     expect(shouldHideMiniPlayerForRoute('Player')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('Games')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('Social')).toBe(true);
+    expect(shouldHideMiniPlayerForRoute('Study')).toBe(true);
+    expect(shouldHideMiniPlayerForRoute('NextSongVote')).toBe(true);
+    expect(shouldHideMiniPlayerForRoute('LibraryStudyWeb')).toBe(true);
+    expect(shouldHideMiniPlayerForRoute('StudyRoom')).toBe(true);
+    expect(shouldHideMiniPlayerForRoute('AvatarCloset')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('SnakeGame')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('MemoryGame')).toBe(true);
     expect(shouldHideMiniPlayerForRoute('TetrisGame')).toBe(true);

@@ -17,7 +17,7 @@ import TrackPlayer, {
   usePlaybackState,
 } from 'react-native-track-player';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
@@ -41,6 +41,7 @@ import {
   loadFavoriteChannelIds,
   orderVotingChannelLast,
   saveFavoriteChannelIds,
+  subscribeFavoriteChannelIds,
   toggleFavoriteChannelId,
 } from '../services/radioFavorites';
 
@@ -80,10 +81,20 @@ const RadioScreen = () => {
   );
 
   useEffect(() => {
+    const unsubscribe = subscribeFavoriteChannelIds(setFavoriteIds);
     loadFavoriteChannelIds()
       .then(setFavoriteIds)
       .catch((error) => logSafeError('radio.favoritesLoad', error));
+    return unsubscribe;
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavoriteChannelIds()
+        .then(setFavoriteIds)
+        .catch(() => {});
+    }, []),
+  );
 
   // Reset the per-track up/down vote whenever the station or the playing song
   // changes, so a previous "like"/"dislike" doesn't stay highlighted on a new

@@ -486,26 +486,32 @@ const LYRICS_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
   en: {
     'player.lyrics': 'Song lyrics',
     'player.lyricsClose': 'Close song lyrics',
+    'player.loadLyricsMobileData': 'Load Lyrics (Mobile Data)',
   },
   tr: {
     'player.lyrics': 'Şarkı sözleri',
     'player.lyricsClose': 'Şarkı sözlerini kapat',
+    'player.loadLyricsMobileData': 'Şarkı Sözlerini Yükle (Hücresel Veri)',
   },
   ru: {
     'player.lyrics': 'Текст песни',
     'player.lyricsClose': 'Закрыть текст песни',
+    'player.loadLyricsMobileData': 'Загрузить текст (Мобильные данные)',
   },
   ar: {
     'player.lyrics': 'كلمات الأغنية',
     'player.lyricsClose': 'إغلاق كلمات الأغنية',
+    'player.loadLyricsMobileData': 'تحميل الكلمات (بيانات الجوال)',
   },
   de: {
     'player.lyrics': 'Songtext',
     'player.lyricsClose': 'Songtext schließen',
+    'player.loadLyricsMobileData': 'Songtext laden (Mobile Daten)',
   },
   fr: {
     'player.lyrics': 'Paroles',
     'player.lyricsClose': 'Fermer les paroles',
+    'player.loadLyricsMobileData': 'Charger les paroles (Données mobiles)',
   },
 };
 

@@ -167,20 +167,21 @@ const PlayerScreen = ({route}: any) => {
   const lyricsTrackArtist = stationOnlyPresentation ? '' : String(metadata?.artist || '').trim();
   const lyricsTrackKey = lyricsTrackTitle ? `${lyricsTrackArtist}\n${lyricsTrackTitle}` : '';
 
-  const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
-  const isFlacActive = currentQuality === 'flac';
+  const currentChannelId = currentChannel?.id;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLyricsLines([]);
-    setIsLyricsLoading(false);
 
-    if (!currentChannel || !lyricsTrackTitle) {
+    if (!currentChannelId || !lyricsTrackTitle) {
+      setLyricsLines([]);
+      setIsLyricsLoading(false);
       return () => controller.abort();
     }
 
     // On cellular/mobile data, do not auto-download. Only fetch if user tapped manual load for this track.
     if (isCellular && manualLyricsRequestedKey !== lyricsTrackKey) {
+      setLyricsLines([]);
+      setIsLyricsLoading(false);
       return () => controller.abort();
     }
 
@@ -201,7 +202,7 @@ const PlayerScreen = ({route}: any) => {
         }
       });
     return () => controller.abort();
-  }, [currentChannel, isCellular, lyricsTrackArtist, lyricsTrackKey, lyricsTrackTitle, manualLyricsRequestedKey]);
+  }, [currentChannelId, isCellular, lyricsTrackArtist, lyricsTrackKey, lyricsTrackTitle, manualLyricsRequestedKey]);
 
   const dismissPlayer = useCallback(() => {
     Animated.timing(dismissY, {
@@ -505,24 +506,7 @@ const PlayerScreen = ({route}: any) => {
                 onPress={() => {
                   setIsLyricsPanelOpen(true);
                   setLyricsDismissedTrackKey('');
-                  const effectiveTitle = lyricsTrackTitle || (displayTitle !== 'RadioTEDU' ? displayTitle : '');
-                  const effectiveArtist = lyricsTrackArtist || (displayArtist !== 'RadioTEDU' ? displayArtist : '');
-                  setManualLyricsRequestedKey(effectiveTitle ? `${effectiveArtist}\n${effectiveTitle}` : 'manual_requested');
-                  if (!isLyricsLoading && effectiveTitle) {
-                    setIsLyricsLoading(true);
-                    fetchScrollableLyrics({
-                      track: effectiveTitle,
-                      artist: effectiveArtist,
-                    })
-                      .then(lines => {
-                        setLyricsLines(lines);
-                        setIsLyricsLoading(false);
-                      })
-                      .catch(error => {
-                        setIsLyricsLoading(false);
-                        logSafeError('player.lyrics', error);
-                      });
-                  }
+                  setManualLyricsRequestedKey(lyricsTrackKey);
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={copy('player.lyrics')}>

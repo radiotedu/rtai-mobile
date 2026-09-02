@@ -191,7 +191,7 @@ npm test
 
 Expected current baselines:
 
-- Mobile Jest: 89/89 suites, 335/335 tests.
+- Mobile Jest: 90/90 suites, 340/340 tests.
 - Android static publish audit: 36/36.
 - Study/Social: 46/46 files, 227/227 tests, plus 3/3 generation contracts.
 - Production account contract harness: 4/4.
@@ -250,4 +250,16 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Jukebox & Market screens were preserved without modifications.
 - No email/notification was sent during these changes.
 - ERP and the Audio Library were not modified.
+
+## 2026-09-02 Phase 2 favorites, lyrics, navigation & notification handoff snapshot
+
+- Two-way real-time favorites synchronization across PlayerScreen modal and RadioScreen favorites shelf via subscriber pattern in `radioFavorites.ts`.
+- MiniPlayer suppression on interactive screens (`NextSongVote`, `Social`, `Study`, `LibraryStudyWeb`, `StudyRoom`, `AvatarCloset`) in `MiniPlayer.tsx`.
+- Smart network-aware lyrics policy: Automatic LRCLIB lyrics on Wi-Fi; on-demand manual load button with no background data fetch on cellular mobile data in `PlayerScreen.tsx` & `appCopy.ts`.
+- Dynamic platform media notification capabilities: Live Radio presents station previous/next controls with jump symbols removed; Podcasts present -15s / +30s jump controls in `playbackQueue.ts` & `playbackService.ts`.
+- Verified on live Android tablet emulator (`RadioTEDU-Tablet-Test`), including screenshots of favorited state, shelf sync, and interactive Jukebox WebView.
+- Tests: Mobile Jest 90/90 suites (340/340 tests), Android publish audit 36/36, Study/Social 46/46 files (227/227 tests + 3/3 generation contracts), Language routing 6/6 suites (100% pass), Registration newsletter 2/2 suites (100% pass), Stations page 4/4 suites (100% pass), Root contracts 15/15 pass.
+- Commit hash pushed to `origin/main`: `0aa7062`.
+- No Android build performed. No email or push notifications sent. Production DB and Audio Library untouched.
+
 

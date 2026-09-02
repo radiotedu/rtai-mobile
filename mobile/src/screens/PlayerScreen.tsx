@@ -772,11 +772,9 @@ const styles = StyleSheet.create({
   liveBarFill: {width: '100%', height: '100%', backgroundColor: COLORS.primary, opacity: 0.5},
   spacer: {height: SPACING.md},
   lyricsPanel: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
     borderWidth: 1,
-    borderLeftWidth: 3,
     borderColor: COLORS.border,
-    borderLeftColor: COLORS.primary,
     borderRadius: 16,
     backgroundColor: COLORS.surface,
     overflow: 'hidden',

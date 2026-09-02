@@ -36,6 +36,7 @@ import {useChannels} from '../context/ChannelContext';
 import {Analytics} from '../services/analyticsService';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
+import {navigationRef, openPlayerModal} from '../navigation/navigationRef';
 import {
   buildFavoriteChannelOrder,
   loadFavoriteChannelIds,
@@ -155,10 +156,14 @@ const RadioScreen = () => {
     }
   };
 
+  const openPlayer = () => {
+    openPlayerModal();
+  };
+
   // Tapping a station plays it AND opens the full-screen player.
   const openChannel = (channel: RadioChannel) => {
     playChannel(channel);
-    navigation.navigate('Player');
+    openPlayer();
   };
 
   const togglePlayback = async () => {
@@ -227,16 +232,12 @@ const RadioScreen = () => {
 
   const renderHistoryItem = ({item}: {item: any}) => (
     <View style={styles.historyItem}>
-      <Image
-        source={{uri: item.cover_url || 'https://radiotedu.com/logo.png'}}
-        style={styles.historyCover}
-      />
-      <View style={styles.historyInfo}>
-        <Text style={styles.historyTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.historyArtist} numberOfLines={1}>{item.artist}</Text>
+      <View style={styles.historyTrackInfo}>
+        <Text style={styles.historyTrackTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.historyTrackArtist} numberOfLines={1}>{item.artist}</Text>
       </View>
       <Text style={styles.historyTime}>
-        {new Date(item.played_at).toLocaleTimeString(i18n.resolvedLanguage || i18n.language || 'en', {
+        {new Date(item.played_at).toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
         })}
@@ -250,13 +251,14 @@ const RadioScreen = () => {
         <SafeAreaView style={styles.safeArea}>
           <GlobalHeader />
 
-          <View style={styles.nowPlayingCard}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Player')}
-              activeOpacity={0.85}
-              accessibilityLabel={copy('common.openPlayer')}>
+          <TouchableOpacity
+            style={styles.nowPlayingCard}
+            activeOpacity={0.9}
+            onPress={openPlayer}
+            accessibilityLabel={copy('common.openPlayer')}>
+            <View>
               {displayArtworkSource ? <Image source={displayArtworkSource} style={styles.nowArtwork} /> : <View style={styles.nowArtworkPlaceholder} />}
-            </TouchableOpacity>
+            </View>
             <View style={styles.nowBody}>
               <View style={styles.liveRow}>
                 <View style={styles.liveBadge}>
@@ -279,13 +281,13 @@ const RadioScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity style={styles.playButton} onPress={togglePlayback}>
                 {isBuffering ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Icon name={isPlaying ? 'pause' : 'play'} size={25} color="#fff" />
+                  <Icon name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
                 )}
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.transportRow}>
             <TouchableOpacity style={styles.transportButton} onPress={skipToPreviousChannel}>

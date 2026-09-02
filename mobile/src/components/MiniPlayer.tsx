@@ -29,6 +29,7 @@ import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioCha
 import {logSafeError} from '../utils/safeLog';
 import AirPlayRoutePicker from './AirPlayRoutePicker';
 import {clearOutputMedia, showCastRoutePicker, updateOutputMedia} from '../services/outputRouting';
+import {openPlayerModal} from '../navigation/navigationRef';
 
 const IMMERSIVE_GAME_ROUTES = new Set([
   'SnakeGame',
@@ -245,7 +246,9 @@ const MiniPlayer = () => {
         <TouchableOpacity
           style={styles.touchableArea}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('Player')}>
+          onPress={() => {
+            openPlayerModal();
+          }}>
           <View style={styles.artworkContainer}>
             {displayArtworkSource &&
             displayArtwork !== 'https://radiotedu.com/logo.png' ? (

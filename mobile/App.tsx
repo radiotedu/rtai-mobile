@@ -15,6 +15,7 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TrackPlayer, { Capability } from 'react-native-track-player';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { navigationRef } from './src/navigation/navigationRef';
 import { MetadataProvider } from './src/context/MetadataContext';
 import { ChannelProvider } from './src/context/ChannelContext';
 import { AuthProvider } from './src/context/AuthContext';
@@ -62,8 +63,6 @@ const linking: any = {
     },
   },
 };
-
-export const navigationRef = createNavigationContainerRef<any>();
 
 function App(): React.JSX.Element {
   const [showSplash, setShowSplash] = React.useState(true);

@@ -479,27 +479,38 @@ const PlayerScreen = ({route}: any) => {
                 ))}
               </ScrollView>
             </View>
-          ) : isCellular &&
-            manualLyricsRequestedKey !== lyricsTrackKey &&
-            lyricsTrackTitle &&
-            !stationOnlyPresentation &&
-            lyricsDismissedTrackKey !== lyricsTrackKey ? (
+          ) : !stationOnlyPresentation && (lyricsTrackTitle || displayTitle) ? (
             <View style={styles.cellularLyricsContainer}>
               <TouchableOpacity
                 style={styles.cellularLyricsButton}
                 activeOpacity={0.8}
-                onPress={() => setManualLyricsRequestedKey(lyricsTrackKey)}
+                onPress={() => {
+                  setLyricsDismissedTrackKey('');
+                  const effectiveTitle = lyricsTrackTitle || (displayTitle !== 'RadioTEDU' ? displayTitle : '');
+                  const effectiveArtist = lyricsTrackArtist || (displayArtist !== 'RadioTEDU' ? displayArtist : '');
+                  setManualLyricsRequestedKey(effectiveTitle ? `${effectiveArtist}\n${effectiveTitle}` : 'manual_requested');
+                  if (!isLyricsLoading && effectiveTitle) {
+                    setIsLyricsLoading(true);
+                    fetchScrollableLyrics({
+                      track: effectiveTitle,
+                      artist: effectiveArtist,
+                    })
+                      .then(lines => {
+                        setLyricsLines(lines);
+                        setIsLyricsLoading(false);
+                      })
+                      .catch(error => {
+                        setIsLyricsLoading(false);
+                        logSafeError('player.lyrics', error);
+                      });
+                  }
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="LYRICS">
                 <Text style={styles.cellularLyricsButtonText}>
-                  LYRICS
+                  {isLyricsLoading ? 'LYRICS...' : 'LYRICS'}
                 </Text>
               </TouchableOpacity>
-            </View>
-          ) : isLyricsLoading ? (
-            <View style={styles.lyricsLoadingContainer}>
-              <ActivityIndicator size="small" color={COLORS.primary} style={styles.cellularLyricsIcon} />
-              <Text style={styles.lyricsLoadingText}>LYRICS...</Text>
             </View>
           ) : null}
 
@@ -641,7 +652,7 @@ const PlayerScreen = ({route}: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: COLORS.background},
+  container: {flex: 1, width: '100%', height: '100%', backgroundColor: COLORS.background},
   tint: {
     position: 'absolute',
     top: 0,

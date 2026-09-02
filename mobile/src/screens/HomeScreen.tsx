@@ -33,6 +33,7 @@ import {
   ErpIdentityStatus,
   fetchErpIdentityStatus,
 } from '../services/ecosystem';
+import {openPlayerModal} from '../navigation/navigationRef';
 
 const emptyHome: GamificationHome = {
   points: {
@@ -185,7 +186,10 @@ const HomeScreen = () => {
                     key={channel.id}
                     style={styles.stationCard}
                     activeOpacity={0.8}
-                    onPress={() => playChannelById(channel.id)}>
+                    onPress={() => {
+                      playChannelById(channel.id);
+                      openPlayerModal();
+                    }}>
                     <View style={[styles.stationColorBar, {backgroundColor: channel.color || COLORS.primary}]} />
                     <View style={styles.stationInfo}>
                       <Text style={styles.stationName} numberOfLines={1}>{channel.name}</Text>

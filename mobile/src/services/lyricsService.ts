@@ -62,8 +62,29 @@ export async function fetchScrollableLyrics({
 }: LyricsRequest): Promise<string[]> {
   const cleanTrack = String(track).trim();
   const cleanArtist = String(artist).trim();
-  if (!cleanTrack) {
-    return [];
+  // Fast direct get for exact artist + track match
+  if (cleanTrack && cleanArtist) {
+    try {
+      const getParams = new URLSearchParams({
+        track_name: cleanTrack,
+        artist_name: cleanArtist,
+      });
+      const getRes = await fetch(`https://lrclib.net/api/get?${getParams.toString()}`, {
+        signal,
+        headers: {Accept: 'application/json'},
+      });
+      if (getRes.ok) {
+        const getBody = (await getRes.json()) as LrcLibCandidate;
+        if (!getBody.instrumental && (getBody.plainLyrics || getBody.syncedLyrics)) {
+          const parsed = parseScrollableLyrics(getBody.plainLyrics || getBody.syncedLyrics);
+          if (parsed.length > 0) {
+            return parsed;
+          }
+        }
+      }
+    } catch {
+      // Fallback to fuzzy search below
+    }
   }
 
   const baseTrack = cleanTrack.replace(/\s*(?:\[|\().*$/, '').trim();

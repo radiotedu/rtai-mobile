@@ -96,10 +96,10 @@ export async function fetchScrollableLyrics({
   const seenSearches = new Set<string>();
   const candidates = new Map<string, LrcLibCandidate>();
 
-  for (const search of searches) {
+  const fetchPromises = searches.map(async search => {
     const searchKey = `${normalize(search.artist)}\n${normalize(search.track)}`;
     if (!search.track || seenSearches.has(searchKey)) {
-      continue;
+      return;
     }
     seenSearches.add(searchKey);
 
@@ -107,22 +107,26 @@ export async function fetchScrollableLyrics({
     if (search.artist) {
       params.set('artist_name', search.artist);
     }
-    const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
-      signal,
-      headers: {Accept: 'application/json'},
-    });
-    if (!response.ok) {
-      continue;
+    try {
+      const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
+        signal,
+        headers: {Accept: 'application/json'},
+      });
+      if (response.ok) {
+        const body = await response.json();
+        if (Array.isArray(body)) {
+          body.forEach((candidate: LrcLibCandidate) => {
+            const key = String(candidate.id ?? `${candidate.artistName}\n${candidate.trackName}`);
+            candidates.set(key, candidate);
+          });
+        }
+      }
+    } catch {
+      // Ignore network abort or transient search failure
     }
-    const body = await response.json();
-    if (!Array.isArray(body)) {
-      continue;
-    }
-    body.forEach((candidate: LrcLibCandidate) => {
-      const key = String(candidate.id ?? `${candidate.artistName}\n${candidate.trackName}`);
-      candidates.set(key, candidate);
-    });
-  }
+  });
+
+  await Promise.allSettled(fetchPromises);
 
   const match = [...candidates.values()]
     .filter(candidate => !candidate.instrumental && (candidate.plainLyrics || candidate.syncedLyrics))

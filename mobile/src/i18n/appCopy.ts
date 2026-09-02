@@ -487,31 +487,43 @@ const LYRICS_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'player.lyrics': 'Song lyrics',
     'player.lyricsClose': 'Close song lyrics',
     'player.loadLyricsMobileData': 'Load Lyrics (Mobile Data)',
+    'player.lyricsLoading': 'Loading lyrics...',
+    'player.lyricsNotFound': 'No lyrics found for this track.',
   },
   tr: {
     'player.lyrics': 'Şarkı sözleri',
     'player.lyricsClose': 'Şarkı sözlerini kapat',
     'player.loadLyricsMobileData': 'Şarkı Sözlerini Yükle (Hücresel Veri)',
+    'player.lyricsLoading': 'Şarkı sözleri yükleniyor...',
+    'player.lyricsNotFound': 'Bu parça için şarkı sözü bulunamadı.',
   },
   ru: {
     'player.lyrics': 'Текст песни',
     'player.lyricsClose': 'Закрыть текст песни',
     'player.loadLyricsMobileData': 'Загрузить текст (Мобильные данные)',
+    'player.lyricsLoading': 'Загрузка текста песни...',
+    'player.lyricsNotFound': 'Текст для этого трека не найден.',
   },
   ar: {
     'player.lyrics': 'كلمات الأغنية',
     'player.lyricsClose': 'إغلاق كلمات الأغنية',
     'player.loadLyricsMobileData': 'تحميل الكلمات (بيانات الجوال)',
+    'player.lyricsLoading': 'جارٍ تحميل كلمات الأغنية...',
+    'player.lyricsNotFound': 'لم يتم العثور على كلمات لهذا المسار.',
   },
   de: {
     'player.lyrics': 'Songtext',
     'player.lyricsClose': 'Songtext schließen',
     'player.loadLyricsMobileData': 'Songtext laden (Mobile Daten)',
+    'player.lyricsLoading': 'Songtext wird geladen...',
+    'player.lyricsNotFound': 'Kein Songtext für diesen Titel gefunden.',
   },
   fr: {
     'player.lyrics': 'Paroles',
     'player.lyricsClose': 'Fermer les paroles',
     'player.loadLyricsMobileData': 'Charger les paroles (Données mobiles)',
+    'player.lyricsLoading': 'Chargement des paroles...',
+    'player.lyricsNotFound': 'Aucune parole trouvée pour ce titre.',
   },
 };
 

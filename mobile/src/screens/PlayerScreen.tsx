@@ -94,6 +94,7 @@ const PlayerScreen = ({route}: any) => {
   const [sleepMenuVisible, setSleepMenuVisible] = useState(false);
   const [lyricsLines, setLyricsLines] = useState<string[]>([]);
   const [lyricsDismissedTrackKey, setLyricsDismissedTrackKey] = useState<string | null>(null);
+  const [isLyricsPanelOpen, setIsLyricsPanelOpen] = useState(false);
   const [isCellular, setIsCellular] = useState(false);
   const [manualLyricsRequestedKey, setManualLyricsRequestedKey] = useState('');
   const [isLyricsLoading, setIsLyricsLoading] = useState(false);
@@ -451,7 +452,7 @@ const PlayerScreen = ({route}: any) => {
             <View style={styles.spacer} />
           )}
 
-          {(lyricsLines.length > 0 || isLyricsLoading || manualLyricsRequestedKey === lyricsTrackKey) &&
+          {(isLyricsPanelOpen || ((lyricsLines.length > 0 || isLyricsLoading) && !isCellular)) &&
           lyricsDismissedTrackKey !== lyricsTrackKey &&
           !stationOnlyPresentation ? (
             <View style={styles.lyricsPanel} accessibilityLabel={copy('player.lyrics')}>
@@ -461,6 +462,7 @@ const PlayerScreen = ({route}: any) => {
                   <Text style={styles.lyricsProvider}>LRCLIB</Text>
                   <TouchableOpacity
                     onPress={() => {
+                      setIsLyricsPanelOpen(false);
                       setLyricsDismissedTrackKey(lyricsTrackKey);
                       setManualLyricsRequestedKey('');
                     }}
@@ -474,7 +476,7 @@ const PlayerScreen = ({route}: any) => {
               {isLyricsLoading ? (
                 <View style={styles.lyricsStatusWrap}>
                   <ActivityIndicator size="small" color={COLORS.primary} />
-                  <Text style={styles.lyricsStatusText}>Şarkı sözleri yükleniyor...</Text>
+                  <Text style={styles.lyricsStatusText}>{copy('player.lyricsLoading')}</Text>
                 </View>
               ) : lyricsLines.length > 0 ? (
                 <ScrollView
@@ -491,7 +493,7 @@ const PlayerScreen = ({route}: any) => {
                 </ScrollView>
               ) : (
                 <View style={styles.lyricsStatusWrap}>
-                  <Text style={styles.lyricsStatusText}>Bu parça için şarkı sözü bulunamadı.</Text>
+                  <Text style={styles.lyricsStatusText}>{copy('player.lyricsNotFound')}</Text>
                 </View>
               )}
             </View>
@@ -501,6 +503,7 @@ const PlayerScreen = ({route}: any) => {
                 style={styles.cellularLyricsButton}
                 activeOpacity={0.8}
                 onPress={() => {
+                  setIsLyricsPanelOpen(true);
                   setLyricsDismissedTrackKey('');
                   const effectiveTitle = lyricsTrackTitle || (displayTitle !== 'RadioTEDU' ? displayTitle : '');
                   const effectiveArtist = lyricsTrackArtist || (displayArtist !== 'RadioTEDU' ? displayArtist : '');
@@ -522,9 +525,9 @@ const PlayerScreen = ({route}: any) => {
                   }
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="LYRICS">
+                accessibilityLabel={copy('player.lyrics')}>
                 <Text style={styles.cellularLyricsButtonText}>
-                  {isLyricsLoading ? 'LYRICS...' : 'LYRICS'}
+                  {isLyricsLoading ? copy('player.lyricsLoading') : 'LYRICS'}
                 </Text>
               </TouchableOpacity>
             </View>

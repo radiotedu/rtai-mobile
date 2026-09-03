@@ -168,6 +168,8 @@ const PlayerScreen = ({route}: any) => {
   const lyricsTrackKey = lyricsTrackTitle ? `${lyricsTrackArtist}\n${lyricsTrackTitle}` : '';
 
   const currentChannelId = currentChannel?.id;
+  const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
+  const isFlacActive = currentQuality === 'flac';
 
   useEffect(() => {
     const controller = new AbortController();

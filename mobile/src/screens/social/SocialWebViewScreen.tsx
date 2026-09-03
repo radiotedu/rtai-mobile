@@ -159,6 +159,7 @@ const SocialWebViewScreen = () => {
             ref={webViewRef}
             source={{uri: RESOLVED_SOCIAL_WEB_URL}}
             style={styles.webView}
+            androidLayerType="software"
             originWhitelist={['https://radiotedu.com']}
             javaScriptEnabled
             domStorageEnabled

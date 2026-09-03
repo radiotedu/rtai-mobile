@@ -141,6 +141,7 @@ const JukeLocalWebViewScreen = () => {
           source={{uri: controllerUrl}}
           ref={webViewRef}
           style={styles.webView}
+          androidLayerType="software"
           originWhitelist={['https://radiotedu.com']}
           javaScriptEnabled
           cacheEnabled={false}

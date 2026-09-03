@@ -117,7 +117,7 @@ function draw(state) {
   lines.push(`${C.red}└${'─'.repeat(totalCols)}┘${C.reset}`);
 
   // 2. MAIN BODY PANELS
-  const leftW = 36;
+  const leftW = 40;
   const rightW = totalCols - leftW - 3;
   const numStations = state.stations.length;
 
@@ -159,8 +159,8 @@ function draw(state) {
         const dot = `${stationColor(station.id)}●${C.reset}`;
         const flac = station.qualities.includes('flac') ? `${C.gold}[FLAC]${C.reset}` : '';
         const namePart = isSelected
-          ? `${C.bold}${C.white}${station.name.slice(0, 14).padEnd(14)}${C.reset}`
-          : `${station.name.slice(0, 14).padEnd(14)}`;
+          ? `${C.bold}${C.white}${station.name.slice(0, 19).padEnd(19)}${C.reset}`
+          : `${station.name.slice(0, 19).padEnd(19)}`;
 
         const rowStr = ` ${cursor} ${playIcon} ${dot} ${namePart} ${flac}`;
         leftContent = isSelected
@@ -423,8 +423,8 @@ async function runTui({
             return;
           }
 
-          // Station Row click in Tab 1 (Y=5 to 4 + stations.length, X <= 38)
-          if (state.activeTab === 1 && y >= 5 && y < 5 + stations.length && x <= 38) {
+          // Station Row click in Tab 1 (Y=5 to 4 + stations.length, X <= 42)
+          if (state.activeTab === 1 && y >= 5 && y < 5 + stations.length && x <= 42) {
             state.selected = y - 5;
             await onPlay(stations[state.selected], state);
             state.paused = false;

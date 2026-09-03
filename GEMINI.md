@@ -334,3 +334,14 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-03 radiotedu-tui OpenCode studio console overhaul handoff snapshot
+
+- Transformed `radiotedu-tui` into a high-density, professional studio broadcast console inspired by OpenCode and Spotify-TUI:
+  - OpenCode-style rounded slate frames (`╭─╮`, `│`, `╰─╯`) with high-contrast tab capsules (`[1: STATIONS]`, `[2: EQUALIZER]`, `[3: STUDY ROOM]`, `[4: ACCOUNT]`).
+  - 32-band real-time studio audio spectrum equalizer engine with vertical dB scale markers (`+3dB`, `0dB`, `-3dB`, `-6dB`, `-12dB`, `-24dB`), floating peak-hold decay dots (`•`), and frequency axis labels (`32Hz` to `16kHz`).
+  - Structured stations data table with full station names, genre descriptors (`Symphonic 24b`, `Bebop & Soul`, `Chillhop Beats`, `Workout EDM`, `Classic & Alt`, etc.), and format badges (`[FLAC]`, `[AAC]`, `[MP3]`, `[OGG]`).
+  - Live broadcast dock overhaul: completely removed artificial track progress bar per live radio streaming nature; replaced with authentic live telemetry (`● LIVE ON AIR`, continuous stream timer `18m 42s`, signal health meter `▂▃▅▆▇ (99%)`, and interactive volume slider).
+  - Preserved full mouse interactivity: tab clicks, station row clicks, mouse wheel scrolling, volume slider clicks, action buttons.
+- Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

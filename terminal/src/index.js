@@ -192,6 +192,16 @@ async function runInteractive() {
       state.status = paused ? 'Paused' : 'Playback resumed';
       return paused;
     },
+    onVolume: (delta, state) => {
+      const newVol = player.setVolume((player.volume || 80) + delta);
+      state.status = `Volume: ${newVol}%`;
+      return newVol;
+    },
+    onSetVolume: (vol, state) => {
+      const newVol = player.setVolume(vol);
+      state.status = `Volume: ${newVol}%`;
+      return newVol;
+    },
     onStudy: async state => { const current = loadStudy(); return current ? Math.floor((Date.now() - current.startedAt) / 60000) : null; },
     onAccount: async () => accountSummary().catch(() => ({label: 'Guest', gold: null})),
     onLogin: async () => { await commandLogin([]); return accountSummary(); },

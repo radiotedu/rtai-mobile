@@ -1,9 +1,9 @@
-﻿# RadioTEDU Terminal Windows Installer
+﻿# radiotedu-tui Windows PowerShell Installer
 # Usage: irm https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.ps1 | iex
 
 Write-Host "=============================================" -ForegroundColor Red
-Write-Host "          RADIOTEDU TERMINAL CLI             " -ForegroundColor White
-Write-Host "   Spotify-inspired Interactive Player       " -ForegroundColor Yellow
+Write-Host "            radiotedu-tui                    " -ForegroundColor White
+Write-Host "   Spotify-tui Inspired Dashboard Player     " -ForegroundColor Yellow
 Write-Host "=============================================" -ForegroundColor Red
 Write-Host ""
 
@@ -28,15 +28,15 @@ if ($player) {
 }
 
 # 3. Install via npm
-Write-Host "Installing radiotedu package globally..." -ForegroundColor Cyan
+Write-Host "Installing radiotedu-tui globally..." -ForegroundColor Cyan
 npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
 
 # 4. Verify
 $rt = Get-Command radiotedu -ErrorAction SilentlyContinue
 if ($rt) {
     Write-Host ""
-    Write-Host "RadioTEDU Terminal successfully installed!" -ForegroundColor Green
-    Write-Host "Run: radiotedu" -ForegroundColor White
+    Write-Host "radiotedu-tui successfully installed!" -ForegroundColor Green
+    Write-Host "Run from anywhere: radiotedu or radiotedu-tui" -ForegroundColor White
 } else {
     Write-Host "Please restart your terminal to reload PATH, then run: radiotedu" -ForegroundColor Cyan
 }

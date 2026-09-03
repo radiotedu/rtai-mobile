@@ -1,5 +1,5 @@
 @echo off
-title RadioTEDU Terminal Player
-cd /d "c:\Users\akgul\OneDrive\Documents\ChatGPT\Mobile\terminal"
+title radiotedu-tui (Spotify-inspired RadioTEDU Terminal)
+cd /d "%~dp0terminal"
 node src\index.js
 pause

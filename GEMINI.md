@@ -315,3 +315,24 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Tested single APK (including Android Auto `RadioTeduCarService`, Media3 session, and all 6 stations) prepared and uploaded to GitHub Release `v1.3.5`.
 - Tests: Terminal 7/7 tests pass + syntax check pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-03 radiotedu-tui spotify-tui dashboard release handoff snapshot
+
+- Transformed terminal client into `radiotedu-tui` inspired directly by `Rigellute/spotify-tui`:
+  - Multi-pane dashboard architecture:
+    - Tab bar (`[1: Stations]`, `[2: Visualizer]`, `[3: Study & Lyrics]`, `[4: Account]`).
+    - Left Stations Panel with colored station dots, `[FLAC]` badges, and selection cursor.
+    - Right Live Audio Spectrum & Stream Panel: Multi-row animated graphic equalizer (`cava` / `spotify-tui` style) with labeled frequency axis (`60Hz` to `16kHz`), dynamic audio spectrum waveforms, and engine status.
+    - Full-width bottom Spotify playbar with live stream timer (`04:12 ━━━━━━━━●────── 60:00 [● LIVE]`), interactive volume meter (`🔉 [████████░░] 80%`), and clickable control buttons.
+  - Interactive mouse controls:
+    - Click on tabs to switch views.
+    - Click on stations to play.
+    - Mouse wheel to scroll stations list.
+    - Click on playbar to toggle pause/play.
+    - Click on volume slider or buttons `[+]` / `[-]` to adjust audio volume.
+  - Keyboard controls: `1-4` tab switching, `Tab` panel toggle, `Space`/`p` pause, `f` quality, `v` visualizer toggle, `+`/`-` volume, `m` mute, `l` login, `s` study, `q` quit.
+  - Global CMD execution: `radiotedu` and `radiotedu-tui` commands work from any directory on the PC via npm bin wrappers in `%APPDATA%\npm`.
+  - Packaged `radiotedu-tui-1.3.5.tgz` and uploaded to GitHub Release `v1.3.5`.
+  - Updated one-liner installers: `terminal/install.sh` (curl) and `terminal/install.ps1` (PowerShell).
+- Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

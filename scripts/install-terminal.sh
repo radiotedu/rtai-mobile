@@ -1,7 +1,7 @@
 ﻿#!/usr/bin/env bash
 set -e
 
-# RadioTEDU Terminal Installer
+# radiotedu-tui Installer (Spotify-tui inspired CLI)
 # Usage: curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash
 
 RED='\033[0;31m'
@@ -17,9 +17,9 @@ echo " |  _ \ __ _  __| (_)___|_   _| ____|  _ \| | | |"
 echo " | |_) / _\` |/ _\` | / _ \ | | |  _| | | | | | | |"
 echo " |  _ < (_| | (_| | | (_) || | | |___| |_| | |_| |"
 echo " |_| \_\__,_|\__,_|_|\___/ |_| |_____|____/ \___/ "
-echo "                 TERMINAL CLI                    "
+echo "                 radiotedu-tui                   "
 echo -e "${NC}"
-echo -e "${CYAN}Installing RadioTEDU Terminal Player (Spotify-inspired TUI)...${NC}"
+echo -e "${CYAN}Installing radiotedu-tui (Spotify-tui inspired CLI player)...${NC}"
 echo ""
 
 # 1. Check Node.js
@@ -30,11 +30,6 @@ if ! command -v node >/dev/null 2>&1; then
   echo "  Ubuntu/Debian: sudo apt install nodejs npm"
   echo "  Arch:   sudo pacman -S nodejs npm"
   exit 1
-fi
-
-NODE_VER=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VER" -lt 18 ]; then
-  echo -e "${YELLOW}Warning: Node.js 18+ is recommended. Found: $(node -v)${NC}"
 fi
 
 # 2. Check Audio Engine (mpv / ffplay)
@@ -50,41 +45,27 @@ else
   echo "    Arch:   sudo pacman -S mpv"
 fi
 
-# 3. Install RadioTEDU CLI via npm
+# 3. Install radiotedu-tui globally via npm
 echo ""
-echo -e "${CYAN}Fetching and installing radiotedu package...${NC}"
-
-TARGET_URL="https://github.com/radiotedu/rtai-mobile/releases/download/v1.3.5/radiotedu-1.3.5.tgz"
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
-
-if curl -fsSL "$TARGET_URL" -o "$TMP_DIR/radiotedu.tgz" 2>/dev/null; then
-  echo -e "${CYAN}Installing from release bundle...${NC}"
-  npm install -g "$TMP_DIR/radiotedu.tgz"
-else
-  echo -e "${CYAN}Installing from Git repository...${NC}"
-  npm install -g "git+https://github.com/radiotedu/rtai-mobile.git#main:terminal"
-fi
+echo -e "${CYAN}Installing radiotedu-tui globally...${NC}"
+npm install -g "git+https://github.com/radiotedu/rtai-mobile.git#main:terminal"
 
 # 4. Verify Installation
 if command -v radiotedu >/dev/null 2>&1; then
   echo ""
   echo -e "${GREEN}${BOLD}✓ Successfully installed $(radiotedu --version)!${NC}"
   echo ""
-  echo -e "${BOLD}To start the interactive player:${NC}"
-  echo -e "  ${GREEN}radiotedu${NC}"
+  echo -e "${BOLD}To start the interactive Spotify-style player:${NC}"
+  echo -e "  ${GREEN}radiotedu${NC}  or  ${GREEN}radiotedu-tui${NC}"
   echo ""
-  echo -e "${BOLD}Mouse & Keyboard Controls:${NC}"
-  echo "  • Mouse Wheel / Arrows : Navigate stations"
-  echo "  • Left Click / Enter   : Play selected station"
-  echo "  • Space / P            : Pause / Resume"
-  echo "  • F                    : Toggle Quality (Normal, Low, FLAC)"
-  echo "  • L                    : Sign In (RadioTEDU / TEDÜ SSO)"
-  echo "  • X                    : Sign Out"
-  echo "  • S                    : Study Session Timer"
-  echo "  • Q                    : Quit"
+  echo -e "${BOLD}Dashboard Layout & Features:${NC}"
+  echo "  • [1: Stations] [2: Visualizer] [3: Study & Lyrics] [4: Account]"
+  echo "  • Real-time Audio Spectrum Equalizer (cava style)"
+  echo "  • Spotify playbar with live progress and volume control"
+  echo "  • Full mouse support: click stations, tabs, volume, buttons"
+  echo "  • RadioTEDU & TEDÜ ERP SSO login with Gold rewards"
   echo ""
 else
   echo -e "${RED}Installation finished, but 'radiotedu' command is not on PATH.${NC}"
-  echo "Please ensure npm global bin directory is in your PATH (e.g. $(npm bin -g 2>/dev/null || echo '~/.npm-global/bin'))."
+  echo "Please ensure your npm global bin directory is in PATH."
 fi

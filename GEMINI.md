@@ -262,4 +262,21 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Commit hash pushed to `origin/main`: `0aa7062`.
 - No Android build performed. No email or push notifications sent. Production DB and Audio Library untouched.
 
+## 2026-09-03 phone verification & frame-by-frame video analysis handoff snapshot
+
+- Executed full test verification exclusively on physical-dimension Android Phone emulator (Pixel 5, 1080x2340), strictly adhering to user directive (*"tablet değil, telefon testi yap."*).
+- Screen recording videos captured and extracted frame-by-frame:
+  - `phone_flow1_player_lyrics.mp4`: Live radio playback, minimalist `[ LYRICS ]` pill button, non-blocking LRCLIB query state, dismiss `✕` control, and Sleep Timer bottom sheet options (15m, 30m, 45m, 60m).
+  - `phone_flow2_favorites.mp4`: Real-time two-way favorites synchronization between RadioScreen list card, Favorites shelf (updating from 0 to 1 active with solid red heart), and Player modal (solid red heart `#e50914`).
+  - `phone_flow3_miniplayer_clean.mp4`: MiniPlayer behavior verified — active and floating above tab bar on Home and Radio tabs; completely suppressed (hidden) on interactive screens (`NextSongVote`, `Social`, `Study`, `Jukebox`).
+  - `FocusScreen.tsx` bottom list clearance verified above MiniPlayer with no overlap.
+  - `ProfileScreen.tsx` Guest Welcome Hero Card verified with bullet points for Gold, Badges, and Campus Tickets.
+- Source fixes:
+  - `mobile/src/screens/PlayerScreen.tsx`: Restored `isLive` and `isFlacActive` definitions to fix Player modal runtime crash.
+  - `mobile/src/screens/jukebox/JukeLocalWebViewScreen.tsx` & `mobile/src/screens/social/SocialWebViewScreen.tsx`: Added `androidLayerType="software"` to prevent Chromium renderer process crash on swiftshader indirect GPU emulators.
+- Tests: Mobile Jest 90/90 suites (340/340 tests passed), Android static publish audit 36/36 passed.
+- Commit hash pushed to `origin/main`: `5288302` (and previous `fedb5e4`).
+- Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent.
+
+
 

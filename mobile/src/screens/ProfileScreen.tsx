@@ -453,7 +453,7 @@ const ProfileScreen = () => {
               <View style={styles.guestIconWrap}>
                 <Icon name="account-star" size={32} color={COLORS.primary} />
               </View>
-              <Text style={styles.guestHeroTitle}>RadioTEDU Topluluğuna Katılın</Text>
+              <Text style={styles.guestHeroTitle}>RadioTEDU Hesabı Açın</Text>
               <Text style={styles.guestHeroText}>
                 Giriş yaparak canlı radyo dinlerken Gold biriktirebilir, rozetler kazanabilir, profilini özelleştirebilir ve kampüs etkinliklerine katılabilirsin.
               </Text>

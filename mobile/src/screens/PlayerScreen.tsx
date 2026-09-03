@@ -136,7 +136,10 @@ const PlayerScreen = ({route}: any) => {
     if (!activeTrack?.id || isPodcastId(activeTrack.id)) {
       return undefined;
     }
-    return channelList.find(c => c.id === activeTrack.id);
+    return (
+      RADIO_CHANNELS.find(c => c.id === activeTrack.id) ||
+      channelList.find(c => c.id === activeTrack.id)
+    );
   }, [activeTrack?.id, channelList]);
 
   const state = playbackState?.state;
@@ -278,10 +281,11 @@ const PlayerScreen = ({route}: any) => {
 
   const goToOffset = async (delta: number) => {
     if (currentChannel) {
-      const idx = channelList.findIndex(c => c.id === currentChannel.id);
+      const allStations = RADIO_CHANNELS.filter(c => !c.requiresLiveCheck);
+      const idx = allStations.findIndex(c => c.id === currentChannel.id);
       const base = idx === -1 ? 0 : idx;
       const next =
-        channelList[(base + delta + channelList.length) % channelList.length];
+        allStations[(base + delta + allStations.length) % allStations.length];
       if (next) {
         await playChannelById(next.id).catch(() => {});
       }
@@ -417,7 +421,7 @@ const PlayerScreen = ({route}: any) => {
               {currentChannel ? (
                 <View style={styles.stationTag}>
                   <View style={[styles.stationTagDot, {backgroundColor: currentChannel.color || COLORS.primary}]} />
-                  <Text style={styles.stationTagText}>{currentChannel.name}</Text>
+                  <Text style={[styles.stationTagText, {color: currentChannel.color || COLORS.primary}]}>{currentChannel.name}</Text>
                 </View>
               ) : null}
               <Text style={styles.title} numberOfLines={2}>

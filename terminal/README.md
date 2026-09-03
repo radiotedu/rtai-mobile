@@ -1,33 +1,94 @@
-# RadioTEDU terminal
+﻿# RadioTEDU Terminal
 
-Spotify-inspired RadioTEDU terminal player for Linux, macOS, and Windows. The interactive TUI includes live stations, Now Playing metadata, quality selection, login/logout, Gold balance and verified listening rewards. JukeLocal is intentionally excluded.
+Spotify-inspired interactive RadioTEDU terminal player for Linux, macOS, and Windows.
 
-## Run
+Features a full-color terminal user interface (TUI) with mouse control, live station streaming, real-time Icecast Now Playing metadata, audio visualizer, account sign-in (RadioTEDU Account & TEDÜ/ERP SSO), Gold listening rewards, and Study timer.
 
-Requires Node.js 18+ and `mpv` (recommended) or `ffplay` on `PATH`.
+---
 
-```text
-npm install -g radiotedu
-radiotedu
-radiotedu stations
-radiotedu play radio --player=ffplay
+## 🚀 Quick Install
 
-# Repository development
-npm start
-npm start -- stations
-npm start -- play cazz --quality=flac --allow-metered
-npm start -- play radio --player=ffplay
-npm start -- login
-npm start -- gold
-npm start -- study start library 25
+### Linux & macOS (curl)
+```bash
+curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash
 ```
 
-Controls: arrow keys or `j`/`k`, Enter/click to play, mouse wheel to move, `f` quality, Space/`p` pause-resume, `l` login, `x` logout, `a` refresh account/Gold, `s` Study timer and `q` quit.
+### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.ps1 | iex
+```
 
-Normal and low mounts use HE-AAC v1. FLAC is offered only for `/classic-flac` and `/cazz-flac`. Icecast `StreamTitle` metadata appears in the player.
+### npm (Global)
+```bash
+npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
+```
 
-`login` uses the same RadioTEDU API as the mobile app (`/auth/login`). `login --tedu` starts the ERP/TEDÜ browser flow and exchanges the returned code. Signed-in listening uses the existing rotating-nonce `/economy/listening/*` protocol; the server remains authoritative for Gold awards. Tokens are stored in the platform configuration directory with restrictive file permissions.
+---
 
-Study sessions use the existing `/study/sessions/*` API, send heartbeats, and display elapsed minutes. `radiotedu study status` reports the active local timer; `study stop` finishes it server-side.
+## 🎧 Usage
 
-Set `RADIOTEDU_API_BASE`, `RADIOTEDU_STREAM_ORIGIN`, or `RADIOTEDU_PLAYER` to point at a test service/player.
+Launch the interactive Spotify-style TUI:
+```bash
+radiotedu
+```
+
+### Direct CLI Commands
+```bash
+# List all available stations and streams
+radiotedu stations
+
+# Play a station directly
+radiotedu play classic
+radiotedu play cazz --quality=flac --allow-metered
+radiotedu play radio --player=ffplay
+
+# Account & Gold
+radiotedu login           # Interactive sign in (Email & Password or TEDÜ SSO)
+radiotedu login --tedu    # Direct TEDÜ / ERP browser SSO flow
+radiotedu gold            # View current spendable Gold balance
+radiotedu logout          # Sign out
+
+# Study session timer
+radiotedu study start library 25
+radiotedu study status
+radiotedu study stop
+```
+
+---
+
+## 🖱️ Controls & Shortcuts
+
+| Action | Keyboard | Mouse |
+| :--- | :--- | :--- |
+| **Navigate Stations** | `↑` / `↓` or `j` / `k` | **Mouse Wheel Up / Down** |
+| **Play Station** | `Enter` | **Left Click** on station row |
+| **Pause / Resume** | `Space` or `p` | **Left Click** on Now Playing or `[Space]` |
+| **Toggle Quality** | `f` (Normal / Low / FLAC) | **Left Click** on `[F] Quality` |
+| **Sign In** | `l` | **Left Click** on `[L] Login` |
+| **Sign Out** | `x` | **Left Click** on `[X] Logout` |
+| **Refresh Account / Gold** | `a` | **Left Click** on `[A] Refresh` |
+| **Study Timer** | `s` | **Left Click** on `[S] Study` |
+| **Quit** | `q` | **Left Click** on `[Q] Quit` |
+
+---
+
+## 📻 Stations & Quality
+
+- **RadioTEDU**: Flagship station (Normal & Low HE-AAC)
+- **Classical**: Classical music with **FLAC Hi-Fi** support
+- **Jazz**: Jazz & Blues with **FLAC Hi-Fi** support
+- **Lo-Fi**: Lo-Fi beats for studying and relaxing
+- **Energize**: High-energy workout & focus beats
+- **Rock**: Classic & alternative rock
+- **English / Français**: Multi-language campus broadcasts
+- **Voting**: Live interactive voting channel
+
+---
+
+## 🔐 Auth & Gold Architecture
+
+- `login` connects to the authoritative RadioTEDU API (`/auth/login`).
+- `login --tedu` initiates the TEDÜ/ERP browser SSO authorization flow.
+- Listening rewards use rotating server-issued nonces (`/economy/listening/*`); the server strictly validates all Gold rewards. Tokens are stored securely in platform user config directories.
+
+Requires Node.js 18+ and `mpv` (recommended) or `ffplay` on `PATH`.

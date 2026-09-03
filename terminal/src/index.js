@@ -53,6 +53,13 @@ async function commandLogin(args) {
     console.log(`Signed in as ${user.display_name || 'RadioTEDU user'}.`);
     return user;
   }
+  if (!args.length) {
+    process.stdout.write('\n=== RadioTEDU Sign In ===\n[1] RadioTEDU Account (Email & Password)\n[2] TEDÜ / ERP SSO (Browser Login)\n');
+    const choice = await prompt('Select login method [1/2] (default 1): ');
+    if (choice === '2') {
+      return commandLogin(['--tedu']);
+    }
+  }
   const email = await prompt('Email: ');
   const password = await secretPrompt('Password: ');
   const user = await login(email, password);

@@ -27,3 +27,6 @@ artifacts/private-signing/
 .vscode/
 .DS_Store
 Thumbs.db
+newss/
+output/
+stations-page-verification/

@@ -299,3 +299,19 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Confirmed station naming visibility: Every station explicitly displays its name in 3 distinct places: Top bar (`RadioTEDU · <Station>`), Station tag badge (`● <Station>`), and official station logo/title.
 - Tests: Mobile Jest 90/90 suites (340/340 tests passed), Android publish audit 36/36 passed.
 - Pushed to `origin/main` in commit `7716c17`.
+
+## 2026-09-03 terminal v1.3.5 & mobile v1.3.5 release handoff snapshot
+
+- Terminal upgraded to v1.3.5 with Spotify CLI / OpenCode-inspired TUI:
+  - Rich ANSI color palette with per-station brand colors (RadioTEDU red, Classical gold, Jazz purple, Lo-Fi cyan, Energize yellow, Rock orange).
+  - Animated live visualizer (` ▂▃▅▆▇▆▅▃ `) and pulsing `● LIVE` indicator.
+  - Interactive mouse control: mouse wheel navigation, station click-to-play, Now Playing pause toggle, and clickable control action buttons (`[Space]`, `[F]`, `[A]`, `[S]`, `[L]`, `[X]`, `[Q]`).
+  - Integrated login flow supporting both RadioTEDU Account (email/password) and TEDÜ ERP SSO browser authentication.
+  - Created cross-platform installer scripts:
+    - Linux/macOS curl: `curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash`
+    - Windows PowerShell: `irm https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.ps1 | iex`
+    - npm global: `npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal`
+  - Packaged npm tarball `radiotedu-1.3.5.tgz`.
+- Tested single APK (including Android Auto `RadioTeduCarService`, Media3 session, and all 6 stations) prepared and uploaded to GitHub Release `v1.3.5`.
+- Tests: Terminal 7/7 tests pass + syntax check pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

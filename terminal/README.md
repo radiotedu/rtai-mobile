@@ -6,29 +6,23 @@ Inspired by [Rigellute/spotify-tui](https://github.com/Rigellute/spotify-tui), f
 
 ---
 
-## 🚀 Quick Install & Run
+## 🚀 Installation & Run
 
-### cmd / PowerShell / Terminal (Direct Run)
-If installed on PATH, simply open any cmd or PowerShell window and run:
+### 1. Global npm Install
+```bash
+npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
+```
+
+### 2. Run from anywhere in cmd, PowerShell, or bash:
 ```bash
 radiotedu
 # or
 radiotedu-tui
 ```
 
-### Windows (PowerShell One-Liner)
-```powershell
-irm https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.ps1 | iex
-```
-
-### Linux & macOS (curl One-Liner)
+### 3. Linux & macOS (Optional installer script)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash
-```
-
-### npm Global Install
-```bash
-npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
 ```
 
 ---

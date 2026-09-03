@@ -237,6 +237,32 @@ async function runInteractive() {
     onStudy: async state => { const current = loadStudy(); return current ? Math.floor((Date.now() - current.startedAt) / 60000) : null; },
     onAccount: async () => accountSummary().catch(() => ({label: 'Guest', gold: null})),
     onLogin: async () => { await commandLogin([]); return accountSummary(); },
+    onLoginCreds: async (email, password) => {
+      await login(email, password);
+      return accountSummary();
+    },
+    onLoginSsoStart: async () => {
+      const returnUri = 'radiotedu://auth/erp/linked';
+      const result = await startErpLogin(returnUri);
+      if (!result?.authorization_url) throw new Error('ERP login endpoint did not return an authorization URL.');
+      openExternal(result.authorization_url);
+      return result.authorization_url;
+    },
+    onLoginSsoExchange: async (callbackOrCode) => {
+      let code = callbackOrCode?.trim();
+      if (code && code.includes('erp_code=')) {
+        try {
+          const url = new URL(code);
+          code = url.searchParams.get('erp_code') || code;
+        } catch {
+          const match = code.match(/erp_code=([^&]+)/);
+          if (match) code = match[1];
+        }
+      }
+      if (!code) throw new Error('Callback URL did not contain erp_code.');
+      await exchangeErpCode(code);
+      return accountSummary();
+    },
     onLogout: async () => { gold.stop(); await logout(); return {label: 'Guest', gold: null}; },
     onQuit: () => { if (metadataTimer) clearInterval(metadataTimer); gold.stop(); player.stop(); },
     onTick: state => { activeState = state; },

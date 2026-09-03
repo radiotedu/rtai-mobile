@@ -357,3 +357,14 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Verified live audio streaming (`ffplay` PID verified active and streaming audio bytes).
 - Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-03 radiotedu-tui inline interactive login modal dialog handoff snapshot
+
+- Fixed login experience in `radiotedu-tui` by replacing external terminal subshell prompt with a native, inline modal dialog box (`renderModalLines`):
+  - When `L` is pressed (or clicked via mouse), an inline high-contrast gold-bordered modal dialog appears directly in the studio console.
+  - Option 1: RadioTEDU Account (Email & Password) with live text fields, active cursor (`█`), `[Tab]` field cycling, `[Enter]` submission, and real-time status/error banners.
+  - Option 2: TEDÜ / ERP SSO (Single Sign-On) with automatic browser launch and callback URL pasting.
+  - Audio stream playback continues playing without any interruption or pause during the entire login flow.
+  - Full mouse and keyboard controls: `[Esc]` or `[Q]` closes the modal, mouse clicks focus fields or select options.
+- Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

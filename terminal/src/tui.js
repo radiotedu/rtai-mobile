@@ -154,6 +154,77 @@ function generateStudioSpectrum(tick, numBands, maxHeight, isPlaying) {
   return rows;
 }
 
+function renderModalLines(modal, totalCols, maxRows) {
+  const modalW = Math.min(68, totalCols - 4);
+  const padLeft = ' '.repeat(Math.max(0, Math.floor((totalCols - modalW) / 2)));
+  const innerW = modalW - 4;
+  const boxLines = [];
+
+  const wrapLine = (content) => {
+    return padVisible(`${padLeft}${C.gold}│${C.reset} ${padVisible(content, innerW)} ${C.gold}│${C.reset}`, totalCols);
+  };
+
+  if (modal.type === 'choice') {
+    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🔐 RADIOTEDU SIGN IN // HESAP GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 41))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.bold}Lütfen oturum açma yöntemini seçin:${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 📧 ${C.white}RadioTEDU Hesabı (E-Posta & Şifre)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[2]${C.reset} 🏛️ ${C.white}TEDÜ / ERP SSO (Tarayıcı ile Tek Tık Giriş)${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.darkGray}${'─'.repeat(innerW - 4)}${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray} veya ${C.white}[2]${C.gray}'ye basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
+    boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
+  } else if (modal.type === 'creds') {
+    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 📧 RADIOTEDU HESAP GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 30))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.gray}RadioTEDU e-posta ve şifrenizi girin:${C.reset}`));
+    boxLines.push(wrapLine(''));
+
+    const isEmail = modal.field === 'email';
+    const isPass = modal.field === 'password';
+    const emailCursor = isEmail ? `${C.spotifyGreen}█${C.reset}` : '';
+    const passCursor = isPass ? `${C.spotifyGreen}█${C.reset}` : '';
+
+    const emailBorder = isEmail ? C.spotifyGreen : C.darkGray;
+    const passBorder = isPass ? C.spotifyGreen : C.darkGray;
+
+    const emailVal = truncateVisible(modal.email || '', 34) + emailCursor;
+    const passVal = '•'.repeat((modal.password || '').length) + passCursor;
+
+    boxLines.push(wrapLine(`  E-Posta : ${emailBorder}[${C.reset} ${padVisible(emailVal, 36)} ${emailBorder}]${C.reset}`));
+    boxLines.push(wrapLine(`  Şifre   : ${passBorder}[${C.reset} ${padVisible(passVal, 36)} ${passBorder}]${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.darkGray}[Tab] Alan Değiştir  ·  [Enter] Giriş Yap  ·  [Esc] İptal${C.reset}`));
+
+    const statusText = modal.status
+      ? (modal.status.includes('Hata') ? `${C.brightRed}⚠️ ${modal.status}${C.reset}` : `${C.yellow}⏳ ${modal.status}${C.reset}`)
+      : '';
+    boxLines.push(wrapLine(`  ${statusText}`));
+    boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
+  } else if (modal.type === 'sso') {
+    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🏛️ TEDÜ / ERP SSO GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 29))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.gray}Tarayıcınızda TEDÜ oturum açma sayfası açıldı.${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Girişten sonra açılan callback URL'sini yapıştırın:${C.reset}`));
+    boxLines.push(wrapLine(''));
+
+    const urlCursor = `${C.spotifyGreen}█${C.reset}`;
+    const urlVal = truncateVisible(modal.url || '', 36) + urlCursor;
+    boxLines.push(wrapLine(`  URL : ${C.spotifyGreen}[${C.reset} ${padVisible(urlVal, 38)} ${C.spotifyGreen}]${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.darkGray}[Enter] Onayla ve Doğrula  ·  [Esc] İptal${C.reset}`));
+
+    const statusText = modal.status
+      ? (modal.status.includes('Hata') ? `${C.brightRed}⚠️ ${modal.status}${C.reset}` : `${C.yellow}⏳ ${modal.status}${C.reset}`)
+      : '';
+    boxLines.push(wrapLine(`  ${statusText}`));
+    boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
+  }
+
+  while (boxLines.length < maxRows) {
+    boxLines.push(' '.repeat(totalCols));
+  }
+  return boxLines;
+}
+
 let vizTick = 0;
 let streamSeconds = 0;
 
@@ -199,8 +270,12 @@ function draw(state) {
   const leftW = 50;
   const rightW = totalCols - leftW - 3;
   const numStations = state.stations.length;
+  const maxWorkspaceRows = Math.max(numStations + 2, 12);
 
-  if (activeTab === 1) {
+  if (state.modal) {
+    const modalLines = renderModalLines(state.modal, totalCols, maxWorkspaceRows);
+    lines.push(...modalLines);
+  } else if (activeTab === 1) {
     // TAB 1: STUDIO DASHBOARD (Left: Stations Table, Right: Telemetry & Equalizer)
     const leftHeader = `╭─ STATIONS (${numStations}) ${'─'.repeat(Math.max(0, leftW - 17))}╮`;
     const rightHeader = `╭─ AUDIO SPECTRUM & BROADCAST TELEMETRY ${'─'.repeat(Math.max(0, rightW - 41))}╮`;
@@ -433,6 +508,8 @@ function draw(state) {
 function parseInput(buffer) {
   const input = buffer.toString('utf8');
   if (input === '\u0003') return {type: 'key', key: 'q'};
+  if (input === '\x1b') return {type: 'key', key: 'escape'};
+  if (input === '\x7f' || input === '\b' || input === '\x08') return {type: 'key', key: 'backspace'};
   if (input === '\x1b[A' || input === 'k') return {type: 'key', key: 'up'};
   if (input === '\x1b[B' || input === 'j') return {type: 'key', key: 'down'};
   if (input === '\x1b[C') return {type: 'key', key: 'right'};
@@ -442,10 +519,10 @@ function parseInput(buffer) {
   if (input === '\t') return {type: 'key', key: 'tab'};
   if (input === '+' || input === '=') return {type: 'key', key: 'volup'};
   if (input === '-' || input === '_') return {type: 'key', key: 'voldown'};
-  if (input.length === 1) return {type: 'key', key: input.toLowerCase()};
   const mouse = input.match(/^\x1b\[<([0-9]+);([0-9]+);([0-9]+)([mM])$/);
   if (mouse) return {type: 'mouse', button: Number(mouse[1]), x: Number(mouse[2]), y: Number(mouse[3]), release: mouse[4] === 'm'};
-  return null;
+  if (input.length === 1) return {type: 'key', key: input.toLowerCase(), raw: input};
+  return {type: 'key', key: input.toLowerCase(), raw: input};
 }
 
 async function runTui({
@@ -458,6 +535,9 @@ async function runTui({
   onStudy,
   onAccount,
   onLogin,
+  onLoginCreds,
+  onLoginSsoStart,
+  onLoginSsoExchange,
   onLogout,
   onQuit,
   onTick,
@@ -482,6 +562,7 @@ async function runTui({
       activeTab: 1,
       volume: 80,
       focusedPanel: 'stations',
+      modal: null,
     };
 
     let inputBuffer = '';
@@ -531,6 +612,147 @@ async function runTui({
 
     const handle = async (event) => {
       if (!event) return;
+
+      // MODAL DIALOG INTERACTION
+      if (state.modal) {
+        if (event.type === 'key') {
+          if (event.key === 'escape' || (state.modal.type === 'choice' && event.key === 'q')) {
+            state.modal = null;
+            render();
+            return;
+          }
+
+          if (state.modal.type === 'choice') {
+            if (event.key === '1') {
+              state.modal = {type: 'creds', field: 'email', email: '', password: '', status: ''};
+              render();
+              return;
+            }
+            if (event.key === '2') {
+              state.modal = {type: 'sso', url: '', status: 'Tarayıcıda TEDÜ oturum açma sayfası açılıyor...'};
+              render();
+              onLoginSsoStart?.().then(() => {
+                if (state.modal?.type === 'sso') {
+                  state.modal.status = 'Tarayıcıda giriş yapıp callback URL\'sini yapıştırın:';
+                  render();
+                }
+              }).catch(err => {
+                if (state.modal?.type === 'sso') {
+                  state.modal.status = `Hata: ${err.message}`;
+                  render();
+                }
+              });
+              return;
+            }
+            return;
+          }
+
+          if (state.modal.type === 'creds') {
+            if (event.key === 'tab') {
+              state.modal.field = state.modal.field === 'email' ? 'password' : 'email';
+              render();
+              return;
+            }
+            if (event.key === 'backspace') {
+              state.modal[state.modal.field] = state.modal[state.modal.field].slice(0, -1);
+              render();
+              return;
+            }
+            if (event.key === 'enter') {
+              if (state.modal.field === 'email' && !state.modal.password) {
+                state.modal.field = 'password';
+                render();
+                return;
+              }
+              if (!state.modal.email || !state.modal.password) {
+                state.modal.status = 'E-posta ve şifre gereklidir.';
+                render();
+                return;
+              }
+              state.modal.status = 'Giriş yapılıyor, lütfen bekleyin...';
+              render();
+              try {
+                const acc = await onLoginCreds?.(state.modal.email, state.modal.password);
+                state.account = acc;
+                state.modal = null;
+                state.status = `Giriş başarılı · ${acc.label}`;
+              } catch (err) {
+                state.modal.status = `Hata: ${err.message}`;
+              }
+              render();
+              return;
+            }
+            const char = event.raw || event.key;
+            if (char && char.length === 1 && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
+              state.modal[state.modal.field] += char;
+              render();
+              return;
+            }
+            return;
+          }
+
+          if (state.modal.type === 'sso') {
+            if (event.key === 'backspace') {
+              state.modal.url = state.modal.url.slice(0, -1);
+              render();
+              return;
+            }
+            if (event.key === 'enter') {
+              if (!state.modal.url) {
+                state.modal.status = 'Lütfen callback URL girin.';
+                render();
+                return;
+              }
+              state.modal.status = 'Doğrulanıyor, lütfen bekleyin...';
+              render();
+              try {
+                const acc = await onLoginSsoExchange?.(state.modal.url);
+                state.account = acc;
+                state.modal = null;
+                state.status = `TEDÜ SSO Girişi başarılı · ${acc.label}`;
+              } catch (err) {
+                state.modal.status = `Hata: ${err.message}`;
+              }
+              render();
+              return;
+            }
+            const char = event.raw || event.key;
+            if (char && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
+              state.modal.url += char;
+              render();
+              return;
+            }
+            return;
+          }
+        }
+
+        // Mouse clicks on modal
+        if (event.type === 'mouse' && event.button === 0 && event.release) {
+          if (state.modal.type === 'choice') {
+            if (event.y === 6) {
+              state.modal = {type: 'creds', field: 'email', email: '', password: '', status: ''};
+              render();
+              return;
+            }
+            if (event.y === 7) {
+              state.modal = {type: 'sso', url: '', status: 'Tarayıcıda TEDÜ oturum açma sayfası açılıyor...'};
+              render();
+              onLoginSsoStart?.().catch(err => { if (state.modal) state.modal.status = `Hata: ${err.message}`; });
+              return;
+            }
+            if (event.y >= 9) {
+              state.modal = null;
+              render();
+              return;
+            }
+          }
+          if (state.modal.type === 'creds') {
+            if (event.y === 6) { state.modal.field = 'email'; render(); return; }
+            if (event.y === 7) { state.modal.field = 'password'; render(); return; }
+          }
+        }
+        return;
+      }
 
       // MOUSE SUPPORT
       if (event.type === 'mouse') {
@@ -618,12 +840,7 @@ async function runTui({
               if (state.account?.label && state.account.label !== 'Guest') {
                 state.account = await onLogout();
               } else {
-                pauseInput();
-                try {
-                  state.account = await onLogin();
-                } finally {
-                  resumeInput();
-                }
+                state.modal = { type: 'choice' };
               }
             } else if (x >= 66 && x <= 78) {
               // Study
@@ -702,12 +919,7 @@ async function runTui({
             render();
             break;
           case 'l':
-            pauseInput();
-            try {
-              state.account = await onLogin();
-            } finally {
-              resumeInput();
-            }
+            state.modal = { type: 'choice' };
             render();
             break;
           case 'x':

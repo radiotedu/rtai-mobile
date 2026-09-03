@@ -280,3 +280,22 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 
 
 
+
+## 2026-09-03 station identification & profile guest title handoff snapshot
+
+- Updated Guest Hero Card title in `mobile/src/screens/ProfileScreen.tsx` from "RadioTEDU Topluluğuna Katılın" to "RadioTEDU Hesabı Açın" per user directive.
+- Hardened station identification & theming in `mobile/src/screens/PlayerScreen.tsx`:
+  - `currentChannel` now searches canonical `RADIO_CHANNELS` as primary/fallback source, guaranteeing that all 6 stations (RadioTEDU, Classical, Jazz, Lo-Fi, Energize, Rock) reliably display their official station name, color-coded tag badge, and custom logo even under transient stream check conditions.
+  - `stationTagText` adopts the channel's designated brand color (`currentChannel.color`), dynamically tinting station tag badges (Gold for Classical, Purple for Jazz, Cyan for Lo-Fi, Neon Yellow for Energize, Orange for Rock).
+  - Station skip cycling (`goToOffset`) iterates over all 6 canonical stations (`RADIO_CHANNELS.filter(c => !c.requiresLiveCheck)`).
+- Sequentially tested all 6 stations on Pixel 5 phone emulator and captured verification screenshots of each station player modal:
+  - Station 1: `RadioTEDU` (`artifacts/station_1_radiotedu.png`)
+  - Station 2: `Classical` (`artifacts/station_2_classical.png`)
+  - Station 3: `Jazz` (`artifacts/station_3_jazz.png`)
+  - Station 4: `Lo-Fi` (`artifacts/station_4_lofi.png`)
+  - Station 5: `Energize` (`artifacts/station_5_energize.png`)
+  - Station 6: `Rock` (`artifacts/station_6_rock.png`)
+  - Profile verified: `RadioTEDU Hesabı Açın` (`artifacts/s_profile_opened.png`)
+- Confirmed station naming visibility: Every station explicitly displays its name in 3 distinct places: Top bar (`RadioTEDU · <Station>`), Station tag badge (`● <Station>`), and official station logo/title.
+- Tests: Mobile Jest 90/90 suites (340/340 tests passed), Android publish audit 36/36 passed.
+- Pushed to `origin/main` in commit `7716c17`.

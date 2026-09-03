@@ -345,3 +345,15 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Preserved full mouse interactivity: tab clicks, station row clicks, mouse wheel scrolling, volume slider clicks, action buttons.
 - Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-03 radiotedu-tui audio engine and auto-play release handoff snapshot
+
+- Fixed audio playback and startup behavior in `terminal/src/player.js`, `terminal/src/index.js`, and `terminal/src/tui.js`:
+  - Added Windows `where.exe` binary resolver to `findPlayer()` so `ffplay.exe` or `mpv.exe` (installed via winget/path) is automatically detected and bound by full path.
+  - Enabled instant startup auto-play: `radiotedu` now automatically starts streaming the flagship station (`RadioTEDU`) on launch without waiting for user action.
+  - Made Icecast metadata fetching fully asynchronous: `readIcecastMetadata` runs in the background without blocking stream playback startup.
+  - Fixed Space/Play click behavior: pressing `Space` or clicking the playbar when idle now immediately plays the selected station instead of returning a no-op pause.
+  - Added real-time error banner in the TUI status bar if the audio player engine fails or encounters an unhandled stream issue.
+  - Verified live audio streaming (`ffplay` PID verified active and streaming audio bytes).
+- Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

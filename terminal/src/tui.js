@@ -464,6 +464,7 @@ async function runTui({
   initialAccount = null,
   initialQuality = 'normal',
   playerName = null,
+  autoPlay = true,
 }) {
   return new Promise(resolve => {
     const state = {
@@ -573,7 +574,12 @@ async function runTui({
 
           // Track row (play/pause toggle)
           if (y === playbarStart + 1) {
-            state.paused = await onPause(state);
+            if (!state.active) {
+              await onPlay(stations[state.selected], state);
+              state.paused = false;
+            } else {
+              state.paused = await onPause(state);
+            }
             render();
             return;
           }
@@ -592,7 +598,12 @@ async function runTui({
           if (y === playbarStart + 3) {
             if (x >= 2 && x <= 18) {
               // Space: Play / Pause
-              state.paused = await onPause(state);
+              if (!state.active) {
+                await onPlay(stations[state.selected], state);
+                state.paused = false;
+              } else {
+                state.paused = await onPause(state);
+              }
             } else if (x >= 19 && x <= 32) {
               // F: Quality
               state.quality = onQuality(state);
@@ -658,7 +669,12 @@ async function runTui({
             break;
           case 'space':
           case 'p':
-            state.paused = await onPause(state);
+            if (!state.active) {
+              await onPlay(stations[state.selected], state);
+              state.paused = false;
+            } else {
+              state.paused = await onPause(state);
+            }
             render();
             break;
           case 'f':
@@ -748,6 +764,19 @@ async function runTui({
     process.stdin.on('data', dataHandler);
     process.stdout.write(`${ESC}?25l${ESC}?1000h${ESC}?1006h`);
     render();
+
+    if (autoPlay && stations.length > 0) {
+      setImmediate(async () => {
+        try {
+          await onPlay(stations[0], state);
+          state.paused = false;
+          render();
+        } catch (err) {
+          state.status = `Audio error: ${err.message}`;
+          render();
+        }
+      });
+    }
   });
 }
 

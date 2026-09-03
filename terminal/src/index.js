@@ -163,6 +163,7 @@ async function runInteractive() {
     initialQuality: quality,
     initialAccount: await accountSummary().catch(() => ({label: 'Guest', gold: null})),
     playerName: player.name,
+    autoPlay: true,
     onPlay: async (station, state) => {
       activeState = state;
       if (!station.qualities.includes(quality)) quality = 'normal';
@@ -170,12 +171,35 @@ async function runInteractive() {
       if (station.liveCheck && !(await isLive(url))) { state.status = 'Station is not currently live.'; return; }
       if (quality === 'flac') state.status = 'FLAC selected · confirm data plan';
       if (metadataTimer) clearInterval(metadataTimer);
-      gold.stop(); player.start(url, station.name); activeStation = station; state.active = station; state.codec = codecFor(quality, station); state.metadata = (await readIcecastMetadata(url)).title || null; state.status = `Playing ${quality.toUpperCase()}`;
+      gold.stop();
+      try {
+        player.start(url, station.name);
+      } catch (err) {
+        state.status = `Audio error: ${err.message}`;
+        state.requestRender?.();
+        return;
+      }
+      activeStation = station;
+      state.active = station;
+      state.codec = codecFor(quality, station);
+      state.status = `Playing ${station.name} (${quality.toUpperCase()})`;
+      state.requestRender?.();
+
+      readIcecastMetadata(url).then(meta => {
+        if (state.active?.id === station.id && meta?.title) {
+          state.metadata = meta.title;
+          state.requestRender?.();
+        }
+      }).catch(() => {});
+
       await gold.start(station.goldId || station.id).catch(() => { state.status += ' · sign in to earn Gold'; });
       metadataTimer = setInterval(async () => {
         if (state.active?.id === station.id) {
-          state.metadata = (await readIcecastMetadata(url)).title || state.metadata;
-          state.requestRender?.();
+          const meta = await readIcecastMetadata(url);
+          if (meta?.title) {
+            state.metadata = meta.title;
+            state.requestRender?.();
+          }
         }
       }, 30000);
     },
@@ -186,6 +210,14 @@ async function runInteractive() {
       state.codec = codecFor(quality, station); return quality;
     },
     onPause: async state => {
+      if (!state.active) {
+        const station = state.stations[state.selected] || state.stations[0];
+        if (station) {
+          await activeState?.onPlay?.(station, state);
+          state.paused = false;
+          return false;
+        }
+      }
       const paused = player.pause();
       gold.stop();
       if (!paused && activeStation) await gold.start(activeStation.goldId || activeStation.id).catch(() => false);

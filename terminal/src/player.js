@@ -5,10 +5,22 @@ function probeArgs(command) {
 }
 
 function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
-  const candidates = configured ? [configured] : (process.platform === 'win32' ? ['mpv.com', 'mpv', 'ffplay'] : ['mpv', 'ffplay']);
+  if (configured) return configured;
+  const candidates = process.platform === 'win32' ? ['mpv.com', 'mpv', 'ffplay'] : ['mpv', 'ffplay'];
   for (const candidate of candidates) {
     const probe = spawnSync(candidate, probeArgs(candidate), {stdio: 'ignore', shell: false});
     if (!probe.error && probe.status === 0) return candidate;
+  }
+  if (process.platform === 'win32') {
+    for (const name of ['mpv.com', 'mpv', 'ffplay']) {
+      try {
+        const where = spawnSync('where.exe', [name], {encoding: 'utf8'});
+        if (!where.error && where.stdout) {
+          const lines = where.stdout.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (lines.length > 0) return lines[0];
+        }
+      } catch {}
+    }
   }
   return null;
 }
@@ -28,10 +40,12 @@ class Player {
     this.volume = 80;
   }
   launch() {
+    if (!this.command || !this.last) return;
     const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume), {stdio: ['pipe', 'ignore', 'ignore']});
     this.process = child;
     this.paused = false;
     child.once('exit', () => { if (this.process === child) this.process = null; });
+    child.on('error', () => { if (this.process === child) this.process = null; });
   }
   start(url, title) {
     if (!this.command) throw new Error('No player found. Install mpv (recommended) or ffplay, then run again.');

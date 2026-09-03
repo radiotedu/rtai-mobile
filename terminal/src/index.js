@@ -4,8 +4,28 @@ const crypto = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {STATIONS, getStation, streamUrl, codecFor, listStations} = require('./stations');
 const {loadAuth, saveStudy, loadStudy, clearStudy} = require('./store');
-const {login, me, gamificationHome, logout, startErpLogin, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
+const {login, me, gamificationHome, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
+const {beginPendingErpLoginPkce, getPendingErpLoginPkce, clearPendingErpLoginPkce} = require('./pkce');
 const {readIcecastMetadata, isLive} = require('./metadata');
+
+function extractErpCode(callbackOrCode) {
+  const input = String(callbackOrCode || '').trim();
+  if (!input) throw new Error('Callback URL did not contain erp_code.');
+  if (!input.includes('://') && !input.includes('erp_code=') && !input.includes('code=')) return input;
+  let code = '';
+  let status = '';
+  try {
+    const url = new URL(input);
+    code = url.searchParams.get('erp_code') || url.searchParams.get('code') || '';
+    status = url.searchParams.get('erp_status') || '';
+  } catch {
+    const match = input.match(/erp_code=([^&\s]+)/) || input.match(/code=([^&\s]+)/);
+    if (match) code = decodeURIComponent(match[1]);
+  }
+  if (!code) throw new Error('Callback URL did not contain erp_code.');
+  if (status && status !== 'success') throw new Error(`ERP login callback reported status: ${status}.`);
+  return code;
+}
 const {Player} = require('./player');
 const {ListeningGold} = require('./gold');
 const {runTui} = require('./tui');
@@ -34,24 +54,49 @@ function secretPrompt(question) {
 }
 
 function openExternal(url) {
-  const command = process.platform === 'win32' ? 'cmd' : process.platform === 'darwin' ? 'open' : 'xdg-open';
-  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
-  execFile(command, args, () => {});
+  if (process.platform === 'win32') {
+    execFile('rundll32', ['url.dll,FileProtocolHandler', url], () => {});
+  } else if (process.platform === 'darwin') {
+    execFile('open', [url], () => {});
+  } else {
+    execFile('xdg-open', [url], () => {});
+  }
 }
 
 async function commandLogin(args) {
   if (args.includes('--tedu')) {
     const returnUri = 'radiotedu://auth/erp/linked';
-    const result = await startErpLogin(returnUri);
-    if (!result?.authorization_url) throw new Error('ERP login endpoint did not return an authorization URL.');
-    console.log('Opening TEDÜ/ERP login in browser…'); openExternal(result.authorization_url);
+    const pkce = beginPendingErpLoginPkce();
+    let result;
+    try {
+      result = await startErpLogin(returnUri, pkce);
+    } catch (err) {
+      clearPendingErpLoginPkce(pkce.verifier);
+      throw err;
+    }
+    if (!result?.authorization_url) {
+      clearPendingErpLoginPkce(pkce.verifier);
+      throw new Error('ERP login endpoint did not return an authorization URL.');
+    }
+    let authorizationUrl;
+    try {
+      authorizationUrl = validateAuthorizationUrl(result.authorization_url);
+    } catch (err) {
+      clearPendingErpLoginPkce(pkce.verifier);
+      throw err;
+    }
+    console.log('Opening TEDÜ/ERP login in browser…'); openExternal(authorizationUrl);
     const callback = await prompt('Paste the final RadioTEDU callback URL: ');
-    const url = new URL(callback);
-    const code = url.searchParams.get('erp_code');
-    if (!code) throw new Error('Callback URL did not contain erp_code.');
-    const user = await exchangeErpCode(code);
-    console.log(`Signed in as ${user.display_name || 'RadioTEDU user'}.`);
-    return user;
+    const code = extractErpCode(callback);
+    try {
+      const user = await exchangeErpCode(code, pkce.verifier);
+      clearPendingErpLoginPkce(pkce.verifier);
+      console.log(`Signed in as ${user.display_name || 'RadioTEDU user'}.`);
+      return user;
+    } catch (err) {
+      clearPendingErpLoginPkce(pkce.verifier);
+      throw err;
+    }
   }
   if (!args.length) {
     process.stdout.write('\n=== RadioTEDU Sign In ===\n[1] RadioTEDU Account (Email & Password)\n[2] TEDÜ / ERP SSO (Browser Login)\n');
@@ -163,7 +208,7 @@ async function runInteractive() {
     initialQuality: quality,
     initialAccount: await accountSummary().catch(() => ({label: 'Guest', gold: null})),
     playerName: player.name,
-    autoPlay: true,
+    autoPlay: false,
     onPlay: async (station, state) => {
       activeState = state;
       if (!station.qualities.includes(quality)) quality = 'normal';
@@ -210,14 +255,6 @@ async function runInteractive() {
       state.codec = codecFor(quality, station); return quality;
     },
     onPause: async state => {
-      if (!state.active) {
-        const station = state.stations[state.selected] || state.stations[0];
-        if (station) {
-          await activeState?.onPlay?.(station, state);
-          state.paused = false;
-          return false;
-        }
-      }
       const paused = player.pause();
       gold.stop();
       if (!paused && activeStation) await gold.start(activeStation.goldId || activeStation.id).catch(() => false);
@@ -243,24 +280,38 @@ async function runInteractive() {
     },
     onLoginSsoStart: async () => {
       const returnUri = 'radiotedu://auth/erp/linked';
-      const result = await startErpLogin(returnUri);
-      if (!result?.authorization_url) throw new Error('ERP login endpoint did not return an authorization URL.');
-      openExternal(result.authorization_url);
-      return result.authorization_url;
+      const pkce = beginPendingErpLoginPkce();
+      let result;
+      try {
+        result = await startErpLogin(returnUri, pkce);
+      } catch (err) {
+        clearPendingErpLoginPkce(pkce.verifier);
+        throw err;
+      }
+      if (!result?.authorization_url) {
+        clearPendingErpLoginPkce(pkce.verifier);
+        throw new Error('ERP login endpoint did not return an authorization URL.');
+      }
+      let authorizationUrl;
+      try {
+        authorizationUrl = validateAuthorizationUrl(result.authorization_url);
+      } catch (err) {
+        clearPendingErpLoginPkce(pkce.verifier);
+        throw err;
+      }
+      openExternal(authorizationUrl);
+      return authorizationUrl;
     },
     onLoginSsoExchange: async (callbackOrCode) => {
-      let code = callbackOrCode?.trim();
-      if (code && code.includes('erp_code=')) {
-        try {
-          const url = new URL(code);
-          code = url.searchParams.get('erp_code') || code;
-        } catch {
-          const match = code.match(/erp_code=([^&]+)/);
-          if (match) code = match[1];
-        }
+      const code = extractErpCode(callbackOrCode);
+      const pending = getPendingErpLoginPkce();
+      try {
+        await exchangeErpCode(code, pending?.verifier);
+      } catch (err) {
+        if (pending) clearPendingErpLoginPkce(pending.verifier);
+        throw err;
       }
-      if (!code) throw new Error('Callback URL did not contain erp_code.');
-      await exchangeErpCode(code);
+      if (pending) clearPendingErpLoginPkce(pending.verifier);
       return accountSummary();
     },
     onLogout: async () => { gold.stop(); await logout(); return {label: 'Guest', gold: null}; },

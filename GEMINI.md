@@ -368,3 +368,15 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Full mouse and keyboard controls: `[Esc]` or `[Q]` closes the modal, mouse clicks focus fields or select options.
 - Tests: Terminal 7/7 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-03 radiotedu-tui ERP OAuth URL fix and manual play control handoff snapshot
+
+- Fixed Windows ERP OAuth browser opening issue:
+  - Replaced `cmd.exe /c start` with `rundll32 url.dll,FileProtocolHandler` so URL query parameters containing `&` (such as `&response_type=code` and `&redirect_uri=...`) are not truncated by `cmd.exe` command separator parsing.
+  - Implemented PKCE S256 helper in `terminal/src/pkce.js` with SHA-256 code challenge generation matching RFC 7636 and RadioTEDU mobile standard.
+  - Added strict authorization URL validation (`validateAuthorizationUrl`) verifying `response_type=code`, `client_id`, and `code_challenge`.
+- Respected user directive regarding playback control:
+  - Set `autoPlay: false` so that the radio console opens cleanly in standby without automatically playing sound.
+  - Playback only begins when the user explicitly triggers it via `[Space]`, `[P]`, `[Enter]`, or clicking the playbar.
+- Tests: Terminal 13/13 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

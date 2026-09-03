@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/tui.js && node --check src/api.js && node --check src/stations.js && node --check src/store.js && node --check src/player.js && node --check src/gold.js",
+    "check": "node --check src/index.js && node --check src/tui.js && node --check src/api.js && node --check src/stations.js && node --check src/store.js && node --check src/player.js && node --check src/gold.js && node --check src/pkce.js",
     "prepublishOnly": "npm test && npm run check"
   },
   "files": [

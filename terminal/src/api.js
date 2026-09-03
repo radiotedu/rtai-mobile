@@ -71,12 +71,38 @@ async function logout() {
   try { await request('/auth/logout', {method: 'POST'}); } finally { clearAuth(); }
 }
 
-async function startErpLogin(returnUri) {
-  return request('/auth/erp-link/login/start', {method: 'POST', body: JSON.stringify({return_uri: returnUri})});
+async function startErpLogin(returnUri, pkce) {
+  return request('/auth/erp-link/login/start', {method: 'POST', body: JSON.stringify({
+    return_uri: returnUri,
+    ...(pkce ? {code_challenge: pkce.codeChallenge, code_challenge_method: pkce.method} : {}),
+  })});
 }
 
-async function exchangeErpCode(code) {
-  const session = await request('/auth/erp-link/login/exchange', {method: 'POST', body: JSON.stringify({code})});
+function validateAuthorizationUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(String(value || '').trim());
+  } catch {
+    throw new Error('ERP login did not return a valid authorization URL.');
+  }
+  if (parsed.protocol !== 'https:') throw new Error('ERP authorize URL must use https.');
+  if (parsed.hostname !== 'radiotedu.com') throw new Error('ERP authorize URL has an unexpected host.');
+  if (parsed.pathname !== '/erp/oauth/authorize') throw new Error('ERP authorize URL has an unexpected path.');
+  if (parsed.searchParams.get('response_type') !== 'code') {
+    throw new Error('ERP authorize URL is missing response_type=code. Start login again so the TUI sends its PKCE code_challenge.');
+  }
+  if (!parsed.searchParams.get('client_id')) throw new Error('ERP authorize URL is missing client_id.');
+  if (!parsed.searchParams.get('code_challenge')) {
+    throw new Error('ERP authorize URL is missing code_challenge. Start login again so the TUI sends its PKCE code_challenge.');
+  }
+  return parsed.toString();
+}
+
+async function exchangeErpCode(code, codeVerifier) {
+  const session = await request('/auth/erp-link/login/exchange', {method: 'POST', body: JSON.stringify({
+    code,
+    ...(codeVerifier ? {code_verifier: codeVerifier} : {}),
+  })});
   if (!session?.access_token || !session?.refresh_token) throw new Error('ERP login response did not contain a valid session.');
   saveAuth({access_token: session.access_token, refresh_token: session.refresh_token, user: session.user || null});
   return session.user || await me();
@@ -94,4 +120,4 @@ async function finishStudySession(sessionId, nonce) {
   return request(`/study/sessions/${encodeURIComponent(sessionId)}/finish`, {method: 'POST', body: JSON.stringify({nonce})});
 }
 
-module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession};
+module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession};

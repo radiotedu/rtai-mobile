@@ -544,7 +544,7 @@ async function runTui({
   initialAccount = null,
   initialQuality = 'normal',
   playerName = null,
-  autoPlay = true,
+  autoPlay = false,
 }) {
   return new Promise(resolve => {
     const state = {
@@ -682,7 +682,7 @@ async function runTui({
               render();
               return;
             }
-            const char = event.raw || event.key;
+            const char = event.raw || (event.key === 'space' ? ' ' : event.key);
             if (char && char.length === 1 && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
               state.modal[state.modal.field] += char;
               render();
@@ -717,7 +717,7 @@ async function runTui({
               return;
             }
             const char = event.raw || event.key;
-            if (char && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
+            if (char && char.length === 1 && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
               state.modal.url += char;
               render();
               return;
@@ -729,26 +729,26 @@ async function runTui({
         // Mouse clicks on modal
         if (event.type === 'mouse' && event.button === 0 && event.release) {
           if (state.modal.type === 'choice') {
-            if (event.y === 6) {
+            if (event.y === 7) {
               state.modal = {type: 'creds', field: 'email', email: '', password: '', status: ''};
               render();
               return;
             }
-            if (event.y === 7) {
+            if (event.y === 8) {
               state.modal = {type: 'sso', url: '', status: 'Tarayıcıda TEDÜ oturum açma sayfası açılıyor...'};
               render();
               onLoginSsoStart?.().catch(err => { if (state.modal) state.modal.status = `Hata: ${err.message}`; });
               return;
             }
-            if (event.y >= 9) {
+            if (event.y >= 12) {
               state.modal = null;
               render();
               return;
             }
           }
           if (state.modal.type === 'creds') {
-            if (event.y === 6) { state.modal.field = 'email'; render(); return; }
-            if (event.y === 7) { state.modal.field = 'password'; render(); return; }
+            if (event.y === 7) { state.modal.field = 'email'; render(); return; }
+            if (event.y === 8) { state.modal.field = 'password'; render(); return; }
           }
         }
         return;

@@ -119,32 +119,66 @@ function downloadPortablePlayer() {
   const home = os.homedir();
   const targetDir = path.join(home, '.radiotedu', 'bin');
   const targetExe = path.join(targetDir, 'ffplay.exe');
-  if (fs.existsSync(targetExe)) return targetExe;
+  if (fs.existsSync(targetExe)) {
+    try {
+      if (fs.statSync(targetExe).size > 10000000) return targetExe;
+    } catch {}
+  }
 
   try {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, {recursive: true});
     }
-    const psScript = `
-$ProgressPreference = 'SilentlyContinue'
-$targetDir = "$env:USERPROFILE\\.radiotedu\\bin"
-New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-$zipPath = "$targetDir\\ffplay.zip"
-Invoke-WebRequest -Uri "https://radiotedu.com/tui/tools/ffplay.zip" -OutFile $zipPath
-Expand-Archive -Path $zipPath -DestinationPath $targetDir -Force
-Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
-`;
-    spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript], {
-      stdio: 'ignore',
-      windowsHide: true,
-      timeout: 90000,
+    const tempExe = path.join(targetDir, `ffplay_${Date.now()}.tmp`);
+    const dlScript = `
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
+
+function download(url, dest, cb) {
+  const mod = url.startsWith('https:') ? https : http;
+  mod.get(url, (res) => {
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      return download(res.headers.location, dest, cb);
+    }
+    if (res.statusCode !== 200) {
+      return cb(new Error('HTTP ' + res.statusCode));
+    }
+    const file = fs.createWriteStream(dest);
+    res.pipe(file);
+    file.on('finish', () => {
+      file.close(() => cb(null));
     });
-    if (fs.existsSync(targetExe)) {
+    file.on('error', (err) => {
+      try { fs.unlinkSync(dest); } catch {}
+      cb(err);
+    });
+  }).on('error', cb);
+}
+
+download('https://radiotedu.com/tui/tools/ffplay.exe', process.argv[1], (err) => {
+  if (err) process.exit(1);
+  process.exit(0);
+});
+`;
+    const res = spawnSync(process.execPath, ['-e', dlScript, tempExe], {
+      windowsHide: true,
+      timeout: 120000,
+    });
+    if (res.status === 0 && fs.existsSync(tempExe) && fs.statSync(tempExe).size > 10000000) {
+      if (fs.existsSync(targetExe)) {
+        try { fs.unlinkSync(targetExe); } catch {}
+      }
+      fs.renameSync(tempExe, targetExe);
       return targetExe;
+    }
+    if (fs.existsSync(tempExe)) {
+      try { fs.unlinkSync(tempExe); } catch {}
     }
   } catch {}
   return null;
 }
+
 
 class Player {
   constructor(configured) {

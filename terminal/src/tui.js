@@ -965,11 +965,6 @@ async function runTui({
           // Station Row click in Tab 1 (Y=6 to 5 + stations.length, X <= 52)
           if (state.activeTab === 1 && y >= 6 && y < 6 + stations.length && x <= 52) {
             state.selected = y - 6;
-            if (!state.playerName) {
-              state.modal = {type: 'audio_engine_missing'};
-              render();
-              return;
-            }
             await onPlay(stations[state.selected], state);
             state.paused = false;
             render();
@@ -1074,11 +1069,6 @@ async function runTui({
           // Track row (play/pause toggle)
           if (y === playbarStart + 1) {
             if (!state.active) {
-              if (!state.playerName) {
-                state.modal = {type: 'audio_engine_missing'};
-                render();
-                return;
-              }
               await onPlay(stations[state.selected], state);
               state.paused = false;
             } else {
@@ -1103,11 +1093,6 @@ async function runTui({
             if (x >= 2 && x <= 18) {
               // Space: Play / Pause
               if (!state.active) {
-                if (!state.playerName) {
-                  state.modal = {type: 'audio_engine_missing'};
-                  render();
-                  return;
-                }
                 await onPlay(stations[state.selected], state);
                 state.paused = false;
               } else {
@@ -1173,22 +1158,12 @@ async function runTui({
             render();
             break;
           case 'enter':
-            if (!state.playerName) {
-              state.modal = {type: 'audio_engine_missing'};
-              render();
-              break;
-            }
             await onPlay(stations[state.selected], state);
             state.paused = false;
             render();
             break;
           case 'space':
             if (!state.active) {
-              if (!state.playerName) {
-                state.modal = {type: 'audio_engine_missing'};
-                render();
-                break;
-              }
               await onPlay(stations[state.selected], state);
               state.paused = false;
             } else {
@@ -1214,11 +1189,6 @@ async function runTui({
               render();
             } else {
               if (!state.active) {
-                if (!state.playerName) {
-                  state.modal = {type: 'audio_engine_missing'};
-                  render();
-                  break;
-                }
                 await onPlay(stations[state.selected], state);
                 state.paused = false;
               } else {

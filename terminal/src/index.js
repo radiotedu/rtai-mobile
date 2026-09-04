@@ -222,6 +222,12 @@ async function commandStudy(args) {
 
 async function runInteractive() {
   const player = new Player();
+  if (!player.command && process.platform === 'win32') {
+    const downloaded = downloadPortablePlayer();
+    if (downloaded) {
+      player.command = downloaded;
+    }
+  }
   let activeStation = null;
   let quality = 'normal';
   let metadataTimer = null;
@@ -272,6 +278,10 @@ async function runInteractive() {
       if (metadataTimer) clearInterval(metadataTimer);
       gold.stop();
       if (!player.command) {
+        if (state) {
+          state.status = 'Downloading portable audio engine (ffplay)...';
+          state.requestRender?.();
+        }
         ensureAudioEngine(state);
       }
       try {
@@ -286,6 +296,7 @@ async function runInteractive() {
       }
       activeStation = station;
       state.active = station;
+      state.playerName = player.name;
       state.codec = codecFor(quality, station);
       state.status = `Playing ${station.name} (${quality.toUpperCase()})`;
       state.requestRender?.();

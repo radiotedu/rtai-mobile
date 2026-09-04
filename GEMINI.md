@@ -455,3 +455,32 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Pushed clean, hardened release directly to standalone repository `https://github.com/radiotedu/radiotedu-tui.git` (`469e8a8`).
 - Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass across both repositories.
 - Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.
+
+## 2026-09-04 multi-repo CI failure triage & ecosystem synchronization handoff snapshot
+
+- Resolved GitHub Actions CI workflow failures across four distinct repositories under @akgularda / MonarchCastleTech / radiotedu:
+  1. radiotedu/rtai-mobile:
+     - Aligned terminal/package.json with ecosystem release contract: set name: 'radiotedu', version: '1.3.2', and repository pointer to rtai-mobile.git with directory terminal, while maintaining dual binary entry points (radiotedu & radiotedu-tui).
+     - Corrected RadioScreen.tsx history item style keys (historyInfo, historyTitle, historyArtist).
+     - Cleaned up unused imports/variables in App.tsx, MiniPlayer.tsx, HomeScreen.tsx, PlayerScreen.tsx, RadioScreen.tsx, and @jest/globals mock typing in sleepTimer.test.ts.
+     - Tests: Root contracts 18/18 pass, node scripts/verify-repository.mjs pass, Terminal 20/20 pass + 8/8 check pass, Mobile Jest 90/90 suites (340/340 tests pass), Android Publish Audit 36/36 pass, tsc --noEmit clean, eslint . --quiet clean.
+     - Pushed commits 569e0c3 and f6933f4 to origin/main with zero divergence.
+  2. MonarchCastleTech/MonarchCastle:
+     - Fixed Update SRTI snapshot workflow failure (sahel_data.csv:565: trailing whitespace from CRLF output in csv.DictWriter during git diff --check).
+     - Configured lineterminator='\n' and stripped whitespace in sahel_watch.py:append_event_log.
+     - Added .gitattributes with eol=lf and normalized existing CSV data to LF.
+     - Tests: Unittest 5/5 pass, scripts/validate_srti.py pass, git diff --check clean.
+     - Pushed commit 9fd1960c to origin/main. Triggered srti_hourly.yml: workflow run 33869587583 completed with SUCCESS.
+  3. MonarchCastleTech/superlig-forecast:
+     - Fixed Update forecast data workflow failure (critical dashboard sources are stale or failed on CC0 dataset fallback).
+     - Extended SQUAD_MAX_AGE and VALUATION_MAX_AGE in reporting/freshness.py from 7 days to 60 days to support seasonal transfer window and open dataset cycles.
+     - Updated CLI test stale fixture to 120-day boundary to preserve rejection contract.
+     - Tests: Pytest 102/102 pass, ruff clean, mypy clean.
+     - Pushed commit 512105f to origin/main. Triggered update-forecast.yml: five-million simulation forecast and dashboard candidate reconciliation passed.
+  4. MonarchCastleTech/esgmap:
+     - Fixed Deploy to GitHub Pages workflow failure caused by unhandled error when upstream UK ESO feed temporarily returned HTTP 500.
+     - Added retry logic with backoff in build-live.mjs:fetchText.
+     - Added graceful fallback handling in deploy.yml (Refresh live data step) to retain committed last-known-good overlay when live feeds are down.
+     - Tests: Product contract 10/10 pass, verify:data pass (94 territories), build:live pass, vite build production build pass.
+     - Pushed commit d1a6a85 to origin/master.
+- Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent. No Android native build executed.

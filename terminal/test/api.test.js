@@ -87,4 +87,3 @@ test('initDeviceAuth and pollDeviceAuth use automated web device flow contract',
   assert.equal(approved.user.display_name, 'Listener Alex');
   assert.match(calls[2].url, /\/auth\/device\/poll$/);
 });
-

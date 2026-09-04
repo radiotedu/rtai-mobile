@@ -429,3 +429,18 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Added `author` field to `terminal/package.json` pointing to `Arda Akgül (akgularda) <akgularda@users.noreply.github.com>`.
 - Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass.
 - Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.
+
+## 2026-09-04 radiotedu-tui security audit & v1.4.4 device flow sync handoff snapshot
+
+- Executed comprehensive security audit of `radiotedu-tui` codebase (`https://github.com/radiotedu/radiotedu-tui`):
+  - Hardened `openExternal` in `src/index.js` by strictly validating `URL` objects (protocol `https:`/`http:` only) and executing `rundll32 url.dll,FileProtocolHandler` directly without `cmd.exe` shell expansion to eliminate command argument injection risks on Windows.
+  - Hardened `downloadPortablePlayer` in `src/player.js` by using `-LiteralPath` and escaping single quotes in user path strings to prevent injection on Windows profile paths with apostrophes.
+  - Audited token persistence in `src/store.js`: verified directory permissions `0o700` and file permissions `0o600`.
+  - Audited PKCE implementation in `src/pkce.js`: verified RFC 7636 compliance, SHA-256 challenge, 10-minute expiry, and strict domain validation.
+  - Audited gamification in `src/gold.js`: confirmed tamper-proof listening proof via server nonces and session heartbeats.
+- Synced terminal modules to v1.4.4:
+  - Integrated automated GitHub CLI-style device pairing flow (`POST /auth/device/init` & `POST /auth/device/poll`).
+  - Added interactive `device_poll` modal in `src/tui.js` with live browser approval status.
+  - Updated `README.md` to reflect the 3-option login dialog and v1.4.4 features.
+- Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass; Root contract tests 15/15 pass.
+- Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.

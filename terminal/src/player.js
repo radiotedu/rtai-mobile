@@ -173,7 +173,7 @@ download('https://radiotedu.com/tui/tools/ffplay.zip', process.argv[1], (err) =>
       try {
         spawnSync('powershell.exe', [
           '-NoProfile', '-NonInteractive', '-Command',
-          `Expand-Archive -Path '${tempZip}' -DestinationPath '${targetDir}' -Force`
+          `Expand-Archive -LiteralPath '${tempZip.replace(/'/g, "''")}' -DestinationPath '${targetDir.replace(/'/g, "''")}' -Force`
         ], {windowsHide: true, timeout: 30000});
       } catch {}
       try { fs.unlinkSync(tempZip); } catch {}

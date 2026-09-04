@@ -59,11 +59,15 @@ function openExternal(url) {
       if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
         return resolve();
       }
-      const safeUrl = url.trim();
+      const parsed = new URL(url.trim());
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return resolve();
+      }
+      const safeUrl = parsed.toString();
       if (process.platform === 'win32') {
-        execFile('cmd.exe', ['/c', 'start', '""', safeUrl], (err) => {
+        execFile('rundll32', ['url.dll,FileProtocolHandler', safeUrl], (err) => {
           if (err) {
-            execFile('rundll32', ['url.dll,FileProtocolHandler', safeUrl], () => resolve());
+            execFile('cmd.exe', ['/c', 'start', '""', safeUrl], () => resolve());
           } else {
             resolve();
           }

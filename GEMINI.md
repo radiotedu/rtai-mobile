@@ -380,3 +380,16 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Playback only begins when the user explicitly triggers it via `[Space]`, `[P]`, `[Enter]`, or clicking the playbar.
 - Tests: Terminal 13/13 tests pass + syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-04 radiotedu-tui 4-4 device pairing code flow and audio engine hardening handoff snapshot
+
+- Implemented 4-4 Device Pairing Code Flow (`AAAA-BBBB`) in `radiotedu-tui`:
+  - Added Option `[3] 🔑 Web Eşleme Kodu (radiotedu.com/device -> AAAA-BBBB)` to the login modal dialog.
+  - Users can generate a code on the web portal or ERP and type/paste it directly into the terminal without dealing with browser redirect callbacks or expired OAuth states.
+  - Added `verifyPairCode(code)` in `terminal/src/api.js` calling `POST /auth/device/verify`.
+  - Added automatic hyphen formatting and uppercase normalization in `terminal/src/tui.js`.
+- Hardened audio engine in `terminal/src/player.js`:
+  - Prioritized `where.exe` resolution on Windows to resolve the full absolute binary path of `ffplay.exe`.
+  - Switched `Player.launch()` to `{stdio: 'ignore', windowsHide: true}` eliminating child process stdin blocking.
+- Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

@@ -108,6 +108,17 @@ async function exchangeErpCode(code, codeVerifier) {
   return session.user || await me();
 }
 
+async function verifyPairCode(code) {
+  const normalized = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const formatted = normalized.length === 8 ? `${normalized.slice(0, 4)}-${normalized.slice(4)}` : code.trim();
+  const session = await request('/auth/device/verify', {method: 'POST', body: JSON.stringify({
+    code: formatted,
+  })});
+  if (!session?.access_token || !session?.refresh_token) throw new Error('Eşleme kodu doğrulanamadı veya süresi doldu.');
+  saveAuth({access_token: session.access_token, refresh_token: session.refresh_token, user: session.user || null});
+  return session.user || await me();
+}
+
 async function startStudySession(location, clientSessionId, targetMinutes) {
   return request('/study/sessions/start', {method: 'POST', body: JSON.stringify({location, clientSessionId, sessionType: 'study', ...(targetMinutes ? {pomodoroTargetMinutes: targetMinutes} : {})})});
 }
@@ -120,4 +131,4 @@ async function finishStudySession(sessionId, nonce) {
   return request(`/study/sessions/${encodeURIComponent(sessionId)}/finish`, {method: 'POST', body: JSON.stringify({nonce})});
 }
 
-module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession};
+module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, verifyPairCode, startStudySession, heartbeatStudySession, finishStudySession};

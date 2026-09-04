@@ -170,9 +170,27 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 📧 ${C.white}RadioTEDU Hesabı (E-Posta & Şifre)${C.reset}`));
     boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[2]${C.reset} 🏛️ ${C.white}TEDÜ / ERP SSO (Tarayıcı ile Tek Tık Giriş)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.yellow}${C.bold}[3]${C.reset} 🔑 ${C.white}Web Eşleme Kodu (radiotedu.com/device ➔ AAAA-BBBB)${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.darkGray}${'─'.repeat(innerW - 4)}${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray} veya ${C.white}[2]${C.gray}'ye basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray}, ${C.white}[2]${C.gray} veya ${C.white}[3]${C.gray}'e basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
+    boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
+  } else if (modal.type === 'pair') {
+    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🔑 WEB EŞLEME KODU (AAAA-BBBB) ${'─'.repeat(Math.max(0, modalW - 35))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.gray}1. Tarayıcınızda ${C.white}radiotedu.com/device${C.gray} adresine gidin.${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}2. Sitede oturum açıp aldığınız 8 haneli kodu girin:${C.reset}`));
+    boxLines.push(wrapLine(''));
+
+    const codeCursor = `${C.spotifyGreen}█${C.reset}`;
+    const codeVal = (modal.code || '') + codeCursor;
+    boxLines.push(wrapLine(`  Eşleme Kodu : ${C.spotifyGreen}[${C.reset} ${padVisible(codeVal, 24)} ${C.spotifyGreen}]${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.darkGray}[Enter] Doğrula ve Giriş Yap  ·  [Esc] İptal${C.reset}`));
+
+    const statusText = modal.status
+      ? (modal.status.includes('Hata') ? `${C.brightRed}⚠️ ${modal.status}${C.reset}` : `${C.yellow}⏳ ${modal.status}${C.reset}`)
+      : '';
+    boxLines.push(wrapLine(`  ${statusText}`));
     boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   } else if (modal.type === 'creds') {
     boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 📧 RADIOTEDU HESAP GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 30))}╮${C.reset}`, totalCols));
@@ -538,6 +556,7 @@ async function runTui({
   onLoginCreds,
   onLoginSsoStart,
   onLoginSsoExchange,
+  onLoginPairCode,
   onLogout,
   onQuit,
   onTick,
@@ -644,6 +663,11 @@ async function runTui({
               });
               return;
             }
+            if (event.key === '3') {
+              state.modal = {type: 'pair', code: '', status: ''};
+              render();
+              return;
+            }
             return;
           }
 
@@ -724,6 +748,52 @@ async function runTui({
             }
             return;
           }
+
+          if (state.modal.type === 'pair') {
+            if (event.key === 'backspace') {
+              if (state.modal.code.endsWith('-')) {
+                state.modal.code = state.modal.code.slice(0, -2);
+              } else {
+                state.modal.code = state.modal.code.slice(0, -1);
+              }
+              render();
+              return;
+            }
+            if (event.key === 'enter') {
+              const cleanCode = state.modal.code.trim();
+              if (!cleanCode || cleanCode.replace(/[^A-Za-z0-9]/g, '').length < 8) {
+                state.modal.status = 'Lütfen 8 haneli kodu girin (örn: AAAA-BBBB).';
+                render();
+                return;
+              }
+              state.modal.status = 'Doğrulanıyor, lütfen bekleyin...';
+              render();
+              try {
+                const acc = await onLoginPairCode?.(cleanCode);
+                state.account = acc;
+                state.modal = null;
+                state.status = `Giriş başarılı · ${acc.label}`;
+              } catch (err) {
+                state.modal.status = `Hata: ${err.message}`;
+              }
+              render();
+              return;
+            }
+            const raw = event.raw || event.key;
+            if (raw && raw.length === 1 && !raw.startsWith('\x1b') && raw !== '\r' && raw !== '\n' && raw !== '\t') {
+              const char = raw.toUpperCase();
+              if (/^[A-Z0-9]$/.test(char) && state.modal.code.length < 9) {
+                if (state.modal.code.length === 4 && !state.modal.code.includes('-')) {
+                  state.modal.code += '-';
+                }
+                state.modal.code += char;
+                if (state.modal.code.length === 4) state.modal.code += '-';
+                render();
+                return;
+              }
+            }
+            return;
+          }
         }
 
         // Mouse clicks on modal
@@ -738,6 +808,11 @@ async function runTui({
               state.modal = {type: 'sso', url: '', status: 'Tarayıcıda TEDÜ oturum açma sayfası açılıyor...'};
               render();
               onLoginSsoStart?.().catch(err => { if (state.modal) state.modal.status = `Hata: ${err.message}`; });
+              return;
+            }
+            if (event.y === 9) {
+              state.modal = {type: 'pair', code: '', status: ''};
+              render();
               return;
             }
             if (event.y >= 12) {

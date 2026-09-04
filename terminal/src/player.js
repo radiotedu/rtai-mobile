@@ -6,11 +6,6 @@ function probeArgs(command) {
 
 function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
   if (configured) return configured;
-  const candidates = process.platform === 'win32' ? ['mpv.com', 'mpv', 'ffplay'] : ['mpv', 'ffplay'];
-  for (const candidate of candidates) {
-    const probe = spawnSync(candidate, probeArgs(candidate), {stdio: 'ignore', shell: false});
-    if (!probe.error && probe.status === 0) return candidate;
-  }
   if (process.platform === 'win32') {
     for (const name of ['mpv.com', 'mpv', 'ffplay']) {
       try {
@@ -21,6 +16,11 @@ function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
         }
       } catch {}
     }
+  }
+  const candidates = process.platform === 'win32' ? ['mpv.com', 'mpv', 'ffplay'] : ['mpv', 'ffplay'];
+  for (const candidate of candidates) {
+    const probe = spawnSync(candidate, probeArgs(candidate), {stdio: 'ignore', shell: false});
+    if (!probe.error && probe.status === 0) return candidate;
   }
   return null;
 }
@@ -38,14 +38,27 @@ class Player {
     this.last = null;
     this.paused = false;
     this.volume = 80;
+    this.lastError = null;
+    this.lastExitCode = null;
   }
   launch() {
     if (!this.command || !this.last) return;
-    const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume), {stdio: ['pipe', 'ignore', 'ignore']});
+    const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume), {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
     this.process = child;
     this.paused = false;
-    child.once('exit', () => { if (this.process === child) this.process = null; });
-    child.on('error', () => { if (this.process === child) this.process = null; });
+    child.once('exit', (code) => {
+      if (this.process === child) {
+        this.process = null;
+        if (code !== 0 && code !== null) this.lastExitCode = code;
+      }
+    });
+    child.on('error', (err) => {
+      this.lastError = err;
+      if (this.process === child) this.process = null;
+    });
   }
   start(url, title) {
     if (!this.command) throw new Error('No player found. Install mpv (recommended) or ffplay, then run again.');

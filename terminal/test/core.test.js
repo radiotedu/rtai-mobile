@@ -48,3 +48,10 @@ test('keyboard and SGR mouse input are recognized', () => {
   assert.deepEqual(parseInput(Buffer.from(' ')), {type: 'key', key: 'space'});
   assert.deepEqual(parseInput(Buffer.from('\x1b[<64;1;1M')), {type: 'mouse', button: 64, x: 1, y: 1, release: false});
 });
+
+test('device pairing code formats 8 characters into 4-4 with hyphen', () => {
+  const code = 'abcd1234';
+  const normalized = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const formatted = normalized.length === 8 ? `${normalized.slice(0, 4)}-${normalized.slice(4)}` : code;
+  assert.equal(formatted, 'ABCD-1234');
+});

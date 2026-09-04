@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {STATIONS, getStation, streamUrl, codecFor, listStations} = require('./stations');
 const {loadAuth, saveStudy, loadStudy, clearStudy} = require('./store');
-const {login, me, gamificationHome, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
+const {login, me, gamificationHome, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, verifyPairCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
 const {beginPendingErpLoginPkce, getPendingErpLoginPkce, clearPendingErpLoginPkce} = require('./pkce');
 const {readIcecastMetadata, isLive} = require('./metadata');
 
@@ -312,6 +312,10 @@ async function runInteractive() {
         throw err;
       }
       if (pending) clearPendingErpLoginPkce(pending.verifier);
+      return accountSummary();
+    },
+    onLoginPairCode: async (code) => {
+      await verifyPairCode(code);
       return accountSummary();
     },
     onLogout: async () => { gold.stop(); await logout(); return {label: 'Guest', gold: null}; },

@@ -403,3 +403,12 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Removed old broken callback URL SSO flow from the TUI entirely.
 - Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-04 radiotedu-tui ERP device pairing URL update to /erp/device handoff snapshot
+
+- Updated ERP device pairing URL in `radiotedu-tui` from `/device` to `/erp/device` (`https://radiotedu.com/erp/device`):
+  - Updated `terminal/src/index.js` `onLoginPairStart` to open `https://radiotedu.com/erp/device`.
+  - Updated `terminal/src/tui.js` modal instructions and status text to reference `radiotedu.com/erp/device`.
+  - Streamlined ERP login to single-step pairing code entry with automatic browser launch.
+- Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

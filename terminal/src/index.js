@@ -279,7 +279,7 @@ async function runInteractive() {
       return accountSummary();
     },
     onLoginPairStart: () => {
-      openExternal('https://radiotedu.com/device');
+      openExternal('https://radiotedu.com/erp/device');
     },
     onLoginPairCode: async (code) => {
       await verifyPairCode(code);

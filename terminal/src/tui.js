@@ -176,7 +176,7 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   } else if (modal.type === 'pair') {
     boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🏛️ TEDÜ / ERP GİRİŞİ (8 HANELİ KOD) ${'─'.repeat(Math.max(0, modalW - 40))}╮${C.reset}`, totalCols));
-    boxLines.push(wrapLine(`  ${C.gray}1. Tarayıcınızda ${C.white}radiotedu.com/device${C.gray} sayfası açıldı.${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}1. Tarayıcınızda ${C.white}radiotedu.com/erp/device${C.gray} sayfası açıldı.${C.reset}`));
     boxLines.push(wrapLine(`  ${C.gray}   (Giriş yapmadıysanız TEDÜ hesabınızla oturum açın)${C.reset}`));
     boxLines.push(wrapLine(`  ${C.gray}2. Sitede gösterilen 8 haneli kodu buraya girin:${C.reset}`));
     boxLines.push(wrapLine(''));
@@ -630,7 +630,7 @@ async function runTui({
               return;
             }
             if (event.key === '2') {
-              state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/device açılıyor...'};
+              state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/erp/device açılıyor...'};
               render();
               onLoginPairStart?.().catch(() => {});
               return;
@@ -738,7 +738,7 @@ async function runTui({
               return;
             }
             if (event.y === 8) {
-              state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/device açılıyor...'};
+              state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/erp/device açılıyor...'};
               render();
               onLoginPairStart?.().catch(() => {});
               return;

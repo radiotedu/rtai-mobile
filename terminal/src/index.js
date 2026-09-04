@@ -262,6 +262,12 @@ async function runInteractive() {
       activeState.requestRender?.();
     },
   });
+  player.onExitError = (err) => {
+    if (activeState) {
+      activeState.status = `⚠️ ${err.message}`;
+      activeState.requestRender?.();
+    }
+  };
   await runTui({
     stations: listStations(),
     initialQuality: quality,
@@ -297,6 +303,8 @@ async function runInteractive() {
       activeStation = station;
       state.active = station;
       state.playerName = player.name;
+      state.streamStartedAt = Date.now();
+      state.streamElapsedBeforePause = 0;
       state.codec = codecFor(quality, station);
       state.status = `Playing ${station.name} (${quality.toUpperCase()})`;
       state.requestRender?.();

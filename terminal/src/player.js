@@ -193,20 +193,38 @@ class Player {
   launch() {
     if (!this.command || !this.last) return;
     const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume), {
-      stdio: 'ignore',
+      stdio: ['ignore', 'ignore', 'pipe'],
       windowsHide: true,
     });
     this.process = child;
     this.paused = false;
+    let stderrBuffer = '';
+    child.stderr?.on('data', (chunk) => {
+      stderrBuffer = (stderrBuffer + chunk.toString()).slice(-2000);
+    });
     child.once('exit', (code) => {
       if (this.process === child) {
         this.process = null;
-        if (code !== 0 && code !== null) this.lastExitCode = code;
+        if (code !== 0 && code !== null) {
+          this.lastExitCode = code;
+          if (stderrBuffer.includes('No audio device found') ||
+              stderrBuffer.includes('Element not found') ||
+              stderrBuffer.includes('WASAPI') ||
+              stderrBuffer.includes('DirectSoundCreate8') ||
+              stderrBuffer.includes('audio open failed') ||
+              stderrBuffer.includes('Unsupported audio format')) {
+            this.lastError = new Error('Ses donanımı bulunamadı (ses kartı/hoparlör yok)');
+          } else {
+            this.lastError = new Error(`Ses motoru kapandı (kod: ${code})`);
+          }
+          this.onExitError?.(this.lastError);
+        }
       }
     });
     child.on('error', (err) => {
       this.lastError = err;
       if (this.process === child) this.process = null;
+      this.onExitError?.(err);
     });
   }
   start(url, title) {

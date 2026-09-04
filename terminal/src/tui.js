@@ -239,7 +239,6 @@ function renderModalLines(modal, totalCols, maxRows) {
 }
 
 let vizTick = 0;
-let streamSeconds = 0;
 
 function draw(state) {
   const totalCols = Math.max(96, Math.min(130, (process.stdout.columns || 100) - 2));
@@ -306,8 +305,6 @@ function draw(state) {
     const headFiller = '─'.repeat(rightW - 4);
     lines.push(`${C.slateBorder}│${C.reset}${padVisible(tableHead, leftW)}${C.slateBorder}│${C.reset} ${C.slateBorder}│${C.reset}${padVisible(`  ${C.darkGray}${headFiller}${C.reset}`, rightW)}${C.slateBorder}│${C.reset}`);
 
-    vizTick++;
-    if (state.active && !state.paused) streamSeconds++;
     const isPlayingAudio = state.active && !state.paused;
 
     // 6-Row Studio Spectrum Analyzer with dB Scale
@@ -399,8 +396,6 @@ function draw(state) {
   } else if (activeTab === 2) {
     // TAB 2: FULL-WIDTH STUDIO EQUALIZER & STEREO MONITORS
     lines.push(`${C.slateBorder}╭─ FULL-WIDTH STUDIO EQUALIZER & STEREO MONITORS ${'─'.repeat(Math.max(0, totalCols - 50))}╮${C.reset}`);
-    vizTick++;
-    if (state.active && !state.paused) streamSeconds++;
     const isPlayingAudio = state.active && !state.paused;
 
     const fullBands = Math.floor((totalCols - 14) / 2);
@@ -547,7 +542,11 @@ function draw(state) {
   const volBarStr = `${C.spotifyGreen}${'█'.repeat(filledBars)}${C.darkGray}${'░'.repeat(volBarsCount - filledBars)}${C.reset}`;
   const volumeDisplay = `🔉 [${volBarStr}] ${volume}%`;
 
-  // Authentic Live Broadcast Telemetry (No fake progress bar)
+  // Authentic Live Broadcast Telemetry (Calculated from real wall-clock time)
+  const totalElapsedMs = (state.active && !state.paused && state.streamStartedAt)
+    ? (state.streamElapsedBeforePause || 0) + (Date.now() - state.streamStartedAt)
+    : (state.streamElapsedBeforePause || 0);
+  const streamSeconds = Math.floor(totalElapsedMs / 1000);
   const elapsedMins = Math.floor(streamSeconds / 60);
   const elapsedSecs = streamSeconds % 60;
   const sessionTime = `${String(elapsedMins).padStart(2, '0')}m ${String(elapsedSecs).padStart(2, '0')}s`;
@@ -657,6 +656,8 @@ async function runTui({
         completedBreak: 0,
       },
       paused: false,
+      streamStartedAt: null,
+      streamElapsedBeforePause: 0,
       playerName,
       activeTab: 1,
       volume: 80,
@@ -699,6 +700,7 @@ async function runTui({
     // 200ms tick for smooth peak-hold decay, pomodoro countdown and real-time audio animation
     const timer = setInterval(() => {
       let changed = false;
+      vizTick++;
       if (state.pomodoro && state.pomodoro.running) {
         pomoSubTick = (pomoSubTick || 0) + 1;
         if (pomoSubTick >= 5) {
@@ -737,6 +739,39 @@ async function runTui({
       if (onTick?.(state)) changed = true;
       if (changed) render();
     }, 200);
+
+    const triggerPlay = async (station) => {
+      if (!station) return;
+      if (state.active?.id === station.id) {
+        if (state.paused) {
+          state.paused = await onPause(state);
+          if (!state.paused) state.streamStartedAt = Date.now();
+        }
+        return;
+      }
+      state.streamStartedAt = Date.now();
+      state.streamElapsedBeforePause = 0;
+      await onPlay(station, state);
+      state.paused = false;
+    };
+
+    const togglePlayPause = async () => {
+      if (!state.active) {
+        state.streamStartedAt = Date.now();
+        state.streamElapsedBeforePause = 0;
+        await onPlay(stations[state.selected], state);
+        state.paused = false;
+      } else {
+        const wasPaused = state.paused;
+        state.paused = await onPause(state);
+        if (state.paused && !wasPaused) {
+          state.streamElapsedBeforePause += (Date.now() - (state.streamStartedAt || Date.now()));
+          state.streamStartedAt = null;
+        } else if (!state.paused && wasPaused) {
+          state.streamStartedAt = Date.now();
+        }
+      }
+    };
 
     const handle = async (event) => {
       if (!event) return;
@@ -965,8 +1000,7 @@ async function runTui({
           // Station Row click in Tab 1 (Y=6 to 5 + stations.length, X <= 52)
           if (state.activeTab === 1 && y >= 6 && y < 6 + stations.length && x <= 52) {
             state.selected = y - 6;
-            await onPlay(stations[state.selected], state);
-            state.paused = false;
+            await triggerPlay(stations[state.selected]);
             render();
             return;
           }
@@ -1050,15 +1084,15 @@ async function runTui({
             if (y === 18) {
               if (x >= 4 && x <= 22) {
                 const lofi = stations.find(s => s.id === 'lofi');
-                if (lofi) { await onPlay(lofi, state); state.paused = false; render(); return; }
+                if (lofi) { await triggerPlay(lofi); render(); return; }
               }
               if (x >= 24 && x <= 45) {
                 const classic = stations.find(s => s.id === 'classic');
-                if (classic) { await onPlay(classic, state); state.paused = false; render(); return; }
+                if (classic) { await triggerPlay(classic); render(); return; }
               }
               if (x >= 47 && x <= 65) {
                 const jazz = stations.find(s => s.id === 'cazz');
-                if (jazz) { await onPlay(jazz, state); state.paused = false; render(); return; }
+                if (jazz) { await triggerPlay(jazz); render(); return; }
               }
             }
           }
@@ -1068,12 +1102,7 @@ async function runTui({
 
           // Track row (play/pause toggle)
           if (y === playbarStart + 1) {
-            if (!state.active) {
-              await onPlay(stations[state.selected], state);
-              state.paused = false;
-            } else {
-              state.paused = await onPause(state);
-            }
+            await togglePlayPause();
             render();
             return;
           }
@@ -1092,12 +1121,7 @@ async function runTui({
           if (y === playbarStart + 3) {
             if (x >= 2 && x <= 18) {
               // Space: Play / Pause
-              if (!state.active) {
-                await onPlay(stations[state.selected], state);
-                state.paused = false;
-              } else {
-                state.paused = await onPause(state);
-              }
+              await togglePlayPause();
             } else if (x >= 19 && x <= 32) {
               // F: Quality
               state.quality = onQuality(state);
@@ -1158,17 +1182,11 @@ async function runTui({
             render();
             break;
           case 'enter':
-            await onPlay(stations[state.selected], state);
-            state.paused = false;
+            await triggerPlay(stations[state.selected]);
             render();
             break;
           case 'space':
-            if (!state.active) {
-              await onPlay(stations[state.selected], state);
-              state.paused = false;
-            } else {
-              state.paused = await onPause(state);
-            }
+            await togglePlayPause();
             render();
             break;
           case 'p':
@@ -1188,12 +1206,7 @@ async function runTui({
               state.status = `Switched preset to ${state.pomodoro.preset}`;
               render();
             } else {
-              if (!state.active) {
-                await onPlay(stations[state.selected], state);
-                state.paused = false;
-              } else {
-                state.paused = await onPause(state);
-              }
+              await togglePlayPause();
               render();
             }
             break;

@@ -30,6 +30,14 @@ def main():
     extract('androidx/media', MEDIA,
             f'media-{MEDIA}/libraries/decoder_flac/src/main/', work)
     extract('xiph/flac', FLAC, f'flac-{FLAC}/', work / 'jni/libflac')
+    # Android 32-bit exports fseeko64 via stdio.h's large-file alias. A bare
+    # link-symbol probe misses it and incorrectly enables fseek fallback macros.
+    flac_cmake = work / 'jni/libflac/CMakeLists.txt'
+    config = flac_cmake.read_text()
+    probe = 'check_function_exists(fseeko HAVE_FSEEKO)'
+    assert config.count(probe) == 1
+    config = config.replace(probe, '''check_c_source_compiles("\n#define _FILE_OFFSET_BITS 64\n#include <stdio.h>\nint main(void) { return fseeko(stdin, 0, SEEK_SET); }\n" HAVE_FSEEKO)''')
+    flac_cmake.write_text(config)
     # RN Track Player uses ExoPlayer 2's flacJNI. Give Media3 its own soname
     # so loading one decoder cannot hide the other decoder's JNI entry points.
     java = work / 'java/androidx/media3/decoder/flac/FlacLibrary.java'

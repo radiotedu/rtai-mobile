@@ -158,7 +158,9 @@ describe('Android Auto car bridge source contract', () => {
     expect(nativeSourceText).toContain('CommandButton.ICON_QUALITY');
     expect(nativeSourceText).toContain('KEY_CONTENT_FORMAT_TINTABLE_LARGE_ICON_URI');
     expect(nativeSourceText).toContain('KEY_CONTENT_FORMAT_TINTABLE_SMALL_ICON_URI');
-    expect(nativeSourceText).toContain('setSubtitle(if (quality == "flac") "$title · Hi-Fi" else null)');
+    expect(nativeSourceText).toContain('setSubtitle(if (quality == "flac") "$title · Hi-Fi" else if (seriesId == null) title');
+    expect(nativeSourceText).toContain('.setSubtitle(subtitle)');
+    expect(nativeSourceText).toContain('mediaMetadata.subtitle?.toString() != subtitle');
     expect(carBridgeSource).toContain('hiFiUrl: c.streams.flac');
     expect(nativeSourceText).toContain('CAR_TILE_MAX_BYTES');
     expect(nativeSourceText).toContain('R.drawable.car_tile_radio');

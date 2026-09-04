@@ -5,3 +5,5 @@ React Native Android/iOS app. Current baseline 08a6b66 is 1.3.6 (13060 phone). P
 Public release is conditional on all requested APK verification passing. Preserve station catalog and existing homepage/game improvements. Report external-service and test-account limitations explicitly.
 
 2026-09-05: 12 original phone recordings and per-issue results are in artifacts/issue-recordings-2026-09-05. Recorded defects: missing full-player Hi-Fi, clipped Snake Down control, incorrect Music IQ header. Source fixes are being verified; old recordings are not proof of the fixes. Automotive and further device tests are blocked by host disk space; existing files/users are preserved.
+
+Space later increased and Automotive booted. Recordings 13–16 use 6811057, not the fixed candidate. Normal car playback reached PLAYING; podcast tree empty because RNTP setup failed before shared car initialization. Car subtitle did not retain station identity. Car-specific source fixes pass 358 tests; new build/runtime pending. A Hi-Fi attempt buffered and native service logged fallback to Low; investigate independently of badge rendering.

@@ -74,6 +74,24 @@ function App(): React.JSX.Element {
     initI18n().finally(() => setI18nReady(true));
   }, []);
 
+  // Native car browsing must work even if RNTP cannot start in the foreground.
+  useEffect(() => {
+    initCarBridge();
+    const runner = createRunOnceWhenActive(async () => {
+      const items = await fetchAllPodcasts();
+      setCachedPodcasts(items);
+      await pushCarCatalog(items);
+    }, error => console.log('Car catalog initialization failed:', error));
+    runner.handleAppStateChange('active');
+    const subscription = AppState.addEventListener('change', state => {
+      runner.handleAppStateChange(state);
+    });
+    return () => {
+      runner.cancel();
+      subscription.remove();
+    };
+  }, []);
+
   useEffect(() => {
     let playerReady = false;
     let stopStreamQualityController: (() => void) | null = null;
@@ -129,17 +147,6 @@ function App(): React.JSX.Element {
           },
         });
 
-        // Pre-load recent podcasts so they appear in the Android Auto / CarPlay
-        // browse list alongside the live channels (best-effort - never blocks
-        // radio from loading if the podcast API is unavailable).
-        try {
-          const items = await fetchAllPodcasts();
-          setCachedPodcasts(items);
-          pushCarCatalog(items); // include podcasts in the car browse tree
-        } catch (podcastError) {
-          console.log('Podcast preload skipped:', podcastError);
-        }
-
         // Build the browsable queue (channels + podcasts) for the car. Uses the
         // shared helper so the in-app player and the car stay in sync.
         const streamSelection = await resolveCurrentStreamPreferences();
@@ -149,8 +156,6 @@ function App(): React.JSX.Element {
         // Measure listening minutes (only emitted if the user consented).
         startListeningTracker();
 
-        // Wire the native Android Auto / Automotive car browser (Android only).
-        initCarBridge();
         stopOutputRouting = initOutputRouting();
       } catch (e) {
         console.log('Player post-setup initialization failed:', e);

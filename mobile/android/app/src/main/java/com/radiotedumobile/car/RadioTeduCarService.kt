@@ -402,15 +402,26 @@ class RadioTeduCarService : MediaLibraryService() {
         if (artist.isEmpty()) artist = fallback.artist
 
         val artworkKey = "${fallback.id}\u0000$artist\u0000$title"
+        val subtitle = if (fallback.seriesId == null) {
+            listOfNotNull(
+                fallback.title,
+                artist.takeIf { it.isNotBlank() && it != fallback.title },
+                "Hi-Fi".takeIf { fallback.quality == "flac" },
+            ).joinToString(" · ")
+        } else {
+            current.mediaMetadata.subtitle?.toString()
+        }
 
         val normalized = current.mediaMetadata.buildUpon()
             .setTitle(title)
             .setDisplayTitle(title)
             .setArtist(artist)
+            .setSubtitle(subtitle)
             .setStation(if (fallback.seriesId == null) fallback.title else null)
             .build()
         if (mediaMetadata.title?.toString() != title ||
             mediaMetadata.artist?.toString().orEmpty() != artist ||
+            mediaMetadata.subtitle?.toString() != subtitle ||
             mediaMetadata.station?.toString() != fallback.title
         ) {
             replaceCurrentMetadata(index, current, normalized)
@@ -1316,7 +1327,7 @@ class RadioTeduCarService : MediaLibraryService() {
                     null
                 },
             )
-            .setSubtitle(if (quality == "flac") "$title · Hi-Fi" else null)
+            .setSubtitle(if (quality == "flac") "$title · Hi-Fi" else if (seriesId == null) title else artist.ifEmpty { null })
             .setStation(if (seriesId == null) title else null)
             .setIsBrowsable(false)
             .setIsPlayable(true)

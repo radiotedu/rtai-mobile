@@ -56,18 +56,22 @@ function secretPrompt(question) {
 function openExternal(url) {
   return new Promise((resolve) => {
     try {
+      if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
+        return resolve();
+      }
+      const safeUrl = url.trim();
       if (process.platform === 'win32') {
-        execFile('cmd.exe', ['/c', 'start', '""', url], (err) => {
+        execFile('cmd.exe', ['/c', 'start', '""', safeUrl], (err) => {
           if (err) {
-            execFile('rundll32', ['url.dll,FileProtocolHandler', url], () => resolve());
+            execFile('rundll32', ['url.dll,FileProtocolHandler', safeUrl], () => resolve());
           } else {
             resolve();
           }
         });
       } else if (process.platform === 'darwin') {
-        execFile('open', [url], () => resolve());
+        execFile('open', [safeUrl], () => resolve());
       } else {
-        execFile('xdg-open', [url], () => resolve());
+        execFile('xdg-open', [safeUrl], () => resolve());
       }
     } catch {
       resolve();

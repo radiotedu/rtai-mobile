@@ -172,7 +172,6 @@ const PlayerScreen = ({route}: any) => {
 
   const currentChannelId = currentChannel?.id;
   const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
-  const isFlacActive = currentQuality === 'flac';
 
   useEffect(() => {
     const controller = new AbortController();

@@ -17,7 +17,7 @@ import TrackPlayer, {
   usePlaybackState,
 } from 'react-native-track-player';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
@@ -36,7 +36,7 @@ import {useChannels} from '../context/ChannelContext';
 import {Analytics} from '../services/analyticsService';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
-import {navigationRef, openPlayerModal} from '../navigation/navigationRef';
+import {openPlayerModal} from '../navigation/navigationRef';
 import {
   buildFavoriteChannelOrder,
   loadFavoriteChannelIds,
@@ -47,7 +47,6 @@ import {
 } from '../services/radioFavorites';
 
 const RadioScreen = () => {
-  const navigation = useNavigation<any>();
   const {i18n} = useTranslation();
   const copy = (key: string, values?: Record<string, string | number>) =>
     screenCopy(i18n.language, key, values);
@@ -232,9 +231,9 @@ const RadioScreen = () => {
 
   const renderHistoryItem = ({item}: {item: any}) => (
     <View style={styles.historyItem}>
-      <View style={styles.historyTrackInfo}>
-        <Text style={styles.historyTrackTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.historyTrackArtist} numberOfLines={1}>{item.artist}</Text>
+      <View style={styles.historyInfo}>
+        <Text style={styles.historyTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.historyArtist} numberOfLines={1}>{item.artist}</Text>
       </View>
       <Text style={styles.historyTime}>
         {new Date(item.played_at).toLocaleTimeString([], {

@@ -17,11 +17,9 @@ import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
-import {gameListCopy} from '../i18n/gameListCopy';
 import {useAuth} from '../context/AuthContext';
 import {
   AppEvent,
-  ArcadeGame,
   GamificationHome,
   MarketItem,
   fetchGamificationHome,
@@ -258,21 +256,6 @@ function EventPreview({event}: {event: AppEvent}) {
       <View style={styles.previewBody}>
         <Text style={styles.previewTitle}>{event.title}</Text>
               <Text style={styles.previewMeta}>{event.location || copy('home.campus')} · +{event.check_in_points || 0} Gold</Text>
-      </View>
-    </View>
-  );
-}
-
-function GamePreview({game}: {game: ArcadeGame}) {
-  const {i18n} = useTranslation();
-  const copy = (key: string, values?: Record<string, string | number>) => screenCopy(i18n.language, key, values);
-  const localized = gameListCopy(game.slug, i18n.language, {title: game.title, description: game.description ?? ''});
-  return (
-    <View style={styles.previewCard}>
-      <Icon name="controller-classic" size={24} color={COLORS.primary} />
-      <View style={styles.previewBody}>
-        <Text style={styles.previewTitle}>{localized.title}</Text>
-              <Text style={styles.previewMeta}>{copy('games.dailyLimit', {points: game.daily_point_limit || 0})}</Text>
       </View>
     </View>
   );

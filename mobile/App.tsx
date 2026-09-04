@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import {
   NavigationContainer,
-  createNavigationContainerRef,
   getStateFromPath,
 } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

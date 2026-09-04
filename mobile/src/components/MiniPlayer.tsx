@@ -17,7 +17,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {COLORS} from '../theme/theme';
-import {useNavigation, useNavigationState} from '@react-navigation/native';
+import {useNavigationState} from '@react-navigation/native';
 import {
   pausePlaybackByUser,
   playChannelById,
@@ -30,14 +30,6 @@ import {logSafeError} from '../utils/safeLog';
 import AirPlayRoutePicker from './AirPlayRoutePicker';
 import {clearOutputMedia, showCastRoutePicker, updateOutputMedia} from '../services/outputRouting';
 import {openPlayerModal} from '../navigation/navigationRef';
-
-const IMMERSIVE_GAME_ROUTES = new Set([
-  'SnakeGame',
-  'MemoryGame',
-  'TetrisGame',
-  'RhythmTapGame',
-  'WordGuessGame',
-]);
 
 const HIDDEN_MINIPLAYER_ROUTES = new Set([
   'MainTabs',
@@ -86,7 +78,6 @@ const TAB_ROUTES = new Set(['Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);
 const MiniPlayer = () => {
   const playbackState = usePlaybackState();
   const track = useActiveTrack();
-  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const {metadata} = useMetadata();
   const {activeChannels} = useChannels();

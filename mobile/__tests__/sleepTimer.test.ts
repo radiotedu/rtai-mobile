@@ -1,18 +1,18 @@
+import {afterEach, beforeEach, describe, expect, it, jest} from '@jest/globals';
 import {
   setSleepTimer,
   cancelSleepTimer,
   getRemainingSleepTimerSeconds,
   subscribeSleepTimer,
 } from '../src/services/sleepTimer';
-import TrackPlayer from 'react-native-track-player';
 import * as playbackQueue from '../src/services/playbackQueue';
 
 jest.mock('react-native-track-player', () => ({
-  setVolume: jest.fn().mockResolvedValue(undefined),
+  setVolume: (jest.fn() as any).mockResolvedValue(undefined),
 }));
 
 jest.mock('../src/services/playbackQueue', () => ({
-  pausePlaybackByUser: jest.fn().mockResolvedValue(undefined),
+  pausePlaybackByUser: (jest.fn() as any).mockResolvedValue(undefined),
 }));
 
 describe('sleepTimer service', () => {

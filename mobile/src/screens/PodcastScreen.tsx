@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import TrackPlayer, {
   State,
@@ -42,7 +42,13 @@ import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 
 const PodcastScreen = () => {
+  const route = useRoute();
+  const selectedId = (route.params as {podcastId?: string} | undefined)?.podcastId;
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  const displayedPodcasts = useMemo(() => {
+    const selected = podcasts.find(podcast => podcast.id === selectedId);
+    return selected ? [selected, ...podcasts.filter(podcast => podcast.id !== selectedId)] : podcasts;
+  }, [podcasts, selectedId]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -233,7 +239,7 @@ const PodcastScreen = () => {
           </View>
         ) : (
           <FlatList
-            data={podcasts}
+            data={displayedPodcasts}
             keyExtractor={item => item.id}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}

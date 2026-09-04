@@ -1,5 +1,5 @@
 export const COLORS = {
-  primary: '#E31E24', // RadioTEDU Red
+  primary: '#E31E26', // RadioTEDU Red
   secondary: '#FF4D4D',
   background: '#121212',
   surface: '#1E1E1E',

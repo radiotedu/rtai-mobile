@@ -1,7 +1,8 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState, useSyncExternalStore} from 'react';
 import {
   Animated,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +14,16 @@ import {getGameResultMessage} from './gameSession';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {screenCopy} from '../../i18n/screenCopy';
+import {useRoute} from '@react-navigation/native';
+import {discoveryCopy} from '../../i18n/discoveryCopy';
+import {getLocalBest, loadLocalBest, recordLocalBest, subscribeToLocalBests} from '../../services/localGameBests';
+
+function useDeviceBest() {
+  const {name} = useRoute();
+  const best = useSyncExternalStore(subscribeToLocalBests, () => getLocalBest(name));
+  useEffect(() => { loadLocalBest(name); }, [name]);
+  return {name, best};
+}
 
 interface GameShellProps {
   title: string;
@@ -39,6 +50,8 @@ export function GameShell({
 }: GameShellProps) {
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
+  const progressCopy = discoveryCopy(i18n.language);
+  const {best} = useDeviceBest();
   return (
     <View style={styles.shell}>
       <View pointerEvents="none" style={[styles.ambientOrb, {backgroundColor: accentColor}]} />
@@ -70,6 +83,15 @@ export function GameShell({
           {rightLabel ? <Text style={styles.rightLabel}>{rightLabel}</Text> : null}
         </View>
       </View>
+
+      <Text style={styles.personalBest}>
+        {best > 0 ? `${progressCopy.best}: ${best}` : progressCopy.firstRound}
+      </Text>
+      {best > 0 ? (
+        <View style={styles.goalTrack} accessibilityRole="progressbar" accessibilityLabel={progressCopy.target} accessibilityValue={{min: 0, max: best, now: Math.min(Math.max(score, 0), best)}}>
+          <View style={[styles.goalFill, {backgroundColor: accentColor, width: `${Math.min(100, Math.max(0, score / best * 100))}%`}]} />
+        </View>
+      ) : null}
 
       {children}
     </View>
@@ -152,9 +174,23 @@ export function GameResultModal({
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
   const catalogCopy = (key: string) => screenCopy(i18n.language, key);
+  const progressCopy = discoveryCopy(i18n.language);
+  const {name, best} = useDeviceBest();
+  const [newBest, setNewBest] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (!visible) {
+      setNewBest(false);
+      return;
+    }
+    recordLocalBest(name, score).then(improved => {
+      if (active) { setNewBest(improved); }
+    });
+    return () => { active = false; };
+  }, [name, score, visible]);
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.modalOverlay}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onExit}>
+      <ScrollView contentContainerStyle={styles.modalOverlay}>
         <View style={styles.resultCard}>
           <View style={styles.resultIcon}>
             <Icon name={practice ? 'controller-classic' : submitFailed ? 'wifi-alert' : 'trophy-award'} size={38} color={COLORS.primary} />
@@ -165,6 +201,12 @@ export function GameResultModal({
               ? `${copy('games.score')} ${Math.max(0, Math.floor(score))}`
               : getGameResultMessage(score, awardedXp, copy('games.score'))}
           </Text>
+          {best > 0 ? (
+            <View style={styles.recordCard} accessibilityLiveRegion="polite">
+              <Text style={styles.recordTitle}>{newBest ? progressCopy.newBest : progressCopy.best}</Text>
+              <Text style={styles.recordValue}>{best}</Text>
+            </View>
+          ) : null}
           <Text style={styles.resultSubtitle}>
             {practice
               ? catalogCopy('games.practiceNoRewards')
@@ -176,26 +218,33 @@ export function GameResultModal({
           </Text>
 
           {!practice && submitFailed && onRetrySubmit ? (
-            <TouchableOpacity style={styles.primaryButton} onPress={onRetrySubmit}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.primaryButton, styles.retryButton]} onPress={onRetrySubmit}>
               <Text style={styles.primaryButtonText}>{copy('games.retrySubmit')}</Text>
             </TouchableOpacity>
           ) : null}
 
           <View style={styles.resultActions}>
-            <TouchableOpacity style={styles.secondaryButton} onPress={onExit}>
+            <TouchableOpacity accessibilityRole="button" style={styles.secondaryButton} onPress={onExit}>
               <Text style={styles.secondaryButtonText}>{copy('games.exit')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.primaryButton} onPress={onRestart}>
+            <TouchableOpacity accessibilityRole="button" style={styles.primaryButton} onPress={onRestart}>
               <Text style={styles.primaryButtonText}>{copy('games.restart')}</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  personalBest: {color: COLORS.textMuted, fontSize: 12, lineHeight: 17, textAlign: 'center', marginTop: SPACING.sm},
+  goalTrack: {height: 4, backgroundColor: COLORS.border, borderRadius: 2, marginTop: 6, overflow: 'hidden'},
+  goalFill: {height: 4, borderRadius: 2},
+  recordCard: {alignItems: 'center', width: '100%', padding: SPACING.md, marginTop: SPACING.md, borderRadius: 14, backgroundColor: COLORS.surface},
+  recordTitle: {color: COLORS.text, fontSize: 14, textAlign: 'center'},
+  recordValue: {color: '#F4C542', fontSize: 28, fontWeight: '900', marginTop: 4},
+  retryButton: {flex: 0, alignSelf: 'stretch'},
   shell: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -353,7 +402,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   modalOverlay: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: 'rgba(0,0,0,0.72)',
     justifyContent: 'center',
     padding: SPACING.lg,
@@ -379,6 +428,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 25,
     fontWeight: '900',
+    textAlign: 'center',
   },
   resultScore: {
     color: COLORS.primary,
@@ -401,7 +451,8 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
+    padding: SPACING.sm,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -412,10 +463,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '900',
+    textAlign: 'center',
   },
   secondaryButton: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
+    padding: SPACING.sm,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -428,5 +481,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14,
     fontWeight: '900',
+    textAlign: 'center',
   },
 });

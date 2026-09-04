@@ -484,3 +484,13 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
      - Tests: Product contract 10/10 pass, verify:data pass (94 territories), build:live pass, vite build production build pass.
      - Pushed commit d1a6a85 to origin/master.
 - Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent. No Android native build executed.
+
+## 2026-09-04: mobile home, arcade replay and account-deletion page
+
+- Based on Antigravity commit `f7810bc`, in an isolated checkout at `C:\Users\tuna.ozsari\codex-work\rtai-mobile-20260904`. The older dirty checkout was preserved.
+- Home now prioritizes radio stations, real podcast previews and upcoming events. Gold and account shortcuts remain available. Lo-Fi is retained; its stream configuration belongs to the streamer PC and was not changed.
+- Arcade adds device-only best scores, progress, a quick game selector and explicit replay/exit. Server Gold/session validation is unchanged.
+- Added and verified `https://radiotedu.com/delete-account/`, a bilingual manual account/data deletion request page using the existing privacy mailbox. The app Privacy screen links to it. No deletion was performed and no email was sent.
+- Backups: `C:\Users\tuna.ozsari\radiotedu-mobile-backups\20260904-home-games-deletion-223119`. All modified original mobile files match their pre-edit backups.
+- Verification: 354 Jest tests, TypeScript, changed-file ESLint (zero errors), 36 static Android checks, and six browser viewport/theme checks passed. No APK/AAB or emulator was built. Device and binary release checks remain for the build PC.
+- Details and operational limitations: `docs/MOBILE_HOME_GAMES_DELETION_2026-09-04.md`. Source-only commit uses `[skip ci]`; no build/release workflow was dispatched. Production databases, user information, ERP and Audio Library were untouched.

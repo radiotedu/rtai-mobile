@@ -14,6 +14,7 @@ import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import GlobalHeader from '../components/GlobalHeader';
+import HomeDiscovery from '../components/HomeDiscovery';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
@@ -25,13 +26,11 @@ import {
   fetchGamificationHome,
 } from '../services/gamificationService';
 import {logSafeError} from '../utils/safeLog';
-import {RADIO_CHANNELS} from '../data/radioChannels';
-import {playChannelById} from '../services/playbackQueue';
+import {discoveryCopy} from '../i18n/discoveryCopy';
 import {
   ErpIdentityStatus,
   fetchErpIdentityStatus,
 } from '../services/ecosystem';
-import {openPlayerModal} from '../navigation/navigationRef';
 
 const emptyHome: GamificationHome = {
   points: {
@@ -57,15 +56,19 @@ const HomeScreen = () => {
   const [erpIdentity, setErpIdentity] = useState<ErpIdentityStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const loadHome = useCallback(async () => {
     if (!user) {
       setHome(null);
       setErpIdentity(null);
+      setRefreshing(false);
       return;
     }
 
     setLoading(true);
+    setLoadFailed(false);
     try {
       const identityRequest = user.is_guest
         ? Promise.resolve(null)
@@ -81,6 +84,7 @@ const HomeScreen = () => {
       setErpIdentity(nextIdentity);
     } catch (error) {
       logSafeError('home.gamification', error);
+      setLoadFailed(true);
       Alert.alert(copy('home.errorTitle'), copy('home.errorText'));
     } finally {
       setLoading(false);
@@ -96,6 +100,7 @@ const HomeScreen = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setRefreshKey(value => value + 1);
     loadHome();
   };
 
@@ -114,22 +119,32 @@ const HomeScreen = () => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
           }
           showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
-            <View style={styles.heroGlow} />
+          <HomeDiscovery refreshKey={refreshKey} />
+
+          <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
+          {loading && !accountHome ? (
+            <ActivityIndicator accessibilityLabel={copy('home.upcoming')} color={COLORS.primary} style={styles.loading} />
+          ) : loadFailed ? (
+            <EmptyCard text={discoveryCopy(i18n.language).eventsError} />
+          ) : !user ? (
+            <EmptyCard text={copy('home.accountText')} />
+          ) : homeData.events.length === 0 ? (
+            <EmptyCard text={copy('home.noEvents')} />
+          ) : homeData.events.slice(0, 3).map(event => (
+            <TouchableOpacity key={event.id} accessibilityRole="button" onPress={() => navigation.navigate('Events')}>
+              <EventPreview event={event} />
+            </TouchableOpacity>
+          ))}
+
+          {user && !user.is_guest ? <View style={styles.goldSection}>
             <Text style={styles.kicker}>RadioTEDU Gold</Text>
-            <Text style={styles.title}>
-              {copy('home.heroTitle')}
-            </Text>
-            <Text style={styles.subtitle}>
-              {copy('home.heroSubtitle')}
-            </Text>
 
             <View style={styles.pointsRow}>
               <MetricCard label={copy('home.lifetimeGold')} value={accountHome?.points.lifetime_points ?? user?.rank_score ?? 0} />
               <MetricCard label={copy('home.goldBalance')} value={accountHome?.points.spendable_points ?? user?.gold_balance ?? 0} accent />
               <MetricCard label={copy('home.monthlyGold')} value={accountHome?.points.monthly_points ?? user?.monthly_rank_score ?? 0} />
             </View>
-          </View>
+          </View> : null}
 
           {!user || user.is_guest ? (
             <View style={styles.lockedCard}>
@@ -166,40 +181,6 @@ const HomeScreen = () => {
             </View>
           ) : (
             <>
-              <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
-              {homeData.events.length === 0 ? (
-                <EmptyCard text={copy('home.noEvents')} />
-              ) : (
-                homeData.events.slice(0, 3).map((event) => <EventPreview key={event.id} event={event} />)
-              )}
-
-              <SectionHeader
-                title={i18n.language.startsWith('tr') ? 'Bugün ne dinliyoruz?' : 'What are we listening to today?'}
-                action={copy('home.all')}
-                onPress={() => navigation.navigate('Radio')}
-              />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stationShelf}>
-                {RADIO_CHANNELS.map((channel) => (
-                  <TouchableOpacity
-                    key={channel.id}
-                    style={styles.stationCard}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      playChannelById(channel.id);
-                      openPlayerModal();
-                    }}>
-                    <View style={[styles.stationColorBar, {backgroundColor: channel.color || COLORS.primary}]} />
-                    <View style={styles.stationInfo}>
-                      <Text style={styles.stationName} numberOfLines={1}>{channel.name}</Text>
-                      <Text style={styles.stationDesc} numberOfLines={2}>{channel.description}</Text>
-                    </View>
-                    <View style={[styles.stationPlayBtn, {backgroundColor: channel.color || COLORS.primary}]}>
-                      <Icon name="play" size={16} color="#fff" />
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
               <SectionHeader title={copy('home.marketShowcase')} action={copy('home.marketItems')} onPress={() => navigation.navigate('Market')} />
               {homeData.market.length === 0 ? (
                 <EmptyCard text={copy('home.noMarket')} />
@@ -250,12 +231,16 @@ function SectionHeader({title, action, onPress}: {title: string; action: string;
 function EventPreview({event}: {event: AppEvent}) {
   const {i18n} = useTranslation();
   const copy = (key: string) => screenCopy(i18n.language, key);
+  const startsAt = event.starts_at ? new Date(event.starts_at) : null;
+  const date = startsAt && Number.isFinite(startsAt.getTime())
+    ? startsAt.toLocaleDateString(i18n.language, {day: 'numeric', month: 'short'})
+    : null;
   return (
     <View style={styles.previewCard}>
       <Icon name="calendar-heart" size={24} color={COLORS.primary} />
       <View style={styles.previewBody}>
         <Text style={styles.previewTitle}>{event.title}</Text>
-              <Text style={styles.previewMeta}>{event.location || copy('home.campus')} · +{event.check_in_points || 0} Gold</Text>
+        <Text style={styles.previewMeta}>{[date, event.location || copy('home.campus')].filter(Boolean).join(' · ')}</Text>
       </View>
     </View>
   );
@@ -282,6 +267,7 @@ function EmptyCard({text}: {text: string}) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   content: {padding: SPACING.lg, paddingBottom: 170},
+  goldSection: {marginTop: SPACING.xl},
   hero: {
     overflow: 'hidden',
     borderRadius: 28,
@@ -299,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 95,
     backgroundColor: 'rgba(227,30,36,0.45)',
   },
-  kicker: {color: COLORS.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.4, textTransform: 'uppercase'},
+  kicker: {color: COLORS.text, fontSize: 14, fontWeight: '800'},
   title: {color: COLORS.text, fontSize: 27, fontWeight: '900', lineHeight: 33, marginTop: SPACING.sm},
   subtitle: {color: COLORS.textMuted, fontSize: 14, lineHeight: 21, marginTop: SPACING.sm},
   pointsRow: {flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.lg},
@@ -351,8 +337,8 @@ const styles = StyleSheet.create({
   quickText: {color: COLORS.text, fontSize: 15, fontWeight: '800', marginTop: SPACING.sm},
   loading: {paddingVertical: SPACING.xl},
   sectionHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: SPACING.xl, marginBottom: SPACING.sm},
-  sectionTitle: {color: COLORS.text, fontSize: 18, fontWeight: '900'},
-  sectionAction: {color: COLORS.primary, fontSize: 13, fontWeight: '800'},
+  sectionTitle: {flex: 1, color: COLORS.text, fontSize: 18, fontWeight: '900'},
+  sectionAction: {color: COLORS.text, fontSize: 13, fontWeight: '800', padding: 12, textDecorationLine: 'underline'},
   previewCard: {
     flexDirection: 'row',
     alignItems: 'center',

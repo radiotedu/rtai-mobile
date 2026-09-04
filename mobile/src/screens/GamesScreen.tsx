@@ -26,10 +26,12 @@ import {screenCopy} from '../i18n/screenCopy';
 import {Analytics} from '../services/analyticsService';
 import {gameListCopy} from '../i18n/gameListCopy';
 import {logSafeError} from '../utils/safeLog';
+import {discoveryCopy} from '../i18n/discoveryCopy';
 
 const GamesScreen = () => {
   const navigation = useNavigation<any>();
   const {i18n} = useTranslation();
+  const arcadeCopy = discoveryCopy(i18n.language);
   const copy = useCallback(
     (key: string, values?: Record<string, string | number>) =>
       screenCopy(i18n.language, key, values),
@@ -145,8 +147,18 @@ const GamesScreen = () => {
           <Icon name="gamepad-variant" size={34} color="#111" />
           <Text style={styles.title}>{copy('games.heroTitle')}</Text>
           <Text style={styles.subtitle}>
-            {copy('games.heroSubtitle')}
+            {arcadeCopy.arcadeIntro}
           </Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            style={styles.quickPlay}
+            onPress={() => {
+              const playable = displayGames.filter(game => getGameRouteForSlug(game.slug) && (!isAccountRequired || isPracticeGame(game)));
+              if (playable.length > 0) { handlePlay(playable[Math.floor(Math.random() * playable.length)]); }
+            }}>
+            <Icon name="play" size={22} color="#fff" />
+            <Text style={styles.quickPlayText}>{arcadeCopy.quickPlay}</Text>
+          </TouchableOpacity>
         </View>
 
         {isAccountRequired ? (
@@ -313,6 +325,8 @@ function Empty({text}: {text: string}) {
 }
 
 const styles = StyleSheet.create({
+  quickPlay: {minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: SPACING.sm, borderRadius: 12, backgroundColor: '#202020', marginTop: SPACING.lg},
+  quickPlayText: {flexShrink: 1, color: '#fff', fontWeight: '800', fontSize: 15},
   container: {flex: 1, backgroundColor: COLORS.background},
   navbar: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm},
   backButton: {width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)'},

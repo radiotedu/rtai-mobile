@@ -22,6 +22,7 @@ import {
 } from '../privacy/minorConsentPolicy';
 import {setAnalyticsConsent} from '../services/analyticsService';
 import {PRIVACY_URL, TERMS_URL} from '../services/registrationPolicy';
+import {discoveryCopy} from '../i18n/discoveryCopy';
 
 const GOOGLE_PRIVACY_URL = 'https://policies.google.com/privacy';
 const APPLE_PRIVACY_URL = 'https://www.apple.com/legal/privacy/';
@@ -47,7 +48,7 @@ function ageLabel(t: (key: string) => string, ageRange: ConsentAgeRange): string
 }
 
 const PrivacyScreen = ({navigation}: any) => {
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
   const {consent, saveConsent, withdrawAll} = useConsent();
 
   const update = async (next: {
@@ -212,6 +213,15 @@ const PrivacyScreen = ({navigation}: any) => {
         </TouchableOpacity>
 
         <TouchableOpacity
+          onPress={() => Linking.openURL('https://radiotedu.com/delete-account/').catch(() => {
+            Alert.alert('RadioTEDU', 'https://radiotedu.com/delete-account/');
+          })}
+          accessibilityRole="link"
+          style={styles.deletionLink}>
+          <Text style={styles.policyLink}>{discoveryCopy(i18n.language).deletion}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={() => Linking.openURL(RIGHTS_REQUEST_URL)}
           accessibilityRole="link"
           accessibilityLabel={t('privacy.rightsRequest')}>
@@ -232,6 +242,7 @@ const PrivacyScreen = ({navigation}: any) => {
 };
 
 const styles = StyleSheet.create({
+  deletionLink: {minHeight: 44, justifyContent: 'center'},
   container: {flex: 1, backgroundColor: COLORS.background},
   header: {
     flexDirection: 'row',

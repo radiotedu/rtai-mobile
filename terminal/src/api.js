@@ -138,4 +138,38 @@ async function requestPairCode(email, displayName = 'RadioTEDU Terminal') {
   });
 }
 
-module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, requestPairCode, verifyPairCode, startStudySession, heartbeatStudySession, finishStudySession};
+async function initDeviceAuth() {
+  const session = await request('/auth/device/init', {method: 'POST'});
+  if (!session?.device_token || !session?.user_code) {
+    throw new Error('Cihaz yetkilendirme oturumu başlatılamadı.');
+  }
+  return {
+    deviceToken: session.device_token,
+    userCode: session.user_code,
+    verificationUrl: session.verification_url || `https://radiotedu.com/device?code=${session.user_code}`,
+    expiresIn: session.expires_in || 600,
+    interval: session.interval || 2,
+  };
+}
+
+async function pollDeviceAuth(deviceToken) {
+  const session = await request('/auth/device/poll', {
+    method: 'POST',
+    body: JSON.stringify({device_token: deviceToken}),
+  });
+  if (session?.status === 'approved') {
+    if (!session?.access_token || !session?.refresh_token) {
+      throw new Error('Onaylanan oturum jetonları geçersiz.');
+    }
+    saveAuth({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      user: session.user || null,
+    });
+    const user = session.user || await me();
+    return {status: 'approved', user};
+  }
+  return session;
+}
+
+module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, requestPairCode, verifyPairCode, initDeviceAuth, pollDeviceAuth, startStudySession, heartbeatStudySession, finishStudySession};

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RadioTEDU Cihaz Yetkilendirme // Device Authorization</title>
+  <meta name="description" content="RadioTEDU Terminal çalarınızı (radiotedu-tui) hesabınıza bağlayın.">
+  <meta name="theme-color" content="#E31E26">
+
+  <link rel="icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-32x32.png" sizes="32x32">
+  <link rel="icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-192x192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-180x180.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --rt-red: #E31E26;
+      --rt-red-hover: #c9171f;
+      --rt-red-glow: rgba(227, 30, 38, 0.25);
+      --rt-bg: #090b10;
+      --rt-card: #12151e;
+      --rt-card-inner: #181c28;
+      --rt-border: rgba(255, 255, 255, 0.08);
+      --rt-border-focus: rgba(227, 30, 38, 0.5);
+      --rt-text: #f0f3fa;
+      --rt-text-muted: #8a92a6;
+      --rt-green: #10b981;
+      --rt-gold: #f59e0b;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--rt-bg);
+      color: var(--rt-text);
+      font-family: var(--font-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Subtle background grid & glow */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(227, 30, 38, 0.12) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, rgba(227, 30, 38, 0.18), rgba(227, 30, 38, 0.05));
+      border: 1px solid rgba(227, 30, 38, 0.3);
+      border-radius: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px var(--rt-red-glow);
+    }
+
+    .brand-logo-wrap img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .brand-title span {
+      color: var(--rt-red);
+    }
+
+    .brand-subtitle {
+      font-size: 14px;
+      color: var(--rt-text-muted);
+      margin-top: 4px;
+    }
+
+    .card {
+      background: var(--rt-card);
+      border: 1px solid var(--rt-border);
+      border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(16px);
+    }
+
+    .code-badge-box {
+      background: var(--rt-card-inner);
+      border: 1px dashed rgba(227, 30, 38, 0.4);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .code-badge-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--rt-text-muted);
+      margin-bottom: 6px;
+    }
+
+    .code-badge-val {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #fff;
+      display: inline-block;
+    }
+
+    .code-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--rt-text-muted);
+      margin-top: 8px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--rt-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--rt-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--rt-card-inner);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--rt-text-muted);
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: var(--rt-text);
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--rt-text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--rt-card-inner);
+      border: 1px solid var(--rt-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-family: var(--font-main);
+      font-size: 14px;
+      color: #fff;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--rt-red);
+      box-shadow: 0 0 0 3px var(--rt-red-glow);
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-family: var(--font-main);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--rt-red);
+      color: #fff;
+      box-shadow: 0 4px 16px var(--rt-red-glow);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--rt-red-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--rt-border);
+      color: var(--rt-text-muted);
+      margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    /* User Profile Card */
+    .user-profile-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--rt-card-inner);
+      border: 1px solid var(--rt-border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 20px;
+    }
+
+    .user-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rt-red), #881216);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .user-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: var(--rt-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .switch-account-link {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: var(--rt-text-muted);
+      margin-top: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .switch-account-link:hover {
+      color: var(--rt-red);
+      text-decoration: underline;
+    }
+
+    /* Status feedback messages */
+    .alert-box {
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    /* Success / Result View */
+    .result-view {
+      text-align: center;
+      padding: 20px 8px;
+      display: none;
+    }
+
+    .result-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    .result-icon.success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid var(--rt-green);
+      color: var(--rt-green);
+    }
+
+    .result-icon.denied {
+      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid #ef4444;
+      color: #ef4444;
+    }
+
+    .result-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .result-desc {
+      font-size: 14px;
+      color: var(--rt-text-muted);
+      line-height: 1.5;
+    }
+
+    .erp-link-box {
+      text-align: center;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--rt-border);
+      font-size: 13px;
+      color: var(--rt-text-muted);
+    }
+
+    .erp-link-box a {
+      color: var(--rt-red);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .erp-link-box a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--rt-text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="brand-header">
+      <div class="brand-logo-wrap">
+        <img src="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-192x192.png" alt="RadioTEDU">
+      </div>
+      <h1 class="brand-title">Radio<span>TEDU</span></h1>
+      <p class="brand-subtitle">Terminal Çalar (radiotedu-tui) Cihaz Yetkilendirme</p>
+    </div>
+
+    <div class="card">
+      <!-- Device Code Display -->
+      <div class="code-badge-box">
+        <div class="code-badge-label">Bağlanacak Cihaz Kodu</div>
+        <div class="code-badge-val" id="deviceCodeDisplay">--------</div>
+        <div class="code-meta">
+          <span class="pulse-dot" id="statusDot"></span>
+          <span id="statusTimer">Onay bekleniyor</span>
+        </div>
+      </div>
+
+      <div id="alertBox" class="alert-box"></div>
+
+      <!-- Result Screen (Shown on approval or denial) -->
+      <div id="resultView" class="result-view">
+        <div id="resultIcon" class="result-icon success">✓</div>
+        <h2 id="resultTitle" class="result-title">Terminal Onaylandı!</h2>
+        <p id="resultDesc" class="result-desc">
+          Cihazınız RadioTEDU hesabınıza başarıyla bağlandı.<br>
+          Terminal pencerenize dönebilirsiniz, bu sayfayı kapatabilirsiniz.
+        </p>
+      </div>
+
+      <!-- Main Action Views -->
+      <div id="actionContainer">
+        <!-- View 1: User Already Logged In -->
+        <div id="sessionView" style="display: none;">
+          <div class="user-profile-box">
+            <div class="user-avatar" id="userAvatarLetter">U</div>
+            <div class="user-info">
+              <div class="user-name" id="userName">Kullanıcı</div>
+              <div class="user-email" id="userEmail">kullanici@tedu.edu.tr</div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="btnApproveSession">
+            <span>✓ Cihazı Onayla ve Bağla</span>
+          </button>
+          <button type="button" class="btn btn-secondary" id="btnDenySession">
+            <span>✕ İsteği Reddet</span>
+          </button>
+          <a class="switch-account-link" id="btnSwitchAccount">Farklı bir hesapla giriş yap</a>
+        </div>
+
+        <!-- View 2: Login or Register Tabs (For non-logged in users) -->
+        <div id="authView" style="display: none;">
+          <div class="tabs">
+            <button type="button" class="tab-btn active" id="tabLoginBtn">Giriş Yap</button>
+            <button type="button" class="tab-btn" id="tabRegisterBtn">Yeni Kayıt</button>
+          </div>
+
+          <!-- Login Form -->
+          <form id="loginForm" onsubmit="return false;">
+            <div class="form-group">
+              <label class="form-label" for="loginEmail">E-Posta Adresi</label>
+              <input type="email" class="form-input" id="loginEmail" placeholder="ornek@tedu.edu.tr veya e-posta" required autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="loginPassword">Şifre</label>
+              <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary" id="btnLoginSubmit">
+              <span>Giriş Yap ve Cihazı Onayla</span>
+            </button>
+          </form>
+
+          <!-- Register Form -->
+          <form id="registerForm" style="display: none;" onsubmit="return false;">
+            <div class="form-group">
+              <label class="form-label" for="regName">Ad Soyad</label>
+              <input type="text" class="form-input" id="regName" placeholder="Adınız Soyadınız" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regEmail">E-Posta Adresi</label>
+              <input type="email" class="form-input" id="regEmail" placeholder="ornek@tedu.edu.tr veya e-posta" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regPassword">Şifre (en az 6 karakter)</label>
+              <input type="password" class="form-input" id="regPassword" placeholder="••••••••" minlength="6" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btnRegisterSubmit">
+              <span>Kayıt Ol ve Cihazı Onayla</span>
+            </button>
+          </form>
+
+          <div class="erp-link-box">
+            RadioTEDU ERP ekibi üyesi misiniz? <a href="/erp/login" target="_blank">ERP ile Giriş Yap →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      RadioTEDU &bull; Öğrenci Topluluğu &bull; radiotedu.com
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = '/jukebox/api/v1/auth';
+      let activeCode = '';
+      let countdownSeconds = 600;
+      let countdownTimer = null;
+      let currentUser = null;
+
+      // Extract code from query param ?code=...
+      const urlParams = new URLSearchParams(window.location.search);
+      const rawParam = (urlParams.get('code') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (rawParam.length === 8) {
+        activeCode = rawParam.slice(0, 4) + '-' + rawParam.slice(4);
+      } else if (rawParam.length > 0) {
+        activeCode = rawParam;
+      }
+
+      const elCode = document.getElementById('deviceCodeDisplay');
+      const elTimer = document.getElementById('statusTimer');
+      const elAlert = document.getElementById('alertBox');
+      const elSessionView = document.getElementById('sessionView');
+      const elAuthView = document.getElementById('authView');
+      const elResultView = document.getElementById('resultView');
+      const elActionContainer = document.getElementById('actionContainer');
+
+      if (activeCode) {
+        elCode.textContent = activeCode;
+      } else {
+        elCode.textContent = 'KOD YOK';
+        showAlert('Tarayıcı URL\'sinde geçerli bir eşleme kodu bulunamadı. Lütfen terminalden tekrar açın.', 'error');
+      }
+
+      function showAlert(msg, type = 'error') {
+        elAlert.textContent = msg;
+        elAlert.className = 'alert-box alert-' + type;
+        elAlert.style.display = 'block';
+      }
+
+      function hideAlert() {
+        elAlert.style.display = 'none';
+      }
+
+      function startTimer(seconds) {
+        if (countdownTimer) clearInterval(countdownTimer);
+        countdownSeconds = seconds;
+        updateTimerDisplay();
+        countdownTimer = setInterval(() => {
+          countdownSeconds--;
+          if (countdownSeconds <= 0) {
+            clearInterval(countdownTimer);
+            elTimer.textContent = 'Süre doldu';
+            showAlert('Bu eşleme kodunun geçerlilik süresi doldu. Lütfen terminalden yeni bir oturum açın.', 'error');
+            disableButtons();
+          } else {
+            updateTimerDisplay();
+          }
+        }, 1000);
+      }
+
+      function updateTimerDisplay() {
+        const m = Math.floor(countdownSeconds / 60);
+        const s = countdownSeconds % 60;
+        elTimer.textContent = `Kalan süre: ${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+
+      function disableButtons() {
+        document.querySelectorAll('button').forEach(b => b.disabled = true);
+      }
+
+      // Check code validity with backend
+      async function verifyCode() {
+        if (!activeCode) return;
+        try {
+          const res = await fetch(`${API_BASE}/device/check-code?code=${encodeURIComponent(activeCode)}`);
+          const data = await res.json();
+          if (res.ok && data.success && data.data?.valid) {
+            startTimer(data.data.expires_in || 600);
+          } else {
+            showAlert(data?.message || 'Geçersiz veya süresi dolmuş kod.', 'error');
+            disableButtons();
+          }
+        } catch (err) {
+          console.warn('Code verification offline or error:', err);
+        }
+      }
+
+      // Check existing user web session
+      async function checkSession() {
+        try {
+          const res = await fetch('/jukebox/api/v1/auth/web/session', { credentials: 'include' });
+          if (res.ok) {
+            const payload = await res.json();
+            const user = payload?.data?.user || payload?.data;
+            if (user && user.email) {
+              currentUser = user;
+              showSessionView(user);
+              return;
+            }
+          }
+        } catch (e) {
+          // not logged in via cookie
+        }
+
+        // Check localStorage token
+        const storedToken = localStorage.getItem('radiotedu_access_token') || localStorage.getItem('token');
+        if (storedToken) {
+          try {
+            const res = await fetch(`${API_BASE}/me`, {
+              headers: { 'Authorization': `Bearer ${storedToken}` }
+            });
+            if (res.ok) {
+              const payload = await res.json();
+              const user = payload?.data?.user || payload?.data;
+              if (user && user.email) {
+                currentUser = user;
+                currentUser.token = storedToken;
+                showSessionView(user);
+                return;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // Otherwise show login/register form
+        showAuthView();
+      }
+
+      function showSessionView(user) {
+        document.getElementById('userName').textContent = user.display_name || user.name || 'RadioTEDU Üyesi';
+        document.getElementById('userEmail').textContent = user.email || '';
+        document.getElementById('userAvatarLetter').textContent = (user.display_name || user.email || 'U').charAt(0).toUpperCase();
+        elSessionView.style.display = 'block';
+        elAuthView.style.display = 'none';
+      }
+
+      function showAuthView() {
+        elSessionView.style.display = 'none';
+        elAuthView.style.display = 'block';
+      }
+
+      // Switch Account button
+      document.getElementById('btnSwitchAccount').addEventListener('click', () => {
+        currentUser = null;
+        showAuthView();
+      });
+
+      // Tabs handler
+      const tabLogin = document.getElementById('tabLoginBtn');
+      const tabRegister = document.getElementById('tabRegisterBtn');
+      const formLogin = document.getElementById('loginForm');
+      const formRegister = document.getElementById('registerForm');
+
+      tabLogin.addEventListener('click', () => {
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        formLogin.style.display = 'block';
+        formRegister.style.display = 'none';
+        hideAlert();
+      });
+
+      tabRegister.addEventListener('click', () => {
+        tabRegister.classList.add('active');
+        tabLogin.classList.remove('active');
+        formLogin.style.display = 'none';
+        formRegister.style.display = 'block';
+        hideAlert();
+      });
+
+      // Approve with existing session
+      document.getElementById('btnApproveSession').addEventListener('click', async () => {
+        if (!activeCode) return;
+        const btn = document.getElementById('btnApproveSession');
+        btn.disabled = true;
+        btn.textContent = 'Onaylanıyor...';
+        hideAlert();
+
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (currentUser?.token) headers['Authorization'] = `Bearer ${currentUser.token}`;
+
+          const res = await fetch(`${API_BASE}/device/approve`, {
+            method: 'POST',
+            credentials: 'include',
+            headers,
+            body: JSON.stringify({ code: activeCode })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showSuccessScreen(data.data?.user?.display_name || currentUser.display_name);
+          } else {
+            showAlert(data?.message || 'Cihaz onaylanamadı.', 'error');
+            btn.disabled = false;
+            btn.textContent = '✓ Cihazı Onayla ve Bağla';
+          }
+        } catch (err) {
+          showAlert('Sunucu ile bağlantı kurulamadı: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = '✓ Cihazı Onayla ve Bağla';
+        }
+      });
+
+      // Deny session
+      document.getElementById('btnDenySession').addEventListener('click', async () => {
+        if (!activeCode) return;
+        try {
+          await fetch(`${API_BASE}/device/deny`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: activeCode })
+          });
+        } catch (e) {}
+        showDeniedScreen();
+      });
+
+      // Login and Approve submit
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const btn = document.getElementById('btnLoginSubmit');
+
+        btn.disabled = true;
+        btn.textContent = 'Doğrulanıyor...';
+        hideAlert();
+
+        try {
+          const res = await fetch(`${API_BASE}/device/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: activeCode, email, password })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showSuccessScreen(data.data?.user?.display_name || email);
+          } else {
+            showAlert(data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Giriş Yap ve Cihazı Onayla';
+          }
+        } catch (err) {
+          showAlert('Bağlantı hatası: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Giriş Yap ve Cihazı Onayla';
+        }
+      });
+
+      // Register and Approve submit
+      document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const displayName = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const btn = document.getElementById('btnRegisterSubmit');
+
+        btn.disabled = true;
+        btn.textContent = 'Kayıt Yapılıyor...';
+        hideAlert();
+
+        try {
+          const res = await fetch(`${API_BASE}/device/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: activeCode,
+              email,
+              password,
+              display_name: displayName,
+              register: true
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showSuccessScreen(displayName || email);
+          } else {
+            showAlert(data?.message || 'Kayıt işlemi tamamlanamadı.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Kayıt Ol ve Cihazı Onayla';
+          }
+        } catch (err) {
+          showAlert('Bağlantı hatası: ' + err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Kayıt Ol ve Cihazı Onayla';
+        }
+      });
+
+      function showSuccessScreen(name) {
+        if (countdownTimer) clearInterval(countdownTimer);
+        elActionContainer.style.display = 'none';
+        hideAlert();
+        const dot = document.getElementById('statusDot');
+        if (dot) dot.style.backgroundColor = '#10b981';
+        elTimer.textContent = 'Onaylandı ✓';
+
+        document.getElementById('resultTitle').textContent = `Hoş geldin, ${name}!`;
+        document.getElementById('resultDesc').innerHTML = `
+          Terminal cihazınız RadioTEDU hesabınıza başarıyla bağlandı.<br><br>
+          <strong style="color: #fff;">Terminal pencerenize (radiotedu-tui) dönebilirsiniz.</strong><br>
+          Bu sekmeyi güvenle kapatabilirsiniz.
+        `;
+        elResultView.style.display = 'block';
+      }
+
+      function showDeniedScreen() {
+        if (countdownTimer) clearInterval(countdownTimer);
+        elActionContainer.style.display = 'none';
+        hideAlert();
+        const dot = document.getElementById('statusDot');
+        if (dot) dot.style.backgroundColor = '#ef4444';
+        elTimer.textContent = 'Reddedildi ✕';
+
+        const icon = document.getElementById('resultIcon');
+        icon.className = 'result-icon denied';
+        icon.textContent = '✕';
+
+        document.getElementById('resultTitle').textContent = 'Yetkilendirme Reddedildi';
+        document.getElementById('resultDesc').innerHTML = `
+          Cihaz bağlantı isteği reddedildi.<br>
+          Terminalinize bilgi iletildi. Bu sekmeyi kapatabilirsiniz.
+        `;
+        elResultView.style.display = 'block';
+      }
+
+      // Initialize
+      verifyCode();
+      checkSession();
+    })();
+  </script>
+</body>
+</html>

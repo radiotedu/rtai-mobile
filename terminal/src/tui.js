@@ -168,11 +168,31 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🔐 RADIOTEDU SIGN IN // HESAP GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 41))}╮${C.reset}`, totalCols));
     boxLines.push(wrapLine(`  ${C.bold}Lütfen oturum açma yöntemini seçin:${C.reset}`));
     boxLines.push(wrapLine(''));
-    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 📧 ${C.white}RadioTEDU Hesabı (E-Posta & Şifre)${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[2]${C.reset} 🏛️ ${C.white}TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 🌐 ${C.white}Tarayıcı ile Oturum Aç (Otomatik Onay / GitHub CLI Stili)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.yellow}${C.bold}[2]${C.reset} 📧 ${C.white}RadioTEDU Hesabı (E-Posta & Şifre)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[3]${C.reset} 🏛️ ${C.white}TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.darkGray}${'─'.repeat(innerW - 4)}${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray} veya ${C.white}[2]${C.gray}'ye basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray}, ${C.white}[2]${C.gray} veya ${C.white}[3]${C.gray}'e basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
+    boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
+  } else if (modal.type === 'device_poll') {
+    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🌐 RADIOTEDU WEB İLE GİRİŞ ${'─'.repeat(Math.max(0, modalW - 32))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.gray}1. Tarayıcınızda onay sayfası açıldı:${C.reset}`));
+    const urlDisplay = truncateVisible(modal.url || 'https://radiotedu.com/device', innerW - 6);
+    boxLines.push(wrapLine(`     ${C.cyan}${urlDisplay}${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.gray}2. Oturum Onay Kodu:${C.reset}`));
+    boxLines.push(wrapLine(`     ${C.spotifyGreen}${C.bold}[ ${modal.userCode || '--------'} ]${C.reset}`));
+    boxLines.push(wrapLine(''));
+    const statusText = modal.status
+      ? (modal.status.includes('Hata') || modal.status.includes('reddedildi') || modal.status.includes('doldu')
+          ? `${C.brightRed}⚠️ ${modal.status}${C.reset}`
+          : `${C.yellow}⏳ ${modal.status}${C.reset}`)
+      : `${C.yellow}⏳ Tarayıcıda onay bekleniyor...${C.reset}`;
+    boxLines.push(wrapLine(`  ${statusText}`));
+    boxLines.push(wrapLine(`  ${C.darkGray}(Sitede 'Onayla' butonuna bastığınızda terminal otomatik bağlanır)${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.gray}${C.white}[O]${C.gray} Sayfayı Tekrar Aç  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
     boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   } else if (modal.type === 'pair') {
     boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🏛️ TEDÜ / ERP GİRİŞİ (8 HANELİ KOD) ${'─'.repeat(Math.max(0, modalW - 40))}╮${C.reset}`, totalCols));
@@ -625,6 +645,9 @@ async function runTui({
   onLoginCreds,
   onLoginPairStart,
   onLoginPairCode,
+  onLoginDeviceStart = null,
+  onLoginDevicePoll = null,
+  onOpenExternal = null,
   onLogout,
   onQuit,
   onTick,
@@ -678,6 +701,10 @@ async function runTui({
 
     const cleanup = () => {
       clearInterval(timer);
+      if (state.modal?.pollTimer) {
+        clearInterval(state.modal.pollTimer);
+        state.modal.pollTimer = null;
+      }
       process.stdin.removeListener('data', dataHandler);
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
       process.stdin.pause();
@@ -809,18 +836,123 @@ async function runTui({
           }
 
           if (event.key === 'escape' || (state.modal.type === 'choice' && event.key === 'q')) {
+            if (state.modal.pollTimer) {
+              clearInterval(state.modal.pollTimer);
+              state.modal.pollTimer = null;
+            }
             state.modal = null;
             render();
             return;
           }
 
+          if (state.modal.type === 'device_poll') {
+            if (event.key === 'escape' || event.key === 'q') {
+              if (state.modal.pollTimer) {
+                clearInterval(state.modal.pollTimer);
+                state.modal.pollTimer = null;
+              }
+              state.modal = null;
+              render();
+              return;
+            }
+            if (event.key === 'o' || event.key === 'O') {
+              if (state.modal.url) {
+                try {
+                  Promise.resolve(onOpenExternal?.(state.modal.url)).catch(() => {});
+                } catch (e) {}
+              }
+              return;
+            }
+            return;
+          }
+
+          const startDeviceFlow = () => {
+            state.modal = {
+              type: 'device_poll',
+              deviceToken: '',
+              userCode: '...',
+              url: 'https://radiotedu.com/device',
+              status: 'Oturum başlatılıyor...',
+              pollTimer: null,
+            };
+            render();
+
+            (async () => {
+              try {
+                const init = await onLoginDeviceStart?.();
+                if (!state.modal || state.modal.type !== 'device_poll') return;
+                state.modal.deviceToken = init?.deviceToken || '';
+                state.modal.userCode = init?.userCode || '--------';
+                state.modal.url = init?.verificationUrl || 'https://radiotedu.com/device';
+                state.modal.status = 'Tarayıcıda onay bekleniyor...';
+                render();
+
+                const timer = setInterval(async () => {
+                  if (!state.modal || state.modal.type !== 'device_poll' || !state.modal.deviceToken) {
+                    clearInterval(timer);
+                    return;
+                  }
+                  try {
+                    const pollRes = await onLoginDevicePoll?.(state.modal.deviceToken);
+                    if (!state.modal || state.modal.type !== 'device_poll') {
+                      clearInterval(timer);
+                      return;
+                    }
+                    if (pollRes?.status === 'approved') {
+                      clearInterval(timer);
+                      if (state.modal) state.modal.pollTimer = null;
+                      state.account = pollRes.user;
+                      state.modal = null;
+                      state.status = `Giriş başarılı · ${pollRes.user?.label || pollRes.user?.display_name || 'RadioTEDU'}`;
+                      render();
+                      return;
+                    }
+                    if (pollRes?.status === 'denied') {
+                      clearInterval(timer);
+                      if (state.modal) {
+                        state.modal.pollTimer = null;
+                        state.modal.status = 'Oturum isteği tarayıcıda reddedildi.';
+                        render();
+                      }
+                      return;
+                    }
+                    if (pollRes?.status === 'expired') {
+                      clearInterval(timer);
+                      if (state.modal) {
+                        state.modal.pollTimer = null;
+                        state.modal.status = 'Oturum onay süresi doldu.';
+                        render();
+                      }
+                      return;
+                    }
+                  } catch (err) {
+                    // ignore transient network errors during polling
+                  }
+                }, (init?.interval || 2) * 1000);
+
+                if (state.modal) {
+                  state.modal.pollTimer = timer;
+                }
+              } catch (err) {
+                if (state.modal && state.modal.type === 'device_poll') {
+                  state.modal.status = `Hata: ${err?.message || err}`;
+                  render();
+                }
+              }
+            })();
+          };
+
           if (state.modal.type === 'choice') {
             if (event.key === '1') {
+              startDeviceFlow();
+              return;
+            }
+            if (event.key === '2') {
               state.modal = {type: 'creds', field: 'email', email: '', password: '', status: ''};
               render();
               return;
             }
-            if (event.key === '2') {
+            if (event.key === '3') {
               state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/erp/device açılıyor...'};
               render();
               try {
@@ -937,11 +1069,15 @@ async function runTui({
           }
           if (state.modal.type === 'choice') {
             if (event.y === 7) {
+              startDeviceFlow();
+              return;
+            }
+            if (event.y === 8) {
               state.modal = {type: 'creds', field: 'email', email: '', password: '', status: ''};
               render();
               return;
             }
-            if (event.y === 8) {
+            if (event.y === 9) {
               state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/erp/device açılıyor...'};
               render();
               try {
@@ -956,6 +1092,21 @@ async function runTui({
               return;
             }
             if (event.y >= 11) {
+              if (state.modal.pollTimer) {
+                clearInterval(state.modal.pollTimer);
+                state.modal.pollTimer = null;
+              }
+              state.modal = null;
+              render();
+              return;
+            }
+          }
+          if (state.modal.type === 'device_poll') {
+            if (event.y >= 11) {
+              if (state.modal.pollTimer) {
+                clearInterval(state.modal.pollTimer);
+                state.modal.pollTimer = null;
+              }
               state.modal = null;
               render();
               return;

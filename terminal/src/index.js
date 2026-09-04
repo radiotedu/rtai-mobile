@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {STATIONS, getStation, streamUrl, codecFor, listStations} = require('./stations');
 const {loadAuth, saveStudy, loadStudy, clearStudy} = require('./store');
-const {login, me, gamificationHome, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, verifyPairCode, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
+const {login, me, gamificationHome, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, verifyPairCode, initDeviceAuth, pollDeviceAuth, startStudySession, heartbeatStudySession, finishStudySession} = require('./api');
 const {beginPendingErpLoginPkce, getPendingErpLoginPkce, clearPendingErpLoginPkce} = require('./pkce');
 const {readIcecastMetadata, isLive} = require('./metadata');
 
@@ -128,13 +128,45 @@ async function commandLogin(args) {
       throw err;
     }
   }
-  if (!args.length) {
-    process.stdout.write('\n=== RadioTEDU Sign In ===\n[1] 🏛️ TEDÜ / ERP Device Pairing (8-digit code from radiotedu.com/erp/device) [Recommended]\n[2] RadioTEDU Account (Email & Password)\n[3] TEDÜ / ERP SSO (Browser Login)\n');
-    const choice = await prompt('Select login method [1/2/3] (default 1): ');
+  if (args.includes('--web') || args.includes('--flow') || (!args.length && !args.includes('--pair') && !args.includes('--tedu') && !args.includes('--creds'))) {
+    process.stdout.write('\n=== RadioTEDU Sign In ===\n');
+    process.stdout.write('[1] 🌐 Web ile Oturum Aç (Otomatik Onay / GitHub CLI Stili) [Önerilen]\n');
+    process.stdout.write('[2] 📧 RadioTEDU Hesabı (E-Posta & Şifre)\n');
+    process.stdout.write('[3] 🏛️ TEDÜ / ERP Manuel Kod (radiotedu.com/erp/device)\n');
+    process.stdout.write('[4] 🏛️ TEDÜ / ERP SSO (Browser Login)\n');
+    const choice = await prompt('Seçiminiz [1/2/3/4] (varsayılan 1): ');
+
     if (!choice || choice === '1') {
-      return commandLogin(['--pair']);
+      const initData = await initDeviceAuth();
+      console.log(`\n! Oturum Onay Kodu: \x1b[1;32m${initData.userCode}\x1b[0m`);
+      console.log(`! Onay sayfası tarayıcınızda açılıyor: \x1b[36m${initData.verificationUrl}\x1b[0m`);
+      console.log('Tarayıcınızda "Onayla" butonuna bastığınızda terminal otomatik bağlanacaktır...\n');
+      openExternal(initData.verificationUrl);
+
+      process.stdout.write('⏳ Tarayıcıda onay bekleniyor (iptal için Ctrl+C)...');
+      while (true) {
+        await new Promise(r => setTimeout(r, (initData.interval || 2) * 1000));
+        const poll = await pollDeviceAuth(initData.deviceToken);
+        if (poll.status === 'approved') {
+          const name = poll.user?.display_name || poll.user?.email || 'RadioTEDU Kullanıcısı';
+          console.log(`\n✅ Başarıyla giriş yapıldı: ${name}!`);
+          return poll.user;
+        }
+        if (poll.status === 'denied') {
+          console.log('\n❌ Oturum isteği tarayıcıda reddedildi.');
+          return null;
+        }
+        if (poll.status === 'expired') {
+          console.log('\n❌ Oturum onay süresi doldu.');
+          return null;
+        }
+        process.stdout.write('.');
+      }
     }
     if (choice === '3') {
+      return commandLogin(['--pair']);
+    }
+    if (choice === '4') {
       return commandLogin(['--tedu']);
     }
   }
@@ -377,6 +409,27 @@ async function runInteractive() {
     onLoginPairCode: async (code) => {
       await verifyPairCode(code);
       return accountSummary();
+    },
+    onLoginDeviceStart: async () => {
+      const initData = await initDeviceAuth();
+      try {
+        await openExternal(initData.verificationUrl);
+      } catch (err) {}
+      return initData;
+    },
+    onLoginDevicePoll: async (deviceToken) => {
+      const poll = await pollDeviceAuth(deviceToken);
+      if (poll.status === 'approved') {
+        const acc = await accountSummary().catch(() => ({
+          label: poll.user?.display_name || poll.user?.email || 'RadioTEDU Member',
+          gold: poll.user?.gold_balance || 0,
+        }));
+        return {status: 'approved', user: acc};
+      }
+      return poll;
+    },
+    onOpenExternal: async (url) => {
+      await openExternal(url);
     },
     onLogout: async () => { gold.stop(); await logout(); return {label: 'Guest', gold: null}; },
     onQuit: () => { if (metadataTimer) clearInterval(metadataTimer); gold.stop(); player.stop(); },

@@ -59,3 +59,32 @@ test('requestPairCode and verifyPairCode use official device pairing contract', 
   assert.match(calls[1].url, /\/auth\/device\/verify$/);
   assert.deepEqual(JSON.parse(calls[1].options.body), {code: 'ABCD-EFGH'});
 });
+
+test('initDeviceAuth and pollDeviceAuth use GitHub CLI style flow contract', async () => {
+  const {initDeviceAuth, pollDeviceAuth} = require('../src/api');
+  const calls = [];
+  const responses = [
+    {data: {device_token: 'tok-12345678901234567890123456789012', user_code: 'TEST-9999', verification_url: 'https://radiotedu.com/device?code=TEST-9999', expires_in: 600, interval: 2}},
+    {data: {status: 'pending', seconds_left: 598}},
+    {data: {status: 'approved', access_token: 'dev-acc', refresh_token: 'dev-ref', user: {id: 'u-1', display_name: 'Listener Alex'}}},
+  ];
+  global.fetch = async (url, options = {}) => {
+    calls.push({url, options});
+    return {ok: true, status: 200, text: async () => JSON.stringify(responses.shift())};
+  };
+
+  const init = await initDeviceAuth();
+  assert.equal(init.userCode, 'TEST-9999');
+  assert.equal(init.verificationUrl, 'https://radiotedu.com/device?code=TEST-9999');
+  assert.match(calls[0].url, /\/auth\/device\/init$/);
+
+  const pending = await pollDeviceAuth(init.deviceToken);
+  assert.equal(pending.status, 'pending');
+  assert.match(calls[1].url, /\/auth\/device\/poll$/);
+
+  const approved = await pollDeviceAuth(init.deviceToken);
+  assert.equal(approved.status, 'approved');
+  assert.equal(approved.user.display_name, 'Listener Alex');
+  assert.match(calls[2].url, /\/auth\/device\/poll$/);
+});
+

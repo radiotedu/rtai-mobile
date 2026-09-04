@@ -54,13 +54,25 @@ function secretPrompt(question) {
 }
 
 function openExternal(url) {
-  if (process.platform === 'win32') {
-    execFile('rundll32', ['url.dll,FileProtocolHandler', url], () => {});
-  } else if (process.platform === 'darwin') {
-    execFile('open', [url], () => {});
-  } else {
-    execFile('xdg-open', [url], () => {});
-  }
+  return new Promise((resolve) => {
+    try {
+      if (process.platform === 'win32') {
+        execFile('cmd.exe', ['/c', 'start', '""', url], (err) => {
+          if (err) {
+            execFile('rundll32', ['url.dll,FileProtocolHandler', url], () => resolve());
+          } else {
+            resolve();
+          }
+        });
+      } else if (process.platform === 'darwin') {
+        execFile('open', [url], () => resolve());
+      } else {
+        execFile('xdg-open', [url], () => resolve());
+      }
+    } catch {
+      resolve();
+    }
+  });
 }
 
 async function commandLogin(args) {
@@ -242,6 +254,9 @@ async function runInteractive() {
         player.start(url, station.name);
       } catch (err) {
         state.status = `Audio error: ${err.message}`;
+        if (!player.command) {
+          state.modal = {type: 'audio_engine_missing'};
+        }
         state.requestRender?.();
         return;
       }
@@ -273,10 +288,18 @@ async function runInteractive() {
       const station = activeStation || state.stations[state.selected];
       const choices = station.qualities;
       quality = choices[(choices.indexOf(quality) + 1) % choices.length];
-      state.codec = codecFor(quality, station); return quality;
+      state.quality = quality;
+      state.status = `Quality: ${quality.toUpperCase()}`;
+      if (state.active) {
+        state.codec = codecFor(quality, state.active);
+        const url = streamUrl(state.active, quality);
+        try { player.start(url, state.active.name); } catch {}
+      }
+      return quality;
     },
     onPause: async state => {
       const paused = player.pause();
+      state.paused = paused;
       gold.stop();
       if (!paused && activeStation) await gold.start(activeStation.goldId || activeStation.id).catch(() => false);
       state.status = paused ? 'Paused' : 'Playback resumed';
@@ -299,8 +322,8 @@ async function runInteractive() {
       await login(email, password);
       return accountSummary();
     },
-    onLoginPairStart: () => {
-      openExternal('https://radiotedu.com/erp/device');
+    onLoginPairStart: async () => {
+      await openExternal('https://radiotedu.com/erp/device');
     },
     onLoginPairCode: async (code) => {
       await verifyPairCode(code);
@@ -310,6 +333,47 @@ async function runInteractive() {
     onQuit: () => { if (metadataTimer) clearInterval(metadataTimer); gold.stop(); player.stop(); },
     onTick: state => { activeState = state; },
   });
+}
+
+async function commandSetupAudio() {
+  console.log('\n📻 RadioTEDU Audio Engine Setup\n');
+  const player = new Player();
+  if (player.command) {
+    console.log(`✅ Audio decoder is already available: ${player.command}`);
+    console.log(`   Engine: ${player.name}`);
+    console.log('   You can start listening immediately with: radiotedu\n');
+    return;
+  }
+  console.log('⚠️ No audio decoder (mpv/ffplay/vlc) was found on your system PATH.\n');
+  if (process.platform === 'win32') {
+    console.log('Checking for Windows Package Manager (winget)...');
+    try {
+      const {spawnSync} = require('node:child_process');
+      const probeWinget = spawnSync('winget', ['--version'], {encoding: 'utf8'});
+      if (!probeWinget.error && probeWinget.status === 0) {
+        console.log(`[+] Detected winget ${probeWinget.stdout.trim()}`);
+        console.log('[*] Installing Gyan.FFmpeg via winget...');
+        const inst = spawnSync('winget', ['install', 'Gyan.FFmpeg', '--accept-package-agreements', '--accept-source-agreements'], {stdio: 'inherit'});
+        if (inst.status === 0) {
+          console.log('\n✅ FFmpeg successfully installed! Run "radiotedu" to start listening.\n');
+          return;
+        }
+      }
+    } catch (err) {
+      console.log(`[!] winget automated install: ${err.message}`);
+    }
+    console.log('To install an audio decoder manually on Windows, run one of the following:');
+    console.log('  winget install Gyan.FFmpeg');
+    console.log('  winget install mpv.mpv');
+    console.log('  choco install ffmpeg\n');
+  } else if (process.platform === 'darwin') {
+    console.log('To install an audio decoder on macOS, run:');
+    console.log('  brew install mpv\n');
+  } else {
+    console.log('To install an audio decoder on Linux, run:');
+    console.log('  sudo apt install mpv   (Ubuntu/Debian)');
+    console.log('  sudo pacman -S mpv     (Arch)\n');
+  }
 }
 
 async function main() {
@@ -323,7 +387,8 @@ async function main() {
   if (command === 'account' || command === 'gold') return console.log(JSON.stringify(await accountSummary(), null, 2));
   if (command === 'play') return commandPlay(rest);
   if (command === 'study') return commandStudy(rest);
-  if (command === 'help') return console.log('radiotedu [stations|play|login [--code=AAAA-BBBB|--pair|--tedu]|logout|account|gold|study]');
+  if (command === 'setup-audio' || command === 'audio') return commandSetupAudio();
+  if (command === 'help') return console.log('radiotedu [stations|play|login [--code=AAAA-BBBB|--pair|--tedu]|logout|account|gold|study|setup-audio]');
   throw new Error(`Unknown command: ${command}`);
 }
 

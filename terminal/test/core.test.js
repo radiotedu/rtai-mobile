@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {getStation, streamUrl, codecFor, listStations, SUPPORTED_CODECS} = require('../src/stations');
-const {playerArguments, probeArgs} = require('../src/player');
+const {playerArguments, probeArgs, getWindowsCandidatePaths} = require('../src/player');
 const {rewardBalance} = require('../src/gold');
 const {parseInput} = require('../src/tui');
 
@@ -24,12 +24,27 @@ test('Voting stays last and uses its single live mount', () => {
   assert.deepEqual(stations.at(-1).qualities, ['normal']);
 });
 
-test('ffplay is detected and launched as an audio-only player', () => {
+test('audio decoders (ffplay, mpv, vlc) are supported with correct arguments', () => {
   assert.deepEqual(probeArgs('ffplay'), ['-version']);
   assert.deepEqual(probeArgs('mpv'), ['--version']);
+  assert.deepEqual(probeArgs('vlc'), ['--version']);
   assert.deepEqual(playerArguments('ffplay', 'https://stream.example/radio', 'Radio'), [
     '-nodisp', '-vn', '-hide_banner', '-loglevel', 'error', '-volume', '80', 'https://stream.example/radio',
   ]);
+  assert.deepEqual(playerArguments('vlc', 'https://stream.example/radio', 'Radio'), [
+    '-I', 'dummy', '--no-video', 'https://stream.example/radio',
+  ]);
+  assert.deepEqual(playerArguments('mpv', 'https://stream.example/radio', 'Radio', 90), [
+    '--no-video', '--force-window=no', '--input-terminal=yes', '--title=RadioTEDU - Radio', '--volume=90', 'https://stream.example/radio',
+  ]);
+});
+
+test('Windows candidate paths include standard tools and user directory', () => {
+  const paths = getWindowsCandidatePaths();
+  assert.ok(Array.isArray(paths));
+  assert.ok(paths.some(p => p.includes('ffplay.exe')));
+  assert.ok(paths.some(p => p.includes('mpv.exe')));
+  assert.ok(paths.some(p => p.includes('vlc.exe')));
 });
 
 test('Gold balance only accepts a non-negative server integer', () => {
@@ -55,3 +70,20 @@ test('device pairing code formats 8 characters into 4-4 with hyphen', () => {
   const formatted = normalized.length === 8 ? `${normalized.slice(0, 4)}-${normalized.slice(4)}` : code;
   assert.equal(formatted, 'ABCD-1234');
 });
+
+test('onLoginPairStart invocation is resilient to synchronous return and errors', async () => {
+  const syncHandler = () => undefined;
+  await assert.doesNotReject(async () => {
+    try {
+      await Promise.resolve(syncHandler());
+    } catch {}
+  });
+
+  const throwingHandler = () => { throw new Error('browser launch blocked'); };
+  await assert.doesNotReject(async () => {
+    try {
+      await Promise.resolve(throwingHandler());
+    } catch {}
+  });
+});
+

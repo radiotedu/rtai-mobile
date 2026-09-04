@@ -1,13 +1,85 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
 const {spawn, spawnSync} = require('node:child_process');
 
 function probeArgs(command) {
-  return command.toLowerCase().includes('ffplay') ? ['-version'] : ['--version'];
+  const lower = String(command || '').toLowerCase();
+  if (lower.includes('ffplay')) return ['-version'];
+  if (lower.includes('vlc')) return ['--version'];
+  return ['--version'];
+}
+
+function getWindowsCandidatePaths() {
+  const home = os.homedir();
+  const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+  const progFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+  const progFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+  const progData = process.env.ProgramData || 'C:\\ProgramData';
+
+  const paths = [
+    // WinGet Links symlink folder
+    path.join(localAppData, 'Microsoft', 'WinGet', 'Links', 'ffplay.exe'),
+    path.join(localAppData, 'Microsoft', 'WinGet', 'Links', 'mpv.exe'),
+    // Chocolatey
+    path.join(progData, 'chocolatey', 'bin', 'ffplay.exe'),
+    path.join(progData, 'chocolatey', 'bin', 'mpv.exe'),
+    // Scoop
+    path.join(home, 'scoop', 'shims', 'ffplay.exe'),
+    path.join(home, 'scoop', 'shims', 'mpv.exe'),
+    // Standard system installations
+    'C:\\ffmpeg\\bin\\ffplay.exe',
+    path.join(progFiles, 'ffmpeg', 'bin', 'ffplay.exe'),
+    path.join(progFilesX86, 'ffmpeg', 'bin', 'ffplay.exe'),
+    path.join(progFiles, 'mpv', 'mpv.exe'),
+    path.join(progFilesX86, 'mpv', 'mpv.exe'),
+    // VideoLAN VLC
+    path.join(progFiles, 'VideoLAN', 'VLC', 'vlc.exe'),
+    path.join(progFilesX86, 'VideoLAN', 'VLC', 'vlc.exe'),
+    // User local tools
+    path.join(home, '.radiotedu', 'bin', 'ffplay.exe'),
+    path.join(home, '.radiotedu', 'bin', 'mpv.exe'),
+  ];
+
+  // Also check WinGet Packages directory in case Links weren't populated yet
+  try {
+    const wingetPkgs = path.join(localAppData, 'Microsoft', 'WinGet', 'Packages');
+    if (fs.existsSync(wingetPkgs)) {
+      const entries = fs.readdirSync(wingetPkgs);
+      for (const entry of entries) {
+        if (entry.toLowerCase().includes('ffmpeg')) {
+          const subDir = path.join(wingetPkgs, entry);
+          const findInDir = (dir, depth = 0) => {
+            if (depth > 3) return null;
+            try {
+              const files = fs.readdirSync(dir, {withFileTypes: true});
+              for (const f of files) {
+                const full = path.join(dir, f.name);
+                if (f.isFile() && (f.name.toLowerCase() === 'ffplay.exe' || f.name.toLowerCase() === 'mpv.exe')) {
+                  return full;
+                }
+                if (f.isDirectory()) {
+                  const res = findInDir(full, depth + 1);
+                  if (res) return res;
+                }
+              }
+            } catch {}
+            return null;
+          };
+          const found = findInDir(subDir);
+          if (found) paths.unshift(found);
+        }
+      }
+    }
+  } catch {}
+
+  return paths;
 }
 
 function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
   if (configured) return configured;
   if (process.platform === 'win32') {
-    for (const name of ['mpv.com', 'mpv', 'ffplay']) {
+    for (const name of ['mpv.com', 'mpv', 'ffplay', 'vlc']) {
       try {
         const where = spawnSync('where.exe', [name], {encoding: 'utf8'});
         if (!where.error && where.stdout) {
@@ -16,8 +88,14 @@ function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
         }
       } catch {}
     }
+    const winCandidates = getWindowsCandidatePaths();
+    for (const candidatePath of winCandidates) {
+      try {
+        if (fs.existsSync(candidatePath)) return candidatePath;
+      } catch {}
+    }
   }
-  const candidates = process.platform === 'win32' ? ['mpv.com', 'mpv', 'ffplay'] : ['mpv', 'ffplay'];
+  const candidates = process.platform === 'win32' ? ['mpv.com', 'mpv', 'ffplay', 'vlc'] : ['mpv', 'ffplay', 'vlc'];
   for (const candidate of candidates) {
     const probe = spawnSync(candidate, probeArgs(candidate), {stdio: 'ignore', shell: false});
     if (!probe.error && probe.status === 0) return candidate;
@@ -26,9 +104,14 @@ function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
 }
 
 function playerArguments(command, url, title, volume = 80) {
-  return command.toLowerCase().includes('ffplay')
-    ? ['-nodisp', '-vn', '-hide_banner', '-loglevel', 'error', '-volume', String(volume), url]
-    : ['--no-video', '--force-window=no', '--input-terminal=yes', `--title=RadioTEDU - ${title}`, `--volume=${volume}`, url];
+  const lower = String(command || '').toLowerCase();
+  if (lower.includes('ffplay')) {
+    return ['-nodisp', '-vn', '-hide_banner', '-loglevel', 'error', '-volume', String(volume), url];
+  }
+  if (lower.includes('vlc')) {
+    return ['-I', 'dummy', '--no-video', url];
+  }
+  return ['--no-video', '--force-window=no', '--input-terminal=yes', `--title=RadioTEDU - ${title}`, `--volume=${volume}`, url];
 }
 
 class Player {
@@ -87,4 +170,4 @@ class Player {
   get name() { return this.command ? this.command.replace(/^.*[\\/]/, '') : null; }
 }
 
-module.exports = {Player, findPlayer, playerArguments, probeArgs};
+module.exports = {Player, findPlayer, playerArguments, probeArgs, getWindowsCandidatePaths};

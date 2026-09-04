@@ -1,6 +1,6 @@
 {
   "name": "radiotedu-tui",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Spotify-inspired RadioTEDU terminal radio, Gold and Study client",
   "type": "commonjs",
   "bin": {

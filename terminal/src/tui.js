@@ -218,6 +218,19 @@ function renderModalLines(modal, totalCols, maxRows) {
       : '';
     boxLines.push(wrapLine(`  ${statusText}`));
     boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
+  } else if (modal.type === 'audio_engine_missing') {
+    boxLines.push(padVisible(`${padLeft}${C.brightRed}╭─ ⚠️ AUDIO DECODER REQUIRED // SES OYNATICI GEREKLİ ${'─'.repeat(Math.max(0, modalW - 48))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.bold}Canlı radyo yayını için bir ses motoru (mpv/ffplay/vlc) gereklidir.${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.white}Sisteminizde ses akışlarını çözecek oynatıcı bulunamadı.${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Terminalden veya PowerShell üzerinden hızlıca kurabilirsiniz:${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}winget install Gyan.FFmpeg${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}veya:${C.reset} ${C.cyan}winget install mpv.mpv${C.reset}  ${C.gray}veya:${C.reset} ${C.cyan}radiotedu setup-audio${C.reset}`));
+    boxLines.push(wrapLine(''));
+    boxLines.push(wrapLine(`  ${C.darkGray}${'─'.repeat(innerW - 4)}${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}[Esc] veya [Enter] Kapat  ·  (Diğer özellikler aktif olarak kullanılabilir)${C.reset}`));
+    boxLines.push(padVisible(`${padLeft}${C.brightRed}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   }
 
   while (boxLines.length < maxRows) {
@@ -256,7 +269,7 @@ function draw(state) {
     : `${C.spotifyGreen}● ${C.white}${C.bold}${accountLabel}${C.reset}${goldText}${studyText} `;
 
   const headerTitle = ` 📻 ${C.bold}${C.white}RADIOTEDU${C.reset} ${C.red}//${C.reset} ${C.gray}STUDIO CONSOLE${C.reset} `;
-  const headerRight = `${C.darkGray}v1.3.5 ─╮${C.reset}`;
+  const headerRight = `${C.darkGray}v1.3.6 ─╮${C.reset}`;
   const fillHeader = Math.max(0, totalCols - stripAnsi(headerTitle).length - stripAnsi(headerRight).length - 2);
 
   lines.push(`${C.slateBorder}╭─${C.reset}${headerTitle}${C.slateBorder}${'─'.repeat(fillHeader)}${C.reset}${headerRight}`);
@@ -364,7 +377,10 @@ function draw(state) {
         // Diagnostics & Heartbeat
         const bufGauge = isPlayingAudio ? `${C.spotifyGreen}[██████████]${C.reset}` : `${C.darkGray}[░░░░░░░░░░]${C.reset}`;
         const goldStatus = state.account?.gold !== null ? `${C.gold}+1 Gold/30s${C.reset}` : `${C.darkGray}Sign in for Gold${C.reset}`;
-        rightContent = `  ${C.gray}Buffer: ${bufGauge} · Heartbeat: ${goldStatus} · Engine: ${state.playerName || 'ffplay'}${C.reset}`;
+        const engineText = state.playerName
+          ? `${C.white}${state.playerName}${C.reset}`
+          : `${C.brightRed}None (winget install Gyan.FFmpeg)${C.reset}`;
+        rightContent = `  ${C.gray}Buffer: ${bufGauge} · Heartbeat: ${goldStatus} · Engine: ${engineText}`;
       }
 
       lines.push(`${C.slateBorder}│${C.reset}${leftContent}${C.slateBorder}│${C.reset} ${C.slateBorder}│${C.reset}${padVisible(rightContent, rightW)}${C.slateBorder}│${C.reset}`);
@@ -479,11 +495,14 @@ function draw(state) {
 
   const telemetryInfo = isPlaying
     ? `${onAirPill}   ${C.darkGray}·${C.reset}   ${C.gray}Continuous Stream: ${C.white}${sessionTime}${C.reset}   ${C.darkGray}·${C.reset}   ${C.gray}Health: ${signalBars}`
-    : `${onAirPill}   ${C.darkGray}·${C.reset}   ${C.gray}Broadcasting 24/7 from RadioTEDU Ankara Studios · Press [Space] to play${C.reset}`;
+    : (!state.playerName
+      ? `${C.brightRed}⚠️ NO AUDIO ENGINE${C.reset}   ${C.darkGray}·${C.reset}   ${C.yellow}Run: ${C.white}winget install Gyan.FFmpeg${C.yellow} to listen${C.reset}`
+      : `${onAirPill}   ${C.darkGray}·${C.reset}   ${C.gray}Broadcasting 24/7 from RadioTEDU Ankara Studios · Press [Space] to play${C.reset}`);
 
   lines.push(`${C.slateBorder}╭─ NOW PLAYING // LIVE BROADCAST ${'─'.repeat(Math.max(0, totalCols - 34))}╮${C.reset}`);
   
-  const playRow1 = `  ${playIcon}  ${C.bold}${C.white}${truncateVisible(trackName, totalCols - 24)}${C.reset}  ${C.gold}${formatPill}${C.reset}`;
+  const statusNote = state.status && !isPlaying ? ` ${C.yellow}(${state.status})${C.reset}` : '';
+  const playRow1 = `  ${playIcon}  ${C.bold}${C.white}${truncateVisible(trackName, Math.max(10, totalCols - 24 - stripAnsi(statusNote).length))}${C.reset}${statusNote}  ${C.gold}${formatPill}${C.reset}`;
   lines.push(`${C.slateBorder}│${C.reset}${padVisible(playRow1, totalCols)}${C.slateBorder}│${C.reset}`);
 
   const playRow2Spacing = Math.max(2, totalCols - stripAnsi(telemetryInfo).length - stripAnsi(volumeDisplay).length - 4);
@@ -617,6 +636,14 @@ async function runTui({
       // MODAL DIALOG INTERACTION
       if (state.modal) {
         if (event.type === 'key') {
+          if (state.modal.type === 'audio_engine_missing') {
+            if (event.key === 'escape' || event.key === 'enter' || event.key === 'space' || event.key === 'q') {
+              state.modal = null;
+              render();
+            }
+            return;
+          }
+
           if (event.key === 'escape' || (state.modal.type === 'choice' && event.key === 'q')) {
             state.modal = null;
             render();
@@ -632,7 +659,15 @@ async function runTui({
             if (event.key === '2') {
               state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/erp/device açılıyor...'};
               render();
-              onLoginPairStart?.().catch(() => {});
+              try {
+                Promise.resolve(onLoginPairStart?.()).catch((err) => {
+                  if (state.modal) state.modal.status = `Tarayıcı açılamadı: ${err?.message || err}`;
+                  render();
+                });
+              } catch (err) {
+                if (state.modal) state.modal.status = `Tarayıcı açılamadı: ${err?.message || err}`;
+                render();
+              }
               return;
             }
             return;
@@ -731,6 +766,11 @@ async function runTui({
 
         // Mouse clicks on modal
         if (event.type === 'mouse' && event.button === 0 && event.release) {
+          if (state.modal.type === 'audio_engine_missing') {
+            state.modal = null;
+            render();
+            return;
+          }
           if (state.modal.type === 'choice') {
             if (event.y === 7) {
               state.modal = {type: 'creds', field: 'email', email: '', password: '', status: ''};
@@ -740,7 +780,15 @@ async function runTui({
             if (event.y === 8) {
               state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/erp/device açılıyor...'};
               render();
-              onLoginPairStart?.().catch(() => {});
+              try {
+                Promise.resolve(onLoginPairStart?.()).catch((err) => {
+                  if (state.modal) state.modal.status = `Tarayıcı açılamadı: ${err?.message || err}`;
+                  render();
+                });
+              } catch (err) {
+                if (state.modal) state.modal.status = `Tarayıcı açılamadı: ${err?.message || err}`;
+                render();
+              }
               return;
             }
             if (event.y >= 11) {
@@ -785,9 +833,14 @@ async function runTui({
             return;
           }
 
-          // Station Row click in Tab 1 (Y=6 to 5 + stations.length, X <= 44)
+          // Station Row click in Tab 1 (Y=6 to 5 + stations.length, X <= 52)
           if (state.activeTab === 1 && y >= 6 && y < 6 + stations.length && x <= 52) {
             state.selected = y - 6;
+            if (!state.playerName) {
+              state.modal = {type: 'audio_engine_missing'};
+              render();
+              return;
+            }
             await onPlay(stations[state.selected], state);
             state.paused = false;
             render();
@@ -800,6 +853,11 @@ async function runTui({
           // Track row (play/pause toggle)
           if (y === playbarStart + 1) {
             if (!state.active) {
+              if (!state.playerName) {
+                state.modal = {type: 'audio_engine_missing'};
+                render();
+                return;
+              }
               await onPlay(stations[state.selected], state);
               state.paused = false;
             } else {
@@ -824,6 +882,11 @@ async function runTui({
             if (x >= 2 && x <= 18) {
               // Space: Play / Pause
               if (!state.active) {
+                if (!state.playerName) {
+                  state.modal = {type: 'audio_engine_missing'};
+                  render();
+                  return;
+                }
                 await onPlay(stations[state.selected], state);
                 state.paused = false;
               } else {
@@ -883,6 +946,11 @@ async function runTui({
             render();
             break;
           case 'enter':
+            if (!state.playerName) {
+              state.modal = {type: 'audio_engine_missing'};
+              render();
+              break;
+            }
             await onPlay(stations[state.selected], state);
             state.paused = false;
             render();
@@ -890,6 +958,11 @@ async function runTui({
           case 'space':
           case 'p':
             if (!state.active) {
+              if (!state.playerName) {
+                state.modal = {type: 'audio_engine_missing'};
+                render();
+                break;
+              }
               await onPlay(stations[state.selected], state);
               state.paused = false;
             } else {

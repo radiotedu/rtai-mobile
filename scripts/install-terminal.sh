@@ -1,8 +1,8 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -e
 
 # radiotedu-tui Installer (Spotify-tui inspired CLI)
-# Usage: curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash
+# Usage: curl -fsSL https://radiotedu.com/install.sh | bash
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -48,7 +48,12 @@ fi
 # 3. Install radiotedu-tui globally via npm
 echo ""
 echo -e "${CYAN}Installing radiotedu-tui globally...${NC}"
-npm install -g "git+https://github.com/radiotedu/rtai-mobile.git#main:terminal"
+if npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz; then
+  echo -e "${GREEN}✓ Installed radiotedu-tui from radiotedu.com${NC}"
+else
+  echo -e "${YELLOW}! radiotedu.com package download failed, falling back to official GitHub repository...${NC}"
+  npm install -g "git+https://github.com/radiotedu/rtai-mobile.git#main:terminal"
+fi
 
 # 4. Verify Installation
 if command -v radiotedu >/dev/null 2>&1; then

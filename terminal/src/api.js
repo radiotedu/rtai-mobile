@@ -24,7 +24,7 @@ async function refreshSession(auth) {
 
 async function request(path, options = {}, retried = false) {
   const auth = loadAuth();
-  const headers = {'Accept': 'application/json', ...(options.body ? {'Content-Type': 'application/json'} : {}), ...(options.headers || {})};
+  const headers = {'Accept': 'application/json', 'User-Agent': 'radiotedu-tui/1.3.5', ...(options.body ? {'Content-Type': 'application/json'} : {}), ...(options.headers || {})};
   if (auth?.access_token) headers.Authorization = `Bearer ${auth.access_token}`;
   const response = await fetch(`${API_BASE}${path}`, {...options, headers});
   const text = await response.text();

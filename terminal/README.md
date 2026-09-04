@@ -8,16 +8,17 @@ Inspired by [Rigellute/spotify-tui](https://github.com/Rigellute/spotify-tui), f
 
 ## 🚀 Installation & Run
 
-### 1. Windows (PowerShell & Command Prompt)
+### 1. Windows (Recommended: CMD & PowerShell)
 
-Run in **PowerShell**:
-```powershell
-irm https://radiotedu.com/install.ps1 | iex
+Direct global installation via npm (Zero antivirus false-positives, no execution policy bypass required):
+```bash
+npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz
 ```
+*(If Node.js is not yet installed on Windows: `winget install OpenJS.NodeJS.LTS`)*
 
-Or run in standard Windows **Command Prompt (CMD)**:
-```cmd
-powershell -ExecutionPolicy Bypass -Command "irm https://radiotedu.com/install.ps1 | iex"
+Optional local PowerShell script:
+```powershell
+irm https://radiotedu.com/install.ps1 -OutFile install.ps1; .\install.ps1
 ```
 
 ### 2. macOS & Linux (curl / bash)

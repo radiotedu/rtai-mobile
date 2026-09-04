@@ -183,6 +183,11 @@ const COPY: Record<AppLanguage, Record<string, CopyValue>> = {
 
 const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
   en: {
+    'profile.guestTitle': 'Create a RadioTEDU account',
+    'profile.guestDescription': 'Sign in to earn Gold while listening live, collect badges, customize your profile and join campus events.',
+    'profile.guestListening': 'Live listening Gold and rankings',
+    'profile.guestFavorites': 'Favorite song and podcast badges',
+    'profile.guestEvents': 'Campus event tickets and rewards',
     'profile.feedLoadError': 'Podcast feeds could not be loaded.',
     'profile.notificationsReady': 'Notifications ready',
     'profile.notificationsDisabled': 'Notifications disabled',
@@ -228,6 +233,11 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'leaderboard.category.total': 'Overall', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Listening', 'leaderboard.category.events': 'Events', 'leaderboard.category.games': 'Games', 'leaderboard.category.social': 'Social',
   },
   tr: {
+    'profile.guestTitle': 'RadioTEDU Hesabı Açın',
+    'profile.guestDescription': 'Giriş yaparak canlı radyo dinlerken Gold biriktirebilir, rozetler kazanabilir, profilini özelleştirebilir ve kampüs etkinliklerine katılabilirsin.',
+    'profile.guestListening': 'Canlı dinledikçe Gold kazanımı ve sıralama',
+    'profile.guestFavorites': 'Favori şarkı ve podcast rozetleri',
+    'profile.guestEvents': 'Kampüs etkinlik biletleri ve ödüller',
     'profile.feedLoadError': 'Podcast akışları yüklenemedi.',
     'profile.notificationsReady': 'Bildirimler hazır',
     'profile.notificationsDisabled': 'Bildirimler kapalı',
@@ -273,6 +283,11 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'leaderboard.category.total': 'Genel', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Dinleme', 'leaderboard.category.events': 'Etkinlikler', 'leaderboard.category.games': 'Oyunlar', 'leaderboard.category.social': 'Social',
   },
   ru: {
+    'profile.guestTitle': 'Создайте аккаунт RadioTEDU',
+    'profile.guestDescription': 'Войдите, чтобы получать Gold за прослушивание эфира, собирать значки, настраивать профиль и участвовать в мероприятиях кампуса.',
+    'profile.guestListening': 'Gold за прослушивание и рейтинги',
+    'profile.guestFavorites': 'Значки любимых песен и подкастов',
+    'profile.guestEvents': 'Билеты на мероприятия кампуса и награды',
     'profile.feedLoadError': 'Не удалось загрузить ленты подкастов.',
     'profile.notificationsReady': 'Уведомления готовы', 'profile.notificationsDisabled': 'Уведомления отключены',
     'profile.notificationsReadyText': 'RadioTEDU может показывать уведомления о воспроизведении и объявлениях.', 'profile.notificationsDisabledText': 'Уведомления можно включить позже в настройках Android.', 'profile.notificationPermissionError': 'Не удалось запросить разрешение на уведомления.',
@@ -288,6 +303,11 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'leaderboard.category.total': 'Общий', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Прослушивание', 'leaderboard.category.events': 'События', 'leaderboard.category.games': 'Игры', 'leaderboard.category.social': 'Social',
   },
   ar: {
+    'profile.guestTitle': 'أنشئ حساب RadioTEDU',
+    'profile.guestDescription': 'سجّل الدخول لكسب Gold أثناء الاستماع المباشر وجمع الشارات وتخصيص ملفك والمشاركة في فعاليات الجامعة.',
+    'profile.guestListening': 'Gold للاستماع المباشر والترتيب',
+    'profile.guestFavorites': 'شارات الأغاني والبودكاست المفضلة',
+    'profile.guestEvents': 'تذاكر فعاليات الجامعة والمكافآت',
     'profile.feedLoadError': 'تعذر تحميل خلاصات البودكاست.',
     'profile.notificationsReady': 'الإشعارات جاهزة', 'profile.notificationsDisabled': 'الإشعارات معطلة',
     'profile.notificationsReadyText': 'يمكن لـ RadioTEDU عرض إشعارات التشغيل والإعلانات.', 'profile.notificationsDisabledText': 'يمكنك تفعيل الإشعارات لاحقاً من إعدادات نظام Android.', 'profile.notificationPermissionError': 'تعذر طلب إذن الإشعارات.',
@@ -303,6 +323,11 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'leaderboard.category.total': 'الإجمالي', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'الاستماع', 'leaderboard.category.events': 'الفعاليات', 'leaderboard.category.games': 'الألعاب', 'leaderboard.category.social': 'Social',
   },
   de: {
+    'profile.guestTitle': 'RadioTEDU-Konto erstellen',
+    'profile.guestDescription': 'Melde dich an, um beim Live-Hören Gold zu verdienen, Abzeichen zu sammeln, dein Profil zu gestalten und an Campus-Veranstaltungen teilzunehmen.',
+    'profile.guestListening': 'Gold fürs Live-Hören und Ranglisten',
+    'profile.guestFavorites': 'Abzeichen für Lieblingssongs und Podcasts',
+    'profile.guestEvents': 'Tickets für Campus-Veranstaltungen und Belohnungen',
     'profile.feedLoadError': 'Podcast-Feeds konnten nicht geladen werden.',
     'profile.notificationsReady': 'Benachrichtigungen bereit', 'profile.notificationsDisabled': 'Benachrichtigungen deaktiviert',
     'profile.notificationsReadyText': 'RadioTEDU kann Wiedergabe- und Ankündigungsbenachrichtigungen anzeigen.', 'profile.notificationsDisabledText': 'Benachrichtigungen können später in den Android-Systemeinstellungen aktiviert werden.', 'profile.notificationPermissionError': 'Die Benachrichtigungsberechtigung konnte nicht angefordert werden.',
@@ -318,6 +343,11 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'leaderboard.category.total': 'Gesamt', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Hören', 'leaderboard.category.events': 'Events', 'leaderboard.category.games': 'Spiele', 'leaderboard.category.social': 'Social',
   },
   fr: {
+    'profile.guestTitle': 'Créer un compte RadioTEDU',
+    'profile.guestDescription': 'Connectez-vous pour gagner du Gold en écoutant le direct, collectionner des badges, personnaliser votre profil et participer aux événements du campus.',
+    'profile.guestListening': 'Gold pour l’écoute en direct et classements',
+    'profile.guestFavorites': 'Badges de chansons et podcasts favoris',
+    'profile.guestEvents': 'Billets pour les événements du campus et récompenses',
     'profile.feedLoadError': 'Impossible de charger les flux de podcasts.',
     'profile.notificationsReady': 'Notifications prêtes', 'profile.notificationsDisabled': 'Notifications désactivées',
     'profile.notificationsReadyText': 'RadioTEDU peut afficher les notifications de lecture et d’annonces.', 'profile.notificationsDisabledText': 'Vous pourrez activer les notifications dans les réglages système Android.', 'profile.notificationPermissionError': 'Impossible de demander l’autorisation des notifications.',

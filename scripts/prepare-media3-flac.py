@@ -34,6 +34,11 @@ def main():
     # link-symbol probe misses it and incorrectly enables fseek fallback macros.
     flac_cmake = work / 'jni/libflac/CMakeLists.txt'
     config = flac_cmake.read_text()
+    # NDK's legacy toolchain sets CMAKE_SYSTEM_VERSION=1 regardless of API.
+    # Use its actual numeric Android API level for libFLAC's pre-24 guard.
+    api_guard = 'CMAKE_SYSTEM_VERSION VERSION_LESS 24'
+    assert config.count(api_guard) == 1
+    config = config.replace(api_guard, 'ANDROID_PLATFORM_LEVEL LESS 24')
     probe = 'check_function_exists(fseeko HAVE_FSEEKO)'
     assert config.count(probe) == 1
     config = config.replace(probe, '''check_c_source_compiles("\n#define _FILE_OFFSET_BITS 64\n#include <stdio.h>\nint main(void) { return fseeko(stdin, 0, SEEK_SET); }\n" HAVE_FSEEKO)''')

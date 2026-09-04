@@ -17,6 +17,8 @@ remain upstream's Media3 names.
 The libFLAC fseeko feature probe compiles and links against stdio.h with large-file
 support, so Android's 32-bit fseeko64 alias is detected correctly. It does not
 force feature availability or suppress compiler errors.
+The pre-24 guard uses NDK's `ANDROID_PLATFORM_LEVEL`; its legacy toolchain sets
+`CMAKE_SYSTEM_VERSION` to 1 even when targeting API 24 or later.
 
 NDK 28 builds position-independent code with flexible page sizes. The release
 workflow must still inspect every final ELF and the APK's ZIP alignment.

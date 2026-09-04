@@ -453,30 +453,30 @@ const ProfileScreen = () => {
               <View style={styles.guestIconWrap}>
                 <Icon name="account-star" size={32} color={COLORS.primary} />
               </View>
-              <Text style={styles.guestHeroTitle}>RadioTEDU Hesabı Açın</Text>
+              <Text style={styles.guestHeroTitle}>{copy('profile.guestTitle')}</Text>
               <Text style={styles.guestHeroText}>
-                Giriş yaparak canlı radyo dinlerken Gold biriktirebilir, rozetler kazanabilir, profilini özelleştirebilir ve kampüs etkinliklerine katılabilirsin.
+                {copy('profile.guestDescription')}
               </Text>
 
               <View style={styles.guestFeaturesList}>
                 <View style={styles.guestFeatureRow}>
                   <Icon name="check-circle" size={18} color="#4cd964" />
-                  <Text style={styles.guestFeatureText}>Canlı dinledikçe Gold kazanımı & Sıralama</Text>
+                  <Text style={styles.guestFeatureText}>{copy('profile.guestListening')}</Text>
                 </View>
                 <View style={styles.guestFeatureRow}>
                   <Icon name="check-circle" size={18} color="#4cd964" />
-                  <Text style={styles.guestFeatureText}>Favori şarkı ve podcast rozetleri</Text>
+                  <Text style={styles.guestFeatureText}>{copy('profile.guestFavorites')}</Text>
                 </View>
                 <View style={styles.guestFeatureRow}>
                   <Icon name="check-circle" size={18} color="#4cd964" />
-                  <Text style={styles.guestFeatureText}>Kampüs etkinlik biletleri ve ödüller</Text>
+                  <Text style={styles.guestFeatureText}>{copy('profile.guestEvents')}</Text>
                 </View>
               </View>
 
               <TouchableOpacity
                 style={styles.guestLoginButton}
                 onPress={() => navigation.navigate('Auth', {screen: 'Login'})}>
-                <Text style={styles.guestLoginButtonText}>Giriş Yap / Kayıt Ol</Text>
+                <Text style={styles.guestLoginButtonText}>{copy('profile.signIn')}</Text>
               </TouchableOpacity>
             </View>
           </View>

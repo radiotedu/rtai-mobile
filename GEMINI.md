@@ -494,3 +494,12 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Backups: `C:\Users\tuna.ozsari\radiotedu-mobile-backups\20260904-home-games-deletion-223119`. All modified original mobile files match their pre-edit backups.
 - Verification: 354 Jest tests, TypeScript, changed-file ESLint (zero errors), 36 static Android checks, and six browser viewport/theme checks passed. No APK/AAB or emulator was built. Device and binary release checks remain for the build PC.
 - Details and operational limitations: `docs/MOBILE_HOME_GAMES_DELETION_2026-09-04.md`. Source-only commit uses `[skip ci]`; no build/release workflow was dispatched. Production databases, user information, ERP and Audio Library were untouched.
+
+## 2026-09-04: version 1.3.6 release signing and account/Gold verification
+
+- Synchronized platform versions/build codes, removed release debug-key fallback, and added permanent-certificate validation before Android release compilation. No native build ran here.
+- Fixed game-score retry proof loss while preserving the original request payload. Added regression coverage and bounded retained rounds.
+- Passed 355 mobile tests, 22 repository contract tests, TypeScript, ESLint with zero errors, 36 static Android checks, 14 live read-only account/API checks, 80 isolated backend tests, and nine in-memory PostgreSQL Gold accounting checks.
+- Production balances/user data were not changed. Market currently returns an empty catalogue. No production backend deployment, deletion, email or push occurred.
+- Backup: `C:\Users\tuna.ozsari\radiotedu-mobile-backups\20260904-release-api-225619\source-before.zip`.
+- Release-candidate source only; device testing, actual APK signature/version inspection and 16 KB native compatibility remain necessary. Full handoff: `docs/MOBILE_RELEASE_API_GOLD_2026-09-04.md`.

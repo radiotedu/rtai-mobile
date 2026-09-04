@@ -1,0 +1,45 @@
+// Keep this public certificate fingerprint in sync with android-release.yml.
+def productionCertificateSha256 = 'B3B08DB1C4AEFBF4251D53951061ADA727796479DE45D817F9576232FF2D9439'
+
+def verifyProductionSigning = tasks.register('verifyProductionSigning') {
+    group = 'verification'
+    description = 'Reject unsigned, debug-signed or wrong-certificate release builds.'
+    doLast {
+        def propertiesFile = rootProject.file('keystore.properties')
+        if (!propertiesFile.isFile()) {
+            throw new GradleException('Release signing is required. Supply the permanent RadioTEDU keystore through keystore.properties or the Android Release workflow.')
+        }
+        def signing = new Properties()
+        propertiesFile.withInputStream { signing.load(it) }
+        ['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].each { field ->
+            if (!signing.getProperty(field)?.trim()) {
+                throw new GradleException("Missing release signing property: ${field}")
+            }
+        }
+        def store = file(signing.getProperty('storeFile'))
+        if (!store.isFile()) {
+            throw new GradleException('Release keystore file does not exist.')
+        }
+        def keyStore = java.security.KeyStore.getInstance(store, signing.getProperty('storePassword').toCharArray())
+        def alias = signing.getProperty('keyAlias')
+        if (!keyStore.isKeyEntry(alias)) {
+            throw new GradleException('Release alias does not contain a private key.')
+        }
+        if (!(keyStore.getKey(alias, signing.getProperty('keyPassword').toCharArray()) instanceof java.security.PrivateKey)) {
+            throw new GradleException('Release signing private key could not be loaded.')
+        }
+        def certificate = keyStore.getCertificate(alias)
+        def actual = java.security.MessageDigest.getInstance('SHA-256').digest(certificate.encoded).encodeHex().toString().toUpperCase(java.util.Locale.ROOT)
+        if (actual != productionCertificateSha256) {
+            throw new GradleException('Release certificate does not match the permanent RadioTEDU production certificate. Debug signing is not allowed.')
+        }
+    }
+}
+
+// Configuration and debug tasks still work on machines without private keys.
+// Every release compilation/packaging path passes through preReleaseBuild.
+tasks.configureEach { task ->
+    if (task.name == 'preReleaseBuild') {
+        task.dependsOn(verifyProductionSigning)
+    }
+}

@@ -125,7 +125,7 @@ jobs:
               sha256sum | awk '{ print toupper($1) }'
           )
           if [[ "$actual_cert_sha256" != "$EXPECTED_ANDROID_CERT_SHA256" ]]; then
-            printf 'Android signing certificate does not match v1.0.0. Expected %s, got %s.\n' \
+            printf 'Android signing certificate does not match the permanent production certificate. Expected %s, got %s.\n' \
               "$EXPECTED_ANDROID_CERT_SHA256" "$actual_cert_sha256" >&2
             exit 1
           fi

@@ -109,6 +109,27 @@ describe('gameSession helpers', () => {
     );
   });
 
+  it('retries a failed submission with the same proof and frozen score payload', async () => {
+    jest.mocked(startGameSession).mockClear();
+    jest.mocked(submitGameScore).mockReset();
+    const game = {id: 'retry-game', slug: 'snake', title: 'Snake'};
+    jest.mocked(startGameSession).mockResolvedValue({
+      session: {id: 'retry-proof', game_id: game.id, client_round_id: 'retry-round', started_at: new Date(1).toISOString()},
+      nonce: 'retry-nonce', minimum_play_seconds: 3, expires_after_seconds: 1200,
+    });
+    jest.mocked(submitGameScore).mockRejectedValueOnce(new Error('temporary network failure'));
+    prepareVerifiedGameRound(game, 'retry-round');
+    const submission = {game, score: 250, clientRoundId: 'retry-round', startedAt: 1};
+    await expect(submitMobileGameScore(submission)).rejects.toThrow('temporary network failure');
+    const originalPayload = jest.mocked(submitGameScore).mock.calls[0][1];
+    jest.mocked(submitGameScore).mockResolvedValueOnce({points_awarded: 3, spendable_points: 23} as never);
+    await expect(submitMobileGameScore({...submission, score: 999})).resolves.toEqual({points_awarded: 3, spendable_points: 23});
+    expect(startGameSession).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(submitGameScore).mock.calls[1][1]).toEqual(originalPayload);
+    await expect(submitMobileGameScore(submission)).rejects.toThrow('Verified game session is unavailable');
+    expect(submitGameScore).toHaveBeenCalledTimes(2);
+  });
+
   it('does not create or submit a Gold session while offline', async () => {
     jest.mocked(startGameSession).mockClear();
     jest.mocked(submitGameScore).mockClear();

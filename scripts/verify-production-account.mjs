@@ -18,9 +18,25 @@ function arrayField(value, field, label) {
 }
 
 function numberField(value, field, label) {
-  const number = Number(assertRecord(value, label)[field]);
+  const raw = assertRecord(value, label)[field];
+  if ((typeof raw !== 'number' && typeof raw !== 'string') || String(raw).trim() === '') {
+    throw new Error(`${label}.${field} is not numeric.`);
+  }
+  const number = Number(raw);
   if (!Number.isFinite(number)) throw new Error(`${label}.${field} is not numeric.`);
   return number;
+}
+
+async function mapConcurrent(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let index = 0;
+  await Promise.all(Array.from({length: Math.min(concurrency, items.length)}, async () => {
+    while (index < items.length) {
+      const current = index++;
+      results[current] = await fn(items[current]);
+    }
+  }));
+  return results;
 }
 
 export async function apiRequest(pathname, {
@@ -79,19 +95,14 @@ export async function verifyProductionAccount({
     throw new Error('Authenticated account does not match RADIOTEDU_E2E_ACCOUNT_ID.');
   }
 
-  const [gamification, home, gamesPayload, marketPayload, eventsPayload, ticketsPayload, avatarCatalogPayload, avatar, library, chim] =
-    await Promise.all([
-      request('/gamification/me'),
-      request('/gamification/home'),
-      request('/gamification/games'),
-      request('/gamification/market'),
-      request('/gamification/events'),
-      request('/gamification/events/my-tickets'),
-      request('/study/avatar/catalog'),
-      request('/study/avatar/me'),
-      request('/gamification/study-room?room_id=library'),
-      request('/gamification/study-room?room_id=chim-alan'),
-    ]);
+  const [gamification, home, gamesPayload, marketPayload, eventsPayload, ticketsPayload, avatarCatalogPayload, avatar, library, chim, erp, ecosystemTickets] =
+    await mapConcurrent([
+      '/gamification/me', '/gamification/home', '/gamification/games',
+      '/gamification/market', '/gamification/events', '/gamification/events/my-tickets',
+      '/study/avatar/catalog', '/study/avatar/me',
+      '/gamification/study-room?room_id=library', '/gamification/study-room?room_id=chim-alan',
+      '/auth/erp-link/status', '/ecosystem/tickets',
+    ], 4, request);
 
   const points = assertRecord(assertRecord(home, 'gamification.home').points, 'gamification.home.points');
   numberField(points, 'lifetime_points', 'gamification.home.points');
@@ -105,10 +116,29 @@ export async function verifyProductionAccount({
   assertRecord(avatar, 'study.avatar.me');
   assertRecord(library, 'study.room.library');
   assertRecord(chim, 'study.room.chim-alan');
+  const profilePoints = assertRecord(gamification.points, 'gamification.me.points');
+  const avatarPoints = assertRecord(avatar.points, 'study.avatar.me.points');
+  const balances = [
+    numberField(account, 'gold_balance', 'auth.me'),
+    numberField(points, 'spendable_points', 'gamification.home.points'),
+    numberField(profilePoints, 'spendable_points', 'gamification.me.points'),
+    numberField(avatarPoints, 'spendable_points', 'study.avatar.me.points'),
+  ];
+  if (balances.some(balance => !Number.isSafeInteger(balance) || balance < 0)) {
+    throw new Error('Account Gold balance must be a non-negative integer.');
+  }
+  if (new Set(balances).size !== 1) {
+    throw new Error('Account, Home, gamification and avatar Gold balances disagree. Retry with an idle audit account.');
+  }
+  if (typeof assertRecord(erp, 'erp.status').linked !== 'boolean') {
+    throw new Error('ERP link status is missing its linked flag.');
+  }
+  if (!Array.isArray(ecosystemTickets)) throw new Error('Ecosystem tickets is not an array.');
 
   const checks = [
     'authentication', 'gold-profile', 'gold-home', 'games', 'market', 'events',
     'tickets', 'avatar-catalog', 'avatar-profile', 'library-presence', 'chim-presence',
+    'gold-wallet-consistency', 'erp-link-status', 'ecosystem-tickets',
   ];
 
   if (mutate) {

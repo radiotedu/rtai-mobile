@@ -1,6 +1,6 @@
 {
   "name": "radiotedu",
-  "version": "1.3.2",
+  "version": "1.3.6",
   "description": "The official terminal radio, 32-band audio visualizer, Gold listening & campus Study client for RadioTEDU",
   "author": "RadioTEDU <https://radiotedu.com>",
   "type": "commonjs",

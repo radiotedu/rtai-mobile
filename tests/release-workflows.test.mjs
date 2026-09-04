@@ -5,9 +5,30 @@ import test from 'node:test';
 import {verifyReleaseVersion} from '../scripts/verify-release-version.mjs';
 
 test('release tag matches mobile, terminal, TV, Wear, and iOS versions', async () => {
-  assert.deepEqual(await verifyReleaseVersion('v1.3.2'), {tag: 'v1.3.2', version: '1.3.2'});
+  assert.deepEqual(await verifyReleaseVersion('v1.3.6'), {tag: 'v1.3.6', version: '1.3.6'});
   await assert.rejects(verifyReleaseVersion('v1.0.0'), /does not match/);
   await assert.rejects(verifyReleaseVersion('latest'), /vMAJOR\.MINOR\.PATCH/);
+});
+
+test('all Android release targets reject missing or wrong production signing', async () => {
+  const policy = await readFile(new URL('../mobile/android/release-signing.gradle', import.meta.url), 'utf8');
+  const workflow = await readFile(new URL('../.github/workflows/android-release.yml', import.meta.url), 'utf8');
+  const pinned = /EXPECTED_ANDROID_CERT_SHA256:\s*([A-F0-9]{64})/.exec(workflow)?.[1];
+  assert.ok(pinned);
+  assert.ok(policy.includes(pinned));
+  assert.match(policy, /propertiesFile\.isFile\(\)/);
+  assert.match(policy, /KeyStore\.getInstance/);
+  assert.match(policy, /isKeyEntry/);
+  assert.match(policy, /getKey/);
+  assert.match(policy, /actual != productionCertificateSha256/);
+  assert.match(policy, /task\.name == 'preReleaseBuild'/);
+  assert.match(policy, /task\.dependsOn\(verifyProductionSigning\)/);
+  for (const module of ['app', 'tv', 'wear']) {
+    const gradle = await readFile(new URL(`../mobile/android/${module}/build.gradle`, import.meta.url), 'utf8');
+    assert.match(gradle, /apply from: rootProject\.file\('release-signing.gradle'\)/);
+    assert.match(gradle, /signingConfig hasReleaseKeystore \? signingConfigs.release : null/);
+    assert.doesNotMatch(gradle, /hasReleaseKeystore \? signingConfigs.release : signingConfigs.debug/);
+  }
 });
 
 test('iOS release validates and uploads the signed IPA to TestFlight', async () => {

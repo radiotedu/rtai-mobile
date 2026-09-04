@@ -59,3 +59,30 @@ test('release policy permits intentionally disabled streams and Voting only', ()
     true,
   );
 });
+
+test('live audio probe uses a normal GET and cancels after its first chunk', async () => {
+  let cancelled = false;
+  const result = await probeService({kind: 'stream', url: 'https://example.test/live'}, {
+    fetchImpl: async (_url, options) => {
+      assert.equal(options.headers.Range, undefined);
+      assert.equal(options.headers.Accept, 'audio/*');
+      return {
+        ok: true, status: 200, headers: {get: () => 'audio/aac'},
+        body: {getReader: () => ({
+          read: async () => ({value: new Uint8Array([1, 2]), done: false}),
+          cancel: async () => { cancelled = true; },
+        })},
+      };
+    },
+  });
+  assert.equal(result.status, 200);
+  assert.equal(cancelled, true);
+});
+
+test('live audio probe rejects missing or empty bodies', async () => {
+  for (const body of [null, {getReader: () => ({read: async () => ({done: true}), cancel: async () => {}})}]) {
+    await assert.rejects(probeService({kind: 'stream', url: 'https://example.test/live'}, {
+      fetchImpl: async () => ({ok: true, status: 200, headers: {get: () => 'audio/aac'}, body}),
+    }), /empty stream response/);
+  }
+});

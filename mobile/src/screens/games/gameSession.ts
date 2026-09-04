@@ -11,6 +11,8 @@ import {Analytics} from '../../services/analyticsService';
 import NetInfo, {NetInfoState} from '@react-native-community/netinfo';
 
 const verifiedRounds = new Map<string, Promise<VerifiedGameSession | null>>();
+const submittedPayloads = new Map<string, ReturnType<typeof buildGameScorePayload>>();
+const MAX_RETAINED_ROUNDS = 100;
 
 export function hasVerifiedInternet(state: Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>) {
   return state.isConnected !== false && state.isInternetReachable !== false;
@@ -44,6 +46,11 @@ export function prepareVerifiedGameRound(game: ArcadeGame, clientRoundId: string
   }
 
   if (!verifiedRounds.has(clientRoundId)) {
+    while (verifiedRounds.size >= MAX_RETAINED_ROUNDS) {
+      const oldest = verifiedRounds.keys().next().value as string;
+      verifiedRounds.delete(oldest);
+      submittedPayloads.delete(oldest);
+    }
     verifiedRounds.set(clientRoundId, startOnlineVerifiedRound(game, clientRoundId));
   }
 }
@@ -88,6 +95,7 @@ export async function submitMobileGameScore(params: {
 
   if (!(await canReachRewardServer())) {
     verifiedRounds.delete(params.clientRoundId);
+    submittedPayloads.delete(params.clientRoundId);
     Analytics.gameCompleted(
       params.game.slug || String(params.game.id),
       params.score,
@@ -101,13 +109,16 @@ export async function submitMobileGameScore(params: {
   if (!proof) {
     throw new Error('Verified game session is unavailable');
   }
-  const payload = buildGameScorePayload({
+  const payload = submittedPayloads.get(params.clientRoundId) ?? buildGameScorePayload({
     ...params,
     sessionId: proof.session.id,
     nonce: proof.nonce,
   });
+  submittedPayloads.set(params.clientRoundId, payload);
+  let submitted = false;
   try {
     const result = await submitGameScore(params.game.id, payload);
+    submitted = true;
     Analytics.gameCompleted(
       params.game.slug || String(params.game.id),
       params.score,
@@ -131,6 +142,11 @@ export async function submitMobileGameScore(params: {
     }
     return result;
   } finally {
-    verifiedRounds.delete(params.clientRoundId);
+    // A transient failure must leave the original proof and exact payload
+    // available to the result screen's Retry action. Do not start a new round.
+    if (submitted) {
+      verifiedRounds.delete(params.clientRoundId);
+      submittedPayloads.delete(params.clientRoundId);
+    }
   }
 }

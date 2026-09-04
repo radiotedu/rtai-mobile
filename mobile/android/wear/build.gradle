@@ -7,6 +7,7 @@ def hasReleaseKeystore = keystorePropertiesFile.exists()
 if (hasReleaseKeystore) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+apply from: rootProject.file('release-signing.gradle')
 
 android {
     namespace "com.radiotedumobile.wear"
@@ -16,8 +17,8 @@ android {
         applicationId "com.radiotedumobile"
         minSdkVersion 30
         targetSdkVersion 35
-        versionCode 13022
-        versionName "1.3.2"
+        versionCode 13062
+        versionName "1.3.6"
     }
 
     signingConfigs {
@@ -40,7 +41,7 @@ android {
     buildTypes {
         debug { signingConfig signingConfigs.debug }
         release {
-            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
+            signingConfig hasReleaseKeystore ? signingConfigs.release : null
             minifyEnabled true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }

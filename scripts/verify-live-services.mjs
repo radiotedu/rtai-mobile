@@ -35,7 +35,9 @@ export async function probeService(service, {fetchImpl = fetch, timeoutMs = 15_0
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(service.url, {
-      headers: service.kind === 'stream' ? {Accept: 'audio/*', Range: 'bytes=0-2047'} : {},
+      // Live Icecast-style streams need a normal GET, not a finite file range.
+      // Stop after the first audio chunk instead of downloading indefinitely.
+      headers: service.kind === 'stream' ? {Accept: 'audio/*'} : {},
       redirect: 'follow',
       signal: controller.signal,
     });
@@ -47,7 +49,8 @@ export async function probeService(service, {fetchImpl = fetch, timeoutMs = 15_0
     if (service.kind === 'stream' && !/^(audio\/|application\/(ogg|octet-stream))/.test(contentType)) {
       throw new Error(`unexpected content type ${contentType || '(missing)'}`);
     }
-    if (service.kind === 'stream' && response.body) {
+    if (service.kind === 'stream') {
+      if (!response.body) throw new Error('empty stream response');
       const reader = response.body.getReader();
       const {value} = await reader.read();
       await reader.cancel();

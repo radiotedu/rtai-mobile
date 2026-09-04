@@ -22,8 +22,10 @@ function productionApiMock({accountId = 'account-1'} = {}) {
     assert.equal(options.headers.Authorization, 'Bearer test-token');
 
     const fixtures = {
-      '/auth/me': {id: accountId},
-      '/gamification/me': {account_id: accountId},
+      '/auth/me': {id: accountId, gold_balance: 100},
+      '/gamification/me': {account_id: accountId, points: {spendable_points: 100}},
+      '/auth/erp-link/status': {linked: false},
+      '/ecosystem/tickets': [],
       '/gamification/games': {games: [{id: 'game-1', slug: 'snake'}]},
       '/gamification/market': {items: [{id: 'market-1'}]},
       '/gamification/events': {events: [{id: 'event-1'}]},
@@ -36,7 +38,7 @@ function productionApiMock({accountId = 'account-1'} = {}) {
       return jsonResponse({points: {lifetime_points: lifetimePoints, spendable_points: 100}});
     }
     if (endpoint === '/study/avatar/me') {
-      return jsonResponse({ownedItemIds: avatarPurchased ? ['avatar-1'] : [], equipped: avatarPurchased ? {top: 'avatar-1'} : {}});
+      return jsonResponse({ownedItemIds: avatarPurchased ? ['avatar-1'] : [], equipped: avatarPurchased ? {top: 'avatar-1'} : {}, points: {spendable_points: 100}});
     }
     if (endpoint === '/gamification/games/game-1/start') {
       return jsonResponse({session: {id: 'game-session-1'}, nonce: 'game-nonce-1'});
@@ -69,7 +71,7 @@ test('authenticated read-only smoke covers production account features', async (
   });
 
   assert.equal(result.mutated, false);
-  assert.equal(result.checks.length, 11);
+  assert.equal(result.checks.length, 14);
   assert.deepEqual(result.counts, {avatarItems: 1, events: 1, games: 1, market: 1, tickets: 0});
   assert.equal(mock.calls.every(call => call.options.method === 'GET'), true);
 });
@@ -121,4 +123,21 @@ test('mutation refuses catalog games that the mobile UI cannot launch', async ()
     verifyProductionAccount({expectedAccountId: 'account-1', fetchImpl, mutate: true, token: 'test-token'}),
     /playable mobile route/,
   );
+});
+
+test('read-only audit rejects inconsistent or invalid Gold balances', async () => {
+  for (const balance of [101, -1, null, '', 'not-a-number']) {
+    const mock = productionApiMock();
+    const fetchImpl = async (url, options) => {
+      if (new URL(url).pathname.endsWith('/gamification/me')) {
+        return jsonResponse({points: {spendable_points: balance}});
+      }
+      return mock.fetchImpl(url, options);
+    };
+    await assert.rejects(
+      verifyProductionAccount({expectedAccountId: 'account-1', fetchImpl, token: 'test-token'}),
+      /disagree|non-negative|not numeric/,
+    );
+    assert.equal(mock.calls.every(call => call.options.method === 'GET'), true);
+  }
 });

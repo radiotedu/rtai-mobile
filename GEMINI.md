@@ -412,3 +412,20 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Streamlined ERP login to single-step pairing code entry with automatic browser launch.
 - Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-04 radiotedu-tui comprehensive README documentation & author attribution handoff snapshot
+
+- Added comprehensive, production-grade documentation for `radiotedu-tui` in `terminal/README.md`:
+  - Features overview: Spotify-TUI layout, 32-band real-time audio spectrum visualizer (`cava` style with peak-hold decay), 24-bit Lossless FLAC streams, zero-dependency Node.js architecture.
+  - Complete ASCII interface mockup and component breakdown.
+  - Installation guides: 1-line curl installer, npm global install, and local source run.
+  - Audio player engine installation guide for Windows (`winget`, `choco`, `scoop`), macOS (`brew`), and Linux (`apt`, `pacman`, `dnf`).
+  - Full keyboard shortcuts table and SGR mouse control guide.
+  - Complete 9-station audio roster with formats and codecs.
+  - Security and authentication breakdown: RadioTEDU direct login & TEDÜ ERP SSO pairing code flow (`radiotedu.com/erp/device`).
+  - Scriptable headless CLI commands reference.
+  - Test suite coverage documentation.
+  - Author and maintainer attribution to Arda Akgül (`@akgularda`).
+- Added `author` field to `terminal/package.json` pointing to `Arda Akgül (akgularda) <akgularda@users.noreply.github.com>`.
+- Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass.
+- Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.

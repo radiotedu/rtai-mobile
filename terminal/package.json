@@ -2,6 +2,7 @@
   "name": "radiotedu-tui",
   "version": "1.4.2",
   "description": "Spotify-inspired RadioTEDU terminal radio, Gold and Study client",
+  "author": "Arda Akgül (akgularda) <akgularda@users.noreply.github.com>",
   "type": "commonjs",
   "bin": {
     "radiotedu": "src/index.js",

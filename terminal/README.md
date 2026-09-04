@@ -5,7 +5,7 @@
 **The Spotify-TUI inspired terminal client, 32-band real-time audio spectrum visualizer, Focus Pomodoro lounge, server-verified Gold listening engine, and campus Study companion for RadioTEDU.**
 
 [![Version](https://img.shields.io/badge/version-v1.4.4-brightgreen.svg?style=flat-square)](package.json)
-[![Author](https://img.shields.io/badge/author-akgularda-blue.svg?style=flat-square&logo=github)](https://github.com/akgularda)
+[![Organization](https://img.shields.io/badge/organization-RadioTEDU-red.svg?style=flat-square)](https://radiotedu.com)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-informational.svg?style=flat-square&logo=node.js)](https://nodejs.org)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](https://github.com/radiotedu/radiotedu-tui)
 [![Audio Engines](https://img.shields.io/badge/audio-mpv%20%7C%20ffplay%20(auto--fetch)-orange.svg?style=flat-square)](https://mpv.io)
@@ -19,7 +19,7 @@
 [📻 Stations & FLAC](#-stations--stream-qualities) •
 [🔐 Authentication & SSO](#-authentication--erp-sso) •
 [⚡ CLI Mode](#-headless-cli-commands) •
-[👤 Author](#-author--maintainer)
+[📻 Organization](#-organization--community)
 
 </div>
 
@@ -48,7 +48,7 @@
 ## 🎨 Interface Layout
 
 ```text
-╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.4 ────────────────────────────────────────── [👤 akgularda  ◆ 420 Gold] ─╮
+╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.4 ────────────────────────────────────────── [👤 RadioTEDU Member  ◆ 420 Gold] ─╮
 │  [1: Stations]   2: Visualizer   3: Study & Lyrics   4: Account                                               │
 ├───────────────────────────────────┬───────────────────────────────────────────────────────────────────────────┤
 │ STATIONS (9 CHANNELS)             │ LIVE AUDIO SPECTRUM & STREAM INFO                                         │
@@ -359,11 +359,11 @@ terminal/
 
 ---
 
-## 👤 Author & Maintainer
+## 📻 Organization & Community
 
-Developed and maintained with ❤️ by **Arda Akgül**:
+Developed and maintained by **RadioTEDU**:
 
-- **GitHub**: [@akgularda](https://github.com/akgularda)
+- **Website**: [radiotedu.com](https://radiotedu.com)
 - **Repository**: [radiotedu/radiotedu-tui](https://github.com/radiotedu/radiotedu-tui)
 - **Organization**: RadioTEDU Ankara Studios · TED University ([radiotedu.com](https://radiotedu.com))
 
@@ -372,4 +372,4 @@ Developed and maintained with ❤️ by **Arda Akgül**:
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-Copyright (c) 2026 Arda Akgül (RadioTEDU).
+Copyright (c) 2026 RadioTEDU (RadioTEDU Ankara Studios & TED University).

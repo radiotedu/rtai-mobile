@@ -2,11 +2,7 @@
   "name": "radiotedu-tui",
   "version": "1.4.4",
   "description": "The official terminal radio, 32-band audio visualizer, Gold listening & campus Study client for RadioTEDU",
-  "author": "RadioTEDU Engineering <dev@radiotedu.com>",
-  "contributors": [
-    "Arda Akgül (akgularda) <akgularda@users.noreply.github.com>",
-    "Tuna Özsarı <tuna@radiotedu.com>"
-  ],
+  "author": "RadioTEDU <https://radiotedu.com>",
   "type": "commonjs",
   "bin": {
     "radiotedu": "src/index.js",

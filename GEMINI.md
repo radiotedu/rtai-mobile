@@ -445,10 +445,13 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass; Root contract tests 15/15 pass.
 - Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.
 
-## 2026-09-04 radiotedu-tui MIT license release handoff snapshot
+## 2026-09-04 radiotedu-tui RadioTEDU MIT license & standalone repo release handoff snapshot
 
-- Added official MIT License file to `terminal/LICENSE` with copyright attributed to Arda Akgül (RadioTEDU).
-- Updated `terminal/README.md` license badge (`license-MIT-blue`) and footer license text linking to `LICENSE`.
-- Confirmed `"license": "MIT"` in `terminal/package.json`.
-- Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass.
+- Applied official RadioTEDU MIT License across `rtai-mobile` (`terminal/LICENSE`) and standalone `radiotedu/radiotedu-tui` (`LICENSE`):
+  - Copyright: `Copyright (c) 2026 RadioTEDU (RadioTEDU Ankara Studios & TED University)`.
+  - Removed all personal branding and "Made by Arda Akgül" strings from `README.md`, `LICENSE`, and `package.json`.
+  - Set `"author": "RadioTEDU <https://radiotedu.com>"` and `"license": "MIT"` in `package.json`.
+  - Updated README organization badges, mockup header (`RadioTEDU Member`), and Organization & Community section.
+- Pushed clean, hardened release directly to standalone repository `https://github.com/radiotedu/radiotedu-tui.git` (`469e8a8`).
+- Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass across both repositories.
 - Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.

@@ -444,3 +444,11 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Updated `README.md` to reflect the 3-option login dialog and v1.4.4 features.
 - Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass; Root contract tests 15/15 pass.
 - Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.
+
+## 2026-09-04 radiotedu-tui MIT license release handoff snapshot
+
+- Added official MIT License file to `terminal/LICENSE` with copyright attributed to Arda Akgül (RadioTEDU).
+- Updated `terminal/README.md` license badge (`license-MIT-blue`) and footer license text linking to `LICENSE`.
+- Confirmed `"license": "MIT"` in `terminal/package.json`.
+- Tests: Terminal 20/20 tests pass + 8/8 syntax checks pass.
+- Safety rules preserved: Production DB, ERP, Audio Library untouched. No email or push notifications sent.

@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](https://github.com/radiotedu/radiotedu-tui)
 [![Audio Engines](https://img.shields.io/badge/audio-mpv%20%7C%20ffplay%20(auto--fetch)-orange.svg?style=flat-square)](https://mpv.io)
 [![Dependencies](https://img.shields.io/badge/dependencies-0%20(Pure%20Node.js)-success.svg?style=flat-square)](package.json)
-[![License](https://img.shields.io/badge/license-RadioTEDU-red.svg?style=flat-square)](https://radiotedu.com)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
 [🚀 Quick Start](#-installation--quick-start) •
 [🎨 Interface Layout](#-interface-layout) •
@@ -371,5 +371,5 @@ Developed and maintained with ❤️ by **Arda Akgül**:
 
 ## 📄 License
 
-This software is part of the RadioTEDU ecosystem. All rights reserved.
-© 2026 RadioTEDU Ankara Studios & TED University.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+Copyright (c) 2026 Arda Akgül (RadioTEDU).

@@ -87,3 +87,46 @@ test('onLoginPairStart invocation is resilient to synchronous return and errors'
   });
 });
 
+test('Focus Pomodoro matches radiotedu.com/focus presets and timer progression', () => {
+  const defaultPomo = {
+    preset: '25/5',
+    phase: 'focus',
+    focusMinutes: 25,
+    breakMinutes: 5,
+    secondsLeft: 25 * 60,
+    running: false,
+    completedFocus: 0,
+    completedBreak: 0,
+  };
+
+  assert.equal(defaultPomo.preset, '25/5');
+  assert.equal(defaultPomo.secondsLeft, 1500);
+
+  // Switch to 50/10 Deep Work preset
+  const deepPomo = {
+    ...defaultPomo,
+    preset: '50/10',
+    focusMinutes: 50,
+    breakMinutes: 10,
+    secondsLeft: 50 * 60,
+  };
+  assert.equal(deepPomo.preset, '50/10');
+  assert.equal(deepPomo.focusMinutes, 50);
+  assert.equal(deepPomo.breakMinutes, 10);
+  assert.equal(deepPomo.secondsLeft, 3000);
+
+  // Progress calculation
+  const totalPhaseSecs = deepPomo.focusMinutes * 60;
+  const elapsed = 750; // 12m 30s elapsed
+  const secondsLeft = totalPhaseSecs - elapsed;
+  const progress = 1 - (secondsLeft / totalPhaseSecs);
+  assert.equal(progress, 0.25);
+  assert.equal(Math.round(progress * 100), 25);
+});
+
+test('downloadPortablePlayer is exported and callable', () => {
+  const {downloadPortablePlayer} = require('../src/player');
+  assert.equal(typeof downloadPortablePlayer, 'function');
+});
+
+

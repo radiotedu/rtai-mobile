@@ -220,16 +220,15 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   } else if (modal.type === 'audio_engine_missing') {
     boxLines.push(padVisible(`${padLeft}${C.brightRed}╭─ ⚠️ AUDIO DECODER REQUIRED // SES OYNATICI GEREKLİ ${'─'.repeat(Math.max(0, modalW - 48))}╮${C.reset}`, totalCols));
-    boxLines.push(wrapLine(`  ${C.bold}Canlı radyo yayını için bir ses motoru (mpv/ffplay/vlc) gereklidir.${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.bold}Canlı radyo yayını için bir ses motoru (ffplay/mpv/vlc) gereklidir.${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.white}Sisteminizde ses akışlarını çözecek oynatıcı bulunamadı.${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}Terminalden veya PowerShell üzerinden hızlıca kurabilirsiniz:${C.reset}`));
     boxLines.push(wrapLine(''));
-    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}winget install Gyan.FFmpeg${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}veya:${C.reset} ${C.cyan}winget install mpv.mpv${C.reset}  ${C.gray}veya:${C.reset} ${C.cyan}radiotedu setup-audio${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} ⬇️ ${C.white}Taşınabilir ffplay motorunu otomatik kur (~6 sn) [Önerilen]${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[2]${C.reset} 📦 ${C.gray}winget ile kur: winget install Gyan.FFmpeg${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.darkGray}${'─'.repeat(innerW - 4)}${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}[Esc] veya [Enter] Kapat  ·  (Diğer özellikler aktif olarak kullanılabilir)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Hemen indirmek için ${C.white}[1]${C.gray} veya ${C.white}[Enter]${C.gray}'e basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
     boxLines.push(padVisible(`${padLeft}${C.brightRed}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   }
 
@@ -250,7 +249,13 @@ function draw(state) {
   const isGuest = accountLabel === 'Guest';
   const goldVal = state.account?.gold;
   const goldText = Number.isInteger(goldVal) ? `  ${C.gold}${C.bold}◆ ${goldVal} Gold${C.reset}` : '';
-  const studyText = state.studyMinutes !== null ? `  ${C.cyan}⏱ ${Math.floor(state.studyMinutes)}m${C.reset}` : '';
+  const pomo = state.pomodoro;
+  const pomoMins = pomo ? Math.floor(pomo.secondsLeft / 60) : 0;
+  const pomoSecs = pomo ? pomo.secondsLeft % 60 : 0;
+  const pomoPhaseIcon = pomo?.phase === 'focus' ? '🎯' : '☕';
+  const studyText = pomo?.running
+    ? `  ${C.cyan}⏱ ${pomoPhaseIcon} ${String(pomoMins).padStart(2, '0')}:${String(pomoSecs).padStart(2, '0')}${C.reset}`
+    : (state.studyMinutes !== null ? `  ${C.cyan}⏱ ${Math.floor(state.studyMinutes)}m${C.reset}` : '');
   const activeTab = state.activeTab || 1;
   const volume = state.volume ?? 80;
 
@@ -263,16 +268,17 @@ function draw(state) {
       : `${C.bgTabInactive} ${num}: ${name} ${C.reset}`;
   };
 
-  const tabsBar = `${tabPill('1', 'STATIONS', 1)}  ${tabPill('2', 'EQUALIZER', 2)}  ${tabPill('3', 'STUDY ROOM', 3)}  ${tabPill('4', 'ACCOUNT', 4)}`;
+  const tabsBar = `${tabPill('1', 'STATIONS', 1)}  ${tabPill('2', 'EQUALIZER', 2)}  ${tabPill('3', 'FOCUS', 3)}  ${tabPill('4', 'ACCOUNT', 4)}`;
   const userBar = isGuest
     ? `${C.darkGray}👤 Guest (${C.white}Press 'L' to Login${C.darkGray})${C.reset} `
     : `${C.spotifyGreen}● ${C.white}${C.bold}${accountLabel}${C.reset}${goldText}${studyText} `;
 
   const headerTitle = ` 📻 ${C.bold}${C.white}RADIOTEDU${C.reset} ${C.red}//${C.reset} ${C.gray}STUDIO CONSOLE${C.reset} `;
-  const headerRight = `${C.darkGray}v1.3.6 ─╮${C.reset}`;
+  const headerRight = `${C.darkGray}v1.3.7 ─╮${C.reset}`;
   const fillHeader = Math.max(0, totalCols - stripAnsi(headerTitle).length - stripAnsi(headerRight).length - 2);
 
   lines.push(`${C.slateBorder}╭─${C.reset}${headerTitle}${C.slateBorder}${'─'.repeat(fillHeader)}${C.reset}${headerRight}`);
+
   
   const headerContent = `  ${tabsBar}${' '.repeat(Math.max(2, totalCols - stripAnsi(tabsBar).length - stripAnsi(userBar).length - 4))}${userBar}`;
   lines.push(`${C.slateBorder}│${C.reset}${padVisible(headerContent, totalCols)}${C.slateBorder}│${C.reset}`);
@@ -428,23 +434,84 @@ function draw(state) {
     lines.push(`${C.slateBorder}╰${'─'.repeat(totalCols)}╯${C.reset}`);
 
   } else if (activeTab === 3) {
-    // TAB 3: STUDY ROOM & CAMPUS FOCUS SESSION
-    lines.push(`${C.slateBorder}╭─ STUDY ROOM & CAMPUS FOCUS SESSION ${'─'.repeat(Math.max(0, totalCols - 38))}╮${C.reset}`);
-    const isStudying = state.studyMinutes !== null;
-    const studyMins = isStudying ? Math.floor(state.studyMinutes) : 0;
-    const pomodoroBar = Math.min(20, Math.floor((studyMins % 25) / 25 * 20));
-    const pBarStr = `${C.spotifyGreen}${'█'.repeat(pomodoroBar)}${C.darkGray}${'░'.repeat(20 - pomodoroBar)}${C.reset}`;
+    // TAB 3: FOCUS // POMODORO (radiotedu.com/focus)
+    lines.push(`${C.slateBorder}╭─ FOCUS // POMODORO TIMER (radiotedu.com/focus) ${'─'.repeat(Math.max(0, totalCols - 49))}╮${C.reset}`);
+    
+    const pomo = state.pomodoro || {
+      preset: '25/5',
+      phase: 'focus',
+      focusMinutes: 25,
+      breakMinutes: 5,
+      secondsLeft: 25 * 60,
+      running: false,
+      completedFocus: 0,
+      completedBreak: 0,
+    };
 
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.bold}POMODORO FOCUS TIMER:${C.reset}  ${isStudying ? `${C.spotifyGreen}● ACTIVE SESSION${C.reset}` : `${C.darkGray}○ IDLE (Press 'S' to begin)${C.reset}`}`, totalCols)}${C.slateBorder}│${C.reset}`);
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  Progress : [${pBarStr}] ${studyMins}m / 25m (${C.gold}+10 Gold reward${C.reset})`, totalCols)}${C.slateBorder}│${C.reset}`);
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  Location : TEDÜ Ana Kütüphane / Çim Alan  ·  Verified campus study zone`, totalCols)}${C.slateBorder}│${C.reset}`);
+    const isFocusPhase = pomo.phase === 'focus';
+    const totalPhaseSecs = (isFocusPhase ? pomo.focusMinutes : pomo.breakMinutes) * 60;
+    const progress = Math.max(0, Math.min(1, 1 - (pomo.secondsLeft / Math.max(1, totalPhaseSecs))));
+    const percent = Math.round(progress * 100);
+
+    const mins = Math.floor(pomo.secondsLeft / 60);
+    const secs = pomo.secondsLeft % 60;
+    const timeStr = `${String(mins).padStart(2, '0')} : ${String(secs).padStart(2, '0')}`;
+
+    // Presets Row
+    const p25 = pomo.preset === '25/5'
+      ? `${C.bgTabActive} ● 25/5 Classic ${C.reset}`
+      : `${C.bgTabInactive} ○ 25/5 Classic ${C.reset}`;
+    const p50 = pomo.preset === '50/10'
+      ? `${C.bgTabActive} ● 50/10 Deep Work ${C.reset}`
+      : `${C.bgTabInactive} ○ 50/10 Deep Work ${C.reset}`;
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.bold}PRESET:${C.reset}  ${p25}  ${p50}    ${C.darkGray}(Press 'P' or click to switch)${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+
+    // Phase & Status
+    const phaseLabel = isFocusPhase
+      ? `${C.brightRed}${C.bold}🎯 FOCUS PHASE (${pomo.focusMinutes}m)${C.reset}`
+      : `${C.cyan}${C.bold}☕ BREAK PHASE (${pomo.breakMinutes}m)${C.reset}`;
+    const statusLabel = pomo.running
+      ? `${C.spotifyGreen}${C.bold}● RUNNING${C.reset}`
+      : `${C.yellow}${C.bold}⏸ PAUSED${C.reset}`;
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.bold}PHASE :${C.reset}  ${phaseLabel}        ${C.bold}STATUS:${C.reset}  ${statusLabel}`, totalCols)}${C.slateBorder}│${C.reset}`);
     lines.push(`${C.slateBorder}│${C.reset}${padVisible('', totalCols)}${C.slateBorder}│${C.reset}`);
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.bold}LIVE LYRICS / STREAM INTEL:${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
-    const track = state.metadata || state.active?.description || 'Broadcasting live from RadioTEDU Ankara Studios';
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.cyan}♪ ${track}${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.darkGray}• Smart lyrics policy: Zero background cellular drain.${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
-    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.darkGray}• High-concentration instrumental music active on Lo-Fi & Classical.${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
-    for (let k = 0; k < 2; k++) lines.push(`${C.slateBorder}│${C.reset}${padVisible('', totalCols)}${C.slateBorder}│${C.reset}`);
+
+    // Big Digital Clock Frame
+    const clockInner = `⏱️   ${C.bold}${C.white}${timeStr}${C.reset}   (${percent}%)`;
+    const clockBoxW = 40;
+    const clockPad = Math.max(0, Math.floor((totalCols - clockBoxW) / 2));
+    const clockIndent = ' '.repeat(clockPad);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`${clockIndent}${C.slateBorder}┌${'─'.repeat(clockBoxW - 2)}┐${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`${clockIndent}${C.slateBorder}│${C.reset} ${padVisible(`      ${clockInner}`, clockBoxW - 4)} ${C.slateBorder}│${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`${clockIndent}${C.slateBorder}└${'─'.repeat(clockBoxW - 2)}┘${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible('', totalCols)}${C.slateBorder}│${C.reset}`);
+
+    // Progress Bar
+    const barWidth = 30;
+    const filled = Math.round(progress * barWidth);
+    const pBar = `${C.spotifyGreen}${'█'.repeat(filled)}${C.darkGray}${'░'.repeat(barWidth - filled)}${C.reset}`;
+    const remMins = Math.floor(pomo.secondsLeft / 60);
+    const remSecs = pomo.secondsLeft % 60;
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  Progress : [${pBar}] ${percent}%  (${remMins}m ${remSecs}s remaining)`, totalCols)}${C.slateBorder}│${C.reset}`);
+
+    // Completed Sessions
+    const goldEarned = (pomo.completedFocus * (pomo.focusMinutes === 50 ? 20 : 10));
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  Sessions : 🎯 ${pomo.completedFocus} focus completed  ·  ☕ ${pomo.completedBreak} breaks  ·  ${C.gold}◆ +${goldEarned} Gold earned${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible('', totalCols)}${C.slateBorder}│${C.reset}`);
+
+    // Controls
+    const btnS = `${C.white}${C.bold}[S]${C.reset} ${pomo.running ? 'Pause' : 'Start'}`;
+    const btnP = `${C.white}${C.bold}[P]${C.reset} Preset (25/5 ⇄ 50/10)`;
+    const btnB = `${C.white}${C.bold}[B]${C.reset} Focus ⇄ Break`;
+    const btnR = `${C.white}${C.bold}[R]${C.reset} Reset`;
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  Controls : ${btnS}   ${btnP}   ${btnB}   ${btnR}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible('', totalCols)}${C.slateBorder}│${C.reset}`);
+
+    // Focus Audio Channels
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  ${C.bold}Focus Audio Recommendations:${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`  • ${C.cyan}Lo-Fi Beats${C.reset} (Chillhop)   • ${C.gold}Classical${C.reset} (Symphonic)   • ${C.purple}Jazz${C.reset} (Bebop)`, totalCols)}${C.slateBorder}│${C.reset}`);
+    lines.push(`${C.slateBorder}│${C.reset}${padVisible(`    ${C.darkGray}Instrumental streams crafted for deep concentration. Zero vocal distractions.${C.reset}`, totalCols)}${C.slateBorder}│${C.reset}`);
+    
     lines.push(`${C.slateBorder}╰${'─'.repeat(totalCols)}╯${C.reset}`);
 
   } else if (activeTab === 4) {
@@ -515,8 +582,9 @@ function draw(state) {
   const btnVolUp = `${C.white}[+]${C.reset} Vol+`;
   const btnVolDown = `${C.white}[-]${C.reset} Vol-`;
   const btnLogin = isGuest ? `${C.white}[L]${C.reset} Login` : `${C.white}[X]${C.reset} Logout`;
-  const btnStudy = `${C.white}[S]${C.reset} Study`;
+  const btnStudy = `${C.white}[S]${C.reset} Focus`;
   const btnQuit = `${C.white}[Q]${C.reset} Quit`;
+
 
   const playRow3 = `  ${btnSpace}   ${btnQual}   ${btnVolUp} ${btnVolDown}   ${btnLogin}   ${btnStudy}   ${btnQuit}   ${C.darkGray}· Click anywhere to control ·${C.reset}`;
   lines.push(`${C.slateBorder}│${C.reset}${padVisible(playRow3, totalCols)}${C.slateBorder}│${C.reset}`);
@@ -561,6 +629,7 @@ async function runTui({
   onLogout,
   onQuit,
   onTick,
+  onEnsureAudio = null,
   initialAccount = null,
   initialQuality = 'normal',
   playerName = null,
@@ -577,6 +646,16 @@ async function runTui({
       status: '',
       account: initialAccount,
       studyMinutes: null,
+      pomodoro: {
+        preset: '25/5',
+        phase: 'focus',
+        focusMinutes: 25,
+        breakMinutes: 5,
+        secondsLeft: 25 * 60,
+        running: false,
+        completedFocus: 0,
+        completedBreak: 0,
+      },
       paused: false,
       playerName,
       activeTab: 1,
@@ -616,9 +695,38 @@ async function runTui({
       process.stdout.write(`${ESC}?25l${ESC}?1000h${ESC}?1006h`);
     };
 
-    // 200ms tick for smooth peak-hold decay and real-time audio animation
+    let pomoSubTick = 0;
+    // 200ms tick for smooth peak-hold decay, pomodoro countdown and real-time audio animation
     const timer = setInterval(() => {
       let changed = false;
+      if (state.pomodoro && state.pomodoro.running) {
+        pomoSubTick = (pomoSubTick || 0) + 1;
+        if (pomoSubTick >= 5) {
+          pomoSubTick = 0;
+          if (state.pomodoro.secondsLeft > 1) {
+            state.pomodoro.secondsLeft--;
+            changed = true;
+          } else {
+            // Completed current phase!
+            if (state.pomodoro.phase === 'focus') {
+              state.pomodoro.completedFocus++;
+              state.pomodoro.phase = 'break';
+              state.pomodoro.secondsLeft = state.pomodoro.breakMinutes * 60;
+              state.status = `🍅 Focus complete! Time for a ${state.pomodoro.breakMinutes}m break.`;
+              if (state.account && Number.isInteger(state.account.gold)) {
+                state.account.gold += (state.pomodoro.focusMinutes === 50 ? 20 : 10);
+              }
+            } else {
+              state.pomodoro.completedBreak++;
+              state.pomodoro.phase = 'focus';
+              state.pomodoro.secondsLeft = state.pomodoro.focusMinutes * 60;
+              state.status = `☕ Break finished! Ready for a ${state.pomodoro.focusMinutes}m focus session.`;
+            }
+            state.pomodoro.running = true;
+            changed = true;
+          }
+        }
+      }
       if (state.studyMinutes !== null) {
         state.studyMinutes += 0.2 / 60;
         changed = true;
@@ -637,7 +745,28 @@ async function runTui({
       if (state.modal) {
         if (event.type === 'key') {
           if (state.modal.type === 'audio_engine_missing') {
-            if (event.key === 'escape' || event.key === 'enter' || event.key === 'space' || event.key === 'q') {
+            if (event.key === '1' || event.key === 'enter') {
+              state.modal.status = 'Ses motoru indiriliyor, lütfen bekleyin...';
+              render();
+              try {
+                const downloaded = await onEnsureAudio?.(state);
+                if (downloaded) {
+                  state.playerName = downloaded.replace(/^.*[\\/]/, '');
+                  state.modal = null;
+                  state.status = 'Ses motoru başarıyla kuruldu!';
+                  if (state.stations?.[state.selected]) {
+                    await onPlay(state.stations[state.selected], state);
+                  }
+                } else {
+                  state.modal.status = 'İndirme tamamlanamadı. winget install Gyan.FFmpeg deneyin.';
+                }
+              } catch (err) {
+                state.modal.status = `Hata: ${err.message}`;
+              }
+              render();
+              return;
+            }
+            if (event.key === 'escape' || event.key === 'q') {
               state.modal = null;
               render();
             }
@@ -847,8 +976,100 @@ async function runTui({
             return;
           }
 
+          // Mouse clicks on Tab 3: FOCUS
+          if (state.activeTab === 3) {
+            // Preset row (y === 5)
+            if (y === 5) {
+              if (x >= 11 && x <= 27) {
+                state.pomodoro.preset = '25/5';
+                state.pomodoro.focusMinutes = 25;
+                state.pomodoro.breakMinutes = 5;
+                state.pomodoro.phase = 'focus';
+                state.pomodoro.secondsLeft = 25 * 60;
+                state.pomodoro.running = false;
+                state.status = 'Switched to 25/5 Classic';
+                render();
+                return;
+              }
+              if (x >= 29 && x <= 49) {
+                state.pomodoro.preset = '50/10';
+                state.pomodoro.focusMinutes = 50;
+                state.pomodoro.breakMinutes = 10;
+                state.pomodoro.phase = 'focus';
+                state.pomodoro.secondsLeft = 50 * 60;
+                state.pomodoro.running = false;
+                state.status = 'Switched to 50/10 Deep Work';
+                render();
+                return;
+              }
+            }
+
+            // Big Clock Box (y >= 8 && y <= 10)
+            if (y >= 8 && y <= 10) {
+              state.pomodoro.running = !state.pomodoro.running;
+              state.status = state.pomodoro.running ? 'Focus session running' : 'Focus session paused';
+              render();
+              return;
+            }
+
+            // Controls row (y === 15)
+            if (y === 15) {
+              if (x >= 12 && x <= 28) {
+                state.pomodoro.running = !state.pomodoro.running;
+                state.status = state.pomodoro.running ? 'Focus session running' : 'Focus session paused';
+              } else if (x >= 29 && x <= 55) {
+                if (state.pomodoro.preset === '25/5') {
+                  state.pomodoro.preset = '50/10';
+                  state.pomodoro.focusMinutes = 50;
+                  state.pomodoro.breakMinutes = 10;
+                } else {
+                  state.pomodoro.preset = '25/5';
+                  state.pomodoro.focusMinutes = 25;
+                  state.pomodoro.breakMinutes = 5;
+                }
+                state.pomodoro.phase = 'focus';
+                state.pomodoro.secondsLeft = state.pomodoro.focusMinutes * 60;
+                state.pomodoro.running = false;
+                state.status = `Switched preset to ${state.pomodoro.preset}`;
+              } else if (x >= 56 && x <= 72) {
+                if (state.pomodoro.phase === 'focus') {
+                  state.pomodoro.phase = 'break';
+                  state.pomodoro.secondsLeft = state.pomodoro.breakMinutes * 60;
+                } else {
+                  state.pomodoro.phase = 'focus';
+                  state.pomodoro.secondsLeft = state.pomodoro.focusMinutes * 60;
+                }
+                state.pomodoro.running = false;
+                state.status = `Switched to ${state.pomodoro.phase === 'focus' ? 'Focus' : 'Break'} phase`;
+              } else if (x >= 73 && x <= 85) {
+                const total = (state.pomodoro.phase === 'focus' ? state.pomodoro.focusMinutes : state.pomodoro.breakMinutes) * 60;
+                state.pomodoro.secondsLeft = total;
+                state.pomodoro.running = false;
+                state.status = 'Focus timer reset';
+              }
+              render();
+              return;
+            }
+
+            // Focus Channels row (y === 18)
+            if (y === 18) {
+              if (x >= 4 && x <= 22) {
+                const lofi = stations.find(s => s.id === 'lofi');
+                if (lofi) { await onPlay(lofi, state); state.paused = false; render(); return; }
+              }
+              if (x >= 24 && x <= 45) {
+                const classic = stations.find(s => s.id === 'classic');
+                if (classic) { await onPlay(classic, state); state.paused = false; render(); return; }
+              }
+              if (x >= 47 && x <= 65) {
+                const jazz = stations.find(s => s.id === 'cazz');
+                if (jazz) { await onPlay(jazz, state); state.paused = false; render(); return; }
+              }
+            }
+          }
+
           // Bottom Playbar click
-          const playbarStart = state.activeTab === 1 ? 6 + Math.max(stations.length, 10) + 1 : 16;
+          const playbarStart = state.activeTab === 1 ? 6 + Math.max(stations.length, 10) + 1 : (state.activeTab === 3 ? 21 : 16);
 
           // Track row (play/pause toggle)
           if (y === playbarStart + 1) {
@@ -909,9 +1130,15 @@ async function runTui({
                 state.modal = { type: 'choice' };
               }
             } else if (x >= 66 && x <= 78) {
-              // Study
-              const minutes = await onStudy(state);
-              state.studyMinutes = minutes;
+              // Focus
+              if (state.activeTab !== 3) {
+                state.activeTab = 3;
+                state.pomodoro.running = true;
+                state.status = 'Focus session active (25/5)';
+              } else {
+                state.pomodoro.running = !state.pomodoro.running;
+                state.status = state.pomodoro.running ? 'Focus session running' : 'Focus session paused';
+              }
             } else if (x >= 79 && x <= 90) {
               // Quit
               cleanup();
@@ -956,7 +1183,6 @@ async function runTui({
             render();
             break;
           case 'space':
-          case 'p':
             if (!state.active) {
               if (!state.playerName) {
                 state.modal = {type: 'audio_engine_missing'};
@@ -969,6 +1195,60 @@ async function runTui({
               state.paused = await onPause(state);
             }
             render();
+            break;
+          case 'p':
+            if (state.activeTab === 3) {
+              if (state.pomodoro.preset === '25/5') {
+                state.pomodoro.preset = '50/10';
+                state.pomodoro.focusMinutes = 50;
+                state.pomodoro.breakMinutes = 10;
+              } else {
+                state.pomodoro.preset = '25/5';
+                state.pomodoro.focusMinutes = 25;
+                state.pomodoro.breakMinutes = 5;
+              }
+              state.pomodoro.phase = 'focus';
+              state.pomodoro.secondsLeft = state.pomodoro.focusMinutes * 60;
+              state.pomodoro.running = false;
+              state.status = `Switched preset to ${state.pomodoro.preset}`;
+              render();
+            } else {
+              if (!state.active) {
+                if (!state.playerName) {
+                  state.modal = {type: 'audio_engine_missing'};
+                  render();
+                  break;
+                }
+                await onPlay(stations[state.selected], state);
+                state.paused = false;
+              } else {
+                state.paused = await onPause(state);
+              }
+              render();
+            }
+            break;
+          case 'b':
+            if (state.activeTab === 3) {
+              if (state.pomodoro.phase === 'focus') {
+                state.pomodoro.phase = 'break';
+                state.pomodoro.secondsLeft = state.pomodoro.breakMinutes * 60;
+              } else {
+                state.pomodoro.phase = 'focus';
+                state.pomodoro.secondsLeft = state.pomodoro.focusMinutes * 60;
+              }
+              state.pomodoro.running = false;
+              state.status = `Switched to ${state.pomodoro.phase === 'focus' ? 'Focus' : 'Break'} phase`;
+              render();
+            }
+            break;
+          case 'r':
+            if (state.activeTab === 3) {
+              const total = (state.pomodoro.phase === 'focus' ? state.pomodoro.focusMinutes : state.pomodoro.breakMinutes) * 60;
+              state.pomodoro.secondsLeft = total;
+              state.pomodoro.running = false;
+              state.status = 'Focus timer reset';
+              render();
+            }
             break;
           case 'f':
             state.quality = onQuality(state);
@@ -1003,7 +1283,14 @@ async function runTui({
             render();
             break;
           case 's':
-            state.studyMinutes = await onStudy(state);
+            if (state.activeTab === 3) {
+              state.pomodoro.running = !state.pomodoro.running;
+              state.status = state.pomodoro.running ? 'Focus session running' : 'Focus session paused';
+            } else {
+              state.activeTab = 3;
+              state.pomodoro.running = true;
+              state.status = 'Focus session active (25/5)';
+            }
             render();
             break;
           case 'a':
@@ -1017,6 +1304,7 @@ async function runTui({
             break;
         }
       }
+
     };
 
     const dataHandler = async (chunk) => {

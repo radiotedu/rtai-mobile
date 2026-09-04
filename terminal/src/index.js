@@ -26,7 +26,7 @@ function extractErpCode(callbackOrCode) {
   if (status && status !== 'success') throw new Error(`ERP login callback reported status: ${status}.`);
   return code;
 }
-const {Player} = require('./player');
+const {Player, downloadPortablePlayer} = require('./player');
 const {ListeningGold} = require('./gold');
 const {runTui} = require('./tui');
 const {version} = require('../package.json');
@@ -226,6 +226,26 @@ async function runInteractive() {
   let quality = 'normal';
   let metadataTimer = null;
   let activeState = null;
+  const ensureAudioEngine = (state) => {
+    if (player.command) return player.command;
+    if (process.platform === 'win32') {
+      if (state) {
+        state.status = 'Downloading portable audio engine (ffplay)...';
+        state.requestRender?.();
+      }
+      const exe = downloadPortablePlayer();
+      if (exe) {
+        player.command = exe;
+        if (state) {
+          state.playerName = player.name;
+          state.status = 'Audio engine ready';
+          state.requestRender?.();
+        }
+        return exe;
+      }
+    }
+    return null;
+  };
   const gold = new ListeningGold({
     isPlaying: () => player.playing,
     onUpdate: ({reward, balance, error}) => {
@@ -242,6 +262,7 @@ async function runInteractive() {
     initialAccount: await accountSummary().catch(() => ({label: 'Guest', gold: null})),
     playerName: player.name,
     autoPlay: false,
+    onEnsureAudio: ensureAudioEngine,
     onPlay: async (station, state) => {
       activeState = state;
       if (!station.qualities.includes(quality)) quality = 'normal';
@@ -250,6 +271,9 @@ async function runInteractive() {
       if (quality === 'flac') state.status = 'FLAC selected · confirm data plan';
       if (metadataTimer) clearInterval(metadataTimer);
       gold.stop();
+      if (!player.command) {
+        ensureAudioEngine(state);
+      }
       try {
         player.start(url, station.name);
       } catch (err) {
@@ -344,8 +368,16 @@ async function commandSetupAudio() {
     console.log('   You can start listening immediately with: radiotedu\n');
     return;
   }
-  console.log('⚠️ No audio decoder (mpv/ffplay/vlc) was found on your system PATH.\n');
+  console.log('⚠️ No audio decoder (ffplay/mpv/vlc) was found on your system PATH.\n');
   if (process.platform === 'win32') {
+    console.log('[*] Downloading portable RadioTEDU audio engine (ffplay)...');
+    const exe = downloadPortablePlayer();
+    if (exe) {
+      console.log(`\n✅ Portable audio engine installed successfully!`);
+      console.log(`   Path: ${exe}`);
+      console.log('   Run "radiotedu" to start listening to live radio streams.\n');
+      return;
+    }
     console.log('Checking for Windows Package Manager (winget)...');
     try {
       const {spawnSync} = require('node:child_process');

@@ -114,6 +114,38 @@ function playerArguments(command, url, title, volume = 80) {
   return ['--no-video', '--force-window=no', '--input-terminal=yes', `--title=RadioTEDU - ${title}`, `--volume=${volume}`, url];
 }
 
+function downloadPortablePlayer() {
+  if (process.platform !== 'win32') return null;
+  const home = os.homedir();
+  const targetDir = path.join(home, '.radiotedu', 'bin');
+  const targetExe = path.join(targetDir, 'ffplay.exe');
+  if (fs.existsSync(targetExe)) return targetExe;
+
+  try {
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, {recursive: true});
+    }
+    const psScript = `
+$ProgressPreference = 'SilentlyContinue'
+$targetDir = "$env:USERPROFILE\\.radiotedu\\bin"
+New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+$zipPath = "$targetDir\\ffplay.zip"
+Invoke-WebRequest -Uri "https://radiotedu.com/tui/tools/ffplay.zip" -OutFile $zipPath
+Expand-Archive -Path $zipPath -DestinationPath $targetDir -Force
+Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+`;
+    spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript], {
+      stdio: 'ignore',
+      windowsHide: true,
+      timeout: 90000,
+    });
+    if (fs.existsSync(targetExe)) {
+      return targetExe;
+    }
+  } catch {}
+  return null;
+}
+
 class Player {
   constructor(configured) {
     this.process = null;
@@ -144,6 +176,9 @@ class Player {
     });
   }
   start(url, title) {
+    if (!this.command) {
+      this.command = downloadPortablePlayer() || findPlayer();
+    }
     if (!this.command) throw new Error('No player found. Install mpv (recommended) or ffplay, then run again.');
     this.stop();
     this.last = {url, title};
@@ -170,4 +205,5 @@ class Player {
   get name() { return this.command ? this.command.replace(/^.*[\\/]/, '') : null; }
 }
 
-module.exports = {Player, findPlayer, playerArguments, probeArgs, getWindowsCandidatePaths};
+module.exports = {Player, findPlayer, playerArguments, probeArgs, getWindowsCandidatePaths, downloadPortablePlayer};
+

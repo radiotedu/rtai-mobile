@@ -6,11 +6,9 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 36
         targetSdkVersion = 36
-        ndkVersion = "26.1.10909125"
-        // React Native 0.76's Gradle plugin is compiled against Kotlin 1.9.
-        // Keep platform libraries on their newest Kotlin-1.9-compatible lines
-        // below instead of loading the binary-incompatible Kotlin 2.1 plugin.
-        kotlinVersion = "1.9.24"
+        ndkVersion = "28.0.13004108"
+        // React Native 0.77 pairs Kotlin 2.0 with 16 KB-compatible core binaries.
+        kotlinVersion = "2.0.21"
     }
     repositories {
         google()

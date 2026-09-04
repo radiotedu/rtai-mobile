@@ -7,6 +7,11 @@ on:
         description: Release tag (for example, v1.0.0)
         required: true
         type: string
+      publish:
+        description: Publish only after candidate runtime verification
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -17,7 +22,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build and publish signed Android packages
+    name: Build and verify signed Android candidate
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -138,6 +143,19 @@ jobs:
           } > mobile/android/keystore.properties
           chmod 600 mobile/android/keystore.properties
 
+      - name: Verify mobile source checks
+        working-directory: mobile
+        run: |
+          npm test -- --runInBand
+          npx tsc --noEmit
+          npx eslint . --quiet
+          npm run audit:android
+
+      - name: Rebuild FLAC with 16 KB support
+        run: |
+          sdkmanager "ndk;28.0.13004108"
+          python3 scripts/build-flac-16k.py
+
       - name: Build signed phone, TV, and Wear packages
         working-directory: mobile/android
         run: >-
@@ -188,6 +206,11 @@ jobs:
             # integrity without treating the expected private CA chain as a
             # strict-validation failure.
             jarsigner -verify "$aab"
+            if [[ "$module" == app ]]; then
+              python3 scripts/verify-android-identity.py "$apk" --tools "$(dirname "$apksigner")" --sha "$GITHUB_SHA"
+              python3 scripts/verify-android-native.py "$apk" --zipalign "$(dirname "$apksigner")/zipalign"
+              python3 scripts/verify-android-native.py "$aab"
+            fi
             cp "$apk" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.apk"
             cp "$aab" "$asset_dir/RadioTEDU-${labels[$module]}-${RELEASE_TAG}.aab"
           done
@@ -214,9 +237,11 @@ jobs:
           if-no-files-found: error
 
       - name: Publish GitHub Release
+        if: ${{ inputs.publish }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
           name: RadioTEDU Mobile ${{ inputs.tag }}
           files: ${{ steps.verify_packages.outputs.asset_dir }}/*
           fail_on_unmatched_files: true

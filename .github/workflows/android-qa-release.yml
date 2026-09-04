@@ -58,6 +58,10 @@ jobs:
       - run: node scripts/verify-live-services.mjs --allow-unavailable-streams --allow-unavailable-voting
 
       - run: chmod +x mobile/android/gradlew
+      - name: Rebuild FLAC with 16 KB support
+        run: |
+          sdkmanager "ndk;28.0.13004108"
+          python3 scripts/build-flac-16k.py
 
       - name: Build phone with Android Auto, TV, and Wear QA APKs
         working-directory: mobile/android

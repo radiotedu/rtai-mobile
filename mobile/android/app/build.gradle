@@ -88,6 +88,19 @@ def jscFlavor = 'org.webkit:android-jsc:+'
 // image containers. Metro only parses local bundle assets, so reject those
 // formats before any bundle task can inspect them.
 def mobileRoot = rootProject.projectDir.parentFile
+// Never silently package the old 4 KB-only native FLAC decoder.
+tasks.register('verifyFlac16kInput') {
+    doLast {
+        if (!rootProject.file('build/vendor/exoplayer-flac-2.19.0-radiotedu.aar').isFile()) {
+            throw new GradleException('Run python3 scripts/build-flac-16k.py on the build computer before Gradle.')
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name == 'preBuild') {
+        task.dependsOn('verifyFlac16kInput')
+    }
+}
 def unsafeBundlerAssets = fileTree(mobileRoot) {
     include 'src/**/*.icns', 'src/**/*.jxl', 'src/**/*.heif', 'src/**/*.heic'
     include 'assets/**/*.icns', 'assets/**/*.jxl', 'assets/**/*.heif', 'assets/**/*.heic'
@@ -225,7 +238,7 @@ dependencies {
     // The patched KotlinAudio builder enables extension renderers and this
     // native libFLAC module supplies the decoder used in PREFER mode.
     implementation(files("../vendor/kotlinaudio-v2.1.0-radiotedu.aar"))
-    implementation(files("../vendor/exoplayer-flac-2.19.0-radiotedu.aar"))
+    implementation(files("../build/vendor/exoplayer-flac-2.19.0-radiotedu.aar"))
     implementation("com.google.android.exoplayer:exoplayer:2.19.0")
     implementation("com.google.android.exoplayer:extension-mediasession:2.19.0")
     implementation("io.coil-kt:coil:2.2.0")

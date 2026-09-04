@@ -63,6 +63,11 @@ jobs:
 
       - run: chmod +x mobile/android/gradlew
 
+      - name: Rebuild FLAC with 16 KB support
+        run: |
+          sdkmanager "ndk;28.0.13004108"
+          python3 scripts/build-flac-16k.py
+
       - name: Build phone and Android Auto; test TV and Wear
         working-directory: mobile/android
         run: >-

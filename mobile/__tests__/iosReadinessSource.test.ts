@@ -7,6 +7,32 @@ const read = (relative: string) =>
   fs.readFileSync(path.join(root, relative), 'utf8');
 
 describe('iOS release readiness', () => {
+  it('supplies RN 0.77 dependencies before startup and overrides its bundle selector', () => {
+    const delegate = read('ios/RadioTEDUMobile/AppDelegate.mm');
+    expect(delegate).toContain(
+      '#import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>',
+    );
+    const provider = delegate.indexOf(
+      'self.dependencyProvider = [RCTAppDependencyProvider new]',
+    );
+    const startup = delegate.indexOf('[super application:application didFinishLaunchingWithOptions:');
+    expect(provider).toBeGreaterThanOrEqual(0);
+    expect(startup).toBeGreaterThan(provider);
+    expect(delegate).toMatch(/-\s*\(NSURL\s*\*\)bundleURL\s*\{/);
+    expect(delegate).toContain('return [self bundleURL];');
+  });
+
+  it('targets at least the React Native minimum iOS version in every build configuration', () => {
+    const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
+    const targets = Array.from(
+      project.matchAll(/IPHONEOS_DEPLOYMENT_TARGET = (\d+)\.(\d+);/g),
+    );
+    expect(targets.length).toBeGreaterThan(0);
+    for (const [, major, minor] of targets) {
+      expect(Number(major) * 100 + Number(minor)).toBeGreaterThanOrEqual(1501);
+    }
+  });
+
   it('uses the public app name independently of the internal product name', () => {
     const plist = read('ios/RadioTEDUMobile/Info.plist').replace(/\r\n/g, '\n');
     expect(plist).toContain(

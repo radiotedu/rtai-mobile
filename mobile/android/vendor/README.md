@@ -19,3 +19,13 @@ Rebuild from the Gradle-cached upstream AAR:
 
 Upstream: `com.github.doublesymmetry:kotlinaudio:v2.1.0`, commit
 `bf71120704bfe4be2311cf86fc1e2ee1c3c702b7`, Apache License 2.0.
+
+## 16 KB build (1.3.6)
+
+The checked-in FLAC AAR supplies its existing Java classes only. Before Android
+builds, run `python3 scripts/build-flac-16k.py` with NDK 28.0.13004108 installed.
+The script rebuilds JNI from immutable ExoPlayer/FLAC commits into ignored
+`android/build/vendor/`; Gradle packages that regenerated AAR. The original
+4 KB JNI binaries are never used by current app builds. Verify final APK and
+AAB ELF segments with `scripts/verify-android-native.py`; APK verification also
+requires Android SDK zipalign. No local production-server builds.

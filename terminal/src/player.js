@@ -114,7 +114,7 @@ function playerArguments(command, url, title, volume = 80) {
   return ['--no-video', '--force-window=no', '--input-terminal=yes', `--title=RadioTEDU - ${title}`, `--volume=${volume}`, url];
 }
 
-function downloadPortablePlayer() {
+function downloadPortablePlayer(onProgress) {
   if (process.platform !== 'win32') return null;
   const home = os.homedir();
   const targetDir = path.join(home, '.radiotedu', 'bin');
@@ -129,8 +129,66 @@ function downloadPortablePlayer() {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, {recursive: true});
     }
+
+    // Try fast zip download and extraction first (~38MB vs 104MB raw exe)
+    const tempZip = path.join(targetDir, `ffplay_${Date.now()}.zip`);
+    const dlZipScript = `
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
+
+function download(url, dest, cb) {
+  const mod = url.startsWith('https:') ? https : http;
+  mod.get(url, (res) => {
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      return download(res.headers.location, dest, cb);
+    }
+    if (res.statusCode !== 200) {
+      return cb(new Error('HTTP ' + res.statusCode));
+    }
+    const file = fs.createWriteStream(dest);
+    res.pipe(file);
+    file.on('finish', () => {
+      file.close(() => cb(null));
+    });
+    file.on('error', (err) => {
+      try { fs.unlinkSync(dest); } catch {}
+      cb(err);
+    });
+  }).on('error', cb);
+}
+
+download('https://radiotedu.com/tui/tools/ffplay.zip', process.argv[1], (err) => {
+  if (err) process.exit(1);
+  process.exit(0);
+});
+`;
+    onProgress?.('Ses motoru indiriliyor (hızlı paket: 38 MB)...');
+    const zipRes = spawnSync(process.execPath, ['-e', dlZipScript, tempZip], {
+      windowsHide: true,
+      timeout: 120000,
+    });
+    if (zipRes.status === 0 && fs.existsSync(tempZip) && fs.statSync(tempZip).size > 5000000) {
+      onProgress?.('Ses motoru arşivi açılıyor...');
+      try {
+        spawnSync('powershell.exe', [
+          '-NoProfile', '-NonInteractive', '-Command',
+          `Expand-Archive -Path '${tempZip}' -DestinationPath '${targetDir}' -Force`
+        ], {windowsHide: true, timeout: 30000});
+      } catch {}
+      try { fs.unlinkSync(tempZip); } catch {}
+      if (fs.existsSync(targetExe) && fs.statSync(targetExe).size > 10000000) {
+        onProgress?.('Ses motoru hazır!');
+        return targetExe;
+      }
+    }
+    if (fs.existsSync(tempZip)) {
+      try { fs.unlinkSync(tempZip); } catch {}
+    }
+
+    // Fallback: direct exe download if zip extraction failed
     const tempExe = path.join(targetDir, `ffplay_${Date.now()}.tmp`);
-    const dlScript = `
+    const dlExeScript = `
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -161,15 +219,17 @@ download('https://radiotedu.com/tui/tools/ffplay.exe', process.argv[1], (err) =>
   process.exit(0);
 });
 `;
-    const res = spawnSync(process.execPath, ['-e', dlScript, tempExe], {
+    onProgress?.('Ses motoru indiriliyor (doğrudan ikili)...');
+    const exeRes = spawnSync(process.execPath, ['-e', dlExeScript, tempExe], {
       windowsHide: true,
-      timeout: 120000,
+      timeout: 180000,
     });
-    if (res.status === 0 && fs.existsSync(tempExe) && fs.statSync(tempExe).size > 10000000) {
+    if (exeRes.status === 0 && fs.existsSync(tempExe) && fs.statSync(tempExe).size > 10000000) {
       if (fs.existsSync(targetExe)) {
         try { fs.unlinkSync(targetExe); } catch {}
       }
       fs.renameSync(tempExe, targetExe);
+      onProgress?.('Ses motoru hazır!');
       return targetExe;
     }
     if (fs.existsSync(tempExe)) {
@@ -189,19 +249,58 @@ class Player {
     this.volume = 80;
     this.lastError = null;
     this.lastExitCode = null;
+    this.driverIndex = 0;
   }
-  launch() {
+  launch(driverIndex = 0) {
     if (!this.command || !this.last) return;
+    this.driverIndex = driverIndex;
+    const isWindows = process.platform === 'win32';
+    const isFfplay = String(this.command).toLowerCase().includes('ffplay');
+
+    // On Windows, SDL2 in ffplay defaults to WASAPI which frequently fails with
+    // "WASAPI can't find requested audio endpoint: Element not found".
+    // DirectSound is the most universally compatible audio driver on Windows.
+    const drivers = (isWindows && isFfplay) ? ['directsound', 'wasapi', 'winmm'] : [null];
+    const activeDriver = drivers[driverIndex] || null;
+
+    const env = {...process.env};
+    if (activeDriver) {
+      env.SDL_AUDIODRIVER = activeDriver;
+    }
+
     const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume), {
       stdio: ['ignore', 'ignore', 'pipe'],
       windowsHide: true,
+      env,
     });
     this.process = child;
     this.paused = false;
     let stderrBuffer = '';
+
     child.stderr?.on('data', (chunk) => {
-      stderrBuffer = (stderrBuffer + chunk.toString()).slice(-2000);
+      const text = chunk.toString();
+      stderrBuffer = (stderrBuffer + text).slice(-3000);
+
+      // In ffplay on Windows, if SDL fails to open audio endpoint, it may keep running
+      // silently without rendering any sound. Detect this and fail-over immediately:
+      if (isFfplay && isWindows && (
+        text.includes("can't find requested audio endpoint") ||
+        text.includes("DirectSoundCreate8: No audio device found") ||
+        text.includes("No audio device found") ||
+        text.includes("audio open failed") ||
+        text.includes("Unsupported audio format")
+      )) {
+        if (driverIndex + 1 < drivers.length) {
+          if (this.process === child) {
+            this.process = null;
+            try { child.kill(); } catch {}
+            this.launch(driverIndex + 1);
+            return;
+          }
+        }
+      }
     });
+
     child.once('exit', (code) => {
       if (this.process === child) {
         this.process = null;
@@ -213,6 +312,10 @@ class Player {
               stderrBuffer.includes('DirectSoundCreate8') ||
               stderrBuffer.includes('audio open failed') ||
               stderrBuffer.includes('Unsupported audio format')) {
+            if (isFfplay && isWindows && driverIndex + 1 < drivers.length) {
+              this.launch(driverIndex + 1);
+              return;
+            }
             this.lastError = new Error('Ses donanımı bulunamadı (ses kartı/hoparlör yok)');
           } else {
             this.lastError = new Error(`Ses motoru kapandı (kod: ${code})`);
@@ -221,6 +324,7 @@ class Player {
         }
       }
     });
+
     child.on('error', (err) => {
       this.lastError = err;
       if (this.process === child) this.process = null;
@@ -231,14 +335,14 @@ class Player {
     if (!this.command) {
       this.command = downloadPortablePlayer() || findPlayer();
     }
-    if (!this.command) throw new Error('No player found. Install mpv (recommended) or ffplay, then run again.');
+    if (!this.command) throw new Error('Ses motoru bulunamadı. Lütfen "1" tuşuna basarak indirin veya mpv kurun.');
     this.stop();
     this.last = {url, title};
-    this.launch();
+    this.launch(0);
   }
   pause() {
     if (!this.last) return false;
-    if (this.paused) this.launch();
+    if (this.paused) this.launch(0);
     else { if (this.process) this.process.kill(); this.process = null; this.paused = true; }
     return this.paused;
   }
@@ -248,7 +352,7 @@ class Player {
       const last = this.last;
       this.stop();
       this.last = last;
-      this.launch();
+      this.launch(0);
     }
     return this.volume;
   }
@@ -258,4 +362,5 @@ class Player {
 }
 
 module.exports = {Player, findPlayer, playerArguments, probeArgs, getWindowsCandidatePaths, downloadPortablePlayer};
+
 

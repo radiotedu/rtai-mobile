@@ -236,15 +236,21 @@ async function runInteractive() {
     if (player.command) return player.command;
     if (process.platform === 'win32') {
       if (state) {
-        state.status = 'Downloading portable audio engine (ffplay)...';
+        state.status = 'Ses motoru (ffplay) hazırlanıyor...';
         state.requestRender?.();
       }
-      const exe = downloadPortablePlayer();
+      const exe = downloadPortablePlayer((msg) => {
+        if (state) {
+          state.status = msg;
+          if (state.modal) state.modal.status = msg;
+          state.requestRender?.();
+        }
+      });
       if (exe) {
         player.command = exe;
         if (state) {
           state.playerName = player.name;
-          state.status = 'Audio engine ready';
+          state.status = 'Ses motoru hazır';
           state.requestRender?.();
         }
         return exe;

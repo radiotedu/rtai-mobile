@@ -31,3 +31,5 @@ newss/
 output/
 stations-page-verification/
 *.tgz
+terminal/changes/
+*.bak

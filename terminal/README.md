@@ -4,10 +4,10 @@
 
 **The Spotify-TUI inspired terminal client, 32-band real-time audio spectrum visualizer, Focus Pomodoro lounge, server-verified Gold listening engine, and campus Study companion for RadioTEDU.**
 
-[![Version](https://img.shields.io/badge/version-v1.4.2-brightgreen.svg?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.4.3-brightgreen.svg?style=flat-square)](package.json)
 [![Author](https://img.shields.io/badge/author-akgularda-blue.svg?style=flat-square&logo=github)](https://github.com/akgularda)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-informational.svg?style=flat-square&logo=node.js)](https://nodejs.org)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](https://github.com/radiotedu/rtai-mobile)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](https://github.com/radiotedu/radiotedu-tui)
 [![Audio Engines](https://img.shields.io/badge/audio-mpv%20%7C%20ffplay%20(auto--fetch)-orange.svg?style=flat-square)](https://mpv.io)
 [![Dependencies](https://img.shields.io/badge/dependencies-0%20(Pure%20Node.js)-success.svg?style=flat-square)](package.json)
 [![License](https://img.shields.io/badge/license-RadioTEDU-red.svg?style=flat-square)](https://radiotedu.com)
@@ -48,7 +48,7 @@
 ## 🎨 Interface Layout
 
 ```text
-╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.2 ────────────────────────────────────────── [👤 akgularda  ◆ 420 Gold] ─╮
+╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.3 ────────────────────────────────────────── [👤 akgularda  ◆ 420 Gold] ─╮
 │  [1: Stations]   2: Visualizer   3: Study & Lyrics   4: Account                                               │
 ├───────────────────────────────────┬───────────────────────────────────────────────────────────────────────────┤
 │ STATIONS (9 CHANNELS)             │ LIVE AUDIO SPECTRUM & STREAM INFO                                         │
@@ -106,7 +106,7 @@ Use the automated curl installer script:
 ```bash
 curl -sSL https://radiotedu.com/install.sh | bash
 # or from GitHub:
-curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/radiotedu/radiotedu-tui/main/install.sh | bash
 ```
 
 ---
@@ -116,7 +116,7 @@ curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal
 Install globally from the official Git repository:
 
 ```bash
-npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
+npm install -g git+https://github.com/radiotedu/radiotedu-tui.git
 ```
 
 ---
@@ -124,8 +124,8 @@ npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
 ### Option 4: Run Directly from Source
 
 ```bash
-git clone https://github.com/radiotedu/rtai-mobile.git
-cd rtai-mobile/terminal
+git clone https://github.com/radiotedu/radiotedu-tui.git
+cd radiotedu-tui
 node src/index.js
 ```
 
@@ -220,33 +220,34 @@ RadioTEDU broadcasts across 9 official mounts, supporting multi-quality fallback
 
 ---
 
-## 🔐 Authentication & ERP SSO
+## 🔐 Authentication & Single Sign-On
 
-`radiotedu-tui` provides a unified sign-in flow supporting two distinct authentication backends:
+`radiotedu-tui` provides a unified sign-in flow supporting GitHub CLI style automated device pairing, direct email/password login, and TEDÜ ERP SSO:
 
 ```text
 ╭─ 🔐 RADIOTEDU SIGN IN // HESAP GİRİŞİ ────────────────────────╮
 │  Lütfen oturum açma yöntemini seçin:                         │
 │                                                              │
-│  [1] 📧 RadioTEDU Hesabı (E-Posta & Şifre)                   │
-│  [2] 🏛️ TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)          │
+│  [1] 🌐 Web ile Oturum Aç (Otomatik Onay / GitHub CLI Stili) │
+│  [2] 📧 RadioTEDU Hesabı (E-Posta & Şifre)                   │
+│  [3] 🏛️ TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)          │
 │                                                              │
 │  ──────────────────────────────────────────────────────────  │
-│  Klavyeden [1] veya [2]'ye basın  ·  [Esc] İptal             │
+│  Klavyeden [1], [2] veya [3]'e basın  ·  [Esc] İptal         │
 ╰──────────────────────────────────────────────────────────────╯
 ```
 
-### 1. RadioTEDU Account (Email & Password)
-Press `1` in the modal dialog. Enter your email and password inside the terminal modal. Passwords are securely masked with asterisks.
+### 1. Web ile Oturum Aç (GitHub CLI Stili — Önerilen)
+Klavyeden `1` tuşuna basın. Terminal otomatik olarak benzersiz bir cihaz kodu üretir ve tarayıcınızda `https://radiotedu.com/device?code=ABCD-EFGH` adresini açar:
+1. Tarayıcınızda aktif RadioTEDU veya TEDÜ ERP oturumunuz varsa tek tıkla **"Cihazı Onayla"** diyerek yetki verebilirsiniz.
+2. Hesabınız yoksa aynı sayfa üzerinden saniyeler içinde yeni dinleyici hesabı oluşturabilirsiniz.
+3. Onay verdiğiniz anda terminal otomatik olarak oturumu algılar, JWT token'larını kaydeder ve Gold bakiyenizi yükler.
 
-### 2. TEDÜ / ERP Device Pairing Code (8-Character Code)
-Press `2` in the modal dialog:
-1. The terminal automatically opens the official pairing page:
-   `https://radiotedu.com/erp/device`
-2. Sign in with your TED University student or staff credentials in your browser.
-3. Your browser will display an 8-character device pairing code.
-4. Type or paste the code into the terminal modal (e.g. `ABCD-1234`).
-5. Press `Enter` to pair. The terminal exchanges the code and loads your verified account profile and Gold balance.
+### 2. RadioTEDU Hesabı (E-Posta & Şifre)
+Klavyeden `2` tuşuna basın. E-posta ve şifrenizi doğrudan terminal penceresinde girin. Şifreniz maskelenerek korunur.
+
+### 3. TEDÜ / ERP Eşleştirme Kodu (8 Haneli Kod)
+Klavyeden `3` tuşuna basın. Tarayıcınızda `https://radiotedu.com/erp/device` sayfası açılır, ekrandaki 8 haneli kodu terminale girerek eşleştirebilirsiniz.
 
 ### Security Architecture
 
@@ -363,7 +364,7 @@ terminal/
 Developed and maintained with ❤️ by **Arda Akgül**:
 
 - **GitHub**: [@akgularda](https://github.com/akgularda)
-- **Repository**: [radiotedu/rtai-mobile](https://github.com/radiotedu/rtai-mobile)
+- **Repository**: [radiotedu/radiotedu-tui](https://github.com/radiotedu/radiotedu-tui)
 - **Organization**: RadioTEDU Ankara Studios · TED University ([radiotedu.com](https://radiotedu.com))
 
 ---

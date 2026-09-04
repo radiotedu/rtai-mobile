@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RadioTEDU CLI &amp; Terminal Audio Console | radiotedu-tui</title>
+  <meta name="description" content="Official RadioTEDU Terminal &amp; CLI audio console. Live stream, song voting, studio chat, and listening Gold rewards directly inside your terminal.">
+  <meta name="theme-color" content="#0b0b0c">
+
+  <link rel="icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-32x32.png" sizes="32x32">
+  <link rel="icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-192x192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-180x180.png">
+
+  <!-- RadioTEDU Design System Styles -->
+  <link rel="stylesheet" href="https://radiotedu.com/wp-content/themes/radiotedu/assets/css/fonts.css">
+  <link rel="stylesheet" href="https://radiotedu.com/wp-content/themes/radiotedu/assets/css/app.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* RadioTEDU TUI Page Specific Overrides and Enhancements */
+    :root {
+      --rt-tui-dark: #0b0b0d;
+      --rt-tui-card: #ffffff;
+      --rt-tui-border: rgba(11, 11, 12, 0.14);
+      --rt-tui-subtext: #5e606b;
+      --rt-tui-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    body {
+      background-color: var(--rt-paper, #f7f7f4);
+      color: var(--rt-ink, #0b0b0c);
+      font-family: "Albert Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+
+    .font-mono {
+      font-family: var(--rt-tui-mono) !important;
+    }
+
+    .serif-title {
+      font-family: "DM Serif Display", Georgia, serif !important;
+    }
+
+    /* Top Red Ribbon */
+    .rt-top-ribbon {
+      height: 3px;
+      background: var(--rt-red, #ed1c24);
+      width: 100%;
+    }
+
+    /* Header Nav tweaks */
+    .rt-header {
+      background: var(--rt-paper, #f7f7f4);
+      border-bottom: 1px solid var(--rt-line, rgba(11, 11, 12, 0.14));
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .rt-header__inner {
+      width: var(--rt-shell, min(calc(100% - 40px), 1440px));
+      height: 74px;
+      margin-inline: auto;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: clamp(20px, 3vw, 50px);
+    }
+
+    .rt-logo {
+      display: block;
+      width: 175px;
+      line-height: 0;
+    }
+
+    .rt-logo__image {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .rt-header__quick {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(16px, 2.5vw, 36px);
+    }
+
+    .rt-header__quick a {
+      position: relative;
+      color: var(--rt-gray-600, #686865);
+      font-size: 0.72rem;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: color 0.2s;
+      white-space: nowrap;
+    }
+
+    .rt-header__quick a:hover,
+    .rt-header__quick a.active {
+      color: var(--rt-ink, #0b0b0c);
+    }
+
+    .rt-header__quick a.active::before,
+    .rt-header__quick a:hover::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -6px;
+      height: 2px;
+      background: var(--rt-red, #ed1c24);
+    }
+
+    .rt-header__actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-header-pair {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      background: var(--rt-ink, #0b0b0c);
+      color: var(--rt-white, #fff);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-header-pair:hover {
+      background: var(--rt-red, #ed1c24);
+      border-color: var(--rt-red, #ed1c24);
+      color: #fff;
+    }
+
+    .btn-header-pair .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--rt-red, #ed1c24);
+      box-shadow: 0 0 6px var(--rt-red, #ed1c24);
+      animation: pulse-red 1.6s infinite;
+    }
+
+    .btn-header-github {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 14px;
+      border: 1px solid var(--rt-line, rgba(11, 11, 12, 0.2));
+      background: transparent;
+      color: var(--rt-ink, #0b0b0c);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-header-github:hover {
+      border-color: var(--rt-ink, #0b0b0c);
+      background: rgba(11, 11, 12, 0.05);
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.85); }
+    }
+
+    /* Container Shell */
+    .rt-container {
+      width: var(--rt-shell, min(calc(100% - 40px), 1440px));
+      margin-inline: auto;
+      padding-inline: 0;
+    }
+
+    /* Editorial Section Spacing */
+    .tui-section {
+      padding: clamp(48px, 6vw, 84px) 0;
+      border-bottom: 1px solid var(--rt-line, rgba(11, 11, 12, 0.12));
+    }
+
+    .tui-kicker {
+      color: var(--rt-red, #ed1c24);
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tui-kicker::before {
+      content: "";
+      width: 14px;
+      height: 2px;
+      background: currentColor;
+    }
+
+    /* Hero Section */
+    .tui-hero {
+      padding-top: clamp(40px, 6vw, 76px);
+      padding-bottom: clamp(50px, 7vw, 90px);
+    }
+
+    .tui-hero__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: clamp(36px, 5vw, 72px);
+      align-items: center;
+    }
+
+    .tui-hero h1 {
+      font-size: clamp(2.8rem, 4.8vw, 4.7rem);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      margin: 0 0 22px;
+      font-weight: 400;
+      color: var(--rt-ink, #0b0b0c);
+    }
+
+    .tui-hero h1 em {
+      font-style: italic;
+      color: var(--rt-red, #ed1c24);
+    }
+
+    .tui-hero p.lead {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      color: var(--rt-tui-subtext);
+      margin-bottom: 32px;
+      max-width: 580px;
+    }
+
+    .tui-hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .rt-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 26px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .rt-btn--primary {
+      background: var(--rt-red, #ed1c24);
+      border: 1px solid var(--rt-red, #ed1c24);
+      color: #fff;
+      box-shadow: 4px 4px 0 var(--rt-ink, #0b0b0c);
+    }
+
+    .rt-btn--primary:hover {
+      background: var(--rt-red-dark, #c70f18);
+      border-color: var(--rt-red-dark, #c70f18);
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 var(--rt-ink, #0b0b0c);
+    }
+
+    .rt-btn--outline {
+      background: transparent;
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      color: var(--rt-ink, #0b0b0c);
+    }
+
+    .rt-btn--outline:hover {
+      background: var(--rt-ink, #0b0b0c);
+      color: #fff;
+    }
+
+    /* Terminal Quick Install Box */
+    .tui-install-card {
+      background: var(--rt-white, #fff);
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      box-shadow: 8px 8px 0 var(--rt-ink, #0b0b0c);
+      margin-top: 10px;
+    }
+
+    .tui-install-tabs {
+      display: flex;
+      background: var(--rt-paper, #f7f7f4);
+      border-bottom: 1px solid var(--rt-line, rgba(11, 11, 12, 0.16));
+    }
+
+    .tui-tab {
+      padding: 12px 18px;
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--rt-line, rgba(11, 11, 12, 0.16));
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--rt-gray-600, #686865);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tui-tab:hover {
+      color: var(--rt-ink, #0b0b0c);
+      background: #fff;
+    }
+
+    .tui-tab.active {
+      color: var(--rt-red, #ed1c24);
+      background: var(--rt-white, #fff);
+      box-shadow: inset 0 -2px 0 var(--rt-red, #ed1c24);
+    }
+
+    .tui-install-code {
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: #0e0f13;
+      color: #fff;
+    }
+
+    .tui-cmd-line {
+      font-size: 0.88rem;
+      color: #8be9fd;
+      word-break: break-all;
+    }
+
+    .tui-cmd-line .prompt {
+      color: #6272a4;
+      margin-right: 8px;
+      user-select: none;
+    }
+
+    .btn-copy {
+      background: #1e1f29;
+      border: 1px solid #383a4c;
+      color: #f8f8f2;
+      padding: 8px 14px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-copy:hover {
+      border-color: #6272a4;
+      background: #282a36;
+    }
+
+    .btn-copy.copied {
+      background: rgba(80, 250, 123, 0.15);
+      border-color: #50fa7b;
+      color: #50fa7b;
+    }
+
+    /* Quick Install Subnote */
+    .tui-install-subnote {
+      background: #14151f;
+      border-top: 1px solid #222436;
+      padding: 10px 18px;
+      font-size: 0.74rem;
+      color: #9ba1b6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tui-install-subnote code {
+      color: #50fa7b;
+      background: rgba(80, 250, 123, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* Dedicated Install Section Matrix */
+    .install-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .install-card {
+      background: var(--rt-white, #fff);
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 4px 4px 0 var(--rt-line, rgba(11, 11, 12, 0.12));
+      transition: all 0.2s ease;
+    }
+
+    .install-card:hover {
+      box-shadow: 6px 6px 0 var(--rt-red, #ed1c24);
+      transform: translateY(-2px);
+    }
+
+    .install-card__kicker {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: var(--rt-red, #ed1c24);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .install-card h3 {
+      font-size: 1.28rem;
+      line-height: 1.2;
+      margin: 0 0 12px;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-weight: 400;
+      color: var(--rt-ink, #0b0b0c);
+    }
+
+    .install-card p {
+      font-size: 0.88rem;
+      color: var(--rt-gray-600, #686865);
+      line-height: 1.5;
+      margin: 0 0 16px;
+    }
+
+    .install-box {
+      background: #0e0f13;
+      border: 1px solid #232530;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .install-box .cmd {
+      color: #8be9fd;
+      font-size: 0.78rem;
+      word-break: break-all;
+    }
+
+    .install-box .prompt {
+      color: #6272a4;
+      margin-right: 6px;
+      user-select: none;
+    }
+
+    .install-card__subnote {
+      font-size: 0.76rem;
+      color: var(--rt-tui-subtext);
+      line-height: 1.5;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--rt-line, rgba(11, 11, 12, 0.08));
+    }
+
+    .install-card__subnote code {
+      color: var(--rt-red, #ed1c24);
+      background: rgba(237, 28, 36, 0.08);
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+
+    /* Live Terminal Mockup */
+    .tui-mockup {
+      background: #090a0f;
+      border: 1px solid #1f2230;
+      box-shadow: 12px 12px 0 rgba(11, 11, 12, 0.85);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .tui-mockup__bar {
+      background: #14151f;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1f2230;
+    }
+
+    .tui-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .tui-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    .tui-mockup__title {
+      font-size: 0.72rem;
+      color: #8b8f9f;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .tui-mockup__body {
+      padding: 22px;
+      color: #e6edf3;
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+
+    .tui-tag-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .tui-tag-row span {
+      color: #79c0ff;
+      font-weight: 600;
+    }
+
+    .tui-status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .tui-meta-cell .label {
+      color: #8b8f9f;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .tui-meta-cell .val {
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .tui-meta-cell .val.accent { color: #ff5e64; }
+    .tui-meta-cell .val.green { color: #3fb950; }
+    .tui-meta-cell .val.gold { color: #f2cc60; }
+
+    .tui-spectrum-box {
+      background: #000000;
+      border: 1px solid #1f2230;
+      padding: 14px 16px 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .tui-spectrum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #8b8f9f;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .tui-spectrum-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #e6edf3;
+    }
+
+    .spectrum-led-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--rt-red, #ed1c24);
+      box-shadow: 0 0 6px rgba(237, 28, 36, 0.8);
+      animation: pulse-red 1.6s infinite;
+    }
+
+    .spec-meta-tag {
+      color: #50fa7b;
+      font-size: 0.65rem;
+      font-family: var(--rt-font-mono, monospace);
+    }
+
+    .tui-spectrum-canvas-wrap {
+      width: 100%;
+      height: 76px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 2px;
+      background: rgba(15, 17, 26, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    #spectrum-canvas {
+      width: 100%;
+      height: 76px;
+      display: block;
+    }
+
+    .tui-spectrum-scale {
+      display: flex;
+      justify-content: space-between;
+      color: #565a6e;
+      font-size: 0.58rem;
+      letter-spacing: 0.05em;
+      padding-top: 5px;
+      margin-top: 3px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      user-select: none;
+    }
+
+    .tui-stream-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #8b8f9f;
+      font-size: 0.74rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 12px;
+    }
+
+    /* Feature Cards Section */
+    .section-header {
+      margin-bottom: 40px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(2.2rem, 3.8vw, 3.4rem);
+      line-height: 1;
+      margin: 0 0 12px;
+      font-weight: 400;
+    }
+
+    .section-header p {
+      color: var(--rt-tui-subtext);
+      font-size: 1.05rem;
+      max-width: 650px;
+      margin: 0;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .feature-card {
+      background: var(--rt-white, #fff);
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      padding: 32px 28px;
+      position: relative;
+      transition: all 0.25s ease;
+      box-shadow: 4px 4px 0 var(--rt-line, rgba(11, 11, 12, 0.12));
+    }
+
+    .feature-card:hover {
+      box-shadow: 6px 6px 0 var(--rt-red, #ed1c24);
+      transform: translateY(-2px);
+    }
+
+    .feature-card__kicker {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: var(--rt-red, #ed1c24);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.35rem;
+      line-height: 1.15;
+      margin: 0 0 12px;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-weight: 400;
+      color: var(--rt-ink, #0b0b0c);
+    }
+
+    .feature-card p {
+      font-size: 0.92rem;
+      color: var(--rt-gray-600, #686865);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* Shortcuts Section */
+    .shortcuts-card {
+      background: var(--rt-white, #fff);
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      box-shadow: 6px 6px 0 var(--rt-line, rgba(11, 11, 12, 0.15));
+      overflow-x: auto;
+    }
+
+    .shortcuts-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .shortcuts-table th {
+      background: var(--rt-paper, #f7f7f4);
+      padding: 16px 24px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      color: var(--rt-ink, #0b0b0c);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--rt-ink, #0b0b0c);
+    }
+
+    .shortcuts-table td {
+      padding: 16px 24px;
+      font-size: 0.92rem;
+      border-bottom: 1px solid var(--rt-line, rgba(11, 11, 12, 0.12));
+      color: var(--rt-ink, #0b0b0c);
+    }
+
+    .shortcuts-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tui-kbd {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--rt-paper, #f7f7f4);
+      border: 1px solid var(--rt-ink, #0b0b0c);
+      color: var(--rt-red, #ed1c24);
+      font-weight: 700;
+      font-size: 0.8rem;
+      box-shadow: 2px 2px 0 var(--rt-ink, #0b0b0c);
+    }
+
+    /* CTA Banner */
+    .cta-banner {
+      background: var(--rt-ink, #0b0b0c);
+      color: var(--rt-white, #fff);
+      padding: clamp(48px, 6vw, 76px) clamp(28px, 4vw, 56px);
+      border-top: 4px solid var(--rt-red, #ed1c24);
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 36px;
+      align-items: center;
+      box-shadow: 8px 8px 0 var(--rt-red, #ed1c24);
+      margin-bottom: 80px;
+    }
+
+    .cta-banner h2 {
+      font-size: clamp(2.3rem, 3.8vw, 3.4rem);
+      line-height: 0.98;
+      margin: 0 0 16px;
+      font-weight: 400;
+      color: #fff;
+    }
+
+    .cta-banner p {
+      font-size: 1.05rem;
+      color: var(--rt-gray-300, #c9c9c3);
+      line-height: 1.6;
+      margin: 0;
+      max-width: 580px;
+    }
+
+    .cta-banner__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    /* Footer Styling - Replicates official radiotedu.com footer */
+    .rt-footer {
+      background: var(--rt-ink, #0b0b0c);
+      color: var(--rt-white, #fff);
+      position: relative;
+      padding: 70px max(20px, calc((100vw - 1440px) / 2)) 34px;
+      overflow: hidden;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .rt-footer__signal {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: var(--rt-red, #ed1c24);
+    }
+
+    .rt-footer__grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 0.8fr;
+      gap: clamp(36px, 6vw, 90px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .rt-footer__logo {
+      display: block;
+      width: 180px;
+      margin-bottom: 20px;
+      line-height: 0;
+    }
+
+    .rt-footer__grid p {
+      color: var(--rt-gray-300, #c9c9c3);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+      max-width: 460px;
+    }
+
+    .rt-footer__technology-note {
+      font-size: 0.74rem !important;
+      line-height: 1.65 !important;
+      color: #8b8f9f !important;
+    }
+
+    .rt-footer__technology-note a {
+      color: #fff;
+      text-decoration: underline;
+      text-decoration-color: var(--rt-red, #ed1c24);
+    }
+
+    .rt-footer__links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      columns: 2;
+      gap: 28px;
+    }
+
+    .rt-footer__links li {
+      margin-bottom: 14px;
+    }
+
+    .rt-footer__links a {
+      color: var(--rt-white, #fff);
+      text-decoration: none;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .rt-footer__links a:hover {
+      color: var(--rt-red, #ed1c24);
+    }
+
+    .rt-footer__contact {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .rt-footer__address {
+      font-style: normal;
+      font-size: 0.76rem;
+      line-height: 1.6;
+      color: var(--rt-gray-300, #c9c9c3);
+    }
+
+    .rt-footer__address strong {
+      display: block;
+      color: #fff;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .rt-footer__contact a {
+      color: #fff;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .rt-footer__contact a:hover {
+      color: var(--rt-red, #ed1c24);
+    }
+
+    .rt-footer__legal {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--rt-gray-300, #c9c9c3);
+    }
+
+    .rt-footer__legal a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .rt-footer__legal a:hover {
+      color: #fff;
+    }
+
+    .rt-brand-name {
+      text-transform: none !important;
+      font-weight: 800;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .tui-hero__grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .cta-banner { grid-template-columns: 1fr; }
+      .rt-footer__grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .rt-header__quick { display: none; }
+      .install-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .rt-footer__grid { grid-template-columns: 1fr; }
+      .rt-footer__links { columns: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Red Accent Ribbon -->
+  <div class="rt-top-ribbon"></div>
+
+  <!-- RadioTEDU Official Header -->
+  <header class="rt-header">
+    <div class="rt-header__inner">
+      <a class="rt-logo" href="https://radiotedu.com/" aria-label="RadioTEDU Home">
+        <img class="rt-logo__image" src="https://radiotedu.com/wp-content/themes/radiotedu/assets/images/radiotedu-logo.png" alt="RadioTEDU" width="2013" height="358">
+      </a>
+
+      <nav class="rt-header__quick" aria-label="Quick Links">
+        <a href="https://radiotedu.com/radyolar/">Stations</a>
+        <a href="https://radiotedu.com/rtai/">AI</a>
+        <a href="https://radiotedu.com/podcastler/">Podcasts</a>
+        <a href="https://radiotedu.com/jukebox/">Jukebox</a>
+        <a href="https://radiotedu.com/technology">Technology</a>
+        <a href="https://radiotedu.com/tui" class="active">CLI Console</a>
+      </nav>
+
+      <div class="rt-header__actions">
+        <a href="https://radiotedu.com/erp/device" class="btn-header-pair">
+          <span class="live-dot"></span>
+          <span>Pair Device</span>
+        </a>
+        <a href="https://github.com/radiotedu/radiotedu-tui" target="_blank" rel="noopener" class="btn-header-github">
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="tui-hero tui-section">
+    <div class="rt-container">
+      <div class="tui-hero__grid">
+        <!-- Left: Copy & Install Box -->
+        <div>
+          <div class="tui-kicker font-mono">01 / OFFICIAL TERMINAL AUDIO CONSOLE</div>
+          <h1 class="serif-title">
+            The studio broadcast,<br>
+            direct in your <em>terminal.</em>
+          </h1>
+          <p class="lead">
+            RadioTEDU CLI (<code>radiotedu-tui</code>) is an ultra-low latency audio console featuring live radio streaming, real-time song voting, studio chat, and automated Gold rewards while you code.
+          </p>
+
+          <div class="tui-hero__actions">
+            <a href="https://radiotedu.com/erp/device" class="rt-btn rt-btn--primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                <rect x="9" y="9" width="6" height="6"></rect>
+                <line x1="9" y1="1" x2="9" y2="4"></line>
+                <line x1="15" y1="1" x2="15" y2="4"></line>
+                <line x1="9" y1="20" x2="9" y2="23"></line>
+                <line x1="15" y1="20" x2="15" y2="23"></line>
+              </svg>
+              <span>Pair Device via ERP</span>
+            </a>
+            <a href="https://github.com/radiotedu/radiotedu-tui" target="_blank" rel="noopener" class="rt-btn rt-btn--outline">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
+              <span>Repository</span>
+            </a>
+          </div>
+
+          <!-- Quick Install Tabbed Card -->
+          <div class="tui-install-card" id="install-card">
+            <div class="tui-install-tabs">
+              <button class="tui-tab active" id="tab-win" onclick="switchTab('win')">Windows (npm)</button>
+              <button class="tui-tab" id="tab-curl" onclick="switchTab('curl')">macOS / Linux (curl)</button>
+              <button class="tui-tab" id="tab-ps" onclick="switchTab('powershell')">PowerShell Script</button>
+              <button class="tui-tab" id="tab-run" onclick="switchTab('run')">Run App</button>
+            </div>
+            <div class="tui-install-code">
+              <div class="font-mono tui-cmd-line" id="cmd-display">
+                <span class="prompt" id="cmd-prompt">C:\&gt;</span><span id="cmd-string">npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz</span>
+              </div>
+              <button class="btn-copy font-mono" id="copy-btn" onclick="copyCommand()">
+                <span id="copy-label">Copy</span>
+              </button>
+            </div>
+            <div class="tui-install-subnote font-mono">
+              <span id="subnote-text">🛡️ Official npm install: Works in both CMD and PowerShell without execution policy bypass or antivirus alerts.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Studio Terminal Mockup with 32-Band Visualizer -->
+        <div>
+          <div class="tui-mockup">
+            <div class="tui-mockup__bar">
+              <div class="tui-dots">
+                <span class="tui-dot dot-red"></span>
+                <span class="tui-dot dot-yellow"></span>
+                <span class="tui-dot dot-green"></span>
+              </div>
+              <div class="tui-mockup__title font-mono">radiotedu-tui — 80x24</div>
+              <div style="width: 40px;"></div>
+            </div>
+
+            <div class="tui-mockup__body font-mono">
+              <div class="tui-tag-row">
+                <span>RadioTEDU Studio Console v1.4.3</span>
+                <span style="color: #50fa7b;">● STREAMING</span>
+              </div>
+
+              <div class="tui-status-grid">
+                <div class="tui-meta-cell">
+                  <div class="label">Now Playing</div>
+                  <div class="val">RadioTEDU Live Broadcast</div>
+                </div>
+                <div class="tui-meta-cell">
+                  <div class="label">Studio Location</div>
+                  <div class="val">TED University Studio - Ankara</div>
+                </div>
+                <div class="tui-meta-cell">
+                  <div class="label">Broadcast Engine</div>
+                  <div class="val green">ffplay / mpv (AAC / FLAC)</div>
+                </div>
+                <div class="tui-meta-cell">
+                  <div class="label">Listening Gold</div>
+                  <div class="val gold">+20 Gold / hour</div>
+                </div>
+              </div>
+
+              <!-- 32-Band Audio Spectrum -->
+              <div class="tui-spectrum-box">
+                <div class="tui-spectrum-header">
+                  <div class="tui-spectrum-title">
+                    <span class="spectrum-led-dot"></span>
+                    <span>32-Band Audio Spectrum Visualizer</span>
+                  </div>
+                  <span id="spec-meta" class="spec-meta-tag">48 kHz • 192k AAC • EBU R128</span>
+                </div>
+                <div class="tui-spectrum-canvas-wrap">
+                  <canvas id="spectrum-canvas" height="76"></canvas>
+                </div>
+                <div class="tui-spectrum-scale font-mono">
+                  <span>20Hz</span>
+                  <span>63Hz</span>
+                  <span>160Hz</span>
+                  <span>500Hz</span>
+                  <span>1.6kHz</span>
+                  <span>5kHz</span>
+                  <span>16kHz</span>
+                </div>
+              </div>
+
+              <div class="tui-stream-footer">
+                <div>
+                  <span style="color: #50fa7b;">[Active]</span> Latency buffer 0.12s
+                </div>
+                <div>
+                  Session: <span id="stream-timer" style="color: #fff;">00:14:38</span>
+                </div>
+                <div>
+                  Volume: <span style="color: #ff79c6;">[████████░░] 80%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dedicated Platform Installation Matrix Section -->
+  <section class="tui-section" id="install">
+    <div class="rt-container">
+      <div class="section-header">
+        <div class="tui-kicker font-mono">02 / PLATFORM INSTALLATION MATRIX</div>
+        <h2 class="serif-title">Automated setup across Windows, macOS, and Linux.</h2>
+        <p>Choose your preferred shell below. The installer checks Node.js, detects audio decoders (mpv or ffplay), and places the <code>radiotedu</code> binary globally on your system PATH.</p>
+      </div>
+
+      <div class="install-grid">
+        <!-- Windows Card -->
+        <div class="install-card">
+          <div>
+            <div class="install-card__kicker font-mono">WINDOWS 10 / 11 / SERVER</div>
+            <h3>Direct npm Install (Recommended)</h3>
+            <p>Clean and secure installation for Windows Command Prompt (CMD) and PowerShell. Standard package install without execution policy bypass or antivirus alerts.</p>
+            
+            <div class="font-mono" style="font-size: 0.72rem; color: #686865; margin-bottom: 6px; font-weight: 700;">CMD &amp; PowerShell (Direct npm):</div>
+            <div class="install-box">
+              <div class="font-mono cmd"><span class="prompt">C:\&gt;</span>npm i -g https://radiotedu.com/tui/radiotedu-tui.tgz</div>
+              <button class="btn-copy font-mono" onclick="copySnippet('npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz', this)">Copy</button>
+            </div>
+
+            <div class="font-mono" style="font-size: 0.72rem; color: #686865; margin-bottom: 6px; font-weight: 700;">PowerShell Script (Local File):</div>
+            <div class="install-box">
+              <div class="font-mono cmd"><span class="prompt">PS&gt;</span>irm https://radiotedu.com/install.ps1 -OutFile install.ps1; .\install.ps1</div>
+              <button class="btn-copy font-mono" onclick="copySnippet('irm https://radiotedu.com/install.ps1 -OutFile install.ps1; .\\install.ps1', this)">Copy</button>
+            </div>
+          </div>
+          <div class="install-card__subnote">
+            🛡️ <strong>Zero Defender Alerts:</strong> Native npm installation avoids dynamic in-memory execution and runs completely clean under Windows Defender.<br><br>
+            🎵 <strong>Live Audio Streaming:</strong> Live streams require an audio decoder. Run: <code>winget install Gyan.FFmpeg</code> (or run <code>radiotedu setup-audio</code>).
+          </div>
+        </div>
+
+        <!-- macOS & Linux Card -->
+        <div class="install-card">
+          <div>
+            <div class="install-card__kicker font-mono">MACOS &amp; LINUX</div>
+            <h3>Bash &amp; Zsh One-Liner</h3>
+            <p>POSIX installation script. Verifies your Node.js runtime and hardware audio decoders (mpv/ffplay), then downloads and configures the binary.</p>
+            
+            <div class="font-mono" style="font-size: 0.72rem; color: #686865; margin-bottom: 6px; font-weight: 700;">Terminal (bash / zsh):</div>
+            <div class="install-box">
+              <div class="font-mono cmd"><span class="prompt">$</span>curl -sSL https://radiotedu.com/install.sh | bash</div>
+              <button class="btn-copy font-mono" onclick="copySnippet('curl -sSL https://radiotedu.com/install.sh | bash', this)">Copy</button>
+            </div>
+
+            <div class="font-mono" style="font-size: 0.72rem; color: #686865; margin-bottom: 6px; font-weight: 700;">Launch Terminal Console:</div>
+            <div class="install-box">
+              <div class="font-mono cmd"><span class="prompt">$</span>radiotedu</div>
+              <button class="btn-copy font-mono" onclick="copySnippet('radiotedu', this)">Copy</button>
+            </div>
+          </div>
+          <div class="install-card__subnote">
+            💡 <strong>Audio Engine:</strong> For hardware decoding, install mpv. macOS: <code>brew install mpv</code> · Ubuntu/Debian: <code>sudo apt install mpv</code>.
+          </div>
+        </div>
+
+        <!-- Universal npm & Pairing Card -->
+        <div class="install-card">
+          <div>
+            <div class="install-card__kicker font-mono">UNIVERSAL / NODE.JS</div>
+            <h3>Direct npm Tarball &amp; Login</h3>
+            <p>Directly install the official production package hosted on <code>radiotedu.com</code> via npm across any operating system.</p>
+            
+            <div class="font-mono" style="font-size: 0.72rem; color: #686865; margin-bottom: 6px; font-weight: 700;">Global npm Package:</div>
+            <div class="install-box">
+              <div class="font-mono cmd"><span class="prompt">$</span>npm i -g https://radiotedu.com/tui/radiotedu-tui.tgz</div>
+              <button class="btn-copy font-mono" onclick="copySnippet('npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz', this)">Copy</button>
+            </div>
+
+            <div class="font-mono" style="font-size: 0.72rem; color: #686865; margin-bottom: 6px; font-weight: 700;">Device Pairing &amp; Gold Sync:</div>
+            <div class="install-box">
+              <div class="font-mono cmd"><span class="prompt">$</span>radiotedu login</div>
+              <button class="btn-copy font-mono" onclick="copySnippet('radiotedu login', this)">Copy</button>
+            </div>
+          </div>
+          <div class="install-card__subnote">
+            ⚡ <strong>Instant Login:</strong> Run <code>radiotedu login</code> and enter the 8-digit code from <a href="https://radiotedu.com/erp/device" target="_blank" rel="noopener" style="color: var(--rt-red, #ed1c24); font-weight: 700; text-decoration: underline;">radiotedu.com/erp/device</a>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Engineering & Features -->
+  <section class="tui-section" id="features">
+    <div class="rt-container">
+      <div class="section-header">
+        <div class="tui-kicker font-mono">03 / ARCHITECTURE &amp; CAPABILITIES</div>
+        <h2 class="serif-title">Engineered for focus and sonic fidelity.</h2>
+        <p>Built with zero web bloat to run silently in the background while integrating seamlessly into the university's broadcasting backbone.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-card__kicker font-mono">01 / CORE ENGINE</div>
+          <h3>Ultra-Low Latency Broadcast</h3>
+          <p>Leverages native ffplay or mpv decoders to deliver flawless 320 kbps AAC/MP3 radio streams with sub-second buffer overhead.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__kicker font-mono">02 / HUB INTEGRATION</div>
+          <h3>Single-Code Device Pairing</h3>
+          <p>Pair your CLI in seconds with a single 8-character code from <code>radiotedu.com/erp/device</code>. Automatically sync your listening profile.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__kicker font-mono">03 / LISTENER ECONOMY</div>
+          <h3>Automated Gold Rewards</h3>
+          <p>Earn RadioTEDU Gold every hour you listen. Gold rewards accumulate into your unified account across the web, mobile, and kiosk ecosystem.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__kicker font-mono">04 / INTERACTION</div>
+          <h3>Live Next-Song Voting</h3>
+          <p>Vote for the upcoming track directly from your terminal session. Real-time tally percentages reflect listener choices on the fly.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__kicker font-mono">05 / BROADCAST CHAT</div>
+          <h3>Studio Community Bridge</h3>
+          <p>Communicate directly with studio hosts and fellow listeners in real time. Read live program updates without opening a browser.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__kicker font-mono">06 / PORTABILITY</div>
+          <h3>Cross-Platform Native</h3>
+          <p>Runs seamlessly across macOS (Apple Silicon &amp; Intel), Linux distributions (Ubuntu, Debian, Arch, Fedora), and Windows Terminal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyboard Shortcuts -->
+  <section class="tui-section" id="shortcuts">
+    <div class="rt-container">
+      <div class="section-header">
+        <div class="tui-kicker font-mono">04 / KEYBINDINGS &amp; CONTROLS</div>
+        <h2 class="serif-title">Full console control with single keystrokes.</h2>
+        <p>Intuitive shortcuts designed to manage playback, community interaction, and telemetry without breaking your terminal flow.</p>
+      </div>
+
+      <div class="shortcuts-card">
+        <table class="shortcuts-table">
+          <thead>
+            <tr>
+              <th style="width: 22%;">Key</th>
+              <th style="width: 48%;">Action</th>
+              <th style="width: 30%;">Subsystem</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tui-kbd font-mono">Space</span></td>
+              <td><strong>Play / Pause</strong> (Instantly toggle live audio stream)</td>
+              <td>Global Playback</td>
+            </tr>
+            <tr>
+              <td><span class="tui-kbd font-mono">m</span></td>
+              <td><strong>Mute / Unmute</strong> (Toggle sound without resetting stream buffer)</td>
+              <td>Audio Engine</td>
+            </tr>
+            <tr>
+              <td><span class="tui-kbd font-mono">v</span></td>
+              <td><strong>Next-Song Voting</strong> (Open voting ballot and cast vote)</td>
+              <td>Playout Interaction</td>
+            </tr>
+            <tr>
+              <td><span class="tui-kbd font-mono">c</span></td>
+              <td><strong>Studio Chat</strong> (Open live messaging and station announcements)</td>
+              <td>Community Bridge</td>
+            </tr>
+            <tr>
+              <td><span class="tui-kbd font-mono">s</span></td>
+              <td><strong>Session Status</strong> (Display active Gold balance and stream stats)</td>
+              <td>Account Telemetry</td>
+            </tr>
+            <tr>
+              <td><span class="tui-kbd font-mono">q</span></td>
+              <td><strong>Graceful Quit</strong> (Stop stream engine, save state and release port)</td>
+              <td>Process Lifecycle</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action Banner -->
+  <section class="tui-section" style="border-bottom: none; padding-bottom: 0;">
+    <div class="rt-container">
+      <div class="cta-banner">
+        <div>
+          <div class="tui-kicker font-mono" style="color: #ff5e64;">05 / ELEVATE YOUR WORKFLOW</div>
+          <h2 class="serif-title">Ready to bring the broadcast into your terminal?</h2>
+          <p>
+            Install in seconds, link your RadioTEDU account, and enjoy non-stop high-definition student radio while compiling, coding, or managing servers.
+          </p>
+        </div>
+        <div class="cta-banner__actions">
+          <a href="https://radiotedu.com/erp/device" class="rt-btn rt-btn--primary" style="width: 100%; text-align: center;">
+            Pair Device Now
+          </a>
+          <a href="#install" class="rt-btn rt-btn--outline" style="width: 100%; text-align: center; border-color: rgba(255,255,255,0.4); color: #fff;">
+            View Install Options
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Official RadioTEDU Footer -->
+  <footer class="rt-footer">
+    <div class="rt-footer__signal" aria-hidden="true"></div>
+    <div class="rt-footer__grid">
+      <div>
+        <a class="rt-footer__logo" href="https://radiotedu.com/">
+          <img class="rt-logo__image" src="https://radiotedu.com/wp-content/themes/radiotedu/assets/images/radiotedu-logo-white.png" alt="RadioTEDU" width="2013" height="358">
+        </a>
+        <p>TED University's student radio. Listen to the difference, feel different.</p>
+        <p class="rt-footer__technology-note">
+          RadioTEDU uses ITU-R BS.1770-5 loudness and true-peak measurement with the EBU R128 broadcast reference. Streams are encoded by our internally compiled, non-distributed <a href="https://github.com/ffmpeg" target="_blank" rel="noopener noreferrer">FFmpeg</a> build using Fraunhofer FDK AAC: HE-AAC v2 for efficient low-bitrate delivery and AAC-LC at 192 kbit/s for full-quality listening. Classical and Jazz are also available in lossless <a href="https://github.com/xiph/flac" target="_blank" rel="noopener noreferrer">FLAC</a>. See our <a href="https://radiotedu.com/technology">Technology</a> page for more.
+        </p>
+      </div>
+
+      <nav aria-label="Footer Navigation">
+        <ul class="rt-footer__links">
+          <li><a href="https://radiotedu.com/radyolar/">Stations</a></li>
+          <li><a href="https://radiotedu.com/podcastler/">Podcasts</a></li>
+          <li><a href="https://radiotedu.com/yayin-akisi/">Schedule</a></li>
+          <li><a href="https://radiotedu.com/rtai/">AI Lab</a></li>
+          <li><a href="https://radiotedu.com/social/">Social</a></li>
+          <li><a href="https://radiotedu.com/jukebox/">Jukebox</a></li>
+          <li><a href="https://radiotedu.com/erp/">ERP Hub</a></li>
+          <li><a href="https://radiotedu.com/technology">Technology</a></li>
+          <li><a href="https://radiotedu.com/tui">CLI Console</a></li>
+          <li><a href="https://radiotedu.com/erp/device">Device Pairing</a></li>
+        </ul>
+      </nav>
+
+      <div class="rt-footer__contact">
+        <address class="rt-footer__address">
+          <strong>RadioTEDU Ankara Studios</strong>
+          <span>TED University<br>Ziya Gökalp Cad. No:48<br>Kolej, Çankaya, Ankara, Türkiye</span>
+        </address>
+        <a href="mailto:radio@tedu.edu.tr">radio@tedu.edu.tr</a>
+        <a href="https://www.instagram.com/radiotedu/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.youtube.com/@RadioTEDU" target="_blank" rel="noopener">YouTube</a>
+        <a href="https://github.com/radiotedu/radiotedu-tui" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+
+    <div class="rt-footer__legal">
+      <span>© 2026 <span class="rt-brand-name">RadioTEDU</span>. All rights reserved.</span>
+      <a href="https://radiotedu.com/gizlilik-politikasi/">Privacy Policy</a>
+      <a href="https://radiotedu.com/cerez-politikasi/">Cookie Policy</a>
+      <a href="https://radiotedu.com/kullanim-kosullari/">Terms of Service</a>
+    </div>
+  </footer>
+
+  <!-- Interactive JavaScript: Tabs, Copy & 32-Band Visualizer Animation -->
+  <script>
+    const COMMANDS = {
+      win: 'npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz',
+      curl: 'curl -sSL https://radiotedu.com/install.sh | bash',
+      powershell: 'irm https://radiotedu.com/install.ps1 -OutFile install.ps1; .\\install.ps1',
+      run: 'radiotedu login'
+    };
+
+    const PROMPTS = {
+      win: 'C:\\>',
+      curl: '$',
+      powershell: 'PS>',
+      run: '$'
+    };
+
+    const SUBNOTES = {
+      win: '🛡️ Clean & Safe: Official npm install has zero antivirus false-positives and works in both CMD and PowerShell.',
+      curl: '⚡ For macOS (Terminal) or Linux (Ubuntu, Debian, Fedora, Arch). Requires curl and bash.',
+      powershell: '⚡ Downloads install.ps1 locally and executes it without memory injection or execution policy bypass.',
+      run: '⚡ Launch the app and link your listener profile with your 8-digit device code.'
+    };
+
+    let currentTab = 'win';
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tui-tab').forEach(btn => btn.classList.remove('active'));
+      const tabMap = { win: 'tab-win', curl: 'tab-curl', powershell: 'tab-ps', run: 'tab-run' };
+      const el = document.getElementById(tabMap[tab]);
+      if (el) el.classList.add('active');
+
+      const promptEl = document.getElementById('cmd-prompt');
+      if (promptEl) promptEl.textContent = PROMPTS[tab] || '$';
+
+      const cmdStrEl = document.getElementById('cmd-string');
+      if (cmdStrEl) cmdStrEl.textContent = COMMANDS[tab];
+
+      const subnoteEl = document.getElementById('subnote-text');
+      if (subnoteEl) subnoteEl.innerHTML = SUBNOTES[tab] || '';
+
+      resetCopyButton();
+    }
+
+    // Smart OS detection
+    try {
+      const isWin = (navigator.userAgentData && navigator.userAgentData.platform === 'Windows') ||
+                    /Win/i.test(navigator.platform || navigator.userAgent || '');
+      const isMacOrLinux = /Mac|Linux/i.test(navigator.platform || navigator.userAgent || '');
+      if (isWin) {
+        switchTab('win');
+      } else if (isMacOrLinux) {
+        switchTab('curl');
+      }
+    } catch {}
+
+    function resetCopyButton() {
+      const btn = document.getElementById('copy-btn');
+      const label = document.getElementById('copy-label');
+      btn.classList.remove('copied');
+      label.textContent = 'Copy';
+    }
+
+    function copyCommand() {
+      const text = COMMANDS[currentTab];
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const label = document.getElementById('copy-label');
+        btn.classList.add('copied');
+        label.textContent = 'Copied!';
+        setTimeout(resetCopyButton, 2200);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    function copySnippet(text, btnEl) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btnEl.textContent;
+        btnEl.classList.add('copied');
+        btnEl.textContent = 'Copied!';
+        setTimeout(() => {
+          btnEl.classList.remove('copied');
+          btnEl.textContent = originalText;
+        }, 2200);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // Studio-Grade 32-Band Audio Spectrum Engine (Zero Overflow, Hardware Rack Aesthetics)
+    (function initSpectrum() {
+      const canvas = document.getElementById('spectrum-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const BANDS = 32;
+      const SEGMENTS = 13; // Vertical LED segment blocks per column
+      const GAP = 2; // Horizontal gap between bands (px)
+      const SEG_GAP = 1.5; // Vertical gap between LED segments (px)
+
+      let currentLevels = new Array(BANDS).fill(0.1);
+      let peakLevels = new Array(BANDS).fill(0.1);
+      let peakHoldTimes = new Array(BANDS).fill(0);
+      let peakVelocities = new Array(BANDS).fill(0);
+
+      let width = 0;
+      let height = 0;
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        width = Math.floor(rect.width);
+        height = Math.floor(rect.height) || 76;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+
+      let tick = 0;
+      let lastTime = performance.now();
+
+      function draw() {
+        requestAnimationFrame(draw);
+
+        const now = performance.now();
+        const dt = Math.min(0.08, (now - lastTime) / 1000);
+        lastTime = now;
+        tick += dt * 3.4;
+
+        if (width === 0 || canvas.width === 0) resize();
+        ctx.clearRect(0, 0, width, height);
+
+        // Acoustic beat dynamics (~124 BPM)
+        const kickPulse = Math.pow(Math.max(0, Math.sin(tick * 3.1)), 10) * 0.95;
+        const snarePulse = (Math.sin(tick * 6.2) > 0.88) ? 0.42 : 0;
+
+        for (let i = 0; i < BANDS; i++) {
+          const normFreq = i / (BANDS - 1);
+
+          // Acoustic frequency bands
+          const subBass = (i < 5) ? kickPulse * (1 - i / 5) * 0.88 : 0;
+          const bass = (i >= 3 && i <= 9) ? Math.sin(tick * 2.0 + i * 0.45) * 0.32 + 0.38 : 0;
+          const mids = (i >= 8 && i <= 20) ? Math.sin(tick * 2.7 + i * 0.6) * 0.26 + 0.36 + snarePulse * 0.3 : 0;
+          const highs = (i > 18) ? Math.sin(tick * 4.5 + i * 1.05) * 0.24 + 0.3 + (Math.random() * 0.14) : 0;
+
+          const harmonic = Math.sin(tick * 1.1 + normFreq * Math.PI) * 0.22;
+          const noise = (Math.random() - 0.5) * 0.08;
+
+          let target = Math.max(0.08, Math.min(1.0, subBass + bass + mids + highs + harmonic + noise));
+
+          // Smooth rise & fall
+          currentLevels[i] += (target - currentLevels[i]) * Math.min(1.0, dt * 18);
+
+          // Peak hold with gravity physics
+          if (currentLevels[i] >= peakLevels[i]) {
+            peakLevels[i] = currentLevels[i];
+            peakHoldTimes[i] = 0.22; // hold peak for 220ms
+            peakVelocities[i] = 0;
+          } else {
+            if (peakHoldTimes[i] > 0) {
+              peakHoldTimes[i] -= dt;
+            } else {
+              peakVelocities[i] += 9.8 * dt * 0.32; // gravity drop
+              peakLevels[i] = Math.max(currentLevels[i], peakLevels[i] - peakVelocities[i] * dt);
+            }
+          }
+        }
+
+        // Render 32 bands
+        const totalGap = (BANDS - 1) * GAP;
+        const barWidth = Math.max(2, (width - totalGap) / BANDS);
+        const segTotalHeight = height / SEGMENTS;
+        const segHeight = Math.max(2, segTotalHeight - SEG_GAP);
+
+        for (let i = 0; i < BANDS; i++) {
+          const x = i * (barWidth + GAP);
+          const activeSegments = Math.round(currentLevels[i] * SEGMENTS);
+
+          // Draw vertical LED segments
+          for (let seg = 0; seg < SEGMENTS; seg++) {
+            const y = height - (seg + 1) * segTotalHeight;
+            const isLit = seg < activeSegments;
+
+            if (isLit) {
+              // Color mapping: Green -> Amber -> RadioTEDU Red
+              if (seg >= 10) {
+                ctx.fillStyle = '#ff2b33'; // Red peak
+                ctx.shadowColor = 'rgba(255, 43, 51, 0.7)';
+                ctx.shadowBlur = 4;
+              } else if (seg >= 7) {
+                ctx.fillStyle = '#ffb300'; // Amber warning
+                ctx.shadowColor = 'rgba(255, 179, 0, 0.4)';
+                ctx.shadowBlur = 2;
+              } else if (seg >= 3) {
+                ctx.fillStyle = '#00e676'; // Mid green
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+              } else {
+                ctx.fillStyle = '#00d2ff'; // Cyan base
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+              }
+            } else {
+              // Unlit background grid block
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+              ctx.shadowColor = 'transparent';
+              ctx.shadowBlur = 0;
+            }
+
+            ctx.fillRect(x, y, barWidth, segHeight);
+          }
+
+          // Reset shadow
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+
+          // Draw floating peak-hold cap line
+          const peakY = height - (peakLevels[i] * height);
+          const clampedPeakY = Math.max(2, Math.min(height - 3, peakY));
+
+          if (peakLevels[i] >= 0.82) {
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+            ctx.shadowBlur = 4;
+          } else if (peakLevels[i] >= 0.58) {
+            ctx.fillStyle = '#ffd600';
+            ctx.shadowColor = 'rgba(255, 214, 0, 0.6)';
+            ctx.shadowBlur = 3;
+          } else {
+            ctx.fillStyle = '#00e676';
+            ctx.shadowColor = 'rgba(0, 230, 118, 0.5)';
+            ctx.shadowBlur = 2;
+          }
+
+          ctx.fillRect(x, clampedPeakY, barWidth, 2);
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      requestAnimationFrame(draw);
+    })();
+
+    // Live Stream Timer Simulation
+    let totalSeconds = 14 * 60 + 38;
+    setInterval(() => {
+      totalSeconds++;
+      const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+      const secs = String(totalSeconds % 60).padStart(2, '0');
+      const timerEl = document.getElementById('stream-timer');
+      if (timerEl) {
+        timerEl.textContent = `${hrs}:${mins}:${secs}`;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

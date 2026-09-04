@@ -39,8 +39,7 @@ elif command -v ffplay >/dev/null 2>&1; then
   echo -e "${GREEN}✓ Found audio player: ffplay${NC}"
 else
   echo -e "${YELLOW}! Neither mpv nor ffplay was found on PATH.${NC}"
-  echo -e "  radiotedu-tui will attempt to fetch a lightweight audio binary on first launch,"
-  echo -e "  or you can install mpv (recommended) or ffmpeg:"
+  echo -e "  For audio playback, please install mpv (recommended) or ffmpeg:"
   echo "    macOS:  brew install mpv"
   echo "    Ubuntu/Debian: sudo apt install mpv"
   echo "    Arch:   sudo pacman -S mpv"

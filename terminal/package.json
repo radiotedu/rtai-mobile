@@ -1,8 +1,12 @@
 {
   "name": "radiotedu-tui",
   "version": "1.4.3",
-  "description": "Spotify-inspired RadioTEDU terminal radio, Gold and Study client",
-  "author": "Arda Akgül (akgularda) <akgularda@users.noreply.github.com>",
+  "description": "The official terminal radio, 32-band audio visualizer, Gold listening & campus Study client for RadioTEDU",
+  "author": "RadioTEDU Engineering <dev@radiotedu.com>",
+  "contributors": [
+    "Arda Akgül (akgularda) <akgularda@users.noreply.github.com>",
+    "Tuna Özsarı <tuna@radiotedu.com>"
+  ],
   "type": "commonjs",
   "bin": {
     "radiotedu": "src/index.js",
@@ -16,7 +20,10 @@
   },
   "files": [
     "src",
-    "README.md"
+    "install.ps1",
+    "install.sh",
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "radiotedu",
@@ -24,15 +31,20 @@
     "terminal",
     "tui",
     "ffplay",
-    "mpv"
+    "mpv",
+    "spectrum-visualizer",
+    "pomodoro",
+    "gold"
   ],
-  "homepage": "https://radiotedu.com",
+  "homepage": "https://radiotedu.com/tui",
+  "bugs": {
+    "url": "https://github.com/radiotedu/radiotedu-tui/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/radiotedu/rtai-mobile.git",
-    "directory": "terminal"
+    "url": "git+https://github.com/radiotedu/radiotedu-tui.git"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   }

@@ -32,6 +32,10 @@ import {clearOutputMedia, showCastRoutePicker, updateOutputMedia} from '../servi
 import {openPlayerModal} from '../navigation/navigationRef';
 
 const HIDDEN_MINIPLAYER_ROUTES = new Set([
+  'Auth',
+  'Prompt',
+  'Login',
+  'Register',
   'MainTabs',
   'Radio',
   'Profile',

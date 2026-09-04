@@ -26,6 +26,17 @@ import {
 } from '../src/components/MiniPlayer';
 
 describe('MiniPlayer route visibility', () => {
+  it('leaves account creation and sign-in controls unobstructed while audio is selected', () => {
+    for (const name of ['Prompt', 'Login', 'Register']) {
+      const route = getDeepestActiveRouteName({
+        index: 0,
+        routes: [{name: 'Auth', state: {index: 0, routes: [{name}]}}],
+      });
+      expect(shouldHideMiniPlayerForRoute(route)).toBe(true);
+    }
+    expect(shouldHideMiniPlayerForRoute('Auth')).toBe(true);
+  });
+
   it('finds the active nested Jukebox tab', () => {
     const routeName = getDeepestActiveRouteName({
       index: 0,

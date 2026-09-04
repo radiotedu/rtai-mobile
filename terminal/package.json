@@ -1,6 +1,6 @@
 {
-  "name": "radiotedu-tui",
-  "version": "1.4.4",
+  "name": "radiotedu",
+  "version": "1.3.2",
   "description": "The official terminal radio, 32-band audio visualizer, Gold listening & campus Study client for RadioTEDU",
   "author": "RadioTEDU <https://radiotedu.com>",
   "type": "commonjs",
@@ -38,7 +38,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/radiotedu/radiotedu-tui.git"
+    "url": "git+https://github.com/radiotedu/rtai-mobile.git",
+    "directory": "terminal"
   },
   "license": "MIT",
   "engines": {

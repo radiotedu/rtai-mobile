@@ -28,6 +28,7 @@ const SnakeScreen = () => {
   const {i18n} = useTranslation();
   const copy = useCallback((key: string) => appCopy(i18n.language, key), [i18n.language]);
   const localizedGame = gameListCopy('snake', i18n.language);
+  const [cellSize, setCellSize] = useState(1);
   const [snake, setSnake] = useState<Point[]>(START_SNAKE);
   const [food, setFood] = useState<Point>(INITIAL_FOOD);
   const [obstacles, setObstacles] = useState<Point[]>(INITIAL_OBSTACLES);
@@ -245,6 +246,10 @@ const SnakeScreen = () => {
           <Text style={styles.swipeHint}>SWIPE</Text>
         </View>
 
+        <View style={styles.boardArea} onLayout={({nativeEvent: {layout}}) => {
+          // Reserve the controls' natural height; fit the board into what remains.
+          setCellSize(Math.max(1, Math.min(22, (Math.min(layout.width, layout.height) - 14) / BOARD_SIZE - 1)));
+        }}>
         <View style={styles.board} {...panResponder.panHandlers}>
           {Array.from({length: BOARD_SIZE}).map((_, y) => (
             <View key={y} style={styles.row}>
@@ -258,6 +263,7 @@ const SnakeScreen = () => {
                     key={`${x}-${y}`}
                     style={[
                       styles.cell,
+                      {width: cellSize, height: cellSize},
                       isSnake && styles.snakeCell,
                       isHead && styles.snakeHead,
                       isFood && styles.foodCell,
@@ -272,6 +278,7 @@ const SnakeScreen = () => {
               })}
             </View>
           ))}
+        </View>
         </View>
 
         <View style={styles.controls}>
@@ -376,7 +383,8 @@ const styles = StyleSheet.create({
   notePill: {flexDirection: 'row', gap: 4, paddingHorizontal: 10, height: 34, borderRadius: 17, alignItems: 'center', backgroundColor: 'rgba(255,213,74,0.10)', borderWidth: 1, borderColor: 'rgba(255,213,74,0.24)'},
   noteCount: {color: '#FFD54A', fontWeight: '900'},
   swipeHint: {marginLeft: 'auto', color: '#48E08A', fontSize: 10, fontWeight: '900', letterSpacing: 1.5},
-  board: {alignSelf: 'center', marginTop: SPACING.lg, padding: 6, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(72,224,138,0.48)', backgroundColor: '#0D1511', shadowColor: '#48E08A', shadowOpacity: 0.2, shadowRadius: 18, elevation: 8},
+  boardArea: {flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', marginVertical: SPACING.sm},
+  board: {alignSelf: 'center', padding: 6, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(72,224,138,0.48)', backgroundColor: '#0D1511', shadowColor: '#48E08A', shadowOpacity: 0.2, shadowRadius: 18, elevation: 8},
   row: {flexDirection: 'row'},
   cell: {width: 22, height: 22, margin: 0.5, borderRadius: 5, backgroundColor: '#111C16', borderWidth: 0.5, borderColor: '#1B2A21', alignItems: 'center', justifyContent: 'center'},
   snakeCell: {backgroundColor: '#26B96B', borderColor: '#67F0A4'},
@@ -386,7 +394,7 @@ const styles = StyleSheet.create({
   goldenFoodCell: {backgroundColor: '#FF8A4C', borderColor: '#FFD4BA', shadowColor: '#FF8A4C', shadowOpacity: 0.8, shadowRadius: 5, elevation: 5},
   obstacleCell: {backgroundColor: '#33252B', borderColor: '#74505D', transform: [{scale: 0.82}]},
   obstacleCore: {width: 8, height: 8, borderRadius: 3, transform: [{rotate: '45deg'}], backgroundColor: '#B87A8E'},
-  controls: {alignItems: 'center', justifyContent: 'center', marginTop: -SPACING.sm, gap: 4},
+  controls: {alignItems: 'center', justifyContent: 'center', gap: 4},
   dpadTop: {alignItems: 'center'},
   dpadMiddle: {flexDirection: 'row', alignItems: 'center', gap: 4},
   dpadBottom: {alignItems: 'center'},

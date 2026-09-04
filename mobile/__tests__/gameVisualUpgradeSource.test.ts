@@ -43,7 +43,12 @@ describe('arcade visual upgrade', () => {
       expect(source).toContain('dpadTop');
       expect(source).toContain('dpadMiddle');
       expect(source).toContain('dpadBottom');
-      expect(source).toContain('marginTop: -SPACING.sm');
     }
+    expect(tetris).toContain('marginTop: -SPACING.sm');
+    // Snake now reserves the D-pad height instead of overlapping a fixed board.
+    expect(snake).toContain('boardArea: {flex: 1, minHeight: 0');
+    expect(snake).toContain('Math.min(layout.width, layout.height)');
+    expect(snake).toContain('{width: cellSize, height: cellSize}');
+    expect(snake).not.toContain('marginTop: -SPACING.sm');
   });
 });

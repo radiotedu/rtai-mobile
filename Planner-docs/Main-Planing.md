@@ -1,5 +1,7 @@
 # RadioTEDU 1.3.6 candidate
 
+2026-09-05 recorded-defect follow-up: restore full-player Hi-Fi from the active track (never from a pending quality preference), fit Snake's board into remaining height so all direction controls remain visible, and reuse the localized Music IQ catalog title. Touch only these three screens. Validate with TypeScript, lint and mobile tests, then Actions and a new signed-artifact recording when device disk capacity permits. Historical car, Gold and store requirements remain open; no publication until their evidence passes.
+
 Baseline: 08a6b66, preserved by fast-forward and timestamped external source archives.
 
 Upgrade React Native/Hermes to the first compatible 0.77 patch line, retain React 18 and the existing app architecture, and rebuild the same FLAC decoder with NDK r28. Preserve all stations, homepage, games and production identity. Make Actions generate a candidate without publishing until runtime checks pass.

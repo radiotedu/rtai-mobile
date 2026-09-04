@@ -11,6 +11,9 @@ describe('mobile radio presentation', () => {
     expect(radio).toContain("currentQuality === 'flac'");
     expect(radio).toContain('<Text style={styles.hifiText}>Hi-Fi</Text>');
     expect(radio).toMatch(/liveBadge[\s\S]*?hifiBadge/);
+    const player = read('src/screens/PlayerScreen.tsx');
+    expect(player).toContain("activeTrack?.streamQuality === 'flac'");
+    expect(player).toMatch(/liveBadge[\s\S]*?isFlacTrack[\s\S]*?goldFlacText}>Hi-Fi/);
   });
 
   it('uses short mobile names while car surfaces retain branded titles', () => {

@@ -156,6 +156,7 @@ const PlayerScreen = ({route}: any) => {
     return 'normal';
   }, [activeTrack?.url, activeTrack?.streamQuality, preferences.quality, currentChannel]);
   const stationOnlyPresentation = shouldUseStationOnlyPresentation(currentChannel, currentQuality);
+  const isFlacTrack = activeTrack?.streamQuality === 'flac' || String(activeTrack?.url ?? '').includes('-flac');
   const displayArtwork = stationOnlyPresentation
     ? activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK
     : metadata?.artwork || activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK;
@@ -449,6 +450,12 @@ const PlayerScreen = ({route}: any) => {
                 <View style={styles.liveDot} />
                 <Text style={styles.liveText}>{copy('player.live')}</Text>
               </View>
+
+              {isFlacTrack ? (
+                <View style={styles.goldFlacBadge}>
+                  <Text style={styles.goldFlacText}>Hi-Fi</Text>
+                </View>
+              ) : null}
 
               <View style={styles.liveBar}>
                 <View style={styles.liveBarFill} />

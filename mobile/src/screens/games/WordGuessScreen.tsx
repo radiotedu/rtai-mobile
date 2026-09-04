@@ -6,6 +6,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 
 import {appCopy} from '../../i18n/appCopy';
+import {gameListCopy} from '../../i18n/gameListCopy';
 import {getWordGuessQuestions, WordGuessQuestion} from '../../i18n/gameQuestions';
 import {ArcadeGame} from '../../services/gamificationService';
 import {COLORS, SPACING} from '../../theme/theme';
@@ -24,6 +25,7 @@ const WordGuessScreen = () => {
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
   const {i18n} = useTranslation();
+  const localizedGame = gameListCopy('word-guess', i18n.language);
   const copy = useCallback((key: string) => appCopy(i18n.language, key), [i18n.language]);
   const createRound = useCallback(
     () => shuffle(getWordGuessQuestions(i18n.language)).slice(0, ROUND_SIZE),
@@ -127,7 +129,7 @@ const WordGuessScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <GameShell title={copy('games.word')} subtitle={copy('games.wordSubtitle')} icon="music-circle-outline" accentColor="#FF8A4C"
+      <GameShell title={localizedGame.title} subtitle={copy('games.wordSubtitle')} icon="music-circle-outline" accentColor="#FF8A4C"
         score={score} progressLabel={`${Math.min(index + 1, questions.length)}/${questions.length}`}
         rightLabel={`${correct} ${copy('games.wordCorrect')}`} onBack={() => navigation.goBack()}>
         <FeedbackToast text={feedback} />

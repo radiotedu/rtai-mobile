@@ -153,7 +153,7 @@ jobs:
 
       - name: Rebuild FLAC with 16 KB support
         run: |
-          sdkmanager "ndk;28.0.13004108"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.0.13004108"
           python3 scripts/build-flac-16k.py
 
       - name: Build signed phone, TV, and Wear packages

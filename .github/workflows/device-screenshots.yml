@@ -35,7 +35,7 @@ jobs:
       - run: chmod +x mobile/android/gradlew
       - name: Rebuild FLAC with 16 KB support
         run: |
-          sdkmanager "ndk;28.0.13004108"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.0.13004108"
           python3 scripts/build-flac-16k.py
       - working-directory: mobile/android
         run: ./gradlew :app:assembleRelease :tv:assembleDebug :wear:assembleDebug --no-daemon

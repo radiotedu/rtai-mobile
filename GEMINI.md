@@ -503,3 +503,12 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Production balances/user data were not changed. Market currently returns an empty catalogue. No production backend deployment, deletion, email or push occurred.
 - Backup: `C:\Users\tuna.ozsari\radiotedu-mobile-backups\20260904-release-api-225619\source-before.zip`.
 - Release-candidate source only; device testing, actual APK signature/version inspection and 16 KB native compatibility remain necessary. Full handoff: `docs/MOBILE_RELEASE_API_GOLD_2026-09-04.md`.
+
+## 2026-09-04 1.3.6 native candidate work
+
+- Baseline 08a6b66 preserved, timestamped external source backups made.
+- RN/Hermes 0.77.3, Kotlin 2.0.21, NDK r28 and pinned-source FLAC rebuild; final binary identity/ELF/ZIP gates added.
+- iOS dependency provider, bundleURL override and deployment minimum aligned with RN 0.77.
+- Android Release now defaults to artifacts only; no public release until runtime checks pass.
+- Local 357 tests, tsc, lint, version and 36 Android audit checks passed. Runtime verification pending.
+- Initial Actions attempt found sdkmanager absent from PATH; use its SDK absolute path.

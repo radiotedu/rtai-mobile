@@ -169,23 +169,23 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(wrapLine(`  ${C.bold}Lütfen oturum açma yöntemini seçin:${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 📧 ${C.white}RadioTEDU Hesabı (E-Posta & Şifre)${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[2]${C.reset} 🏛️ ${C.white}TEDÜ / ERP SSO (Tarayıcı ile Tek Tık Giriş)${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.yellow}${C.bold}[3]${C.reset} 🔑 ${C.white}Web Eşleme Kodu (radiotedu.com/device ➔ AAAA-BBBB)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[2]${C.reset} 🏛️ ${C.white}TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.darkGray}${'─'.repeat(innerW - 4)}${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray}, ${C.white}[2]${C.gray} veya ${C.white}[3]${C.gray}'e basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}Klavyeden ${C.white}[1]${C.gray} veya ${C.white}[2]${C.gray}'ye basın  ·  ${C.white}[Esc]${C.gray} İptal${C.reset}`));
     boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
   } else if (modal.type === 'pair') {
-    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🔑 WEB EŞLEME KODU (AAAA-BBBB) ${'─'.repeat(Math.max(0, modalW - 35))}╮${C.reset}`, totalCols));
-    boxLines.push(wrapLine(`  ${C.gray}1. Tarayıcınızda ${C.white}radiotedu.com/device${C.gray} adresine gidin.${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}2. Sitede oturum açıp aldığınız 8 haneli kodu girin:${C.reset}`));
+    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🏛️ TEDÜ / ERP GİRİŞİ (8 HANELİ KOD) ${'─'.repeat(Math.max(0, modalW - 40))}╮${C.reset}`, totalCols));
+    boxLines.push(wrapLine(`  ${C.gray}1. Tarayıcınızda ${C.white}radiotedu.com/device${C.gray} sayfası açıldı.${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}   (Giriş yapmadıysanız TEDÜ hesabınızla oturum açın)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.gray}2. Sitede gösterilen 8 haneli kodu buraya girin:${C.reset}`));
     boxLines.push(wrapLine(''));
 
     const codeCursor = `${C.spotifyGreen}█${C.reset}`;
     const codeVal = (modal.code || '') + codeCursor;
     boxLines.push(wrapLine(`  Eşleme Kodu : ${C.spotifyGreen}[${C.reset} ${padVisible(codeVal, 24)} ${C.spotifyGreen}]${C.reset}`));
     boxLines.push(wrapLine(''));
-    boxLines.push(wrapLine(`  ${C.darkGray}[Enter] Doğrula ve Giriş Yap  ·  [Esc] İptal${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.darkGray}[Enter] Onayla ve Giriş Yap  ·  [Esc] İptal${C.reset}`));
 
     const statusText = modal.status
       ? (modal.status.includes('Hata') ? `${C.brightRed}⚠️ ${modal.status}${C.reset}` : `${C.yellow}⏳ ${modal.status}${C.reset}`)
@@ -212,23 +212,6 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(wrapLine(`  Şifre   : ${passBorder}[${C.reset} ${padVisible(passVal, 36)} ${passBorder}]${C.reset}`));
     boxLines.push(wrapLine(''));
     boxLines.push(wrapLine(`  ${C.darkGray}[Tab] Alan Değiştir  ·  [Enter] Giriş Yap  ·  [Esc] İptal${C.reset}`));
-
-    const statusText = modal.status
-      ? (modal.status.includes('Hata') ? `${C.brightRed}⚠️ ${modal.status}${C.reset}` : `${C.yellow}⏳ ${modal.status}${C.reset}`)
-      : '';
-    boxLines.push(wrapLine(`  ${statusText}`));
-    boxLines.push(padVisible(`${padLeft}${C.gold}╰${'─'.repeat(modalW - 2)}╯${C.reset}`, totalCols));
-  } else if (modal.type === 'sso') {
-    boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🏛️ TEDÜ / ERP SSO GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 29))}╮${C.reset}`, totalCols));
-    boxLines.push(wrapLine(`  ${C.gray}Tarayıcınızda TEDÜ oturum açma sayfası açıldı.${C.reset}`));
-    boxLines.push(wrapLine(`  ${C.gray}Girişten sonra açılan callback URL'sini yapıştırın:${C.reset}`));
-    boxLines.push(wrapLine(''));
-
-    const urlCursor = `${C.spotifyGreen}█${C.reset}`;
-    const urlVal = truncateVisible(modal.url || '', 36) + urlCursor;
-    boxLines.push(wrapLine(`  URL : ${C.spotifyGreen}[${C.reset} ${padVisible(urlVal, 38)} ${C.spotifyGreen}]${C.reset}`));
-    boxLines.push(wrapLine(''));
-    boxLines.push(wrapLine(`  ${C.darkGray}[Enter] Onayla ve Doğrula  ·  [Esc] İptal${C.reset}`));
 
     const statusText = modal.status
       ? (modal.status.includes('Hata') ? `${C.brightRed}⚠️ ${modal.status}${C.reset}` : `${C.yellow}⏳ ${modal.status}${C.reset}`)
@@ -554,8 +537,7 @@ async function runTui({
   onAccount,
   onLogin,
   onLoginCreds,
-  onLoginSsoStart,
-  onLoginSsoExchange,
+  onLoginPairStart,
   onLoginPairCode,
   onLogout,
   onQuit,
@@ -648,24 +630,9 @@ async function runTui({
               return;
             }
             if (event.key === '2') {
-              state.modal = {type: 'sso', url: '', status: 'Tarayıcıda TEDÜ oturum açma sayfası açılıyor...'};
+              state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/device açılıyor...'};
               render();
-              onLoginSsoStart?.().then(() => {
-                if (state.modal?.type === 'sso') {
-                  state.modal.status = 'Tarayıcıda giriş yapıp callback URL\'sini yapıştırın:';
-                  render();
-                }
-              }).catch(err => {
-                if (state.modal?.type === 'sso') {
-                  state.modal.status = `Hata: ${err.message}`;
-                  render();
-                }
-              });
-              return;
-            }
-            if (event.key === '3') {
-              state.modal = {type: 'pair', code: '', status: ''};
-              render();
+              onLoginPairStart?.().catch(() => {});
               return;
             }
             return;
@@ -709,40 +676,6 @@ async function runTui({
             const char = event.raw || (event.key === 'space' ? ' ' : event.key);
             if (char && char.length === 1 && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
               state.modal[state.modal.field] += char;
-              render();
-              return;
-            }
-            return;
-          }
-
-          if (state.modal.type === 'sso') {
-            if (event.key === 'backspace') {
-              state.modal.url = state.modal.url.slice(0, -1);
-              render();
-              return;
-            }
-            if (event.key === 'enter') {
-              if (!state.modal.url) {
-                state.modal.status = 'Lütfen callback URL girin.';
-                render();
-                return;
-              }
-              state.modal.status = 'Doğrulanıyor, lütfen bekleyin...';
-              render();
-              try {
-                const acc = await onLoginSsoExchange?.(state.modal.url);
-                state.account = acc;
-                state.modal = null;
-                state.status = `TEDÜ SSO Girişi başarılı · ${acc.label}`;
-              } catch (err) {
-                state.modal.status = `Hata: ${err.message}`;
-              }
-              render();
-              return;
-            }
-            const char = event.raw || event.key;
-            if (char && char.length === 1 && !char.startsWith('\x1b') && char !== '\r' && char !== '\n' && char !== '\t') {
-              state.modal.url += char;
               render();
               return;
             }
@@ -805,17 +738,12 @@ async function runTui({
               return;
             }
             if (event.y === 8) {
-              state.modal = {type: 'sso', url: '', status: 'Tarayıcıda TEDÜ oturum açma sayfası açılıyor...'};
+              state.modal = {type: 'pair', code: '', status: 'Tarayıcıda radiotedu.com/device açılıyor...'};
               render();
-              onLoginSsoStart?.().catch(err => { if (state.modal) state.modal.status = `Hata: ${err.message}`; });
+              onLoginPairStart?.().catch(() => {});
               return;
             }
-            if (event.y === 9) {
-              state.modal = {type: 'pair', code: '', status: ''};
-              render();
-              return;
-            }
-            if (event.y >= 12) {
+            if (event.y >= 11) {
               state.modal = null;
               render();
               return;

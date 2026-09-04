@@ -278,41 +278,8 @@ async function runInteractive() {
       await login(email, password);
       return accountSummary();
     },
-    onLoginSsoStart: async () => {
-      const returnUri = 'radiotedu://auth/erp/linked';
-      const pkce = beginPendingErpLoginPkce();
-      let result;
-      try {
-        result = await startErpLogin(returnUri, pkce);
-      } catch (err) {
-        clearPendingErpLoginPkce(pkce.verifier);
-        throw err;
-      }
-      if (!result?.authorization_url) {
-        clearPendingErpLoginPkce(pkce.verifier);
-        throw new Error('ERP login endpoint did not return an authorization URL.');
-      }
-      let authorizationUrl;
-      try {
-        authorizationUrl = validateAuthorizationUrl(result.authorization_url);
-      } catch (err) {
-        clearPendingErpLoginPkce(pkce.verifier);
-        throw err;
-      }
-      openExternal(authorizationUrl);
-      return authorizationUrl;
-    },
-    onLoginSsoExchange: async (callbackOrCode) => {
-      const code = extractErpCode(callbackOrCode);
-      const pending = getPendingErpLoginPkce();
-      try {
-        await exchangeErpCode(code, pending?.verifier);
-      } catch (err) {
-        if (pending) clearPendingErpLoginPkce(pending.verifier);
-        throw err;
-      }
-      if (pending) clearPendingErpLoginPkce(pending.verifier);
-      return accountSummary();
+    onLoginPairStart: () => {
+      openExternal('https://radiotedu.com/device');
     },
     onLoginPairCode: async (code) => {
       await verifyPairCode(code);

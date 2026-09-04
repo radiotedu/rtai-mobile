@@ -393,3 +393,13 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Switched `Player.launch()` to `{stdio: 'ignore', windowsHide: true}` eliminating child process stdin blocking.
 - Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
 - Clean git tree on `origin/main`.
+
+## 2026-09-04 radiotedu-tui streamlined 2-option login modal handoff snapshot
+
+- Simplified login modal in `radiotedu-tui` to exactly 2 options:
+  - Option 1: `[1] 📧 RadioTEDU Hesabı (E-Posta & Şifre)`
+  - Option 2: `[2] 🏛️ TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)`
+- Selecting Option 2 automatically opens `https://radiotedu.com/device` in the user's browser, prompts for the 8-character pairing code in the TUI, and submits to `POST /auth/device/verify`.
+- Removed old broken callback URL SSO flow from the TUI entirely.
+- Tests: Terminal 14/14 tests pass + 8/8 syntax checks pass; Mobile Jest 90/90 suites (340/340 tests pass); Android publish audit 36/36 pass.
+- Clean git tree on `origin/main`.

@@ -1,4 +1,4 @@
-﻿# radiotedu-tui
+# radiotedu-tui
 
 Spotify-tui inspired interactive RadioTEDU terminal dashboard for Linux, macOS, and Windows.
 
@@ -8,21 +8,41 @@ Inspired by [Rigellute/spotify-tui](https://github.com/Rigellute/spotify-tui), f
 
 ## 🚀 Installation & Run
 
-### 1. Global npm Install
-```bash
-npm install -g git+https://github.com/radiotedu/rtai-mobile.git#main:terminal
+### 1. Windows (PowerShell & Command Prompt)
+
+Run in **PowerShell**:
+```powershell
+irm https://radiotedu.com/install.ps1 | iex
 ```
 
-### 2. Run from anywhere in cmd, PowerShell, or bash:
+Or run in standard Windows **Command Prompt (CMD)**:
+```cmd
+powershell -ExecutionPolicy Bypass -Command "irm https://radiotedu.com/install.ps1 | iex"
+```
+
+### 2. macOS & Linux (curl / bash)
+```bash
+curl -sSL https://radiotedu.com/install.sh | bash
+```
+
+### 3. Direct npm Install (Universal)
+```bash
+npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz
+```
+
+### 4. Launch & Device Pairing
+Run from anywhere:
 ```bash
 radiotedu
 # or
 radiotedu-tui
 ```
 
-### 3. Linux & macOS (Optional installer script)
+To pair with your RadioTEDU / ERP account and earn Gold rewards (+20 Gold / hour):
 ```bash
-curl -fsSL https://raw.githubusercontent.com/radiotedu/rtai-mobile/main/terminal/install.sh | bash
+radiotedu login
+# or with your 8-digit code from https://radiotedu.com/erp/device
+radiotedu login --code=AAAA-BBBB
 ```
 
 ---

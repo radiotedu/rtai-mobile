@@ -6,6 +6,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 
 rootProject.name = 'com.radiotedumobile'
 include ':app'
+include ':flacdecoder'
 include ':formfactor'
 include ':tv'
 include ':wear'

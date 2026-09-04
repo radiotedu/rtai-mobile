@@ -227,6 +227,7 @@ dependencies {
     implementation("androidx.media:media:1.7.0")
     implementation("androidx.media3:media3-session:${media3Version}")
     implementation("androidx.media3:media3-exoplayer:${media3Version}")
+    implementation(project(':flacdecoder'))
     implementation("androidx.media3:media3-common:${media3Version}")
     // media3-datasource provides DefaultHttpDataSource, used to give the car
     // stream finite connect/read timeouts so a half-open stream surfaces as an

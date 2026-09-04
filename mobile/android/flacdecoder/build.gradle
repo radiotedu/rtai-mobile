@@ -1,0 +1,41 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'androidx.media3.decoder.flac'
+    compileSdk rootProject.ext.compileSdkVersion
+    ndkVersion rootProject.ext.ndkVersion
+    defaultConfig {
+        minSdk rootProject.ext.minSdkVersion
+        externalNativeBuild {
+            cmake {
+                arguments '-DWITH_OGG=OFF', '-DINSTALL_MANPAGES=OFF',
+                    '-DBUILD_SHARED_LIBS=OFF', '-DBUILD_PROGRAMS=OFF',
+                    '-DBUILD_EXAMPLES=OFF', '-DBUILD_TESTING=OFF',
+                    '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+                    '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                targets 'media3flacJNI'
+            }
+        }
+    }
+    sourceSets.main {
+        java.srcDirs = ['../build/media3-flac/java']
+        assets.srcDirs = ['../build/media3-flac/assets']
+        manifest.srcFile 'src/main/AndroidManifest.xml'
+    }
+    externalNativeBuild.cmake {
+        path '../build/media3-flac/jni/CMakeLists.txt'
+        version '3.22.1'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    api 'androidx.media3:media3-decoder:1.10.1'
+    implementation 'androidx.media3:media3-exoplayer:1.10.1'
+    implementation 'androidx.annotation:annotation:1.9.1'
+    compileOnly 'org.checkerframework:checker-qual:3.49.1'
+    compileOnly 'org.jetbrains.kotlin:kotlin-annotations-jvm:2.0.21'
+}

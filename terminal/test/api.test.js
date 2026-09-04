@@ -34,3 +34,28 @@ test('login, Gold balance and verified listening use existing production contrac
   assert.deepEqual(JSON.parse(calls[3].options.body), {session_id: 'listen-1', nonce: 'nonce-1', is_playing: true});
   assert.equal(calls[1].options.headers.Authorization, 'Bearer access-test');
 });
+
+test('requestPairCode and verifyPairCode use official device pairing contract', async () => {
+  const {requestPairCode, verifyPairCode} = require('../src/api');
+  const calls = [];
+  const responses = [
+    {data: {code: 'ABCD-EFGH', expires_at: '2026-09-04T07:10:00.000Z', expires_in: 600}},
+    {data: {access_token: 'pair-access-token', refresh_token: 'pair-refresh-token', user: {id: 42, display_name: 'RadioTEDU Dev', email: 'dev@tedu.edu.tr'}}},
+  ];
+  global.fetch = async (url, options = {}) => {
+    calls.push({url, options});
+    return {ok: true, status: 200, text: async () => JSON.stringify(responses.shift())};
+  };
+
+  const codeRes = await requestPairCode('dev@tedu.edu.tr', 'RadioTEDU Dev');
+  assert.equal(codeRes.code, 'ABCD-EFGH');
+  assert.equal(codeRes.expires_in, 600);
+  assert.match(calls[0].url, /\/auth\/device\/code$/);
+  assert.deepEqual(JSON.parse(calls[0].options.body), {email: 'dev@tedu.edu.tr', display_name: 'RadioTEDU Dev'});
+
+  // Verify passing unformatted 8-character code 'abcdefgh' formats to 'ABCD-EFGH'
+  const user = await verifyPairCode('abcdefgh');
+  assert.equal(user.display_name, 'RadioTEDU Dev');
+  assert.match(calls[1].url, /\/auth\/device\/verify$/);
+  assert.deepEqual(JSON.parse(calls[1].options.body), {code: 'ABCD-EFGH'});
+});

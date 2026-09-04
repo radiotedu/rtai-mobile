@@ -131,4 +131,11 @@ async function finishStudySession(sessionId, nonce) {
   return request(`/study/sessions/${encodeURIComponent(sessionId)}/finish`, {method: 'POST', body: JSON.stringify({nonce})});
 }
 
-module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, verifyPairCode, startStudySession, heartbeatStudySession, finishStudySession};
+async function requestPairCode(email, displayName = 'RadioTEDU Terminal') {
+  return request('/auth/device/code', {
+    method: 'POST',
+    body: JSON.stringify({email, display_name: displayName}),
+  });
+}
+
+module.exports = {API_BASE, request, login, me, gamificationHome, startListening, heartbeatListening, logout, startErpLogin, validateAuthorizationUrl, exchangeErpCode, requestPairCode, verifyPairCode, startStudySession, heartbeatStudySession, finishStudySession};

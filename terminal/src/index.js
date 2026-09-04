@@ -64,6 +64,24 @@ function openExternal(url) {
 }
 
 async function commandLogin(args) {
+  const codeArg = args.find(arg => arg.startsWith('--code='));
+  const codeIdx = args.indexOf('--code');
+  const directCode = codeArg ? codeArg.split('=')[1] : (codeIdx !== -1 && args[codeIdx + 1] ? args[codeIdx + 1] : null);
+  if (directCode) {
+    const user = await verifyPairCode(directCode);
+    console.log(`Signed in as ${user.display_name || user.email || 'RadioTEDU user'} via device pairing.`);
+    return user;
+  }
+
+  if (args.includes('--pair') || args.includes('--device')) {
+    console.log('Opening https://radiotedu.com/erp/device in browser…');
+    openExternal('https://radiotedu.com/erp/device');
+    const inputCode = await prompt('Enter 8-character pairing code (e.g. AAAA-BBBB): ');
+    const user = await verifyPairCode(inputCode);
+    console.log(`Signed in as ${user.display_name || user.email || 'RadioTEDU user'} via device pairing.`);
+    return user;
+  }
+
   if (args.includes('--tedu')) {
     const returnUri = 'radiotedu://auth/erp/linked';
     const pkce = beginPendingErpLoginPkce();
@@ -99,9 +117,12 @@ async function commandLogin(args) {
     }
   }
   if (!args.length) {
-    process.stdout.write('\n=== RadioTEDU Sign In ===\n[1] RadioTEDU Account (Email & Password)\n[2] TEDÜ / ERP SSO (Browser Login)\n');
-    const choice = await prompt('Select login method [1/2] (default 1): ');
-    if (choice === '2') {
+    process.stdout.write('\n=== RadioTEDU Sign In ===\n[1] 🏛️ TEDÜ / ERP Device Pairing (8-digit code from radiotedu.com/erp/device) [Recommended]\n[2] RadioTEDU Account (Email & Password)\n[3] TEDÜ / ERP SSO (Browser Login)\n');
+    const choice = await prompt('Select login method [1/2/3] (default 1): ');
+    if (!choice || choice === '1') {
+      return commandLogin(['--pair']);
+    }
+    if (choice === '3') {
       return commandLogin(['--tedu']);
     }
   }
@@ -302,7 +323,7 @@ async function main() {
   if (command === 'account' || command === 'gold') return console.log(JSON.stringify(await accountSummary(), null, 2));
   if (command === 'play') return commandPlay(rest);
   if (command === 'study') return commandStudy(rest);
-  if (command === 'help') return console.log('radiotedu [stations|play|login|logout|account|gold|study]');
+  if (command === 'help') return console.log('radiotedu [stations|play|login [--code=AAAA-BBBB|--pair|--tedu]|logout|account|gold|study]');
   throw new Error(`Unknown command: ${command}`);
 }
 

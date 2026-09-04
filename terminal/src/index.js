@@ -130,7 +130,7 @@ async function commandLogin(args) {
   }
   if (args.includes('--web') || args.includes('--flow') || (!args.length && !args.includes('--pair') && !args.includes('--tedu') && !args.includes('--creds'))) {
     process.stdout.write('\n=== RadioTEDU Sign In ===\n');
-    process.stdout.write('[1] 🌐 Web ile Oturum Aç (Otomatik Onay / GitHub CLI Stili) [Önerilen]\n');
+    process.stdout.write('[1] 🌐 Web ile Hızlı Oturum Aç (Otomatik Onay) [Önerilen]\n');
     process.stdout.write('[2] 📧 RadioTEDU Hesabı (E-Posta & Şifre)\n');
     process.stdout.write('[3] 🏛️ TEDÜ / ERP Manuel Kod (radiotedu.com/erp/device)\n');
     process.stdout.write('[4] 🏛️ TEDÜ / ERP SSO (Browser Login)\n');

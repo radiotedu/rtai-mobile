@@ -60,7 +60,7 @@ test('requestPairCode and verifyPairCode use official device pairing contract', 
   assert.deepEqual(JSON.parse(calls[1].options.body), {code: 'ABCD-EFGH'});
 });
 
-test('initDeviceAuth and pollDeviceAuth use GitHub CLI style flow contract', async () => {
+test('initDeviceAuth and pollDeviceAuth use automated web device flow contract', async () => {
   const {initDeviceAuth, pollDeviceAuth} = require('../src/api');
   const calls = [];
   const responses = [

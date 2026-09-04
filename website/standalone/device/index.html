@@ -499,6 +499,10 @@
             <button type="button" class="tab-btn" id="tabRegisterBtn">Yeni Kayıt</button>
           </div>
 
+          <div style="font-size: 12px; color: var(--rt-text-muted); margin-bottom: 16px; line-height: 1.4; text-align: center;">
+            RadioTEDU hesabı; <strong>Mobil Uygulama</strong>, <strong>Jukebox</strong>, <strong>Juke-Local</strong> ve <strong>Terminal</strong> genelinde ortaktır.
+          </div>
+
           <!-- Login Form -->
           <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
@@ -780,7 +784,7 @@
           if (res.ok && data.success) {
             showSuccessScreen(data.data?.user?.display_name || email);
           } else {
-            showAlert(data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.', 'error');
+            showAlert(data?.error || data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.', 'error');
             btn.disabled = false;
             btn.textContent = 'Giriş Yap ve Cihazı Onayla';
           }
@@ -819,9 +823,19 @@
           if (res.ok && data.success) {
             showSuccessScreen(displayName || email);
           } else {
-            showAlert(data?.message || 'Kayıt işlemi tamamlanamadı.', 'error');
+            const err = data?.error || data?.message || 'Kayıt işlemi tamamlanamadı.';
+            showAlert(err, 'error');
             btn.disabled = false;
             btn.textContent = 'Kayıt Ol ve Cihazı Onayla';
+
+            if (err.includes('zaten bir RadioTEDU') || err.includes('Giriş Yap')) {
+              document.getElementById('loginEmail').value = email;
+              document.getElementById('loginPassword').value = password;
+              setTimeout(() => {
+                const loginTab = document.getElementById('tabLoginBtn');
+                if (loginTab) loginTab.click();
+              }, 2500);
+            }
           }
         } catch (err) {
           showAlert('Bağlantı hatası: ' + err.message, 'error');

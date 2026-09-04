@@ -4,7 +4,7 @@
 
 **The Spotify-TUI inspired terminal client, 32-band real-time audio spectrum visualizer, Focus Pomodoro lounge, server-verified Gold listening engine, and campus Study companion for RadioTEDU.**
 
-[![Version](https://img.shields.io/badge/version-v1.4.3-brightgreen.svg?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/version-v1.4.4-brightgreen.svg?style=flat-square)](package.json)
 [![Author](https://img.shields.io/badge/author-akgularda-blue.svg?style=flat-square&logo=github)](https://github.com/akgularda)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-informational.svg?style=flat-square&logo=node.js)](https://nodejs.org)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](https://github.com/radiotedu/radiotedu-tui)
@@ -48,7 +48,7 @@
 ## 🎨 Interface Layout
 
 ```text
-╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.3 ────────────────────────────────────────── [👤 akgularda  ◆ 420 Gold] ─╮
+╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.4 ────────────────────────────────────────── [👤 akgularda  ◆ 420 Gold] ─╮
 │  [1: Stations]   2: Visualizer   3: Study & Lyrics   4: Account                                               │
 ├───────────────────────────────────┬───────────────────────────────────────────────────────────────────────────┤
 │ STATIONS (9 CHANNELS)             │ LIVE AUDIO SPECTRUM & STREAM INFO                                         │
@@ -222,13 +222,13 @@ RadioTEDU broadcasts across 9 official mounts, supporting multi-quality fallback
 
 ## 🔐 Authentication & Single Sign-On
 
-`radiotedu-tui` provides a unified sign-in flow supporting GitHub CLI style automated device pairing, direct email/password login, and TEDÜ ERP SSO:
+`radiotedu-tui` provides a unified sign-in flow supporting automated browser device pairing, direct email/password login, and TEDÜ ERP SSO:
 
 ```text
 ╭─ 🔐 RADIOTEDU SIGN IN // HESAP GİRİŞİ ────────────────────────╮
 │  Lütfen oturum açma yöntemini seçin:                         │
 │                                                              │
-│  [1] 🌐 Web ile Oturum Aç (Otomatik Onay / GitHub CLI Stili) │
+│  [1] 🌐 Web ile Hızlı Oturum Aç (Otomatik Onay)              │
 │  [2] 📧 RadioTEDU Hesabı (E-Posta & Şifre)                   │
 │  [3] 🏛️ TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)          │
 │                                                              │
@@ -237,7 +237,7 @@ RadioTEDU broadcasts across 9 official mounts, supporting multi-quality fallback
 ╰──────────────────────────────────────────────────────────────╯
 ```
 
-### 1. Web ile Oturum Aç (GitHub CLI Stili — Önerilen)
+### 1. Web ile Hızlı Oturum Aç (Otomatik Onay — Önerilen)
 Klavyeden `1` tuşuna basın. Terminal otomatik olarak benzersiz bir cihaz kodu üretir ve tarayıcınızda `https://radiotedu.com/device?code=ABCD-EFGH` adresini açar:
 1. Tarayıcınızda aktif RadioTEDU veya TEDÜ ERP oturumunuz varsa tek tıkla **"Cihazı Onayla"** diyerek yetki verebilirsiniz.
 2. Hesabınız yoksa aynı sayfa üzerinden saniyeler içinde yeni dinleyici hesabı oluşturabilirsiniz.

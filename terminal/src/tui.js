@@ -168,7 +168,7 @@ function renderModalLines(modal, totalCols, maxRows) {
     boxLines.push(padVisible(`${padLeft}${C.gold}╭─ 🔐 RADIOTEDU SIGN IN // HESAP GİRİŞİ ${'─'.repeat(Math.max(0, modalW - 41))}╮${C.reset}`, totalCols));
     boxLines.push(wrapLine(`  ${C.bold}Lütfen oturum açma yöntemini seçin:${C.reset}`));
     boxLines.push(wrapLine(''));
-    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 🌐 ${C.white}Tarayıcı ile Oturum Aç (Otomatik Onay / GitHub CLI Stili)${C.reset}`));
+    boxLines.push(wrapLine(`  ${C.spotifyGreen}${C.bold}[1]${C.reset} 🌐 ${C.white}Tarayıcı ile Hızlı Oturum Aç (Otomatik Onay)${C.reset}`));
     boxLines.push(wrapLine(`  ${C.yellow}${C.bold}[2]${C.reset} 📧 ${C.white}RadioTEDU Hesabı (E-Posta & Şifre)${C.reset}`));
     boxLines.push(wrapLine(`  ${C.cyan}${C.bold}[3]${C.reset} 🏛️ ${C.white}TEDÜ / ERP Girişi (8 Haneli Kod: AAAA-BBBB)${C.reset}`));
     boxLines.push(wrapLine(''));

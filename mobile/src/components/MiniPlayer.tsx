@@ -36,8 +36,6 @@ const HIDDEN_MINIPLAYER_ROUTES = new Set([
   'Prompt',
   'Login',
   'Register',
-  'MainTabs',
-  'Radio',
   'Profile',
   'Jukebox',
   'Games',

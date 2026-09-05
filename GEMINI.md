@@ -650,4 +650,25 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - TypeScript: 0 errors (`npx tsc --noEmit`).
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
 
+## 2026-09-05 phone emulator test verification, video recording & frame-by-frame UI inspection handoff snapshot
 
+- Executed end-to-end live test verification on physical-dimension Android Phone emulator (`RadioTEDU-Phone-Test`, Pixel 5, 1080x2340) with standalone signed test APK (`RadioTEDU-Mobile-v1.3.7-test.apk`):
+  - Screen recording video captured directly via `adb shell screenrecord`: `artifacts/radiotedu_phone_test_flow.mp4` (1.74 MB).
+  - 48 high-resolution screenshots systematically recorded and inspected across every screen and flow:
+    - `01_app_launched.png`, `02_app_home.png`, `15_home_miniplayer_floating.png`, `41_home_screen_clean_miniplayer.png`: Home screen, 5-station compact shelf, podcast previews, and floating MiniPlayer above bottom navigation tab bar.
+    - `38_login_screen_verified_back.png`: LoginScreen top-left `← Back` button verified. Using `t('common.back')`, it cleanly renders translated label ("Back" / "Geri") and smoothly navigates back without trapping the user.
+    - `39_returned_to_profile_from_login.png`: Profile Guest Welcome Hero card verified ("Create a RadioTEDU account" with exact casing) and bullet points.
+    - `26_next_song_vote_loaded.png`, `27_next_song_vote_webview.png`: Next Song Vote screen verified with mobile styling, dark `#0b1013` background, and Latin `I` brand casing (`● SEÇİMİN / RADIOTEDU`).
+    - `32_social_webview_screen.png`: Social screen verified with sleek 48px header, `<` back button, and clean presentation.
+    - `37_leaderboard_screen.png`: Community Leaderboard verified with bot accounts ("Terminal User", "Codex", "Test User", "QA User", "Bot") filtered out.
+    - `45_radio_tab_active.png`: Radio tab with live station playback, favorites shelf (1 active with solid red heart), and station cards.
+    - `47_player_modal_verified.png`: Expanded full player modal verified with live artwork ("Hold On, I'm Comin' - Sam & Dave"), `● RADIOTEDU` Latin `I` badge, solid red heart `#e50914`, and real-time synchronized LRCLIB lyrics lines with dismiss `✕` control.
+    - `48_modal_closed_to_radio.png`: Modal dismissal returning smoothly to Radio tab with uninterrupted audio playback.
+- Source refinements:
+  - `mobile/src/screens/auth/LoginScreen.tsx`: Used `t('common.back')` for clean i18n translation of the Back button.
+  - `mobile/src/components/MiniPlayer.tsx`: Ensured `MainTabs` and `Radio` remain visible so MiniPlayer floats over the tab bar on Home and Radio while staying hidden on modals and interactive screens.
+- Test Matrix:
+  - Mobile Jest: 96/96 suites passed (385/385 tests passed).
+  - Android Publish Audit: 36/36 passed.
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+- Safety rules strictly preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android native builds executed.

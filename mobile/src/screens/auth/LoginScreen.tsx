@@ -34,7 +34,7 @@ const LoginScreen = () => {
         teduLoginError,
     } = useAuth();
     const navigation = useNavigation<any>();
-    const {i18n} = useTranslation();
+    const {i18n, t} = useTranslation();
     const copy = (key: string) => authCopy(i18n.language, key);
 
     const handleLogin = async () => {
@@ -89,11 +89,11 @@ const LoginScreen = () => {
                         }
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={copy('common.back') || 'Geri'}
+                    accessibilityLabel={t('common.back')}
                     hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
                 >
                     <Icon name="arrow-left" size={24} color={COLORS.text} />
-                    <Text style={styles.backButtonText}>{copy('common.back') || 'Geri'}</Text>
+                    <Text style={styles.backButtonText}>{t('common.back')}</Text>
                 </TouchableOpacity>
             </View>
             <KeyboardAvoidingView

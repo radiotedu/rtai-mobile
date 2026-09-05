@@ -36,6 +36,70 @@ describe('manual lyrics reader', () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('track_name=Test+song&'))).toBe(true);
   });
 
+  it('sends RadioTEDU User-Agent header on all LRCLIB requests', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        trackName: 'Test song',
+        artistName: 'Test artist',
+        plainLyrics: 'First line\nSecond line',
+      }),
+    } as Response);
+
+    await fetchScrollableLyrics({track: 'Test song', artist: 'Test artist'});
+    expect(fetchMock).toHaveBeenCalled();
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = options.headers as Record<string, string>;
+    expect(headers['User-Agent']).toContain('RadioTEDU');
+  });
+
+  it('resolves parenthesized track titles via baseTrack direct get', async () => {
+    jest.spyOn(global, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/api/get' && url.searchParams.get('track_name') === 'The Fate of Ophelia') {
+        return {
+          ok: true,
+          json: async () => ({
+            trackName: 'The Fate of Ophelia',
+            artistName: 'Taylor Swift',
+            plainLyrics: 'I heard you calling on the megaphone\nYou wanna see me all alone',
+          }),
+        } as Response;
+      }
+      return {ok: false, status: 404, json: async () => ({})} as Response;
+    });
+
+    const lines = await fetchScrollableLyrics({
+      track: 'The Fate of Ophelia (The Life of a Showgirl)',
+      artist: 'Taylor Swift',
+    });
+    expect(lines).toEqual([
+      'I heard you calling on the megaphone',
+      'You wanna see me all alone',
+    ]);
+  });
+
+  it('falls back to lyrics.ovh when LRCLIB has no results', async () => {
+    jest.spyOn(global, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('lyrics.ovh')) {
+        return {
+          ok: true,
+          json: async () => ({
+            lyrics: 'Fallback line 1\r\nFallback line 2',
+          }),
+        } as Response;
+      }
+      return {ok: false, status: 404, json: async () => ({})} as Response;
+    });
+
+    const lines = await fetchScrollableLyrics({
+      track: 'Obscure Track',
+      artist: 'Indie Artist',
+    });
+    expect(lines).toEqual(['Fallback line 1', 'Fallback line 2']);
+  });
+
   it('does not start fallback searches after cancellation', async () => {
     const controller = new AbortController();
     const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async () => {

@@ -59,6 +59,11 @@ export const parseScrollableLyrics = (source: unknown): string[] =>
     .filter(Boolean)
     .slice(0, 500);
 
+export const LRCLIB_HEADERS: Record<string, string> = {
+  Accept: 'application/json',
+  'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Mobile) RadioTEDU/1.3.7 (https://radiotedu.com)',
+};
+
 export async function fetchScrollableLyrics({
   track,
   artist = '',
@@ -74,39 +79,48 @@ export async function fetchScrollableLyrics({
   checkAborted();
   const cleanTrack = String(track).trim();
   const cleanArtist = String(artist).trim();
-  // Fast direct get for exact artist + track match
-  if (cleanTrack && cleanArtist) {
-    try {
-      const getParams = new URLSearchParams({
-        track_name: cleanTrack,
-        artist_name: cleanArtist,
-      });
-      const getRes = await fetch(`https://lrclib.net/api/get?${getParams.toString()}`, {
-        signal,
-        headers: {Accept: 'application/json'},
-      });
-      if (getRes.ok) {
-        const getBody = (await getRes.json()) as LrcLibCandidate;
-        checkAborted();
-        if (matchScore(getBody, cleanTrack, cleanArtist) >= 4 &&
-          !getBody.instrumental && (getBody.plainLyrics || getBody.syncedLyrics)) {
-          const parsed = parseScrollableLyrics(getBody.plainLyrics || getBody.syncedLyrics);
-          if (parsed.length > 0) {
-            return parsed;
-          }
-        }
-      }
-    } catch {
-      checkAborted();
-      // Fallback to fuzzy search below
-    }
-  }
-
   const baseTrack = cleanTrack.replace(/\s*(?:\[|\().*$/, '').trim();
   const unquotedTrack = cleanTrack.replace(/["“”'‘’]/g, '').trim();
   const strippedTrack = cleanTrack
     .replace(/\s*(?:\[|\().*?(?:remaster|live|mono|stereo|version|mix|edit|deluxe|bonus|anniversary).*?(?:\]|\))/gi, '')
     .trim();
+
+  // Fast direct get for exact artist + track match (try baseTrack then cleanTrack)
+  if (cleanArtist) {
+    const directVariants = [baseTrack, cleanTrack, strippedTrack].filter(
+      (t, idx, arr) => t && arr.indexOf(t) === idx,
+    );
+    for (const directTrack of directVariants) {
+      try {
+        const getParams = new URLSearchParams({
+          track_name: directTrack,
+          artist_name: cleanArtist,
+        });
+        const getRes = await fetch(`https://lrclib.net/api/get?${getParams.toString()}`, {
+          signal,
+          headers: LRCLIB_HEADERS,
+        });
+        if (getRes.ok) {
+          const getBody = (await getRes.json()) as LrcLibCandidate;
+          checkAborted();
+          if (
+            matchScore(getBody, cleanTrack, cleanArtist) >= 4 &&
+            !getBody.instrumental &&
+            (getBody.plainLyrics || getBody.syncedLyrics)
+          ) {
+            const parsed = parseScrollableLyrics(getBody.plainLyrics || getBody.syncedLyrics);
+            if (parsed.length > 0) {
+              return parsed;
+            }
+          }
+        }
+      } catch {
+        checkAborted();
+        // Continue to next direct variant or search
+      }
+    }
+  }
+
   const searches = [
     {track: cleanTrack, artist: cleanArtist},
     {track: baseTrack, artist: cleanArtist},
@@ -132,7 +146,7 @@ export async function fetchScrollableLyrics({
     try {
       const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
         signal,
-        headers: {Accept: 'application/json'},
+        headers: LRCLIB_HEADERS,
       });
       if (response.ok) {
         const body = await response.json();
@@ -157,5 +171,34 @@ export async function fetchScrollableLyrics({
     .filter(entry => entry.score >= 4)
     .sort((left, right) => right.score - left.score)[0]?.candidate;
 
-  return parseScrollableLyrics(match?.plainLyrics || match?.syncedLyrics);
+  const lrclibLyrics = parseScrollableLyrics(match?.plainLyrics || match?.syncedLyrics);
+  if (lrclibLyrics.length > 0) {
+    return lrclibLyrics;
+  }
+
+  // Secondary fallback: lyrics.ovh (free open lyrics API)
+  if (cleanArtist && (baseTrack || cleanTrack)) {
+    try {
+      const ovhArtist = encodeURIComponent(cleanArtist);
+      const ovhTrack = encodeURIComponent(baseTrack || cleanTrack);
+      const ovhRes = await fetch(`https://api.lyrics.ovh/v1/${ovhArtist}/${ovhTrack}`, {
+        signal,
+        headers: {Accept: 'application/json'},
+      });
+      if (ovhRes.ok) {
+        const ovhBody = (await ovhRes.json()) as {lyrics?: string};
+        checkAborted();
+        if (ovhBody.lyrics) {
+          const ovhParsed = parseScrollableLyrics(ovhBody.lyrics);
+          if (ovhParsed.length > 0) {
+            return ovhParsed;
+          }
+        }
+      }
+    } catch {
+      checkAborted();
+    }
+  }
+
+  return [];
 }

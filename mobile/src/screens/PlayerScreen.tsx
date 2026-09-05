@@ -167,8 +167,10 @@ const PlayerScreen = ({route}: any) => {
     : metadata?.title || activeTrack?.title || currentChannel?.name || 'RadioTEDU';
   const displayArtist =
     stationOnlyPresentation ? '' : metadata?.artist || (activeTrack?.artist as string) || currentChannel?.description || 'RadioTEDU';
-  const lyricsTrackTitle = stationOnlyPresentation ? '' : String(metadata?.title || '').trim();
-  const lyricsTrackArtist = stationOnlyPresentation ? '' : String(metadata?.artist || '').trim();
+  const resolvedTrackTitle = String(metadata?.title || activeTrack?.title || '').trim();
+  const resolvedTrackArtist = String(metadata?.artist || (activeTrack?.artist as string) || '').trim();
+  const lyricsTrackTitle = stationOnlyPresentation ? '' : resolvedTrackTitle;
+  const lyricsTrackArtist = stationOnlyPresentation ? '' : resolvedTrackArtist;
   const lyricsTrackKey = lyricsTrackTitle ? `${lyricsTrackArtist}\n${lyricsTrackTitle}` : '';
 
   const currentChannelId = currentChannel?.id;
@@ -510,6 +512,15 @@ const PlayerScreen = ({route}: any) => {
               ) : (
                 <View style={styles.lyricsStatusWrap}>
                   <Text style={styles.lyricsStatusText}>{copy('player.lyricsNotFound')}</Text>
+                  <TouchableOpacity
+                    style={styles.lyricsRetryButton}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setManualLyricsRequestedKey('');
+                      setTimeout(() => setManualLyricsRequestedKey(lyricsTrackKey), 50);
+                    }}>
+                    <Text style={styles.lyricsRetryText}>{copy('common.retry') || 'Tekrar Dene'}</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -843,6 +854,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  lyricsRetryButton: {
+    marginTop: SPACING.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  lyricsRetryText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '700',
   },
   cellularLyricsContainer: {
     marginTop: SPACING.sm,

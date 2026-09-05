@@ -103,9 +103,15 @@ export async function fetchScrollableLyrics({
   }
 
   const baseTrack = cleanTrack.replace(/\s*(?:\[|\().*$/, '').trim();
+  const unquotedTrack = cleanTrack.replace(/["“”'‘’]/g, '').trim();
+  const strippedTrack = cleanTrack
+    .replace(/\s*(?:\[|\().*?(?:remaster|live|mono|stereo|version|mix|edit|deluxe|bonus|anniversary).*?(?:\]|\))/gi, '')
+    .trim();
   const searches = [
     {track: cleanTrack, artist: cleanArtist},
     {track: baseTrack, artist: cleanArtist},
+    {track: strippedTrack, artist: cleanArtist},
+    {track: unquotedTrack, artist: cleanArtist},
     {track: baseTrack, artist: ''},
   ];
   const seenSearches = new Set<string>();

@@ -2,6 +2,8 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  Linking,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -48,7 +50,7 @@ const EventsScreen = () => {
     setLoading(true);
     try {
       const [nextEvents, nextMarket] = await Promise.all([
-        user ? fetchEvents() : Promise.resolve([]),
+        fetchEvents(),
         user ? fetchMarketItems() : Promise.resolve([]),
       ]);
       setEvents(nextEvents);
@@ -65,6 +67,15 @@ const EventsScreen = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleEventAction = (event: AppEvent) => {
+    const ticketUrl = event.ticket_url || (event.metadata as any)?.ticket_url;
+    if (ticketUrl) {
+      Linking.openURL(ticketUrl).catch(err => logSafeError('events.openTicketUrl', err));
+      return;
+    }
+    void handleRegister(event);
+  };
 
   const handleRegister = async (event: AppEvent) => {
     if (isAccountRequired) {
@@ -172,19 +183,29 @@ const EventsScreen = () => {
         ) : events.length === 0 ? (
           <Empty text={copy('events.empty')} />
         ) : (
-          events.map((event) => (
-            <View key={event.id} style={styles.eventCard}>
-              <Text style={styles.eventTitle}>{event.title}</Text>
-              <Text style={styles.eventMeta}>{formatEventDate(event.starts_at, i18n.language)} · {event.location || copy('events.campus')}</Text>
-              {event.description ? <Text style={styles.eventDescription} numberOfLines={3}>{event.description}</Text> : null}
-              <View style={styles.eventFooter}>
-                <Text style={styles.eventPoints}>+{event.check_in_points || 0} {copy('events.checkinGold')}</Text>
-                <TouchableOpacity style={styles.secondaryButton} onPress={() => handleRegister(event)}>
-                  <Text style={styles.secondaryButtonText}>{copy('events.join')}</Text>
-                </TouchableOpacity>
+          events.map((event) => {
+            const ticketUrl = event.ticket_url || (event.metadata as any)?.ticket_url;
+            return (
+              <View key={event.id} style={styles.eventCard}>
+                {event.image_url ? (
+                  <Image source={{uri: event.image_url}} style={styles.eventImage} resizeMode="cover" />
+                ) : null}
+                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text style={styles.eventMeta}>{formatEventDate(event.starts_at, i18n.language)} · {event.location || copy('events.campus')}</Text>
+                {event.description ? <Text style={styles.eventDescription} numberOfLines={3}>{event.description}</Text> : null}
+                <View style={styles.eventFooter}>
+                  <Text style={styles.eventPoints}>
+                    {event.price ? event.price : `+${event.check_in_points || 0} ${copy('events.checkinGold')}`}
+                  </Text>
+                  <TouchableOpacity style={styles.secondaryButton} onPress={() => handleEventAction(event)}>
+                    <Text style={styles.secondaryButtonText}>
+                      {ticketUrl ? (i18n.language === 'tr' ? 'Bilet Al' : 'Get Tickets') : copy('events.join')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
 
         <View style={styles.marketHeader}>
@@ -249,6 +270,7 @@ const styles = StyleSheet.create({
   sectionTitle: {color: COLORS.text, fontSize: 19, fontWeight: '900', marginTop: SPACING.xl, marginBottom: SPACING.sm},
   loader: {paddingVertical: SPACING.lg},
   eventCard: {padding: SPACING.md, borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.sm},
+  eventImage: {width: '100%', height: 160, borderRadius: 14, marginBottom: SPACING.sm, backgroundColor: '#1e1e1e'},
   eventTitle: {color: COLORS.text, fontSize: 17, fontWeight: '900'},
   eventMeta: {color: COLORS.textMuted, fontSize: 12, marginTop: 4},
   eventDescription: {color: COLORS.textMuted, fontSize: 13, lineHeight: 19, marginTop: SPACING.sm},

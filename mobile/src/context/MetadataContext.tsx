@@ -1,9 +1,9 @@
-import React, {createContext, useCallback, useContext, useRef, useState, ReactNode} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode} from 'react';
 import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-player';
 import {RADIO_CHANNELS, shouldUseStationOnlyPresentation} from '../data/radioChannels';
 import {fetchAlbumArtwork} from '../utils/api';
 import {parseTrackPlayerMetadataEvent} from '../services/streamMetadata';
-import {fetchStationArtwork} from '../services/stationArtwork';
+import {fetchStationArtwork, fetchStationLiveMetadata} from '../services/stationArtwork';
 
 interface TrackMetadata {
   title: string;
@@ -34,9 +34,62 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
     setMetadata(null);
   }, []);
 
+  const pollActiveStation = useCallback(async () => {
+    try {
+      const track = await TrackPlayer.getActiveTrack();
+      if (!track?.id) {
+        return;
+      }
+      const channel = RADIO_CHANNELS.find(item => item.id === String(track.id));
+      if (!channel) {
+        return;
+      }
+      if (shouldUseStationOnlyPresentation(channel, (track as any).streamQuality)) {
+        clearMetadata();
+        return;
+      }
+      const liveInfo = await fetchStationLiveMetadata(channel.id);
+      if (!liveInfo || !liveInfo.title) {
+        return;
+      }
+      const artist = liveInfo.artist || channel.name || 'RadioTEDU';
+      const key = `${channel.id}:${artist}:${liveInfo.title}`;
+      if (key === lastMetadataKey.current) {
+        return;
+      }
+      lastMetadataKey.current = key;
+
+      const fallbackArtwork = String(
+        channel.artwork || 'https://radiotedu.com/logo.png',
+      );
+      const immediate: TrackMetadata = {
+        title: liveInfo.title,
+        artist,
+        artwork: liveInfo.artwork || fallbackArtwork,
+      };
+
+      updateMetadata(immediate);
+      const index = await TrackPlayer.getActiveTrackIndex();
+      if (index !== undefined) {
+        await TrackPlayer.updateMetadataForTrack(index, immediate);
+      }
+    } catch {
+      // transient network errors ignored
+    }
+  }, [clearMetadata, updateMetadata]);
+
+  useEffect(() => {
+    void pollActiveStation();
+    const interval = setInterval(() => {
+      void pollActiveStation();
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [pollActiveStation]);
+
   useTrackPlayerEvents(
     [
       Event.PlaybackActiveTrackChanged,
+      Event.PlaybackState,
       Event.PlaybackMetadataReceived,
       Event.MetadataTimedReceived,
       Event.MetadataCommonReceived,
@@ -44,6 +97,11 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
     async event => {
       if (event.type === Event.PlaybackActiveTrackChanged) {
         clearMetadata();
+        void pollActiveStation();
+        return;
+      }
+      if (event.type === Event.PlaybackState) {
+        void pollActiveStation();
         return;
       }
 

@@ -23,6 +23,7 @@ import {
   AppEvent,
   GamificationHome,
   MarketItem,
+  fetchEvents,
   fetchGamificationHome,
 } from '../services/gamificationService';
 import {logSafeError} from '../utils/safeLog';
@@ -53,6 +54,7 @@ const HomeScreen = () => {
   );
   const {user} = useAuth();
   const [home, setHome] = useState<GamificationHome | null>(null);
+  const [publicEvents, setPublicEvents] = useState<AppEvent[]>([]);
   const [erpIdentity, setErpIdentity] = useState<ErpIdentityStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,9 +62,16 @@ const HomeScreen = () => {
   const [loadFailed, setLoadFailed] = useState(false);
 
   const loadHome = useCallback(async () => {
+    const eventsPromise = fetchEvents().catch(error => {
+      logSafeError('home.events', error);
+      return [] as AppEvent[];
+    });
+
     if (!user) {
       setHome(null);
       setErpIdentity(null);
+      const events = await eventsPromise;
+      setPublicEvents(events);
       setRefreshing(false);
       return;
     }
@@ -76,12 +85,14 @@ const HomeScreen = () => {
           logSafeError('home.erp-identity', error);
           return null;
         });
-      const [nextHome, nextIdentity] = await Promise.all([
+      const [nextHome, nextIdentity, nextEvents] = await Promise.all([
         fetchGamificationHome(),
         identityRequest,
+        eventsPromise,
       ]);
       setHome(nextHome);
       setErpIdentity(nextIdentity);
+      setPublicEvents(nextEvents);
     } catch (error) {
       logSafeError('home.gamification', error);
       setLoadFailed(true);
@@ -106,6 +117,7 @@ const HomeScreen = () => {
 
   const accountHome = user ? home : null;
   const homeData = accountHome ?? emptyHome;
+  const displayEvents = homeData.events.length > 0 ? homeData.events : publicEvents;
   const canUseRoomQr = erpIdentity?.linked === true &&
     erpIdentity.permissions.includes('room.attendance');
 
@@ -122,15 +134,13 @@ const HomeScreen = () => {
           <HomeDiscovery refreshKey={refreshKey} />
 
           <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
-          {loading && !accountHome ? (
+          {loading && !accountHome && displayEvents.length === 0 ? (
             <ActivityIndicator accessibilityLabel={copy('home.upcoming')} color={COLORS.primary} style={styles.loading} />
-          ) : loadFailed ? (
+          ) : loadFailed && displayEvents.length === 0 ? (
             <EmptyCard text={discoveryCopy(i18n.language).eventsError} />
-          ) : !user ? (
-            <EmptyCard text={copy('home.accountText')} />
-          ) : homeData.events.length === 0 ? (
+          ) : displayEvents.length === 0 ? (
             <EmptyCard text={copy('home.noEvents')} />
-          ) : homeData.events.slice(0, 3).map(event => (
+          ) : displayEvents.slice(0, 3).map(event => (
             <TouchableOpacity key={event.id} accessibilityRole="button" onPress={() => navigation.navigate('Events')}>
               <EventPreview event={event} />
             </TouchableOpacity>

@@ -569,3 +569,31 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
 
 2026-09-05 1.3.7 publication: source 5f4de3f, phone 13070, production cert and APK ELF/ZIP 16 KB passed; 379 mobile and 24 terminal tests passed. Packaged terminal exercised; APK radio/podcast/notification controls and matching Elton John artwork verified. Publish only as prerelease: foreground setup retry bug, missing artist metadata, Lo-Fi stream, full Auto projection and final device/auth/Gold coverage remain unresolved. See docs/RELEASE_1_3_7_VERIFICATION.md. No Play submission or production balance mutation.
+
+## 2026-09-05 live radio metadata, LRCLIB lyrics & bilet events auto-sync handoff snapshot
+
+- Resolved Lyrics & Live Metadata Pipeline:
+  - Added `mapStationIdToApiId` (mapping `radiotedu-energize` to `radiotedu-spark`) and `fetchStationLiveMetadata` in `mobile/src/services/stationArtwork.ts` to fetch real-time song title, artist, and high-res cover art from the official WordPress station endpoint (`/wp-json/radiotedu/v1/stations/{stationId}/live?player=1`).
+  - Integrated station live metadata polling (every 8 seconds and on channel switch / playback start) in `mobile/src/context/MetadataContext.tsx`, reliably populating `metadata` across all music channels (RadioTEDU, Classical, Jazz, Energize, Rock) without depending on ExoPlayer native ICY events.
+  - Enhanced `mobile/src/services/lyricsService.ts` with unquoted and stripped track searches, maximizing LRCLIB plain & synced lyrics match rates.
+  - In `mobile/src/screens/PlayerScreen.tsx`, ensured immediate lyrics lookup when metadata is active and fixed manual `[ LYRICS ]` button triggers on cellular/manual loads.
+- Resolved Bilet Events Auto-Sync & Automatic Date Expiration:
+  - In `backend/src/routes/gamification.ts`:
+    - Mounted `GET /events` with `optionalWebAuthMiddleware` before `webAuthMiddleware`, enabling public read access for guests and unauthenticated visitors while preserving user registration status when authenticated.
+    - Implemented `fetchBiletEvents` to parse `https://radiotedu.com/bilet/` (`Hello Campus Party`, 01 Ekim 2026, 20:00–23:59, Le Porte Roof, 800 ₺) with 60s in-memory cache.
+    - Enforced strict date filtering `(ae.ends_at IS NULL OR ae.ends_at >= NOW())` in SQL and in memory, guaranteeing past events automatically disappear once their date has elapsed (e.g. October 2nd for October 1st event).
+  - In `mobile/src/services/gamificationService.ts`:
+    - Updated `AppEvent` interface with `price`, `category`, `slug`, `ticket_url`.
+    - Added resilient direct fallback to `https://radiotedu.com/bilet/` and client-side expiration filter `!event.ends_at || new Date(event.ends_at).getTime() >= Date.now()`.
+  - In `mobile/src/screens/HomeScreen.tsx`:
+    - Removed `!user` gate on events, fetching public campus events so all users (guests and authenticated) see upcoming events.
+  - In `mobile/src/screens/EventsScreen.tsx`:
+    - Unconditionally fetches events, renders event poster image (`Image`), shows price, and displays "Bilet Al / Get Tickets" button linking directly to the ticket purchasing page (`Linking.openURL`).
+  - Added unit test suite `mobile/__tests__/biletEvents.test.ts` (3/3 passed): verified Istanbul timezone ISO date conversion, HTML scraping, active status today, and automated removal on October 2nd.
+- Verification Matrix:
+  - Mobile Jest: 96/96 suites (382/382 tests passed).
+  - Android Publish Audit: 36/36 passed.
+  - Study-game: 46/46 files (227/227 tests + 3 generation contracts passed).
+  - Root tests: 16/16 passed (`technology-rtai-story.test.mjs`, `production-account.test.mjs`).
+  - Read-only language routing: 6/6 suites (100% pass).
+- Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.

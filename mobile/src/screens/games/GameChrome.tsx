@@ -35,6 +35,7 @@ interface GameShellProps {
   rightLabel?: string;
   onBack: () => void;
   children: React.ReactNode;
+  sidebarContent?: React.ReactNode;
 }
 
 export function GameShell({
@@ -47,15 +48,13 @@ export function GameShell({
   rightLabel,
   onBack,
   children,
+  sidebarContent,
 }: GameShellProps) {
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
   const progressCopy = discoveryCopy(i18n.language);
   const {best} = useDeviceBest();
-  return (
-    <View style={styles.shell}>
-      <View pointerEvents="none" style={[styles.ambientOrb, {backgroundColor: accentColor}]} />
-      <View pointerEvents="none" style={[styles.ambientOrbSmall, {borderColor: accentColor}]} />
+  const chrome = (<>
       <View style={styles.navbar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
@@ -93,7 +92,18 @@ export function GameShell({
         </View>
       ) : null}
 
-      {children}
+  </>);
+  return (
+    <View style={[styles.shell, sidebarContent ? styles.horizontalShell : null]}>
+      <View pointerEvents="none" style={[styles.ambientOrb, {backgroundColor: accentColor}]} />
+      <View pointerEvents="none" style={[styles.ambientOrbSmall, {borderColor: accentColor}]} />
+      {sidebarContent ? (
+        <ScrollView style={styles.sidebar} contentContainerStyle={styles.sidebarContent}>
+          {chrome}
+          {sidebarContent}
+        </ScrollView>
+      ) : chrome}
+      {sidebarContent ? <View style={styles.gameContent}>{children}</View> : children}
     </View>
   );
 }
@@ -245,6 +255,10 @@ const styles = StyleSheet.create({
   recordTitle: {color: COLORS.text, fontSize: 14, textAlign: 'center'},
   recordValue: {color: '#F4C542', fontSize: 28, fontWeight: '900', marginTop: 4},
   retryButton: {flex: 0, alignSelf: 'stretch'},
+  horizontalShell: {flexDirection: 'row', gap: SPACING.md},
+  sidebar: {width: '32%', flexGrow: 0},
+  sidebarContent: {paddingBottom: SPACING.sm},
+  gameContent: {flex: 1, minWidth: 0},
   shell: {
     flex: 1,
     backgroundColor: COLORS.background,

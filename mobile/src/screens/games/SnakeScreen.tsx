@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {PanResponder, StyleSheet, Text, TouchableOpacity, Vibration, View} from 'react-native';
+import {PanResponder, StyleSheet, Text, TouchableOpacity, Vibration, View, useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -23,6 +23,8 @@ const INITIAL_FOOD = createFood([...START_SNAKE, ...INITIAL_OBSTACLES]);
 
 const SnakeScreen = () => {
   const navigation = useNavigation<any>();
+  const {width, height} = useWindowDimensions();
+  const landscape = width > height;
   const route = useRoute<any>();
   const game = route.params?.game as ArcadeGame;
   const {i18n} = useTranslation();
@@ -222,17 +224,7 @@ const SnakeScreen = () => {
     },
   });
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <GameShell
-        title={localizedGame.title}
-        subtitle={localizedGame.description}
-        icon="snake"
-        accentColor="#48E08A"
-        score={score}
-        progressLabel={`${snake.length} ${copy('games.snakeLength')}`}
-        rightLabel={running ? copy('games.snakeRight') : copy('games.snakeStopped')}
-        onBack={() => navigation.goBack()}>
+  const hud = (<>
         <FeedbackToast text={feedback} />
         <ComboMeter label={copy('games.snakeCombo')} value={combo} />
 
@@ -246,6 +238,22 @@ const SnakeScreen = () => {
           <Text style={styles.swipeHint}>SWIPE</Text>
         </View>
 
+  </>);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <GameShell
+        title={localizedGame.title}
+        subtitle={localizedGame.description}
+        icon="snake"
+        accentColor="#48E08A"
+        score={score}
+        progressLabel={`${snake.length} ${copy('games.snakeLength')}`}
+        rightLabel={running ? copy('games.snakeRight') : copy('games.snakeStopped')}
+        sidebarContent={landscape ? hud : undefined}
+        onBack={() => navigation.goBack()}>
+        {!landscape ? hud : null}
+        <View style={[styles.playArea, landscape ? styles.landscapePlayArea : null]}>
         <View style={styles.boardArea} onLayout={({nativeEvent: {layout}}) => {
           // Reserve the controls' natural height; fit the board into what remains.
           setCellSize(Math.max(1, Math.min(22, (Math.min(layout.width, layout.height) - 14) / BOARD_SIZE - 1)));
@@ -302,6 +310,7 @@ const SnakeScreen = () => {
           </View>
         </View>
 
+        </View>
         <Text style={styles.helpText}>{copy('games.snakeHelp')}</Text>
       </GameShell>
 
@@ -383,6 +392,8 @@ const styles = StyleSheet.create({
   notePill: {flexDirection: 'row', gap: 4, paddingHorizontal: 10, height: 34, borderRadius: 17, alignItems: 'center', backgroundColor: 'rgba(255,213,74,0.10)', borderWidth: 1, borderColor: 'rgba(255,213,74,0.24)'},
   noteCount: {color: '#FFD54A', fontWeight: '900'},
   swipeHint: {marginLeft: 'auto', color: '#48E08A', fontSize: 10, fontWeight: '900', letterSpacing: 1.5},
+  playArea: {flex: 1, minHeight: 0},
+  landscapePlayArea: {flexDirection: 'row', gap: SPACING.sm, alignItems: 'stretch'},
   boardArea: {flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', marginVertical: SPACING.sm},
   board: {alignSelf: 'center', padding: 6, borderRadius: 26, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(72,224,138,0.48)', backgroundColor: '#0D1511', shadowColor: '#48E08A', shadowOpacity: 0.2, shadowRadius: 18, elevation: 8},
   row: {flexDirection: 'row'},

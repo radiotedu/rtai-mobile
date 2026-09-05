@@ -512,3 +512,23 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Android Release now defaults to artifacts only; no public release until runtime checks pass.
 - Local 357 tests, tsc, lint, version and 36 Android audit checks passed. Runtime verification pending.
 - Initial Actions attempt found sdkmanager absent from PATH; use its SDK absolute path.
+
+## 2026-09-05 mobile candidate v1.3.6 (cb735e3) verification & release handoff snapshot
+
+- Resolved runtime defects from phone/automotive video reviews:
+  - Fixed full-player Hi-Fi badge to reflect active stream URL/quality instead of pending state (`0d29179`).
+  - Fixed Snake board dynamic scaling in portrait and responsive landscape layout to eliminate D-pad Down clipping (`0d29179`, `cb735e3`).
+  - Fixed Music IQ catalog header copy (`0d29179`).
+  - Decoupled car podcast catalog initialization from foreground RNTP setup and retained station/artist subtitle in Media3 car service (`b2c7981`).
+  - Integrated official Media3 1.10.1 FLAC decoder with libFLAC 1.5.0 in `mobile/android/flacdecoder` to eliminate Automotive `c2.android.flac.decoder` crash (`a51329e`, `f598c28`, `e148ed0`).
+  - Implemented NetInfo radio network recovery to automatically transition from ERROR back to PLAYING upon network reconnection with 33s buffer (`50683a8`).
+- Actions Builds & Candidate Artifacts:
+  - Android Build: https://github.com/radiotedu/rtai-mobile/actions/runs/33932343014
+  - CI: https://github.com/radiotedu/rtai-mobile/actions/runs/33932343063
+  - APK: `RadioTEDU-Mobile-v1.3.6.apk` (89,094,055 bytes, version 1.3.6, versionCode 13060).
+  - Production certificate SHA-256: `b3b08db1c4aefbf4251d53951061ada727796479de45d817f9576232ff2d9439`.
+  - APK SHA-256: `c608c6707a833596e1915c73f9ad1653d4abfab9fd73fdb8a95c7b969c559273`.
+  - Artifact path: `artifacts/release-v1.3.6-cb735e3/` and copied to `C:\Users\akgul\Desktop\RadioTEDU-Mobile-v1.3.6.apk`.
+- Test counts: 367 mobile tests (94 suites), Android static audit 36/36, release/API contracts 22/22, 24 native libraries verified 16 KB ELF PT_LOAD aligned. 38 recorded video runs archived.
+- Commit hash: `cb735e363d25f2981c84bbeb2318c3bddc62f4d0` on `origin/main`.
+- Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.

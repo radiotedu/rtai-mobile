@@ -131,15 +131,32 @@ function installedFileSha256(serial, file) {
   throw new Error(`Cannot hash installed APK on device: ${file}`);
 }
 
-function inspectInstalledApp(serial, packageName, component) {
+function inspectInstalledApp(serial, packageName, component, inspectedApk) {
   const baseApkPath = installedBaseApkPath(serial, packageName);
   const packageDump = String(adbRun(serial, ['shell', 'dumpsys', 'package', packageName]));
+  const baseApkSha256 = installedFileSha256(serial, baseApkPath);
+  let metadata = packageDump;
+  // Some Android system images omit application metadata from dumpsys. Read the
+  // inspected binary only after proving it is exactly the installed base.apk.
+  if (!metadata.includes('com.radiotedumobile.BUILD_GIT_SHA=') ||
+      !metadata.includes('com.radiotedumobile.BUILD_GIT_DIRTY=')) {
+    if (!inspectedApk || sha256(fs.readFileSync(inspectedApk)) !== baseApkSha256) {
+      throw new Error('Cannot recover provenance from an APK that differs from the installed binary.');
+    }
+    const xml = String(run(process.env.AAPT || 'aapt', ['dump', 'xmltree', inspectedApk, 'AndroidManifest.xml']));
+    const source = xml.match(/BUILD_GIT_SHA[^\n]*\n[^\n]*?"([0-9a-f]{40})"/i)?.[1];
+    const dirtyValue = xml.match(/BUILD_GIT_DIRTY[^\n]*\n[^\n]*?\(type 0x12\)(0x[0-9a-f]+)\b/i)?.[1]?.toLowerCase();
+    if (!source || !['0x0', '0xffffffff'].includes(dirtyValue)) {
+      throw new Error('Inspected APK has no valid immutable source provenance.');
+    }
+    metadata = `com.radiotedumobile.BUILD_GIT_SHA=${source}\ncom.radiotedumobile.BUILD_GIT_DIRTY=${dirtyValue !== '0x0'}`;
+  }
   const versionName = packageDump.match(/versionName=([^\s]+)/)?.[1];
   const versionCode = packageDump.match(/versionCode=(\d+)/)?.[1];
-  const buildGitSha = packageDump.match(
+  const buildGitSha = metadata.match(
     /com\.radiotedumobile\.BUILD_GIT_SHA=([0-9a-f]{40})/i,
   )?.[1]?.toLowerCase();
-  const buildGitDirty = packageDump.match(
+  const buildGitDirty = metadata.match(
     /com\.radiotedumobile\.BUILD_GIT_DIRTY=(true|false)/i,
   )?.[1]?.toLowerCase() === 'true';
   if (!versionName || !versionCode) {
@@ -148,7 +165,7 @@ function inspectInstalledApp(serial, packageName, component) {
   if (!buildGitSha) {
     throw new Error(`Installed package has no immutable BUILD_GIT_SHA metadata: ${packageName}.`);
   }
-  if (!packageDump.includes('com.radiotedumobile.BUILD_GIT_DIRTY=')) {
+  if (!metadata.includes('com.radiotedumobile.BUILD_GIT_DIRTY=')) {
     throw new Error(`Installed package has no BUILD_GIT_DIRTY metadata: ${packageName}.`);
   }
   return {
@@ -159,7 +176,7 @@ function inspectInstalledApp(serial, packageName, component) {
     buildGitSha,
     buildGitDirty,
     baseApkPath,
-    baseApkSha256: installedFileSha256(serial, baseApkPath),
+    baseApkSha256,
   };
 }
 
@@ -171,7 +188,7 @@ function verifyInstalledApp(serial, session) {
   if (inputDigest !== session.apk.sha256) {
     throw new Error('Prepared APK file hash changed after session creation.');
   }
-  const installed = inspectInstalledApp(serial, session.packageName, session.component);
+  const installed = inspectInstalledApp(serial, session.packageName, session.component, session.apk.path);
   if (installed.baseApkSha256 !== session.apk.sha256) {
     throw new Error('Installed base.apk hash differs from the prepared APK.');
   }
@@ -556,7 +573,7 @@ function prepare() {
     throw new Error(`Display density is ${actualDensity}, expected ${requestedDensity}.`);
   }
 
-  const installed = inspectInstalledApp(serial, packageName, component);
+  const installed = inspectInstalledApp(serial, packageName, component, apk);
   if (installed.baseApkSha256 !== apkDigest) {
     throw new Error('Installed base.apk hash differs from the exact input APK.');
   }

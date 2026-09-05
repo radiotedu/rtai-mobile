@@ -112,7 +112,8 @@ export async function fetchScrollableLyrics({
   const candidates = new Map<string, LrcLibCandidate>();
 
   const fetchPromises = searches.map(async search => {
-    const searchKey = `${normalize(search.artist)}\n${normalize(search.track)}`;
+    // Match normalization removes album suffixes; query deduplication must not.
+    const searchKey = `${search.artist.toLocaleLowerCase('en-US')}\n${search.track.toLocaleLowerCase('en-US')}`;
     if (!search.track || seenSearches.has(searchKey)) {
       return;
     }

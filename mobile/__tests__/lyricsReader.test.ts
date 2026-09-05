@@ -23,6 +23,19 @@ describe('manual lyrics reader', () => {
     expect(await fetchScrollableLyrics({track: 'Test song', artist: 'Test artist'})).toEqual(['First', 'Second']);
   });
 
+  it('searches the simplified title when broadcast metadata includes an album', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async input => {
+      const url = new URL(String(input));
+      const matchingQuery = url.pathname.endsWith('/search') && url.searchParams.get('track_name') === 'Test song';
+      return {ok: true, json: async () => matchingQuery ? [{
+        trackName: 'Test song', artistName: 'Test artist', plainLyrics: 'Matched lyrics',
+      }] : []} as Response;
+    });
+    expect(await fetchScrollableLyrics({track: 'Test song (Album title)', artist: 'Test artist'}))
+      .toEqual(['Matched lyrics']);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('track_name=Test+song&'))).toBe(true);
+  });
+
   it('does not start fallback searches after cancellation', async () => {
     const controller = new AbortController();
     const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async () => {

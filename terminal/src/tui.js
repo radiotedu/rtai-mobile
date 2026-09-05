@@ -4,7 +4,11 @@ const {buildFrame, mouseAction} = require('./layout');
 
 function draw(state) {
   state.layout = buildFrame(state, {columns: process.stdout.columns, rows: process.stdout.rows});
-  process.stdout.write(`${ESC}H${state.layout.lines.join('\r\n')}${ESC}J`);
+  const frame = `${ESC}H${state.layout.lines.join('\r\n')}${ESC}J`;
+  if (frame !== state.previousFrame) {
+    process.stdout.write(frame);
+    state.previousFrame = frame;
+  }
 }
 
 function parseInput(buffer) {
@@ -114,6 +118,7 @@ async function runTui({
     };
 
     const resumeInput = () => {
+      state.previousFrame = null;
       if (process.stdin.isTTY) process.stdin.setRawMode(true);
       process.stdin.on('data', dataHandler);
       process.stdout.write(`${ESC}?25l${ESC}?1000h${ESC}?1006h`);

@@ -3,6 +3,7 @@ import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-playe
 import {RADIO_CHANNELS, shouldUseStationOnlyPresentation} from '../data/radioChannels';
 import {fetchAlbumArtwork} from '../utils/api';
 import {parseTrackPlayerMetadataEvent} from '../services/streamMetadata';
+import {fetchStationArtwork} from '../services/stationArtwork';
 
 interface TrackMetadata {
   title: string;
@@ -55,6 +56,11 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const channel = RADIO_CHANNELS.find(item => item.id === String(track.id));
+      if (!channel) {
+        // Podcast tracks already contain their own title, publisher and cover.
+        clearMetadata();
+        return;
+      }
       if (shouldUseStationOnlyPresentation(channel, (track as any).streamQuality)) {
         clearMetadata();
         return;
@@ -67,7 +73,7 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       lastMetadataKey.current = key;
 
       const fallbackArtwork = String(
-        track.artwork || channel?.artwork || 'https://radiotedu.com/logo.png',
+        channel.artwork || 'https://radiotedu.com/logo.png',
       );
       const immediate = {
         title: parsed.title,
@@ -81,10 +87,14 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
         await TrackPlayer.updateMetadataForTrack(index, immediate);
       }
 
-      if (parsed.artwork || parsed.isJingle) {
+      if ((parsed.artwork && parsed.artwork !== fallbackArtwork) || parsed.isJingle) {
         return;
       }
-      const fetchedArtwork = await fetchAlbumArtwork(`${artist} ${parsed.title}`);
+      const stationArtwork = await fetchStationArtwork(String(track.id), parsed.title, parsed.artist);
+      if (key !== lastMetadataKey.current) {return;}
+      const fetchedArtwork = stationArtwork?.artwork || (parsed.artist
+        ? await fetchAlbumArtwork(`${parsed.artist} ${parsed.title.replace(/\s*(?:\[|\().*$/, '')}`)
+        : null);
       if (!fetchedArtwork || key !== lastMetadataKey.current) {
         return;
       }
@@ -92,7 +102,7 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       if (String(activeAfterFetch?.id ?? '') !== String(track.id)) {
         return;
       }
-      const enriched = {...immediate, artwork: fetchedArtwork};
+      const enriched = {...immediate, artist: stationArtwork?.artist || artist, artwork: fetchedArtwork};
       updateMetadata(enriched);
       const activeIndex = await TrackPlayer.getActiveTrackIndex();
       if (activeIndex !== undefined) {

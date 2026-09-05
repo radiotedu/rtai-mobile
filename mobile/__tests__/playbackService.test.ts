@@ -1,5 +1,9 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
+jest.mock('../src/services/networkPlaybackRecovery', () => ({
+  startNetworkPlaybackRecovery: jest.fn(() => jest.fn()),
+}));
+
 jest.mock('react-native-track-player', () => ({
   __esModule: true,
   default: {

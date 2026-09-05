@@ -19,6 +19,7 @@ import {fetchPodcasts} from './podcastService';
 import {resolveCurrentStreamPreferences} from './streamPreferences';
 import {logSafeError} from '../utils/safeLog';
 import {Analytics} from './analyticsService';
+import {startNetworkPlaybackRecovery} from './networkPlaybackRecovery';
 
 const LATEST_PODCAST_WORDS = [
   'latest',
@@ -120,7 +121,11 @@ export async function handleRemotePlaySearch(query: string): Promise<void> {
   await playChannelById(channel.id);
 }
 
+let stopNetworkRecovery: (() => void) | undefined;
+
 export const PlaybackService = async function () {
+  stopNetworkRecovery?.();
+  stopNetworkRecovery = startNetworkPlaybackRecovery();
   // Transport controls (notification, lock screen, car, headset, Bluetooth).
   TrackPlayer.addEventListener(Event.RemotePlay, resumePlaybackByUser);
   TrackPlayer.addEventListener(Event.RemotePause, pausePlaybackByUser);

@@ -50,6 +50,30 @@ def main():
     assert source.count('new LibraryLoader("flacJNI")') == 1
     java.write_text(source.replace('new LibraryLoader("flacJNI")',
                                    'new LibraryLoader("media3flacJNI")'))
+    # Ogg timestamps belong to Media3. libFLAC 1.5's gap-silence insertion can
+    # emit multiple frames per packet, violating this adapter's one-output
+    # contract. Flush continuity between complete Ogg packets, retaining
+    # STREAMINFO and all per-frame CRC/format validation.
+    decoder = work / 'java/androidx/media3/decoder/flac/FlacDecoder.java'
+    source = decoder.read_text()
+    field = '  private final FlacDecoderJni decoderJni;'
+    assert source.count(field) == 1 and source.count('if (reset) {') == 1
+    source = source.replace(field, field + '''
+  private boolean packetizedInput;
+
+  void setPacketizedInput(boolean packetizedInput) {
+    this.packetizedInput = packetizedInput;
+  }
+''')
+    decoder.write_text(source.replace('if (reset) {', 'if (reset || packetizedInput) {'))
+    renderer = work / 'java/androidx/media3/decoder/flac/LibflacAudioRenderer.java'
+    source = renderer.read_text()
+    marker = '    TraceUtil.endSection();'
+    assert source.count(marker) == 1
+    renderer.write_text(source.replace(marker, '''    decoder.setPacketizedInput(
+        "audio/ogg".equals(format.containerMimeType)
+            || "application/ogg".equals(format.containerMimeType));
+''' + marker))
     cmake = work / 'jni/CMakeLists.txt'
     cmake.write_text(cmake.read_text().replace('flacJNI', 'media3flacJNI'))
     licenses = work / 'assets/media3-flac-licenses'

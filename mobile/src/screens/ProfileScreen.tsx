@@ -425,7 +425,7 @@ const ProfileScreen = () => {
             <Text style={styles.role}>
               {user?.role === 'admin'
                 ? copy('profile.admin')
-                : user?.is_guest
+                : !user || user.is_guest
                   ? copy('profile.guest')
                   : copy('profile.roleMember')}
             </Text>

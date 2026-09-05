@@ -20,5 +20,11 @@ force feature availability or suppress compiler errors.
 The pre-24 guard uses NDK's `ANDROID_PLATFORM_LEVEL`; its legacy toolchain sets
 `CMAKE_SYSTEM_VERSION` to 1 even when targeting API 24 or later.
 
+Ogg FLAC packets are decoded independently: the adapter flushes decoder
+continuity before each complete Ogg packet, while retaining STREAMINFO.
+Media3 owns container timing. This prevents libFLAC's gap-silence insertion
+from producing multiple outputs for one packet and aborting the single-output
+adapter. Per-frame CRC, block size and audio-format checks remain enabled.
+
 NDK 28 builds position-independent code with flexible page sizes. The release
 workflow must still inspect every final ELF and the APK's ZIP alignment.

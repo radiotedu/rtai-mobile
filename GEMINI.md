@@ -597,3 +597,25 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Root tests: 16/16 passed (`technology-rtai-story.test.mjs`, `production-account.test.mjs`).
   - Read-only language routing: 6/6 suites (100% pass).
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
+
+## 2026-09-05 v1.3.7 final signed release build and GitHub release upload handoff snapshot
+
+- Executed production release build on GitHub Actions via `android-release.yml` (run `33968253738`) on `main` commit `5c0be7a`:
+  - Verified main release commit, Node 20, Java 17, and release version tag `v1.3.7`.
+  - All source checks passed (Jest 96/96 suites 382/382 tests, TypeScript noEmit, ESLint quiet, Android publish audit 36/36).
+  - Live services verification passed.
+  - Rebuilt Media3 FLAC with 16 KB page alignment support.
+  - Assembled and bundled release packages (`:app:assembleRelease :app:bundleRelease :tv:assembleRelease :tv:bundleRelease :wear:assembleRelease :wear:bundleRelease`).
+  - Verified production certificate SHA-256 (`B3B08DB1C4AEFBF4251D53951061ADA727796479DE45D817F9576232FF2D9439`).
+  - Verified 16 KB ELF and ZIP alignment for Android 15.
+- Downloaded verified signed artifacts:
+  - `RadioTEDU-Mobile-v1.3.7.apk` (SHA-256: `3963da80566e0d55d3b94c8c5fe07b26a820bede6093b4110434e79d2dc92e79`, 89,099,327 bytes)
+  - `RadioTEDU-Mobile-v1.3.7.aab` (SHA-256: `0dc7466128449f92504e999afd04e9a858a4fdeba403e6e10abc0bf418c081d9`)
+  - `RadioTEDU-TV-v1.3.7.apk` & `.aab`
+  - `RadioTEDU-Wear-v1.3.7.apk` & `.aab`
+  - `RadioTEDU-Terminal-v1.3.7.zip` & `.tgz`
+- Uploaded all assets to GitHub Release `v1.3.7` via `gh release upload v1.3.7 --clobber` as active authenticated user `akgularda`.
+- Updated GitHub Release metadata and release notes (`gh release edit v1.3.7`), marking it as production release (`prerelease: false`).
+- Remote and local branches in sync at `5c0be7a` with clean working tree.
+- Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
+

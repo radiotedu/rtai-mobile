@@ -1,7 +1,7 @@
 {
   "name": "radiotedu",
-  "version": "1.3.6",
-  "description": "The official terminal radio, 32-band audio visualizer, Gold listening & campus Study client for RadioTEDU",
+  "version": "1.3.7",
+  "description": "The official terminal radio, responsive player, Gold listening & campus Study client for RadioTEDU",
   "author": "RadioTEDU <https://radiotedu.com>",
   "type": "commonjs",
   "bin": {
@@ -11,7 +11,7 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/tui.js && node --check src/api.js && node --check src/stations.js && node --check src/store.js && node --check src/player.js && node --check src/gold.js && node --check src/pkce.js",
+    "check": "node --check src/index.js && node --check src/tui.js && node --check src/layout.js && node --check src/api.js && node --check src/stations.js && node --check src/store.js && node --check src/player.js && node --check src/gold.js && node --check src/pkce.js",
     "prepublishOnly": "npm test && npm run check"
   },
   "files": [
@@ -28,7 +28,7 @@
     "tui",
     "ffplay",
     "mpv",
-    "spectrum-visualizer",
+    "audio-player",
     "pomodoro",
     "gold"
   ],

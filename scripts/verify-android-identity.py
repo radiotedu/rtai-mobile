@@ -12,6 +12,8 @@ def main():
     parser.add_argument('apk')
     parser.add_argument('--tools', required=True)
     parser.add_argument('--sha', required=True)
+    parser.add_argument('--version', required=True)
+    parser.add_argument('--version-code', required=True, type=int)
     args = parser.parse_args()
     from pathlib import Path
     tools = Path(args.tools)
@@ -23,14 +25,15 @@ def main():
     if actual != [CERT]:
         raise ValueError('APK does not have the established production signing certificate')
     badging = subprocess.check_output([str(aapt), 'dump', 'badging', args.apk], text=True)
-    if not re.search(r"package: name='com\.radiotedumobile' versionCode='13060' versionName='1\.3\.6'", badging):
+    expected = "package: name='com.radiotedumobile' versionCode='{}' versionName='{}'".format(args.version_code, args.version)
+    if expected not in badging:
         raise ValueError('Unexpected package/version in actual APK')
     manifest = subprocess.check_output([str(aapt), 'dump', 'xmltree', args.apk, 'AndroidManifest.xml'], text=True)
     if not re.search(r'BUILD_GIT_SHA[^\n]*\n[^\n]*' + re.escape(args.sha), manifest):
         raise ValueError('APK source commit differs from requested source')
     if not re.search(r'BUILD_GIT_DIRTY[^\n]*\n[^\n]*0x0\b', manifest):
         raise ValueError('APK was built from a dirty checkout')
-    print(json.dumps({'package': 'com.radiotedumobile', 'version': '1.3.6', 'versionCode': 13060,
+    print(json.dumps({'package': 'com.radiotedumobile', 'version': args.version, 'versionCode': args.version_code,
                       'certificateSha256': CERT, 'sourceCommit': args.sha, 'sourceClean': True}))
 
 

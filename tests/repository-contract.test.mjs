@@ -184,7 +184,6 @@ test('rejects extra paths after owned service endpoint literals', () => {
 test('rejects tracked subsystems and generated artifacts', () => {
   const fixtureRoot = createGitFixture();
   const trackedSubsystems = [
-    'backend/index.js',
     'kiosk/index.js',
     'tools/local-voting-agent/index.js',
     'wordpress/index.php',
@@ -192,6 +191,7 @@ test('rejects tracked subsystems and generated artifacts', () => {
   const trackedArtifacts = [
     'node_modules/root.js',
     'dist/root.js',
+    'backend/dist/server.js',
     'build/root.js',
     '.gradle/root.bin',
     'mobile/node_modules/pkg/index.js',

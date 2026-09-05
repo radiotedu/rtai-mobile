@@ -190,6 +190,7 @@ const PlayerScreen = ({route}: any) => {
       return () => controller.abort();
     }
 
+    setLyricsLines([]);
     setIsLyricsLoading(true);
     fetchScrollableLyrics({
       track: lyricsTrackTitle,
@@ -197,10 +198,12 @@ const PlayerScreen = ({route}: any) => {
       signal: controller.signal,
     })
       .then(lines => {
+        if (controller.signal.aborted) {return;}
         setLyricsLines(lines);
         setIsLyricsLoading(false);
       })
       .catch(error => {
+        if (controller.signal.aborted) {return;}
         setIsLyricsLoading(false);
         if (error?.name !== 'AbortError') {
           logSafeError('player.lyrics', error);

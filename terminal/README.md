@@ -1,90 +1,27 @@
-<div align="center">
+# RadioTEDU Terminal
 
-# 📻 radiotedu-tui
+A responsive radio player with keyboard and mouse controls, a focus timer and server-backed account balances. Version **1.3.7**.
 
-**The Spotify-TUI inspired terminal client, 32-band real-time audio spectrum visualizer, Focus Pomodoro lounge, server-verified Gold listening engine, and campus Study companion for RadioTEDU.**
+## Interface
 
-[![Version](https://img.shields.io/badge/version-v1.4.4-brightgreen.svg?style=flat-square)](package.json)
-[![Organization](https://img.shields.io/badge/organization-RadioTEDU-red.svg?style=flat-square)](https://radiotedu.com)
-[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-informational.svg?style=flat-square&logo=node.js)](https://nodejs.org)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](https://github.com/radiotedu/radiotedu-tui)
-[![Audio Engines](https://img.shields.io/badge/audio-mpv%20%7C%20ffplay%20(auto--fetch)-orange.svg?style=flat-square)](https://mpv.io)
-[![Dependencies](https://img.shields.io/badge/dependencies-0%20(Pure%20Node.js)-success.svg?style=flat-square)](package.json)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+RadioTEDU burgundy, warm white and slate keep stations, playback and controls readable. The layout follows the terminal dimensions, scrolls the station selection into view and restores your shell when you quit. Use **Cascadia Mono** or **JetBrains Mono** in your terminal settings; the application respects the host font.
 
-[🚀 Quick Start](#-installation--quick-start) •
-[🎨 Interface Layout](#-interface-layout) •
-[⌨️ Controls](#-keyboard-shortcuts--controls) •
-[🖱️ Mouse Support](#-mouse-controls) •
-[📻 Stations & FLAC](#-stations--stream-qualities) •
-[🔐 Authentication & SSO](#-authentication--erp-sso) •
-[⚡ CLI Mode](#-headless-cli-commands) •
-[📻 Organization](#-organization--community)
+Four views: Stations, Audio, Focus and Account. Audio reports the selected stream format and player status. It does not claim to measure signal strength, bit depth or a live spectrum. Gold comes from the server; completing a local focus timer does not manufacture a reward.
 
-</div>
-
----
-
-## 🌟 Overview
-
-`radiotedu-tui` brings the sleek aesthetic of [Rigellute/spotify-tui](https://github.com/Rigellute/spotify-tui) and the modern OpenCode / Catppuccin palette to your terminal. Stream campus live broadcasts, enjoy **Lossless 24-bit FLAC** audio on Classical and Jazz channels, watch a real-time animated graphic equalizer, track Study & Focus Pomodoro sessions in TED University campus areas, and earn server-verified RadioTEDU Gold rewards—all with **zero external npm runtime dependencies**.
-
-### Key Highlights
-
-- 🎛️ **Multi-Pane TUI Dashboard**: Tabbed interface (`[1: Stations]`, `[2: Visualizer]`, `[3: Study & Lyrics]`, `[4: Account]`) with smooth layout adaptation for any terminal size (min 96 columns).
-- 📊 **32-Band Audio Spectrum Visualizer**: Dynamic multi-octave harmonic audio equalizer (`cava` style) with sub-bass, mid, and treble simulation, peak-hold decay dots, and labeled frequency axis (`60Hz` to `16kHz`).
-- 🎵 **Pristine Audio Streaming**: Support for **FLAC 24-bit Hi-Fi**, HE-AAC v2, AAC-LC, MP3, and Ogg/Opus streams.
-- 🔊 **Zero-Config Audio Auto-Download**: Automatically detects `mpv` or `ffplay`. If neither is found, `radiotedu-tui` automatically downloads a lightweight, audio-only `ffplay` binary on first launch (Windows & Linux).
-- 🖱️ **Full Mouse & Keyboard Integration**: Native 1006 SGR mouse support (click to play stations, switch tabs, drag/click volume slider, trigger control action pills) alongside intuitive keyboard shortcuts.
-- 🔐 **Secure Dual Authentication**:
-  - Direct **RadioTEDU Account** login via an interactive terminal modal with masked password input.
-  - **TED University ERP SSO** with an instant 8-character device pairing code (`AAAA-BBBB` at `radiotedu.com/erp/device`) and RFC 7636 PKCE S256 challenge security.
-- 🪙 **Server-Verified Gold Listening**: Listening proof engine with rotating cryptographic nonces and heartbeat verification—no client-side minting or tampering (+20 Gold / hour).
-- 📚 **Focus Pomodoro & Study Companion**: Built-in 25/5 and 50/10 Focus Pomodoro timer and Study tracker for TEDU Library and Çim Alan, linked directly with user account stats.
-- ⚡ **Ultra-Lightweight & Cross-Platform**: Runs natively on Linux, macOS, and Windows with 0 npm bloat using standard Node.js 18+ runtime APIs.
-
----
-
-## 🎨 Interface Layout
-
-```text
-╭─ 📻 RADIOTEDU // LIVE DASHBOARD v1.4.4 ────────────────────────────────────────── [👤 RadioTEDU Member  ◆ 420 Gold] ─╮
-│  [1: Stations]   2: Visualizer   3: Study & Lyrics   4: Account                                               │
-├───────────────────────────────────┬───────────────────────────────────────────────────────────────────────────┤
-│ STATIONS (9 CHANNELS)             │ LIVE AUDIO SPECTRUM & STREAM INFO                                         │
-│                                   │                                                                           │
-│   ● RadioTEDU     Flagship Main   │       •               •               •                                   │
-│   ● Classical     Symphonic [FLAC]│     █ █ █           █ █ █           █ █ █           █ █                   │
-│ ▸ ● Jazz          Bebop     [FLAC]│     █ █ █ █       █ █ █ █ █       █ █ █ █ █       █ █ █ █                 │
-│   ● Lo-Fi         Chillhop Beats  │   █ █ █ █ █ █   █ █ █ █ █ █ █   █ █ █ █ █ █ █   █ █ █ █ █ █               │
-│   ● Energize      Workout EDM     │   █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █ █           │
-│   ● Rock          Classic & Alt   │   60Hz 125Hz 250Hz  500Hz  1kHz   2kHz   4kHz   8kHz  16kHz               │
-│   ● English       Campus English  │                                                                           │
-│   ● Français      Campus French   │   Station : Jazz (FLAC) · 24-bit 96kHz Lossless                           │
-│   ● Voting        Audience Vote   │   Track   : Miles Davis - So What                                         │
-│                                   │   Engine  : mpv · Buffer Healthy · Normal Latency                         │
-├───────────────────────────────────┴───────────────────────────────────────────────────────────────────────────┤
-│ NOW PLAYING: Miles Davis - So What                                                                            │
-│ 04:12 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━●────────────────────────────────────────────── 60:00 [● LIVE]        │
-│                                                                                                               │
-│   [Space] Pause   [F] FLAC   [+] Vol+   [-] Vol-   [L] Login   [S] Study   [Q] Quit     🔉 [████████░░] 80%    │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-```
-
----
+All existing stations remain available, including Lo-Fi, Classical and Jazz FLAC. Stream availability depends on the broadcast service. There are no external npm runtime dependencies.
 
 ## 🚀 Installation & Quick Start
 
 ### Prerequisites
 
 1. **Node.js**: Version 18.0.0 or higher.
-2. **Audio Player Engine**: Supported engines are `mpv` (recommended) or `ffplay`. *(If neither is installed, `radiotedu-tui` automatically downloads a lightweight `ffplay` audio binary for you on Windows & Linux).*
+2. **Audio Player Engine**: Supported engines are `mpv` (recommended) or `ffplay`. *(If neither is installed, `radiotedu-tui` offers to download a lightweight `ffplay` audio binary with your confirmation on Windows & Linux).*
 
 ---
 
 ### Option 1: Windows Installation (CMD & PowerShell)
 
-Direct global installation via npm (Zero antivirus false-positives, no execution policy bypass required):
+Direct global installation via npm (Node.js package):
 
 ```bash
 npm install -g https://radiotedu.com/tui/radiotedu-tui.tgz
@@ -157,12 +94,12 @@ radiotedu login --code=AAAA-BBBB
 
 | Shortcut | Action |
 | :--- | :--- |
-| `1` | Switch to **Tab 1: Stations & Spectrum** |
-| `2` | Switch to **Tab 2: Fullscreen Audio Visualizer** |
-| `3` | Switch to **Tab 3: Campus Study Timer & Lyrics** |
+| `1` | Switch to **Tab 1: Stations** |
+| `2` | Switch to **Tab 2: Audio output** |
+| `3` | Switch to **Tab 3: Focus timer** |
 | `4` | Switch to **Tab 4: Account & Gold Balance** |
 | `Tab` | Cycle active focus between interface panels |
-| `v` | Quick-toggle fullscreen visualizer mode |
+| `v` | Switch between Audio and Stations |
 
 ### Playback & Audio
 
@@ -189,14 +126,7 @@ radiotedu login --code=AAAA-BBBB
 
 ## 🖱️ Mouse Controls
 
-`radiotedu-tui` comes with first-class SGR mouse tracking:
-
-- **Switch Tabs**: Click on `[1: Stations]`, `[2: Visualizer]`, `[3: Study & Lyrics]`, or `[4: Account]` to change tabs instantly.
-- **Select & Play**: Click directly on any station row to tune in immediately.
-- **Scroll Stations**: Use the mouse scroll wheel over the station panel to scroll smoothly.
-- **Toggle Playback**: Click on the track metadata or playbar to toggle between Play and Pause.
-- **Interactive Volume Slider**: Click anywhere along the volume meter bar `[████████░░]` to jump straight to that volume level.
-- **Action Buttons**: Click on any bottom button pill (`[Space]`, `[F]`, `[+]`, `[-]`, `[L]`, `[S]`, `[Q]`) to trigger its action.
+Click a tab, station or labeled action. Mouse targets follow the responsive layout. Scroll selects a station; Enter plays it. In Focus, S starts/pauses, P changes preset, B changes phase and R resets the timer. Authentication dialogs mask passwords and retain keyboard controls.
 
 ---
 
@@ -207,13 +137,13 @@ RadioTEDU broadcasts across 9 official mounts, supporting multi-quality fallback
 | Station | Genre / Purpose | Qualities Supported | Default Codec | Lossless FLAC |
 | :--- | :--- | :--- | :--- | :---: |
 | **RadioTEDU** | Flagship Campus Channel | `Normal`, `Low` | HE-AAC v2 | — |
-| **Classical** | Symphonic, Concerto & Chamber | `Normal`, `Low`, `FLAC` | FLAC 24-bit | ✅ **24-bit Hi-Fi** |
-| **Jazz** | Bebop, Soul, Swing & Modern Jazz | `Normal`, `Low`, `FLAC` | FLAC 24-bit | ✅ **24-bit Hi-Fi** |
+| **Classical** | Symphonic, Concerto & Chamber | `Normal`, `Low`, `FLAC` | HE-AAC v2 | ✅ **FLAC** |
+| **Jazz** | Bebop, Soul, Swing & Modern Jazz | `Normal`, `Low`, `FLAC` | HE-AAC v2 | ✅ **FLAC** |
 | **Lo-Fi** | Chillhop Beats for studying | `Normal`, `Low` | HE-AAC v2 | — |
 | **Energize** | High-tempo workout & EDM | `Normal`, `Low` | HE-AAC v2 | — |
 | **Rock** | Classic Rock & Alternative | `Normal`, `Low` | HE-AAC v2 | — |
-| **English** | International Campus Broadcast | `Normal` | MP3 192k | — |
-| **Français** | French Language Broadcast | `Normal` | MP3 192k | — |
+| **English** | International Campus Broadcast | `Normal` | MP3 | — |
+| **Français** | French Language Broadcast | `Normal` | MP3 | — |
 | **Voting** | Interactive live listener-voted stream | `Normal` | Ogg/Opus | — |
 
 > 💡 **Tip**: Press `f` or click `[F]` to cycle through available stream qualities. When tuning to `FLAC` on metered connections, confirmation is requested to prevent unintended data usage.

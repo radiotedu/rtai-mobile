@@ -23,7 +23,6 @@ const requiredPaths = [
 ];
 
 const forbiddenSubsystems = [
-  'backend',
   'kiosk',
   'tools/local-voting-agent',
   'wordpress',

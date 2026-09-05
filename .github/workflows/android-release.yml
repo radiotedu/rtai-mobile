@@ -208,7 +208,9 @@ jobs:
             # strict-validation failure.
             jarsigner -verify "$aab"
             if [[ "$module" == app ]]; then
-              python3 scripts/verify-android-identity.py "$apk" --tools "$(dirname "$apksigner")" --sha "$GITHUB_SHA"
+              version="${RELEASE_TAG#v}"
+              code="$(node -e 'const v=process.argv[1].split(".").map(Number); console.log(v[0]*10000+v[1]*1000+v[2]*10)' "$version")"
+              python3 scripts/verify-android-identity.py "$apk" --tools "$(dirname "$apksigner")" --sha "$GITHUB_SHA" --version "$version" --version-code "$code"
               python3 scripts/verify-android-native.py "$apk" --zipalign "$(dirname "$apksigner")/zipalign"
               python3 scripts/verify-android-native.py "$aab"
             fi

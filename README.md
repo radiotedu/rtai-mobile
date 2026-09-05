@@ -26,6 +26,7 @@ separated: Study opens `radiotedu.com/study`, voting opens
 | `mobile/` | React Native application, native Android/iOS projects, and Android Auto integration |
 | `study-game/` | Vite and Phaser Study experience, avatar tooling, tests, and production build |
 | `terminal/` | Keyboard/mouse terminal player and Study timer for Linux, macOS, and Windows |
+| `backend/` | Deployed backend source handoff, isolated tests and recovery contracts; deploy separately from the app |
 | `scripts/` | Repository-level source and boundary verification |
 | `tests/` | Contracts that keep this repository standalone and reproducible |
 | `docs/` | API configuration, signing, release, and source-provenance guides |

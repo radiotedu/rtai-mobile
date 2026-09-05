@@ -1,12 +1,48 @@
 import fs from 'fs';
 import path from 'path';
-import {describe, expect, it} from '@jest/globals';
-import {parseScrollableLyrics} from '../src/services/lyricsService';
+import {afterEach, describe, expect, it, jest} from '@jest/globals';
+import {fetchScrollableLyrics, parseScrollableLyrics} from '../src/services/lyricsService';
 
 const readSource = (relativePath: string) =>
   fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
 
 describe('manual lyrics reader', () => {
+  afterEach(() => {jest.restoreAllMocks();});
+
+  it('rejects another artist even when the title is identical', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({ok: true, json: async () => ([{
+      id: 1, trackName: 'Shared title', artistName: 'Different artist', plainLyrics: 'Wrong text',
+    }])} as Response);
+    expect(await fetchScrollableLyrics({track: 'Shared title', artist: 'Requested artist'})).toEqual([]);
+  });
+
+  it('returns an exact matching recording', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({ok: true, json: async () => ({
+      trackName: 'Test song', artistName: 'Test artist', plainLyrics: 'First\nSecond',
+    })} as Response);
+    expect(await fetchScrollableLyrics({track: 'Test song', artist: 'Test artist'})).toEqual(['First', 'Second']);
+  });
+
+  it('does not start fallback searches after cancellation', async () => {
+    const controller = new AbortController();
+    const fetchMock = jest.spyOn(global, 'fetch').mockImplementation(async () => {
+      controller.abort();
+      throw new Error('Transport cancelled');
+    });
+    await expect(fetchScrollableLyrics({track: 'Test song', artist: 'Test artist', signal: controller.signal}))
+      .rejects.toMatchObject({name: 'AbortError'});
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a late response from a transport that ignores abort', async () => {
+    const controller = new AbortController();
+    jest.spyOn(global, 'fetch').mockResolvedValue({ok: true, json: async () => {
+      controller.abort();
+      return {trackName: 'Test song', artistName: 'Test artist', plainLyrics: 'Old lyrics'};
+    }} as Response);
+    await expect(fetchScrollableLyrics({track: 'Test song', artist: 'Test artist', signal: controller.signal}))
+      .rejects.toMatchObject({name: 'AbortError'});
+  });
   it('removes timestamps while preserving the full lyric order', () => {
     expect(parseScrollableLyrics('[00:01.10]First line\n[00:04.20]Second line')).toEqual([
       'First line',

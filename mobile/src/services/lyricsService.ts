@@ -32,6 +32,10 @@ const matchScore = (candidate: LrcLibCandidate, track: string, artist: string): 
   if (!wantedTrack || !resultTrack) {
     return -1;
   }
+  if (wantedArtist && (!resultArtist || !(resultArtist === wantedArtist ||
+    resultArtist.includes(wantedArtist) || wantedArtist.includes(resultArtist)))) {
+    return -1;
+  }
 
   let score = resultTrack === wantedTrack
     ? 12
@@ -60,6 +64,14 @@ export async function fetchScrollableLyrics({
   artist = '',
   signal,
 }: LyricsRequest): Promise<string[]> {
+  const checkAborted = () => {
+    if (signal?.aborted) {
+      const error = new Error('Lyrics request cancelled');
+      error.name = 'AbortError';
+      throw error;
+    }
+  };
+  checkAborted();
   const cleanTrack = String(track).trim();
   const cleanArtist = String(artist).trim();
   // Fast direct get for exact artist + track match
@@ -75,7 +87,9 @@ export async function fetchScrollableLyrics({
       });
       if (getRes.ok) {
         const getBody = (await getRes.json()) as LrcLibCandidate;
-        if (!getBody.instrumental && (getBody.plainLyrics || getBody.syncedLyrics)) {
+        checkAborted();
+        if (matchScore(getBody, cleanTrack, cleanArtist) >= 4 &&
+          !getBody.instrumental && (getBody.plainLyrics || getBody.syncedLyrics)) {
           const parsed = parseScrollableLyrics(getBody.plainLyrics || getBody.syncedLyrics);
           if (parsed.length > 0) {
             return parsed;
@@ -83,6 +97,7 @@ export async function fetchScrollableLyrics({
         }
       }
     } catch {
+      checkAborted();
       // Fallback to fuzzy search below
     }
   }
@@ -127,6 +142,7 @@ export async function fetchScrollableLyrics({
   });
 
   await Promise.allSettled(fetchPromises);
+  checkAborted();
 
   const match = [...candidates.values()]
     .filter(candidate => !candidate.instrumental && (candidate.plainLyrics || candidate.syncedLyrics))

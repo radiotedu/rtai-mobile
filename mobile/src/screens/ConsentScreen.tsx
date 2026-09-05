@@ -66,6 +66,8 @@ const ConsentScreen = () => {
   const [ageRange, setAgeRange] = useState<AgeRange | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
   const [listeningContext, setListeningContext] = useState<ListeningContext | null>(null);
+  const [showDetailedNotice, setShowDetailedNotice] = useState(false);
+  const [showTermsDetails, setShowTermsDetails] = useState(false);
   const adultAnalyticsEligible = isAdultConsentAge(ageRange);
 
   const chooseAgeRange = (nextAgeRange: AgeRange) => {
@@ -137,10 +139,22 @@ const ConsentScreen = () => {
         <View style={styles.legalCard}>
           <Text style={styles.legalHeading}>{t('privacy.controllerHeading')}</Text>
           <Text style={styles.legalText}>{t('privacy.controllerNotice')}</Text>
-          <Text style={styles.legalHeading}>{t('privacy.noticeHeading')}</Text>
-          <Text style={styles.legalText}>{t('privacy.fullNotice')}</Text>
-          <Text style={styles.legalHeading}>{t('privacy.thirdPartyHeading')}</Text>
-          <Text style={styles.legalText}>{t('privacy.thirdPartyNotice')}</Text>
+          <TouchableOpacity
+            style={styles.detailsToggle}
+            onPress={() => setShowDetailedNotice(prev => !prev)}
+            accessibilityRole="button">
+            <Text style={styles.detailsToggleText}>
+              {showDetailedNotice ? '▲ Ayrıntılı Yasal Metni Kapat' : '▼ Aydınlatma ve Gizlilik Detaylarını İncele'}
+            </Text>
+          </TouchableOpacity>
+          {showDetailedNotice ? (
+            <View style={styles.detailsContainer}>
+              <Text style={styles.legalHeading}>{t('privacy.noticeHeading')}</Text>
+              <Text style={styles.legalText}>{t('privacy.fullNotice')}</Text>
+              <Text style={styles.legalHeading}>{t('privacy.thirdPartyHeading')}</Text>
+              <Text style={styles.legalText}>{t('privacy.thirdPartyNotice')}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.demo}>
@@ -251,7 +265,17 @@ const ConsentScreen = () => {
         <Text style={styles.terms}>{t('privacy.termsNote')}</Text>
         <View style={styles.legalCard}>
           <Text style={styles.legalHeading}>{t('privacy.termsHeading')}</Text>
-          <Text style={styles.legalText}>{t('privacy.fullTerms')}</Text>
+          <TouchableOpacity
+            style={styles.detailsToggle}
+            onPress={() => setShowTermsDetails(prev => !prev)}
+            accessibilityRole="button">
+            <Text style={styles.detailsToggleText}>
+              {showTermsDetails ? '▲ Şartlar Metnini Kapat' : '▼ Kullanım Şartları Detaylarını İncele'}
+            </Text>
+          </TouchableOpacity>
+          {showTermsDetails ? (
+            <Text style={styles.legalText}>{t('privacy.fullTerms')}</Text>
+          ) : null}
         </View>
         <TouchableOpacity
           style={styles.termsRow}
@@ -323,6 +347,9 @@ const styles = StyleSheet.create({
   policyLink: {color: COLORS.primary, fontSize: 14, fontWeight: '600', marginTop: SPACING.md},
   notice: {color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginTop: SPACING.md},
   legalCard: {backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.md, marginBottom: SPACING.md},
+  detailsToggle: {paddingVertical: SPACING.xs, marginVertical: SPACING.xs},
+  detailsToggleText: {color: COLORS.primary, fontSize: 13, fontWeight: '700'},
+  detailsContainer: {marginTop: SPACING.sm},
   legalHeading: {color: COLORS.text, fontSize: 14, fontWeight: '800', marginBottom: SPACING.xs},
   legalText: {color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: SPACING.sm},
   legalLinks: {flexDirection: 'row', gap: SPACING.lg},

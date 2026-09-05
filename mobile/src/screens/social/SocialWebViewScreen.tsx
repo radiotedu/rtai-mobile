@@ -133,11 +133,7 @@ const SocialWebViewScreen = () => {
           accessibilityLabel={copy('social.back')}>
           <Icon name="chevron-left" size={22} color={COLORS.text} />
         </TouchableOpacity>
-        <View style={styles.headerIcon}>
-          <Icon name="account-group" size={22} color={COLORS.primary} />
-        </View>
         <View style={styles.headerCopy}>
-          <Text style={styles.kicker}>RadioTEDU</Text>
           <Text style={styles.title}>{copy('social.title')}</Text>
         </View>
         <TouchableOpacity
@@ -226,7 +222,8 @@ const SocialWebViewScreen = () => {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   header: {
-    minHeight: 58,
+    height: 48,
+    minHeight: 48,
     paddingHorizontal: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -234,14 +231,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-  },
-  headerIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(227,30,36,0.12)',
   },
   backButton: {
     width: 34,
@@ -254,8 +243,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   headerCopy: {flex: 1},
-  kicker: {color: COLORS.primary, fontSize: 10, fontWeight: '900', textTransform: 'uppercase'},
-  title: {color: COLORS.text, fontSize: 17, fontWeight: '900'},
+  title: {color: COLORS.text, fontSize: 16, fontWeight: '800'},
   refreshButton: {
     width: 38,
     height: 38,

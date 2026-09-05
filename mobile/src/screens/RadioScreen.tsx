@@ -63,10 +63,13 @@ const RadioScreen = () => {
   const [currentVote, setCurrentVote] = useState<'up' | 'down' | null>(null);
 
   const state = playbackState?.state;
-  const isPlaying = state === State.Playing && currentPlayingId === selectedChannel.id;
+  const normalizeChannelId = (id?: string | null) => (id ? id.replace(/-flac|-low$/, '') : null);
+  const activeBaseId = normalizeChannelId(activeTrack?.id) || normalizeChannelId(currentPlayingId);
+  const selectedBaseId = normalizeChannelId(selectedChannel.id);
+  const isSelectedActive = Boolean(activeBaseId && activeBaseId === selectedBaseId);
+  const isPlaying = state === State.Playing && isSelectedActive;
   const isBuffering =
-    (state === State.Buffering || state === State.Loading) &&
-    currentPlayingId === selectedChannel.id;
+    (state === State.Buffering || state === State.Loading) && isSelectedActive;
 
   const orderedChannels = useMemo(
     () => buildFavoriteChannelOrder(activeChannels, favoriteIds),
@@ -167,7 +170,7 @@ const RadioScreen = () => {
 
   const togglePlayback = async () => {
     const currentState = await TrackPlayer.getState();
-    if (currentState === State.Playing) {
+    if (currentState === State.Playing && isSelectedActive) {
       await pausePlaybackByUser();
     } else {
       await playChannel(selectedChannel);
@@ -322,7 +325,7 @@ const RadioScreen = () => {
                     key={channel.id}
                     channel={channel}
                     isActive={selectedChannel.id === channel.id}
-                    isPlaying={currentPlayingId === channel.id && state === State.Playing}
+                    isPlaying={state === State.Playing && normalizeChannelId(channel.id) === activeBaseId}
                     onPress={() => openChannel(channel)}
                     onToggleFavorite={() => toggleFavorite(channel.id)}
                   />
@@ -347,7 +350,7 @@ const RadioScreen = () => {
                   channel={channel}
                   isFavorite={favoriteIds.includes(channel.id)}
                   isActive={selectedChannel.id === channel.id}
-                  isPlaying={currentPlayingId === channel.id && state === State.Playing}
+                  isPlaying={state === State.Playing && normalizeChannelId(channel.id) === activeBaseId}
                   onPress={() => openChannel(channel)}
                   onToggleFavorite={() => toggleFavorite(channel.id)}
                 />

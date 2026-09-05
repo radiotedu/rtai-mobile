@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import {
+import TrackPlayer, {
   usePlaybackState,
   State,
   useActiveTrack,
@@ -74,7 +74,10 @@ export function getDeepestActiveRouteName(state: any): string | undefined {
 }
 
 export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean {
-  return !activeRouteName || HIDDEN_MINIPLAYER_ROUTES.has(activeRouteName);
+  if (!activeRouteName) {
+    return false;
+  }
+  return HIDDEN_MINIPLAYER_ROUTES.has(activeRouteName);
 }
 
 const TAB_ROUTES = new Set(['Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);
@@ -102,6 +105,22 @@ const MiniPlayer = () => {
       setLastTrack(track);
     }
   }, [track]);
+
+  // Hydrate active track on startup to avoid player hide glitch
+  React.useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const current = await TrackPlayer.getActiveTrack();
+        if (isMounted && current) {
+          setLastTrack(current);
+        }
+      } catch {}
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Use active track OR fallback to last known track to prevent flicker
   const displayTrack = track || lastTrack;

@@ -615,3 +615,39 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Uploaded all assets to GitHub Release `v1.3.7` via `gh release upload v1.3.7 --clobber` as active authenticated user `akgularda`.
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
 
+## 2026-09-05 Downloads.rar testing feedback & bug fixes handoff snapshot
+
+- Implemented comprehensive fixes for all 9 issues identified from tester WhatsApp feedback and screenshots (`Downloads.rar`):
+  1. **LoginScreen Back Navigation** (`mobile/src/screens/auth/LoginScreen.tsx`):
+     - Added safe-area compliant `← Geri` header button allowing guests/users to safely return to previous screens or `MainTabs`.
+  2. **Android Auto App Icon** (`mobile/android/app/src/main/res/mipmap-anydpi-v26/`, `AndroidManifest.xml`, `RadioTeduCarService.kt`):
+     - Added `<monochrome>` drawable element to both `ic_launcher.xml` and `ic_launcher_round.xml`.
+     - Declared `android:icon="@drawable/ic_launcher_monochrome"` and `android:logo` on `RadioTeduCarService`.
+     - Injected `DefaultMediaNotificationProvider` with `setSmallIcon(R.drawable.ic_launcher_monochrome)` preventing black square icon rendering on vehicle displays.
+  3. **Social WebView Header De-duplication** (`mobile/src/screens/social/SocialWebViewScreen.tsx`):
+     - Removed duplicate native kicker and icon, slimmed header height to 48px, and eliminated uppercase `RADİOTEDU` rendering.
+  4. **Profile Duplicate Placeholder & Cache Resilience** (`mobile/src/screens/ProfileScreen.tsx`, `mobile/src/i18n/appCopy.ts`):
+     - Separated `profile.favoriteSongArtist` ("Şarkının sanatçısı") across all 6 locales (en, tr, ru, ar, de, fr).
+     - Added resilient local `AsyncStorage` cache fallback (`profile_favorites_${user.id}`) ensuring custom profile inputs are never lost upon network disconnects.
+  5. **Radio Play/Pause Button State Desynchronization** (`mobile/src/screens/RadioScreen.tsx`):
+     - Normalized active channel IDs (`normalizeChannelId`) stripping quality suffixes (`-flac`, `-low`).
+     - Bound hero button, `FavoriteCard`, and `ChannelGridCard` strictly to `state === State.Playing && normalizeChannelId(channel.id) === activeBaseId`.
+  6. **MiniPlayer Route Visibility & Cold Boot Hydration** (`mobile/src/components/MiniPlayer.tsx`):
+     - Removed `'MainTabs'` from `HIDDEN_MINIPLAYER_ROUTES`.
+     - Hydrated active track on mount via `TrackPlayer.getActiveTrack()` preventing MiniPlayer disappearing on app restarts.
+  7. **Next Song Vote Mobile CSS Injection** (`mobile/src/screens/next-song-vote/NextSongVoteScreen.tsx`):
+     - Injected `VOTING_MOBILE_CSS` injecting viewport meta tags, dark styling (`#0b1013`), font normalization, and strict `text-transform: none !important`.
+  8. **Leaderboard QA & Bot Account Filtering** (`mobile/src/screens/LeaderboardScreen.tsx`):
+     - Excluded placeholder/bot identities ("Codex", "Terminal User", "Test User", "QA User", "Bot") from the community leaderboard ranking.
+  9. **Consent & Privacy Modal UX Streamlining** (`mobile/src/screens/ConsentScreen.tsx`):
+     - Wrapped extensive legal texts (`privacy.fullNotice`, `privacy.thirdPartyNotice`, `privacy.fullTerms`) inside collapsible containers (`showDetailedNotice`, `showTermsDetails`), keeping initial onboarding clean while maintaining Jest compliance.
+- Tests & Verification:
+  - Mobile Jest: 96/96 suites passed (385/385 tests passed).
+  - Android Publish Audit: 36/36 passed.
+  - Study-game: 46/46 files passed (227/227 tests passed + 3/3 contract tests passed).
+  - Root contract tests: 16/16 passed (`technology-rtai-story.test.mjs`, `production-account.test.mjs`).
+  - Brand compliance: Strictly `RadioTEDU` / `RADIOTEDU`, zero occurrences of `RADİOTEDU`.
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+- Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
+
+

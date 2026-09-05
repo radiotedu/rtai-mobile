@@ -36,6 +36,17 @@ const categories: Array<{value: LeaderboardCategory; key: string}> = [
   {value: 'social', key: 'leaderboard.category.social'},
 ];
 
+const isTestOrBotAccount = (name: string) => {
+  const lower = name.toLowerCase();
+  return (
+    lower.includes('codex') ||
+    lower.includes('terminal user') ||
+    lower.includes('test user') ||
+    lower.includes('qa user') ||
+    lower.includes('bot')
+  );
+};
+
 const LeaderboardScreen = () => {
   const navigation = useNavigation<any>();
   const {i18n} = useTranslation();
@@ -81,7 +92,11 @@ const LeaderboardScreen = () => {
         return;
       }
 
-      setLeaderboard(response.data.data.leaderboard || []);
+      const rawList = response.data.data.leaderboard || [];
+      const filtered = rawList.filter(
+        (u: any) => !isTestOrBotAccount(u.display_name || u.username || ''),
+      );
+      setLeaderboard(filtered);
     } catch (error) {
       logSafeError('leaderboard.load', error);
     } finally {

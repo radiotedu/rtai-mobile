@@ -78,6 +78,24 @@ const LoginScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <View style={styles.topBar}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => {
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        } else {
+                            navigation.navigate('MainTabs');
+                        }
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={copy('common.back') || 'Geri'}
+                    hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
+                >
+                    <Icon name="arrow-left" size={24} color={COLORS.text} />
+                    <Text style={styles.backButtonText}>{copy('common.back') || 'Geri'}</Text>
+                </TouchableOpacity>
+            </View>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
@@ -192,6 +210,25 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+    },
+    topBar: {
+        paddingHorizontal: SPACING.lg,
+        paddingTop: Platform.OS === 'android' ? SPACING.xs : 0,
+        height: 48,
+        justifyContent: 'center',
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        paddingVertical: SPACING.xs,
+        paddingHorizontal: SPACING.xs,
+        gap: 6,
+    },
+    backButtonText: {
+        color: COLORS.text,
+        fontSize: 16,
+        fontWeight: '600',
     },
     keyboardView: {
         flex: 1,

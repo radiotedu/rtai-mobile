@@ -45,6 +45,48 @@ import {
 } from '../../services/webViewSessionRefreshCoordinator';
 
 const WebView = NativeWebView as any;
+const VOTING_MOBILE_CSS = `
+(function() {
+  try {
+    var meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'viewport';
+      document.head.appendChild(meta);
+    }
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+
+    var styleId = 'rt-vote-mobile-style';
+    if (!document.getElementById(styleId)) {
+      var s = document.createElement('style');
+      s.id = styleId;
+      s.innerHTML = \`
+        * {
+          -webkit-text-size-adjust: 100%;
+          text-transform: none !important;
+        }
+        body {
+          margin: 0 !important;
+          padding: 8px 12px !important;
+          background-color: #0b1013 !important;
+          color: #ffffff !important;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          overflow-x: hidden !important;
+        }
+        .kicker, [class*="kicker"] {
+          text-transform: none !important;
+        }
+        .header, header, nav, .site-header {
+          display: none !important;
+        }
+      \`;
+      document.head.appendChild(s);
+    }
+  } catch (e) {}
+})();
+true;
+`;
+
 const EMPTY_AUTH_STATE: VotingWebViewAuthState = {
   accessToken: null,
   user: null,
@@ -222,6 +264,7 @@ export default function NextSongVoteScreen() {
     // its session refresh.
     webViewReadyRef.current = true;
     injectCurrentAuth();
+    webViewRef.current?.injectJavaScript(VOTING_MOBILE_CSS);
   }, [injectCurrentAuth]);
 
   const handleNavigationRequest = useCallback((request: {url: string}) => {

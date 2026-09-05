@@ -111,6 +111,8 @@
       <service
         android:name=".car.RadioTeduCarService"
         android:exported="true"
+        android:icon="@drawable/ic_launcher_monochrome"
+        android:logo="@drawable/ic_launcher_monochrome"
         android:foregroundServiceType="mediaPlayback">
         <intent-filter>
           <!-- Media3 controllers use this action. Keep the platform browse

@@ -36,6 +36,7 @@ import androidx.media3.extractor.metadata.icy.IcyInfo
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.CommandButton
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
@@ -220,6 +221,11 @@ class RadioTeduCarService : MediaLibraryService() {
         // It reads current Media3 metadata, so ICY title/artist changes are also
         // reflected on notification, lock screen, Auto, AAOS, and Wear surfaces.
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR)
+        setMediaNotificationProvider(
+            DefaultMediaNotificationProvider.Builder(this)
+                .setSmallIcon(R.drawable.ic_launcher_monochrome)
+                .build(),
+        )
 
         CarBridge.onCatalogChanged = {
             preloadCatalogArtwork()

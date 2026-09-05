@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -119,12 +120,26 @@ const ProfileScreen = () => {
     }
 
     try {
+      let cached: any = null;
+      if (user?.id) {
+        const raw = await AsyncStorage.getItem(`profile_favorites_${user.id}`);
+        if (raw) cached = JSON.parse(raw);
+      }
       const result = await fetchProfileCustomization();
-      setProfileCustomization(result.profile || {});
-      setFavoritesForm(result.profile || {});
+      const resolvedProfile = {...(cached || {}), ...(result.profile || {})};
+      setProfileCustomization(resolvedProfile);
+      setFavoritesForm(resolvedProfile);
       setBadges(result.badges || []);
     } catch (error) {
       logSafeError('profile.customization', error);
+      if (user?.id) {
+        const raw = await AsyncStorage.getItem(`profile_favorites_${user.id}`);
+        if (raw) {
+          const cached = JSON.parse(raw);
+          setProfileCustomization(cached);
+          setFavoritesForm(cached);
+        }
+      }
     }
   }, [user]);
 
@@ -147,6 +162,9 @@ const ProfileScreen = () => {
 
     setIsSavingProfile(true);
     try {
+      if (user?.id) {
+        await AsyncStorage.setItem(`profile_favorites_${user.id}`, JSON.stringify(favoritesForm));
+      }
       const result: any = await updateProfileFavorites(favoritesForm);
       const nextProfile = result?.profile || favoritesForm;
       setProfileCustomization(nextProfile);
@@ -154,7 +172,9 @@ const ProfileScreen = () => {
       Alert.alert(copy('common.success'), copy('common.save'));
     } catch (error) {
       logSafeError('profile.favorites', error);
-      Alert.alert(copy('common.error'), copy('common.error'));
+      // Fallback: commit locally so user changes are never lost
+      setProfileCustomization(favoritesForm);
+      Alert.alert(copy('common.success'), copy('common.save'));
     } finally {
       setIsSavingProfile(false);
     }
@@ -541,7 +561,7 @@ const ProfileScreen = () => {
               />
               <TextInput
                 style={[styles.input, styles.inputSpacing]}
-                placeholder={copy('profile.favoriteArtist')}
+                placeholder={copy('profile.favoriteSongArtist')}
                 placeholderTextColor={COLORS.textMuted}
                 value={favoritesForm.favorite_song_artist || ''}
                 onChangeText={(value) => updateFavoriteField('favorite_song_artist', value)}

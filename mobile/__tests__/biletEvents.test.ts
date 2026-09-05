@@ -3,7 +3,6 @@ import {
   parseBiletDates,
   parseBiletHtml,
   fetchEvents,
-  AppEvent,
 } from '../src/services/gamificationService';
 import api from '../src/services/api';
 
@@ -84,8 +83,6 @@ describe('bilet events auto-sync and date expiration', () => {
   });
 
   it('automatically keeps the event visible prior to expiration and filters it out on October 2nd', async () => {
-    const parsedEvents = parseBiletHtml(SAMPLE_BILET_HTML);
-
     // Mock API returning empty, forcing direct bilet fetch
     (api.get as jest.MockedFunction<any>).mockResolvedValueOnce({data: {data: {events: []}}});
     jest.spyOn(global, 'fetch').mockResolvedValueOnce({

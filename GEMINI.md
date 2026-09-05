@@ -532,3 +532,28 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Test counts: 367 mobile tests (94 suites), Android static audit 36/36, release/API contracts 22/22, 24 native libraries verified 16 KB ELF PT_LOAD aligned. 38 recorded video runs archived.
 - Commit hash: `cb735e363d25f2981c84bbeb2318c3bddc62f4d0` on `origin/main`.
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
+
+## 2026-09-05 backend durable outcome recovery & release candidate verification handoff snapshot
+
+- Resolved Blocker #2 (Backend Game Retry Durable Outcome Recovery):
+  - In backend `src/routes/gamification.ts` (`handleGameScoreRequest`), implemented durable outcome recovery for client score submission retries following lost HTTP responses.
+  - Prior to consuming the session proof, the server checks `game_score_submissions` by `(user_id, client_round_id)`:
+    - On exact retry match: validates score and game integrity, returning original committed `{ score, points_awarded, spendable_points, replayed: true }` without double-crediting points or creating redundant ledger rows.
+    - On conflicting retry (same round ID with altered score): rejects with HTTP 409 conflict.
+    - Survives server process restarts via PostgreSQL table persistence (`game_score_submissions` unique index on `user_id, client_round_id`).
+  - Added unit tests in `src/routes/gamification.test.ts` for exact retry replay, conflict rejection on score tampering, and recovery after proof cache purge (`resetGameSessionProofsForTests()`). All 83 backend tests passed across all 8 files; TypeScript build (`npm run build`) succeeded with 0 errors.
+- Isolated verification script in mobile repository (`scripts/verify-gold-isolated.cjs`):
+  - Added `arcade_games` and `game_score_submissions` schema in in-memory PGlite.
+  - Added 3 new test checks: lost response exact retry, changed score conflict rejection, and process restart simulation.
+  - All 12/12 in-memory PGlite checks passed with 0 production database connections.
+- Verified test matrix:
+  - Mobile Jest: 94/94 suites, 367/367 tests passed.
+  - Android Publish Audit: 36/36 passed.
+  - Release version check: v1.3.6 passed.
+  - Release/API contracts: 22/22 passed.
+  - Terminal tests: 20/20 passed.
+  - Study-game tests: 46 files, 227 tests + 3 generation contracts passed.
+- Blocker status:
+  - Blocker #1 (Lo-Fi stream): Confirmed by user as external streamer-source issue; station and fallback logic remain intact in mobile app.
+  - Blocker #2 (Backend durable outcome recovery): Fully resolved and verified in isolated backend suite. Server archive packaged at `C:\Users\akgul\radiotedu-mobile-backups\backend-archive-durable-recovery-20260905.zip`.
+- Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.

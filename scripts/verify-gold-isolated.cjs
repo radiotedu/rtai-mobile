@@ -111,6 +111,119 @@ async function main() {
       assert.equal(Number(sums.amount), Number((await balance()).spendable_points));
       assert.equal(Number((await query('SELECT count(*) AS count FROM points_ledger WHERE balance_after IS NULL')).rows[0].count), 0);
     });
+    await pg.exec(`
+      CREATE TABLE IF NOT EXISTS arcade_games (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        slug TEXT UNIQUE,
+        title TEXT,
+        point_rate NUMERIC,
+        daily_point_limit INT,
+        is_active BOOLEAN DEFAULT true,
+        metadata JSONB DEFAULT '{}'
+      );
+      CREATE TABLE IF NOT EXISTS game_score_submissions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        game_id UUID REFERENCES arcade_games(id),
+        user_id UUID REFERENCES users(id),
+        score INT NOT NULL DEFAULT 0,
+        points_awarded INT NOT NULL DEFAULT 0,
+        client_round_id VARCHAR(120),
+        reported_score INT,
+        server_elapsed_seconds INT,
+        verification_status VARCHAR(30) NOT NULL DEFAULT 'legacy',
+        submitted_at TIMESTAMPTZ DEFAULT now()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_game_score_submissions_user_round
+        ON game_score_submissions(user_id, client_round_id) WHERE client_round_id IS NOT NULL;
+    `);
+    const gameId = '00000000-0000-4000-8000-000000000002';
+    await query(`INSERT INTO arcade_games (id, slug, title, point_rate, daily_point_limit, is_active, metadata)
+      VALUES ($1, 'snake', 'Snake', 0.02, 50, true, '{"verification":"client-timed-session","surface":"mobile"}'::jsonb)`, [gameId]);
+
+    const {handleGameScoreRequest, handleGameStartRequest} = requireBackend('./dist/routes/gamification');
+    const {resetGameSessionProofsForTests} = requireBackend('./dist/services/gameSessionProof');
+    const createMockRes = () => {
+      const res = {
+        statusCode: 200,
+        body: null,
+        status(code) { res.statusCode = code; return res; },
+        json(payload) { res.body = payload; return res; },
+      };
+      return res;
+    };
+
+    const roundId = 'iso-round-retry-1';
+    const startRes = createMockRes();
+    await handleGameStartRequest({
+      params: { gameId },
+      body: { client_round_id: roundId, submission_source: 'mobile_game' },
+      user: { id: userId, role: 'user' },
+    }, startRes);
+    assert.equal(startRes.statusCode, 201);
+    const startData = startRes.body.data;
+
+    const realNow = Date.now;
+    Date.now = () => realNow() + 5000;
+    try {
+      const scoreBody = {
+        score: 100,
+        client_round_id: roundId,
+        play_duration_ms: 5000,
+        submission_source: 'mobile_game',
+        session_id: startData.session.id,
+        nonce: startData.nonce,
+      };
+      const scoreRes = createMockRes();
+      await handleGameScoreRequest({
+        params: { gameId },
+        body: scoreBody,
+        user: { id: userId, role: 'user' },
+      }, scoreRes);
+      assert.equal(scoreRes.statusCode, 201);
+      assert.equal(scoreRes.body.data.points_awarded, 2);
+
+      await check('lost response followed by exact retry returns committed result without double award', async () => {
+        const retryRes = createMockRes();
+        const ledgerBefore = await ledgerCount();
+        await handleGameScoreRequest({
+          params: { gameId },
+          body: scoreBody,
+          user: { id: userId, role: 'user' },
+        }, retryRes);
+        assert.equal(retryRes.statusCode, 200);
+        assert.equal(retryRes.body.data.score, 100);
+        assert.equal(retryRes.body.data.points_awarded, 2);
+        assert.equal(retryRes.body.data.replayed, true);
+        assert.equal(await ledgerCount(), ledgerBefore);
+      });
+
+      await check('retry with changed score for same round is rejected with conflict', async () => {
+        const conflictRes = createMockRes();
+        await handleGameScoreRequest({
+          params: { gameId },
+          body: {...scoreBody, score: 200},
+          user: { id: userId, role: 'user' },
+        }, conflictRes);
+        assert.equal(conflictRes.statusCode, 409);
+      });
+
+      await check('process restart simulation recovers committed result without in-memory proof', async () => {
+        resetGameSessionProofsForTests();
+        const restartRetryRes = createMockRes();
+        await handleGameScoreRequest({
+          params: { gameId },
+          body: scoreBody,
+          user: { id: userId, role: 'user' },
+        }, restartRetryRes);
+        assert.equal(restartRetryRes.statusCode, 200);
+        assert.equal(restartRetryRes.body.data.score, 100);
+        assert.equal(restartRetryRes.body.data.points_awarded, 2);
+        assert.equal(restartRetryRes.body.data.replayed, true);
+      });
+    } finally {
+      Date.now = realNow;
+    }
+
     console.log(`PASS | isolated Gold persistence | ${checks} checks | production database connections=0`);
   } finally {
     await pg.close();

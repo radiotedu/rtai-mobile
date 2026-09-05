@@ -600,22 +600,18 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 
 ## 2026-09-05 v1.3.7 final signed release build and GitHub release upload handoff snapshot
 
-- Executed production release build on GitHub Actions via `android-release.yml` (run `33968253738`) on `main` commit `5c0be7a`:
-  - Verified main release commit, Node 20, Java 17, and release version tag `v1.3.7`.
-  - All source checks passed (Jest 96/96 suites 382/382 tests, TypeScript noEmit, ESLint quiet, Android publish audit 36/36).
-  - Live services verification passed.
-  - Rebuilt Media3 FLAC with 16 KB page alignment support.
-  - Assembled and bundled release packages (`:app:assembleRelease :app:bundleRelease :tv:assembleRelease :tv:bundleRelease :wear:assembleRelease :wear:bundleRelease`).
-  - Verified production certificate SHA-256 (`B3B08DB1C4AEFBF4251D53951061ADA727796479DE45D817F9576232FF2D9439`).
-  - Verified 16 KB ELF and ZIP alignment for Android 15.
-- Downloaded verified signed artifacts:
-  - `RadioTEDU-Mobile-v1.3.7.apk` (SHA-256: `3963da80566e0d55d3b94c8c5fe07b26a820bede6093b4110434e79d2dc92e79`, 89,099,327 bytes)
-  - `RadioTEDU-Mobile-v1.3.7.aab` (SHA-256: `0dc7466128449f92504e999afd04e9a858a4fdeba403e6e10abc0bf418c081d9`)
-  - `RadioTEDU-TV-v1.3.7.apk` & `.aab`
-  - `RadioTEDU-Wear-v1.3.7.apk` & `.aab`
-  - `RadioTEDU-Terminal-v1.3.7.zip` & `.tgz`
+- Executed production release build on GitHub Actions via `android-release.yml` on `main` commit `6c8d0b6`:
+  - Resolved LRCLIB Cloudflare HTTP 520 block: React Native Android `fetch` uses OkHttp (`okhttp/4.9.2`), which Cloudflare on `lrclib.net` rejects. Attached explicit browser User-Agent (`Mozilla/5.0 (Linux; Android 14; Mobile) RadioTEDU/1.3.7 (https://radiotedu.com)`).
+  - Added multi-variant direct GET in `mobile/src/services/lyricsService.ts`: automatically tries `baseTrack` (e.g. *The Fate of Ophelia*) when metadata contains album/subtitle additions like *(The Life of a Showgirl)*, returning 79 lines of lyrics instantly without search latency.
+  - Linked `resolvedTrackTitle` and `resolvedTrackArtist` from `metadata` and `activeTrack` fallbacks in `mobile/src/screens/PlayerScreen.tsx`.
+  - Added secondary open lyrics fallback to `lyrics.ovh`.
+  - Added in-panel Retry button when lyrics are not found.
+  - Unit tests updated in `mobile/__tests__/lyricsReader.test.ts` (11/11 tests passed).
+  - Mobile test suite: 96/96 suites, 385/385 tests passed. Android publish audit: 36/36 passed. TypeScript and ESLint: 0 errors.
+- Assembled signed production packages:
+  - `RadioTEDU-Mobile-v1.3.7.apk` (SHA-256: `c6ec77922eec932af3ede273a94f008eed5d7c19993514b4fba4177f81841013`, 89,099,327 bytes).
+  - Production certificate SHA-256: `B3B08DB1C4AEFBF4251D53951061ADA727796479DE45D817F9576232FF2D9439`.
+  - 16 KB native ELF and ZIP page alignment verified.
 - Uploaded all assets to GitHub Release `v1.3.7` via `gh release upload v1.3.7 --clobber` as active authenticated user `akgularda`.
-- Updated GitHub Release metadata and release notes (`gh release edit v1.3.7`), marking it as production release (`prerelease: false`).
-- Remote and local branches in sync at `5c0be7a` with clean working tree.
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
 

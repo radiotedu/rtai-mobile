@@ -533,6 +533,16 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Commit hash: `cb735e363d25f2981c84bbeb2318c3bddc62f4d0` on `origin/main`.
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
 
+## 2026-09-05 deployed backend exact-retry recovery and build-PC handoff
+
+- This dated entry supersedes the earlier archive-only recovery claim. Actual backend source/tests are now under `backend/` in `rtai-mobile/main`.
+- User approved deployment. Active port-3000 release is `C:\inetpub\rtjukebox-releases\20260905-mobile136-recovery-r1`; the additive `game_score_recoveries` migration is committed. Previous release is retained for rollback.
+- Fingerprints enforce exact user/game/round/session/nonce/score/duration/source identity, with atomic outcome and Gold persistence. Exact retries return the original 201 body; no `replayed:true` field is required. Changed nonce/duration/missing session are rejected.
+- Full backend verification: 637 passed, 2 unrelated voting integration tests skipped; build passed. Deployed-source isolated rerun: 38 passed. Local health and the public mobile API authentication check passed. No production account/balance mutations were used for tests.
+- Public mobile API is `https://radiotedu.com/jukebox/api/v1`; bare `/api/` and `/jukebox/health` route to other services and are not deployment evidence for this backend.
+- No app/native/terminal source changes or builds were performed. Backend fix alone needs no APK rebuild. Preserve the v1.3.6 client's exact retained score payload.
+- Read `backend/docs/MOBILE_136_BACKEND_HANDOFF.md` for source provenance, migration, rollback, API examples and limits. Give `docs/APK_BUILD_PC_PROMPT.md` to the APK build computer. Do not deploy the old Antigravity archive over this release.
+
 ## 2026-09-05 backend durable outcome recovery & release candidate verification handoff snapshot
 
 - Resolved Blocker #2 (Backend Game Retry Durable Outcome Recovery):

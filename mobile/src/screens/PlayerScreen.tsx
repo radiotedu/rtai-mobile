@@ -157,29 +157,51 @@ const PlayerScreen = ({route}: any) => {
   }, [activeTrack?.url, activeTrack?.streamQuality, preferences.quality, currentChannel]);
   const stationOnlyPresentation = shouldUseStationOnlyPresentation(currentChannel, currentQuality);
   const isFlacTrack = activeTrack?.streamQuality === 'flac' || String(activeTrack?.url ?? '').includes('-flac');
+  const currentChannelId = currentChannel?.id;
+  const isPodcast = isPodcastId(activeTrack?.id);
+  const isLive = !isPodcast && (!!currentChannel || !!activeTrack);
+
   const displayArtwork = stationOnlyPresentation
     ? activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK
+    : isPodcast
+    ? activeTrack?.artwork || FALLBACK_ARTWORK
     : metadata?.artwork || activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK;
   const displayArtworkSource =
     typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
   const displayTitle = stationOnlyPresentation
     ? currentChannel?.name || 'Lo-Fi'
+    : isPodcast
+    ? activeTrack?.title || 'RadioTEDU Podcast'
     : metadata?.title || activeTrack?.title || currentChannel?.name || 'RadioTEDU';
   const displayArtist =
-    stationOnlyPresentation ? '' : metadata?.artist || (activeTrack?.artist as string) || currentChannel?.description || 'RadioTEDU';
-  const resolvedTrackTitle = String(metadata?.title || activeTrack?.title || '').trim();
-  const resolvedTrackArtist = String(metadata?.artist || (activeTrack?.artist as string) || '').trim();
-  const lyricsTrackTitle = stationOnlyPresentation ? '' : resolvedTrackTitle;
-  const lyricsTrackArtist = stationOnlyPresentation ? '' : resolvedTrackArtist;
+    stationOnlyPresentation
+      ? ''
+      : isPodcast
+      ? (activeTrack?.artist as string) || 'RadioTEDU'
+      : metadata?.artist || (activeTrack?.artist as string) || currentChannel?.description || 'RadioTEDU';
+
+  const resolvedTrackTitle = String(
+    isPodcast ? '' : metadata?.title || activeTrack?.title || '',
+  ).trim();
+  const resolvedTrackArtist = String(
+    isPodcast ? '' : metadata?.artist || (activeTrack?.artist as string) || '',
+  ).trim();
+  const lyricsTrackTitle = stationOnlyPresentation || isPodcast ? '' : resolvedTrackTitle;
+  const lyricsTrackArtist = stationOnlyPresentation || isPodcast ? '' : resolvedTrackArtist;
   const lyricsTrackKey = lyricsTrackTitle ? `${lyricsTrackArtist}\n${lyricsTrackTitle}` : '';
 
-  const currentChannelId = currentChannel?.id;
-  const isLive = !!currentChannel || (!!activeTrack && !isPodcastId(activeTrack.id));
+  useEffect(() => {
+    if (isPodcast) {
+      setIsLyricsPanelOpen(false);
+      setLyricsLines([]);
+      setIsLyricsLoading(false);
+    }
+  }, [isPodcast]);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    if (!currentChannelId || !lyricsTrackTitle) {
+    if (!currentChannelId || !lyricsTrackTitle || isPodcast) {
       setLyricsLines([]);
       setIsLyricsLoading(false);
       return () => controller.abort();
@@ -212,7 +234,7 @@ const PlayerScreen = ({route}: any) => {
         }
       });
     return () => controller.abort();
-  }, [currentChannelId, isCellular, lyricsTrackArtist, lyricsTrackKey, lyricsTrackTitle, manualLyricsRequestedKey]);
+  }, [currentChannelId, isCellular, isPodcast, lyricsTrackArtist, lyricsTrackKey, lyricsTrackTitle, manualLyricsRequestedKey]);
 
   const dismissPlayer = useCallback(() => {
     Animated.timing(dismissY, {
@@ -470,7 +492,8 @@ const PlayerScreen = ({route}: any) => {
             <View style={styles.spacer} />
           )}
 
-          {(isLyricsPanelOpen || ((lyricsLines.length > 0 || isLyricsLoading) && !isCellular)) &&
+          {!isPodcast &&
+          (isLyricsPanelOpen || ((lyricsLines.length > 0 || isLyricsLoading) && !isCellular)) &&
           lyricsDismissedTrackKey !== lyricsTrackKey &&
           !stationOnlyPresentation ? (
             <View style={styles.lyricsPanel} accessibilityLabel={copy('player.lyrics')}>
@@ -524,7 +547,7 @@ const PlayerScreen = ({route}: any) => {
                 </View>
               )}
             </View>
-          ) : !stationOnlyPresentation && (lyricsTrackTitle || displayTitle) ? (
+          ) : !isPodcast && !stationOnlyPresentation && lyricsTrackTitle ? (
             <View style={styles.cellularLyricsContainer}>
               <TouchableOpacity
                 style={styles.cellularLyricsButton}

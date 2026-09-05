@@ -130,16 +130,29 @@ const MiniPlayer = () => {
       clearOutputMedia();
       return;
     }
-    const title = stationOnlyPresentation ? displayChannel?.name || 'RadioTEDU' : metadata?.title || String(displayTrack.title || 'RadioTEDU');
-    const artist = stationOnlyPresentation ? '' : metadata?.artist || String(displayTrack.artist || 'RadioTEDU');
-    const artwork = stationOnlyPresentation ? displayTrack.artwork : metadata?.artwork || displayTrack.artwork;
+    const trackIsPodcast = String(displayTrack.id || '').startsWith('podcast:');
+    const title = stationOnlyPresentation
+      ? displayChannel?.name || 'RadioTEDU'
+      : trackIsPodcast
+      ? displayTrack.title || 'RadioTEDU Podcast'
+      : metadata?.title || String(displayTrack.title || 'RadioTEDU');
+    const artist = stationOnlyPresentation
+      ? ''
+      : trackIsPodcast
+      ? displayTrack.artist || 'RadioTEDU'
+      : metadata?.artist || String(displayTrack.artist || 'RadioTEDU');
+    const artwork = stationOnlyPresentation
+      ? displayTrack.artwork
+      : trackIsPodcast
+      ? displayTrack.artwork
+      : metadata?.artwork || displayTrack.artwork;
     updateOutputMedia({
       id: String(displayTrack.id || ''),
       url: String(displayTrack.url || ''),
       title,
       artist,
       artwork: typeof artwork === 'string' ? artwork : '',
-      live: !String(displayTrack.id || '').startsWith('podcast'),
+      live: !trackIsPodcast,
       positionSeconds: progress.position,
     });
   }, [displayChannel?.name, displayTrack, metadata?.artist, metadata?.artwork, metadata?.title, progress.position, stationOnlyPresentation]);
@@ -247,9 +260,22 @@ const MiniPlayer = () => {
   };
 
   // Use context metadata if available, fallback to track data (or last known track)
-  const displayTitle = stationOnlyPresentation ? 'Lo-Fi' : metadata?.title || displayTrack?.title;
-  const displayArtist = stationOnlyPresentation ? '' : metadata?.artist || displayTrack?.artist;
-  const displayArtwork = stationOnlyPresentation ? displayTrack?.artwork : metadata?.artwork || displayTrack?.artwork;
+  const isPodcast = String(displayTrack?.id || '').startsWith('podcast:');
+  const displayTitle = stationOnlyPresentation
+    ? 'Lo-Fi'
+    : isPodcast
+    ? displayTrack?.title
+    : metadata?.title || displayTrack?.title;
+  const displayArtist = stationOnlyPresentation
+    ? ''
+    : isPodcast
+    ? displayTrack?.artist
+    : metadata?.artist || displayTrack?.artist;
+  const displayArtwork = stationOnlyPresentation
+    ? displayTrack?.artwork
+    : isPodcast
+    ? displayTrack?.artwork
+    : metadata?.artwork || displayTrack?.artwork;
   const displayArtworkSource = typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
 
   return (

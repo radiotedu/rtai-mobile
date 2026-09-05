@@ -71,7 +71,10 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       updateMetadata(immediate);
       const index = await TrackPlayer.getActiveTrackIndex();
       if (index !== undefined) {
-        await TrackPlayer.updateMetadataForTrack(index, immediate);
+        const currentTrack = await TrackPlayer.getActiveTrack();
+        if (String(currentTrack?.id) === channel.id) {
+          await TrackPlayer.updateMetadataForTrack(index, immediate);
+        }
       }
     } catch {
       // transient network errors ignored
@@ -142,7 +145,10 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       updateMetadata(immediate);
       const index = await TrackPlayer.getActiveTrackIndex();
       if (index !== undefined) {
-        await TrackPlayer.updateMetadataForTrack(index, immediate);
+        const currentTrack = await TrackPlayer.getActiveTrack();
+        if (String(currentTrack?.id) === String(track.id)) {
+          await TrackPlayer.updateMetadataForTrack(index, immediate);
+        }
       }
 
       if ((parsed.artwork && parsed.artwork !== fallbackArtwork) || parsed.isJingle) {

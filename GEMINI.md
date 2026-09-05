@@ -672,3 +672,30 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Android Publish Audit: 36/36 passed.
   - TypeScript: 0 errors (`npx tsc --noEmit`).
 - Safety rules strictly preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android native builds executed.
+
+## 2026-09-06 podcast lyrics suppression & playback metadata isolation handoff snapshot
+
+- User-visible outcome:
+  - Lyrics button (`[ LYRICS ]`) and lyrics panel (`lyricsPanel`) are strictly suppressed and hidden during podcast playback.
+  - Radio stations continue to display the `[ LYRICS ]` button and LRCLIB lyrics panel as expected.
+  - Active podcast episodes in both Player modal and MiniPlayer retain their original episode title, artwork, and artist; background Icecast polling in `MetadataContext.tsx` no longer overwrites podcast tracks with live radio metadata.
+  - Verified on physical-dimension Pixel 5 Android phone emulator (`RadioTEDU-Phone-Test`, 1080x2340):
+    - Video recording: `artifacts/podcast_lyrics_suppression.mp4` (and `artifacts/podcast_vs_radio_lyrics.mp4`).
+    - Screenshots: `artifacts/verify_podcast_now.png` (podcast with -15s/+30s controls and no lyrics button), `artifacts/verify_lyrics_loaded.png` (live radio with `[ LYRICS ]` button), `artifacts/verify_tap_left_touch.png` (live radio with active lyrics panel).
+- Exact files changed:
+  - `mobile/src/screens/PlayerScreen.tsx`: Strictly defined `isPodcast = isPodcastId(activeTrack?.id)`, isolated podcast presentation metadata, cleaned up lyrics state on podcast mount, and gated both `lyricsPanel` and `cellularLyricsContainer` (`[ LYRICS ]`) behind `!isPodcast`.
+  - `mobile/src/components/MiniPlayer.tsx`: Added podcast detection (`String(displayTrack.id).startsWith('podcast:')`) for `displayTitle`, `displayArtist`, `displayArtwork`, and `updateOutputMedia`.
+  - `mobile/src/context/MetadataContext.tsx`: Verified active track ID matches channel ID before updating `TrackPlayer.updateMetadataForTrack(...)` in `pollActiveStation` and metadata event handlers.
+  - `mobile/__tests__/lyricsReader.test.ts`: Added test case verifying lyrics suppression during podcast playback.
+- Deployment / packaging action:
+  - Generated bundle via `npx react-native bundle`, aligned and signed test APK `artifacts/RadioTEDU-Mobile-v1.3.7-test.apk` via `package_apk.py` (using `zipalign` and `apksigner`).
+  - Installed and verified live on emulator `emulator-5554`.
+- Tests and counts:
+  - Mobile Jest: 96/96 suites passed (386/386 tests).
+  - Android Publish Audit: 36/36 passed.
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+  - Study/Social: 46/46 files passed (227/227 tests + 3/3 contracts).
+- Known limitations: None.
+- Push: Committed and pushed to `origin/main`.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.

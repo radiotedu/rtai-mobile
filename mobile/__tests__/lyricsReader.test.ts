@@ -147,4 +147,11 @@ describe('manual lyrics reader', () => {
     expect(player).toContain('cellularLyricsButton');
     expect(player).toContain('LYRICS');
   });
+
+  it('suppresses lyrics button and panel while podcast is playing', () => {
+    const player = readSource('src/screens/PlayerScreen.tsx');
+    expect(player).toContain('isPodcast');
+    expect(player).toContain('!isPodcast &&');
+    expect(player).toContain('!isPodcast && !stationOnlyPresentation && lyricsTrackTitle');
+  });
 });

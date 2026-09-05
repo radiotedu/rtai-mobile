@@ -112,7 +112,7 @@ export default function HomeDiscovery({refreshKey}: {refreshKey: number}) {
 }
 
 const styles = StyleSheet.create({
-  hero: {padding: SPACING.lg, borderRadius: 22, backgroundColor: '#23090B', borderLeftWidth: 4, borderLeftColor: '#E31E26'},
+  hero: {padding: SPACING.lg, borderRadius: 22, backgroundColor: '#23090B'},
   brand: {color: '#fff', fontSize: 14, fontWeight: '800'},
   headline: {color: '#fff', fontSize: 28, lineHeight: 35, fontWeight: '900', marginTop: SPACING.md},
   intro: {color: '#D7CBCD', fontSize: 14, lineHeight: 21, marginTop: SPACING.sm},

@@ -21,6 +21,21 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ## What is included
 
+### Version 1.3.7 testing prerelease
+
+[APK and terminal downloads](https://github.com/radiotedu/rtai-mobile/releases/tag/v1.3.7) · [Verification report and remaining issues](docs/RELEASE_1_3_7_VERIFICATION.md)
+
+Production-signed Android with Android Auto integration included; full Auto projection and Google Play readiness remain unverified. The report records the startup retry failure and other outstanding checks.
+
+<p>
+  <img src="docs/images/release-1.3.7/phone-home.png" width="260" alt="RadioTEDU Home in the signed 1.3.7 APK">
+  <img src="docs/images/release-1.3.7/phone-podcasts.png" width="260" alt="Podcast catalog and radio cover artwork in the signed 1.3.7 APK">
+</p>
+
+![RadioTEDU terminal player](docs/images/release-1.3.7/terminal.png)
+
+[Preview images and editable HTML](docs/images/release-1.3.7/README.md) use real app captures and Manrope, with the font license included.
+
 | Component | Responsibility |
 | --- | --- |
 | `mobile/` | React Native application, native Android/iOS projects, and Android Auto integration |

@@ -567,3 +567,5 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Blocker #1 (Lo-Fi stream): Confirmed by user as external streamer-source issue; station and fallback logic remain intact in mobile app.
   - Blocker #2 (Backend durable outcome recovery): Fully resolved and verified in isolated backend suite. Server archive packaged at `C:\Users\akgul\radiotedu-mobile-backups\backend-archive-durable-recovery-20260905.zip`.
 - Safety rules preserved: Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No local Android builds executed.
+
+2026-09-05 1.3.7 publication: source 5f4de3f, phone 13070, production cert and APK ELF/ZIP 16 KB passed; 379 mobile and 24 terminal tests passed. Packaged terminal exercised; APK radio/podcast/notification controls and matching Elton John artwork verified. Publish only as prerelease: foreground setup retry bug, missing artist metadata, Lo-Fi stream, full Auto projection and final device/auth/Gold coverage remain unresolved. See docs/RELEASE_1_3_7_VERIFICATION.md. No Play submission or production balance mutation.

@@ -17,6 +17,7 @@ import com.radiotedumobile.analytics.AnalyticsBridgeModule
 import com.radiotedumobile.notifications.NotificationBridgePackage
 import com.radiotedumobile.cast.CastBridgePackage
 import com.radiotedumobile.live.LiveVoteBridgePackage
+import com.radiotedumobile.pip.PipBridgePackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -30,6 +31,7 @@ class MainApplication : Application(), ReactApplication {
           packages.add(NotificationBridgePackage())
           packages.add(CastBridgePackage())
           packages.add(LiveVoteBridgePackage())
+          packages.add(PipBridgePackage())
           return packages
         }
 

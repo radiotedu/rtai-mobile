@@ -578,6 +578,105 @@ const SLEEP_TIMER_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
   },
 };
 
+const EXPERIENCE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
+  en: {
+    'lyrics.share': 'Share lyrics',
+    'lyrics.shareTitle': 'Share Lyric Quote',
+    'lyrics.selectLines': 'Select lines (max 4)',
+    'lyrics.shareStory': 'Share to Story & WhatsApp',
+    'focus.pip': 'Picture-in-Picture (PiP) Mode',
+    'focus.pipTitle': 'Picture-in-Picture (PiP) Permission',
+    'focus.pipDesc': 'RadioTEDU Focus Timer needs PiP permission to float over other apps as a mini timer. Would you like to enable it in Settings?',
+    'focus.pipEnable': 'Enable (Open Settings)',
+    'focus.pipFullscreen': 'Return to Fullscreen',
+    'stats.title': 'Listening Recap',
+    'stats.badge': 'THIS WEEK',
+    'stats.duration': 'Listening Time',
+    'stats.topGenre': 'Top Genre',
+    'stats.share': 'Share My Recap',
+  },
+  tr: {
+    'lyrics.share': 'Sözleri Paylaş',
+    'lyrics.shareTitle': 'Şarkı Sözünü Paylaş',
+    'lyrics.selectLines': 'Satır Seçin (Maks. 4)',
+    'lyrics.shareStory': "Instagram & WhatsApp'ta Paylaş",
+    'focus.pip': 'Picture-in-Picture (PiP) Modu',
+    'focus.pipTitle': 'Picture-in-Picture (PiP) İzni',
+    'focus.pipDesc': "RadioTEDU Odak Sayacı'nı diğer uygulamaların üzerinde küçük bir pencere olarak kullanabilmek için PiP izni gerekiyor. Ayarlardan izin vermek istiyor musunuz?",
+    'focus.pipEnable': 'İzin Ver (Ayarları Aç)',
+    'focus.pipFullscreen': 'Tam Ekran Görünümüne Dön',
+    'stats.title': 'Dinleme İstatistiklerin',
+    'stats.badge': 'BU HAFTA',
+    'stats.duration': 'Dinleme Süresi',
+    'stats.topGenre': 'En Çok Dinlenen',
+    'stats.share': 'Özetimi Paylaş',
+  },
+  ru: {
+    'lyrics.share': 'Поделиться текстом',
+    'lyrics.shareTitle': 'Поделиться цитатой',
+    'lyrics.selectLines': 'Выберите строки (макс. 4)',
+    'lyrics.shareStory': 'Поделиться в Story и WhatsApp',
+    'focus.pip': 'Режим Картинка в картинке',
+    'focus.pipTitle': 'Разрешение Картинка в картинке',
+    'focus.pipDesc': 'Таймеру фокуса RadioTEDU нужно разрешение PiP для работы поверх других приложений. Включить в Настройках?',
+    'focus.pipEnable': 'Включить (Настройки)',
+    'focus.pipFullscreen': 'Вернуться на полный экран',
+    'stats.title': 'Итоги прослушивания',
+    'stats.badge': 'НА ЭТОЙ НЕДЕЛЕ',
+    'stats.duration': 'Время прослушивания',
+    'stats.topGenre': 'Любимый жанр',
+    'stats.share': 'Поделиться итогами',
+  },
+  ar: {
+    'lyrics.share': 'مشاركة الكلمات',
+    'lyrics.shareTitle': 'مشاركة اقتباس الأغنية',
+    'lyrics.selectLines': 'اختر الأسطر (بحد أقصى 4)',
+    'lyrics.shareStory': 'مشاركة على Story وWhatsApp',
+    'focus.pip': 'وضع صورة داخل صورة',
+    'focus.pipTitle': 'إذن صورة داخل صورة',
+    'focus.pipDesc': 'يحتاج مؤقت التركيز RadioTEDU إلى إذن PiP ليعمل كنافذة صغيرة فوق التطبيقات الأخرى. هل تريد تمكينه من الإعدادات؟',
+    'focus.pipEnable': 'تمكين (فتح الإعدادات)',
+    'focus.pipFullscreen': 'العودة إلى ملء الشاشة',
+    'stats.title': 'ملخص الاستماع',
+    'stats.badge': 'هذا الأسبوع',
+    'stats.duration': 'مدة الاستماع',
+    'stats.topGenre': 'النوع الأكثر استماعاً',
+    'stats.share': 'مشاركة ملخصي',
+  },
+  de: {
+    'lyrics.share': 'Songtext teilen',
+    'lyrics.shareTitle': 'Songtext-Zitat teilen',
+    'lyrics.selectLines': 'Zeilen wählen (max. 4)',
+    'lyrics.shareStory': 'In Story & WhatsApp teilen',
+    'focus.pip': 'Bild-in-Bild-Modus (PiP)',
+    'focus.pipTitle': 'Bild-in-Bild-Berechtigung',
+    'focus.pipDesc': 'Der RadioTEDU-Fokus-Timer benötigt die PiP-Berechtigung, um als Mini-Fenster über anderen Apps zu schweben. In den Einstellungen aktivieren?',
+    'focus.pipEnable': 'Aktivieren (Einstellungen)',
+    'focus.pipFullscreen': 'Zurück zum Vollbild',
+    'stats.title': 'Hör-Statistik',
+    'stats.badge': 'DIESE WOCHE',
+    'stats.duration': 'Hördauer',
+    'stats.topGenre': 'Top-Genre',
+    'stats.share': 'Statistik teilen',
+  },
+  fr: {
+    'lyrics.share': 'Partager les paroles',
+    'lyrics.shareTitle': 'Partager une citation',
+    'lyrics.selectLines': 'Sélectionner des lignes (max 4)',
+    'lyrics.shareStory': 'Partager en Story & WhatsApp',
+    'focus.pip': 'Mode Image dans l’image (PiP)',
+    'focus.pipTitle': 'Autorisation Image dans l’image',
+    'focus.pipDesc': 'Le minuteur de concentration RadioTEDU nécessite l’autorisation PiP pour flotter au-dessus d’autres applications. L’activer dans les paramètres ?',
+    'focus.pipEnable': 'Activer (Paramètres)',
+    'focus.pipFullscreen': 'Revenir en plein écran',
+    'stats.title': 'Bilan d’écoute',
+    'stats.badge': 'CETTE SEMAINE',
+    'stats.duration': 'Temps d’écoute',
+    'stats.topGenre': 'Genre préféré',
+    'stats.share': 'Partager mon bilan',
+  },
+};
+
 const APP_COPY_TABLES = [
   COPY,
   SOCIAL_COPY,
@@ -591,6 +690,7 @@ const APP_COPY_TABLES = [
   LOCALE_FIX_COPY,
   LYRICS_COPY,
   SLEEP_TIMER_COPY,
+  EXPERIENCE_COPY,
 ];
 
 export function missingAppCopyKeys(language: AppLanguage): string[] {
@@ -604,6 +704,6 @@ export function missingAppCopyKeys(language: AppLanguage): string[] {
 
 export function appCopy(language: string | undefined, key: string, values: Record<string, string | number> = {}): string {
   const lang = (language ?? 'en').split(/[-_]/)[0] as AppLanguage;
-  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? LYRICS_COPY[lang]?.[key] ?? SLEEP_TIMER_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? LYRICS_COPY.en[key] ?? SLEEP_TIMER_COPY.en[key] ?? key;
+  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? LYRICS_COPY[lang]?.[key] ?? SLEEP_TIMER_COPY[lang]?.[key] ?? EXPERIENCE_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? LYRICS_COPY.en[key] ?? SLEEP_TIMER_COPY.en[key] ?? EXPERIENCE_COPY.en[key] ?? key;
   return typeof value === 'function' ? value(values) : value;
 }

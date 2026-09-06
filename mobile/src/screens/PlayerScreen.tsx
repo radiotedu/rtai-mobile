@@ -49,6 +49,7 @@ import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 import {fetchScrollableLyrics} from '../services/lyricsService';
 import {useSleepTimer} from '../services/sleepTimer';
+import LyricsShareModal from '../components/LyricsShareModal';
 import NetInfo from '@react-native-community/netinfo';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
@@ -99,6 +100,8 @@ const PlayerScreen = ({route}: any) => {
   const [isCellular, setIsCellular] = useState(false);
   const [manualLyricsRequestedKey, setManualLyricsRequestedKey] = useState('');
   const [isLyricsLoading, setIsLyricsLoading] = useState(false);
+  const [lyricsShareVisible, setLyricsShareVisible] = useState(false);
+  const [lyricsShareIndex, setLyricsShareIndex] = useState(0);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
 
@@ -501,6 +504,21 @@ const PlayerScreen = ({route}: any) => {
               <View style={styles.lyricsHeader}>
                 <Text style={styles.lyricsTitle}>{copy('player.lyrics')}</Text>
                 <View style={styles.lyricsHeaderActions}>
+                  {lyricsLines.length > 0 ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setLyricsShareIndex(0);
+                        setLyricsShareVisible(true);
+                      }}
+                      style={styles.lyricsShareHeaderButton}
+                      accessibilityRole="button"
+                      accessibilityLabel="Şarkı Sözünü Paylaş">
+                      <Icon name="share-variant-outline" size={14} color={currentChannel?.color || COLORS.primary} />
+                      <Text style={[styles.lyricsShareHeaderText, {color: currentChannel?.color || COLORS.primary}]}>
+                        Paylaş
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                   <Text style={styles.lyricsProvider}>LRCLIB</Text>
                   <TouchableOpacity
                     onPress={() => {
@@ -528,9 +546,17 @@ const PlayerScreen = ({route}: any) => {
                   persistentScrollbar
                   showsVerticalScrollIndicator>
                   {lyricsLines.map((line, index) => (
-                    <Text key={`${index}-${line}`} selectable style={styles.lyricsLine}>
-                      {line}
-                    </Text>
+                    <TouchableOpacity
+                      key={`${index}-${line}`}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        setLyricsShareIndex(index);
+                        setLyricsShareVisible(true);
+                      }}>
+                      <Text selectable style={styles.lyricsLine}>
+                        {line}
+                      </Text>
+                    </TouchableOpacity>
                   ))}
                 </ScrollView>
               ) : (
@@ -703,6 +729,18 @@ const PlayerScreen = ({route}: any) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <LyricsShareModal
+        visible={lyricsShareVisible}
+        onClose={() => setLyricsShareVisible(false)}
+        lyricsLines={lyricsLines}
+        initialLineIndex={lyricsShareIndex}
+        trackTitle={resolvedTrackTitle || lyricsTrackTitle}
+        trackArtist={resolvedTrackArtist || lyricsTrackArtist}
+        artworkUrl={typeof displayArtwork === 'string' ? displayArtwork : currentChannel?.artwork}
+        stationColor={currentChannel?.color || COLORS.primary}
+        stationName={currentChannel?.name || 'RadioTEDU'}
+      />
     </Animated.View>
   );
 };
@@ -864,6 +902,20 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   lyricsHeaderActions: {flexDirection: 'row', alignItems: 'center', gap: SPACING.sm},
+  lyricsShareHeaderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginRight: 4,
+  },
+  lyricsShareHeaderText: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginLeft: 3,
+  },
   lyricsProvider: {color: COLORS.textMuted, fontSize: 10, fontWeight: '800'},
   lyricsClose: {width: 44, height: 44, alignItems: 'center', justifyContent: 'center'},
   lyricsScroller: {flexGrow: 0, height: 124},

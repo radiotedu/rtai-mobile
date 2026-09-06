@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   FlatList,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
@@ -15,6 +16,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
 import {playChannelById} from '../services/playbackQueue';
+import {
+  isPipSupported,
+  isPipAllowed,
+  requestPipPermission,
+  enterPictureInPicture,
+} from '../services/pipService';
 
 type Phase = 'work' | 'shortBreak' | 'longBreak';
 
@@ -52,7 +59,26 @@ const FocusScreen = ({navigation}: any) => {
   const [secondsLeft, setSecondsLeft] = useState(DURATIONS.work);
   const [isRunning, setIsRunning] = useState(false);
   const [completedWork, setCompletedWork] = useState(0);
+  const [pipModalVisible, setPipModalVisible] = useState(false);
+  const [miniHudVisible, setMiniHudVisible] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handlePipClick = useCallback(async () => {
+    const supported = await isPipSupported();
+    if (!supported) {
+      setMiniHudVisible(prev => !prev);
+      return;
+    }
+    const allowed = await isPipAllowed();
+    if (!allowed) {
+      setPipModalVisible(true);
+      return;
+    }
+    const entered = await enterPictureInPicture(16, 9);
+    if (!entered) {
+      setMiniHudVisible(prev => !prev);
+    }
+  }, []);
 
   const goToPhase = useCallback((next: Phase) => {
     setPhase(next);
@@ -169,6 +195,43 @@ const FocusScreen = ({navigation}: any) => {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <>
+            {/* PiP Mini HUD Mode */}
+            {miniHudVisible ? (
+              <View style={[styles.miniHud, {borderColor: phaseColor}]}>
+                <View style={styles.miniHudHeader}>
+                  <View style={styles.miniHudBadge}>
+                    <View style={[styles.miniHudDot, {backgroundColor: phaseColor}]} />
+                    <Text style={[styles.miniHudBadgeText, {color: phaseColor}]}>
+                      {t(`focus.${phase}`).toUpperCase()}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setMiniHudVisible(false)}
+                    hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                    accessibilityRole="button"
+                    accessibilityLabel="Tam Ekran">
+                    <Icon name="fullscreen" size={20} color={COLORS.textMuted} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.miniHudTimer, {color: phaseColor}]}>
+                  {formatTime(secondsLeft)}
+                </Text>
+                <View style={styles.miniHudControls}>
+                  <TouchableOpacity onPress={reset} style={styles.miniHudSmallBtn}>
+                    <Icon name="restart" size={18} color={COLORS.text} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={toggleRun}
+                    style={[styles.miniHudPlayBtn, {backgroundColor: phaseColor}]}>
+                    <Icon name={isRunning ? 'pause' : 'play'} size={22} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={skip} style={styles.miniHudSmallBtn}>
+                    <Icon name="skip-next" size={18} color={COLORS.text} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
             {/* Pomodoro timer */}
             <View style={[styles.timerCard, {borderColor: phaseColor}]}>
               <Text style={[styles.phaseLabel, {color: phaseColor}]}>
@@ -200,6 +263,23 @@ const FocusScreen = ({navigation}: any) => {
                   <Text style={styles.secondaryBtnText}>{t('focus.skip')}</Text>
                 </TouchableOpacity>
               </View>
+
+              <TouchableOpacity
+                style={styles.pipBtn}
+                onPress={handlePipClick}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Picture-in-Picture Modu">
+                <Icon
+                  name="picture-in-picture-bottom-right"
+                  size={18}
+                  color={phaseColor}
+                  style={{marginRight: 6}}
+                />
+                <Text style={[styles.pipBtnText, {color: phaseColor}]}>
+                  {miniHudVisible ? 'Tam Ekran Görünümüne Dön' : 'Picture-in-Picture (PiP) Modu'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Ambient sounds */}
@@ -270,6 +350,42 @@ const FocusScreen = ({navigation}: any) => {
           <Text style={styles.empty}>{t('focus.noTasks')}</Text>
         }
       />
+
+      {/* Picture-in-Picture Permission Modal */}
+      <Modal
+        visible={pipModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPipModalVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={[styles.modalIconWrap, {backgroundColor: `${COLORS.primary}20`}]}>
+              <Icon name="picture-in-picture-bottom-right" size={32} color={COLORS.primary} />
+            </View>
+            <Text style={styles.modalTitle}>Picture-in-Picture (PiP) İzni</Text>
+            <Text style={styles.modalDesc}>
+              RadioTEDU Odak Sayacı'nı diğer uygulamaların üzerinde küçük bir pencere olarak kullanabilmek için PiP izni gerekiyor. Ayarlardan izin vermek istiyor musunuz?
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setPipModalVisible(false)}
+                activeOpacity={0.7}>
+                <Text style={styles.modalCancelText}>Vazgeç</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmBtn}
+                onPress={async () => {
+                  setPipModalVisible(false);
+                  await requestPipPermission();
+                }}
+                activeOpacity={0.85}>
+                <Text style={styles.modalConfirmText}>İzin Ver (Ayarları Aç)</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -356,6 +472,146 @@ const styles = StyleSheet.create({
   taskText: {color: COLORS.text, fontSize: 15, flex: 1},
   taskTextDone: {textDecorationLine: 'line-through', color: COLORS.textMuted},
   empty: {color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.md},
+  pipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  pipBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  miniHud: {
+    backgroundColor: '#12161A',
+    borderRadius: 16,
+    padding: SPACING.md,
+    borderWidth: 1.5,
+    marginBottom: SPACING.md,
+    alignItems: 'center',
+  },
+  miniHudHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 8,
+  },
+  miniHudBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  miniHudDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  miniHudBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  miniHudTimer: {
+    fontSize: 36,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  miniHudControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 10,
+  },
+  miniHudSmallBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniHudPlayBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.lg,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#181C20',
+    borderRadius: 20,
+    padding: SPACING.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalDesc: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalConfirmBtn: {
+    flex: 1.5,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: '800',
+  },
 });
 
 export default FocusScreen;

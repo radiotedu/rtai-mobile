@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +23,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import api from '../services/api';
 import { STORAGE_API } from '../services/config';
 import {logSafeError} from '../utils/safeLog';
+import {getListeningStats, type ListeningStatsSummary} from '../services/listeningStatsService';
 import {
   createPodcastFeed,
   deletePodcastFeed,
@@ -85,6 +87,11 @@ const ProfileScreen = () => {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [listeningStats, setListeningStats] = useState<ListeningStatsSummary | null>(null);
+
+  useEffect(() => {
+    getListeningStats().then(setListeningStats).catch(() => {});
+  }, []);
 
   const STORAGE_API_LOCAL = STORAGE_API;
   const loadFeeds = useCallback(async () => {
@@ -465,6 +472,103 @@ const ProfileScreen = () => {
             <Text style={styles.statNumber}>{user?.total_upvotes_received || 0}</Text>
             <Text style={styles.statLabel}>{copy('profile.likes')}</Text>
           </View>
+        </View>
+
+        {/* Weekly Listening Recap / Wrapped Card */}
+        <View style={styles.recapCard}>
+          <View style={styles.recapHeader}>
+            <View style={styles.recapHeaderLeft}>
+              <Icon name="chart-box-outline" size={20} color={COLORS.primary} style={{marginRight: 6}} />
+              <Text style={styles.recapTitle}>Dinleme İstatistiklerin</Text>
+            </View>
+            <View style={styles.recapBadge}>
+              <Text style={styles.recapBadgeText}>BU HAFTA</Text>
+            </View>
+          </View>
+
+          <View style={styles.recapGrid}>
+            <View style={styles.recapItem}>
+              <Text style={styles.recapItemValue}>
+                {listeningStats && listeningStats.hoursThisWeek > 0
+                  ? `${listeningStats.hoursThisWeek} sa ${listeningStats.minutesRemainderThisWeek} dk`
+                  : `${listeningStats?.totalMinutesThisWeek || 0} dk`}
+              </Text>
+              <Text style={styles.recapItemLabel}>Dinleme Süresi</Text>
+            </View>
+            <View style={styles.recapItem}>
+              <Text
+                style={[
+                  styles.recapItemValue,
+                  {color: listeningStats?.topGenre?.color || COLORS.primary},
+                ]}
+                numberOfLines={1}>
+                {listeningStats?.topGenre?.name || 'RadioTEDU'}
+              </Text>
+              <Text style={styles.recapItemLabel}>
+                En Çok Dinlenen ({listeningStats?.topGenre?.percentage || 0}%)
+              </Text>
+            </View>
+          </View>
+
+          {/* Peak Time Habit */}
+          <View style={styles.recapPeakRow}>
+            <Icon name="clock-time-four-outline" size={16} color={COLORS.primary} style={{marginRight: 6}} />
+            <Text style={styles.recapPeakText}>
+              {listeningStats?.peakTimeLabel || 'Gece Kuşu (22:00 - 05:00)'}
+            </Text>
+          </View>
+
+          {/* Genre Distribution Progress Bar */}
+          {listeningStats && listeningStats.genreBreakdown.length > 0 ? (
+            <View style={styles.genreBarContainer}>
+              <View style={styles.genreBar}>
+                {listeningStats.genreBreakdown.map(genre => (
+                  <View
+                    key={genre.id}
+                    style={{
+                      flex: Math.max(genre.percentage, 1),
+                      backgroundColor: genre.color,
+                      height: 8,
+                    }}
+                  />
+                ))}
+              </View>
+              <View style={styles.genreLegend}>
+                {listeningStats.genreBreakdown.slice(0, 3).map(genre => (
+                  <View key={genre.id} style={styles.legendItem}>
+                    <View style={[styles.legendDot, {backgroundColor: genre.color}]} />
+                    <Text style={styles.legendText} numberOfLines={1}>
+                      {genre.name} (%{genre.percentage})
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={styles.recapShareButton}
+            onPress={async () => {
+              try {
+                const top = listeningStats?.topGenre?.name || 'RadioTEDU';
+                const timeStr =
+                  listeningStats && listeningStats.hoursThisWeek > 0
+                    ? `${listeningStats.hoursThisWeek} saat ${listeningStats.minutesRemainderThisWeek} dakika`
+                    : `${listeningStats?.totalMinutesThisWeek || 0} dakika`;
+                const peakStr = listeningStats?.peakTimeLabel || '';
+                const msg = `📻 Bu hafta RadioTEDU'da ${timeStr} radyo dinledim!\n🎷 Favori türüm: ${top}\n🌙 Dinleme saatim: ${peakStr}\n\nSen de dinle: https://radiotedu.com`;
+                await Share.share({
+                  title: 'RadioTEDU Dinleme Özetim',
+                  message: msg,
+                });
+              } catch {
+                // Cancelled
+              }
+            }}
+            activeOpacity={0.8}>
+            <Icon name="share-variant-outline" size={16} color={COLORS.primary} style={{marginRight: 6}} />
+            <Text style={styles.recapShareText}>Özetimi Paylaş</Text>
+          </TouchableOpacity>
         </View>
 
         {!user || user.is_guest ? (
@@ -959,6 +1063,130 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textMuted,
     marginTop: 4,
+  },
+  recapCard: {
+    backgroundColor: '#161B20',
+    borderRadius: 20,
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  recapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  recapHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recapTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  recapBadge: {
+    backgroundColor: 'rgba(227, 30, 36, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(227, 30, 36, 0.3)',
+  },
+  recapBadgeText: {
+    color: COLORS.primary,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  recapGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  recapItem: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 14,
+    padding: 12,
+  },
+  recapItemValue: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  recapItemLabel: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  recapPeakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  recapPeakText: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  genreBarContainer: {
+    marginBottom: 14,
+  },
+  genreBar: {
+    flexDirection: 'row',
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    backgroundColor: '#232830',
+    marginBottom: 8,
+  },
+  genreLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  legendText: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  recapShareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(227, 30, 36, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(227, 30, 36, 0.25)',
+  },
+  recapShareText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '800',
   },
   section: {
     marginTop: SPACING.xl,

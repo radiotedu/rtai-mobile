@@ -1,9 +1,10 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode} from 'react';
-import TrackPlayer, {Event, useTrackPlayerEvents} from 'react-native-track-player';
+import TrackPlayer, {Event, State, useTrackPlayerEvents} from 'react-native-track-player';
 import {RADIO_CHANNELS, shouldUseStationOnlyPresentation} from '../data/radioChannels';
 import {fetchAlbumArtwork} from '../utils/api';
 import {parseTrackPlayerMetadataEvent} from '../services/streamMetadata';
 import {fetchStationArtwork, fetchStationLiveMetadata} from '../services/stationArtwork';
+import {recordListeningTime} from '../services/listeningStatsService';
 
 interface TrackMetadata {
   title: string;
@@ -43,6 +44,10 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       const channel = RADIO_CHANNELS.find(item => item.id === String(track.id));
       if (!channel) {
         return;
+      }
+      const playbackState = await TrackPlayer.getPlaybackState();
+      if (playbackState?.state === State.Playing) {
+        void recordListeningTime(channel.id, 8);
       }
       if (shouldUseStationOnlyPresentation(channel, (track as any).streamQuality)) {
         clearMetadata();

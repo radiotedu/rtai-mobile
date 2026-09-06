@@ -699,3 +699,43 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Known limitations: None.
 - Push: Committed and pushed to `origin/main`.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+## 2026-09-06 arcade games visual & haptic overhaul handoff snapshot
+
+- User-visible outcome:
+  - Visual overhaul across all 5 built-in arcade games (**Neon Snake**, **Memory Cards**, **Blocks / Tetris**, **Song Guess**, and **Music IQ**) plus shared **GameChrome** and **GamesScreen**:
+    - Ambient glowing breathing loops with game-specific accent colors (Snake: `#48E08A`, Memory: `#A78BFA`, Blocks: `#46C8FF`, Song Guess: `#FFD54A`, Music IQ: `#FF8A4C`).
+    - Dynamic score scale bounce animation on points increase.
+    - Combo fire badges with escalating multiplier styling (`x1`, `x2`, `x3`, etc.).
+    - Snake: board impact shake animation on life loss (`shakeAnim`), food scale pulse animation (`foodScale`), glowing food note icon (♪) and pink obstacle dots.
+    - Memory: card flip animations, glowing purple revealed card borders, celebration feedback toasts.
+    - Blocks: neon border styling, active block bevels, and **ghost piece landing guide** showing exact projected placement on the floor with dashed borders.
+    - Song Guess: rotating vinyl turntable record animation during preview, 7-bar bouncing audio spectrum equalizer, progress step indicator.
+    - Music IQ: live circular countdown timer badge (`⏱ 14`) with scale pulsing animation and linear progress bar, embossed A/B/C/D option tiles.
+    - Result Modal: circular gamepad trophy badge with golden backdrop, personal best record celebration card (`★ New personal best`), score summary, and clean navigation actions.
+  - Tactile micro-haptic feedback engine (`GameHaptics`) implemented with calibrated profiles: button tap (12ms), food eat / answer success (`[0, 15, 35, 20]`), combo streak escalation, drop impact (22ms), mismatch warning (`[0, 40, 50, 40]`), and game over (`[0, 50, 60, 40]`).
+  - Gold rewards architecture clarified: Guest practice mode enables unlimited local play with `"Practice · No Gold rewards"`; authenticated RadioTEDU accounts synchronize with `GET /gamification/games`, initiate cryptographic sessions (`POST /gamification/games/<id>/start`), and submit verified scores to earn real Gold (`POST /gamification/games/<id>/score`) into their PostgreSQL wallet and ledger.
+  - Verified on physical-dimension Pixel 5 phone emulator (`RadioTEDU-Phone-Test`, 1080x2340):
+    - Video recording: `artifacts/arcade_games_visual_overhaul.mp4` (3.75 MB).
+    - Screenshots captured and verified for all 5 games and result modals.
+- Exact files changed:
+  - `mobile/src/screens/games/gameHaptics.ts`: Micro-vibration helper with calibrated tactile feedback patterns.
+  - `mobile/src/screens/games/GameChrome.tsx`: Ambient glow loops, score bounce animations, combo fire badges, result modal trophy & personal best styling, and modal haptics.
+  - `mobile/src/screens/games/SnakeScreen.tsx`: Board impact shake, food scale pulse, D-pad and turn haptics.
+  - `mobile/src/screens/games/MemoryGameScreen.tsx`: Stylized card backs, flip animations, match/mismatch haptics.
+  - `mobile/src/screens/games/TetrisScreen.tsx`: Ghost piece landing guide, block bevels, hard drop & line clear haptics.
+  - `mobile/src/screens/games/RhythmTapScreen.tsx`: Spinning vinyl turntable, bouncing equalizer spectrum bars, combo streak haptics.
+  - `mobile/src/screens/games/WordGuessScreen.tsx`: Countdown timer scale pulse, progress bar, option tap haptics.
+  - `mobile/src/screens/GamesScreen.tsx`: Quick play and card play button tap haptics.
+- Deployment / packaging action:
+  - Generated bundle via `npx react-native bundle`, aligned and signed test APK `artifacts/RadioTEDU-Mobile-v1.3.7-test.apk` via `package_apk.py` (using `zipalign` and `apksigner`).
+  - Installed and verified live on emulator `emulator-5554`.
+- Tests and counts:
+  - Mobile Jest: 96/96 suites passed (386/386 tests).
+  - Android Publish Audit: 36/36 passed.
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+  - Study/Social: 46/46 files passed (227/227 tests + 3/3 contracts).
+- Known limitations: None.
+- Push: Committed and pushed to `origin/main`.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.

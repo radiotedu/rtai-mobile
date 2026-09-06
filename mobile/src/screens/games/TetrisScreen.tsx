@@ -7,6 +7,7 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {GameHaptics} from './gameHaptics';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {isPracticeGame} from './gameRoutes';
@@ -52,6 +53,16 @@ const TetrisScreen = () => {
 
   const activeCells = useMemo(() => getPieceCells(piece), [piece]);
 
+  const ghostPiece = useMemo(() => {
+    let ghost = piece;
+    while (!collides({...ghost, y: ghost.y + 1}, occupied)) {
+      ghost = {...ghost, y: ghost.y + 1};
+    }
+    return ghost;
+  }, [piece, occupied]);
+
+  const ghostCells = useMemo(() => getPieceCells(ghostPiece), [ghostPiece]);
+
   useEffect(() => {
     if (!running || gameOver) {
       return undefined;
@@ -90,6 +101,7 @@ const TetrisScreen = () => {
     setRunning(false);
     setGameOver(true);
     setFeedback(copy('games.tetrisFull'));
+    GameHaptics.gameOver();
     submitFinalScore(finalScore);
   };
 
@@ -106,10 +118,15 @@ const TetrisScreen = () => {
     setScore(nextScoreValue);
     if (clearedRows > 0) {
       setLines((value) => value + clearedRows);
-      setFeedback(`${clearedRows} ${copy('games.tetrisLines')} · +${gained}`);
-      Vibration.vibrate(24);
+      const multi = clearedRows >= 4 ? 'TETRIS!' : clearedRows === 3 ? 'TRIPLE!' : clearedRows === 2 ? 'DOUBLE!' : '';
+      setFeedback(`${multi ? multi + ' ' : ''}${clearedRows} ${copy('games.tetrisLines')} · +${gained}`);
+      GameHaptics.success();
+      if (clearedRows >= 2) {
+        GameHaptics.combo(clearedRows);
+      }
     } else {
       setFeedback(`+${gained}`);
+      GameHaptics.impact();
     }
 
     const spawn = {...nextPiece, x: 3, y: 0};
@@ -137,6 +154,7 @@ const TetrisScreen = () => {
   };
 
   const moveHorizontal = (delta: number) => {
+    GameHaptics.tap();
     setPiece((current) => {
       const moved = {...current, x: current.x + delta};
       return collides(moved, occupied) ? current : moved;
@@ -144,6 +162,7 @@ const TetrisScreen = () => {
   };
 
   const rotate = () => {
+    GameHaptics.tap();
     setPiece((current) => {
       const rotated = {
         ...current,
@@ -154,6 +173,7 @@ const TetrisScreen = () => {
   };
 
   const drop = () => {
+    GameHaptics.impact();
     let dropped = piece;
     while (!collides({...dropped, y: dropped.y + 1}, occupied)) {
       dropped = {...dropped, y: dropped.y + 1};
@@ -198,13 +218,15 @@ const TetrisScreen = () => {
                 {Array.from({length: WIDTH}).map((__, x) => {
                   const key = keyOf({x, y});
                   const active = activeCells.some((cell) => cell.x === x && cell.y === y);
+                  const isGhost = !active && !occupied[key] && ghostCells.some((cell) => cell.x === x && cell.y === y);
                   return (
                     <View
                       key={key}
                       style={[
                         styles.cell,
-                        occupied[key] ? {backgroundColor: occupied[key]} : null,
-                        active ? {backgroundColor: piece.color} : null,
+                        occupied[key] ? [styles.filledCell, {backgroundColor: occupied[key]}] : null,
+                        active ? [styles.activeCell, {backgroundColor: piece.color}] : null,
+                        isGhost ? [styles.ghostCell, {borderColor: `${piece.color}66`}] : null,
                       ]}
                     />
                   );
@@ -215,7 +237,7 @@ const TetrisScreen = () => {
           <View style={styles.sidePanel}>
             <Text style={styles.nextTitle}>{copy('games.next')}</Text>
             <MiniPiece piece={nextPiece} />
-            <TouchableOpacity style={styles.pauseButton} onPress={() => setRunning((value) => !value)} disabled={gameOver}>
+            <TouchableOpacity style={styles.pauseButton} onPress={() => { GameHaptics.tap(); setRunning((value) => !value); }} disabled={gameOver}>
               <Icon name={running ? 'pause' : 'play'} size={20} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -327,6 +349,9 @@ const styles = StyleSheet.create({
   board: {padding: 6, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(70,200,255,0.48)', backgroundColor: '#0C151B', shadowColor: '#46C8FF', shadowOpacity: 0.18, shadowRadius: 16, elevation: 7},
   row: {flexDirection: 'row'},
   cell: {width: 23, height: 23, margin: 1, borderRadius: 5, backgroundColor: '#111E26', borderWidth: 1, borderColor: '#1B303D'},
+  filledCell: {borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.22)'},
+  activeCell: {borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.45)', shadowColor: '#fff', shadowOpacity: 0.25, shadowRadius: 4, elevation: 3},
+  ghostCell: {borderWidth: 1.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.03)'},
   sidePanel: {width: 86, alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.md, borderRadius: 22, backgroundColor: 'rgba(70,200,255,0.07)', borderWidth: 1, borderColor: 'rgba(70,200,255,0.22)'},
   nextTitle: {color: COLORS.textMuted, fontSize: 11, fontWeight: '900', textTransform: 'uppercase'},
   miniBoard: {padding: SPACING.xs, borderRadius: 14, backgroundColor: '#0E1B22', borderWidth: 1, borderColor: 'rgba(70,200,255,0.34)'},

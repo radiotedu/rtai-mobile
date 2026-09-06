@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {ScrollView, StyleSheet, Text, TouchableOpacity, Vibration, View} from 'react-native';
+import {Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, Vibration, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -7,6 +7,7 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {GameHaptics} from './gameHaptics';
 import {createAnswerGate} from './answerGate';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
@@ -45,6 +46,29 @@ const RhythmTapScreen = () => {
   const startedAtRef = useRef(Date.now());
   const currentQuestion = questions[index];
   const score = useMemo(() => correct * 160 + Math.max(0, streak - 1) * 35, [correct, streak]);
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (previewState === 'playing') {
+      const loop = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 2500,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      spinAnim.setValue(0);
+    }
+  }, [previewState, spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   useEffect(() => { prepareVerifiedGameRound(game, roundIdRef.current); }, [game]);
   useEffect(() => () => {
@@ -54,6 +78,7 @@ const RhythmTapScreen = () => {
 
   const togglePreview = async () => {
     if (previewState === 'loading') return;
+    GameHaptics.tap();
     if (previewSessionRef.current) {
       const session = previewSessionRef.current;
       previewSessionRef.current = null;
@@ -100,11 +125,13 @@ const RhythmTapScreen = () => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setFinished(true);
+    GameHaptics.gameOver();
     submitFinalScore(finalScore);
   };
 
   const answer = (option: string) => {
     if (selected || finished || !answerGateRef.current.tryEnter()) return;
+    GameHaptics.tap();
     const preview = previewSessionRef.current;
     previewSessionRef.current = null;
     if (preview) void preview.stop();
@@ -116,7 +143,14 @@ const RhythmTapScreen = () => {
     setCorrect(nextCorrect);
     setStreak(nextStreak);
     setFeedback(isCorrect ? `${copy('games.correct')} x${nextStreak}` : copy('games.wrong'));
-    if (isCorrect) Vibration.vibrate(18);
+    if (isCorrect) {
+      GameHaptics.success();
+      if (nextStreak >= 2) {
+        GameHaptics.combo(nextStreak);
+      }
+    } else {
+      GameHaptics.warning();
+    }
 
     transitionTimeoutRef.current = setTimeout(() => {
       transitionTimeoutRef.current = null;
@@ -162,12 +196,21 @@ const RhythmTapScreen = () => {
                 {questions.map((question, questionIndex) => <View key={`${question.answer}-${questionIndex}`} style={[styles.progressDot, questionIndex <= index && styles.progressDotActive]} />)}
               </View>
               <View style={styles.deck}>
-                <View style={styles.vinylRecord}>
+                <Animated.View style={[styles.vinylRecord, {transform: [{rotate: spin}]}]}>
                   <View style={styles.vinylGroove} />
                   <View style={styles.vinylLabel}><Icon name="broadcast" size={22} color="#111" /></View>
-                </View>
+                </Animated.View>
                 <View style={styles.equalizer}>
-                  {[18, 34, 48, 28, 42, 22, 38].map((height, barIndex) => <View key={barIndex} style={[styles.equalizerBar, {height}]} />)}
+                  {[18, 34, 48, 28, 42, 22, 38].map((height, barIndex) => (
+                    <View
+                      key={barIndex}
+                      style={[
+                        styles.equalizerBar,
+                        {height: previewState === 'playing' ? Math.max(12, ((height * 1.4) % 54) + 8) : height},
+                        previewState === 'playing' && styles.equalizerBarActive,
+                      ]}
+                    />
+                  ))}
                 </View>
               </View>
               <TouchableOpacity
@@ -239,6 +282,7 @@ const styles = StyleSheet.create({
   vinylLabel: {width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFD54A', alignItems: 'center', justifyContent: 'center'},
   equalizer: {flex: 1, height: 62, marginLeft: SPACING.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
   equalizerBar: {width: 6, borderRadius: 4, backgroundColor: '#FFD54A'},
+  equalizerBarActive: {backgroundColor: '#FFF0A3', shadowColor: '#FFD54A', shadowOpacity: 0.8, shadowRadius: 6, elevation: 4},
   previewButton: {alignSelf: 'center', minWidth: 180, height: 48, marginTop: SPACING.md, paddingHorizontal: SPACING.md, borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFD54A', borderWidth: 1, borderColor: '#FFF0A3'},
   previewButtonActive: {backgroundColor: '#FF8A4C', borderColor: '#FFD4BA'},
   previewButtonText: {color: '#111', fontSize: 13, fontWeight: '900', letterSpacing: 0.5},

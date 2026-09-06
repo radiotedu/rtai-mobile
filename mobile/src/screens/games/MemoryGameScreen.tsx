@@ -7,6 +7,7 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {GameHaptics} from './gameHaptics';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {isPracticeGame} from './gameRoutes';
@@ -79,6 +80,7 @@ const MemoryGameScreen = () => {
     if (matchedCount === cards.length && cards.length > 0 && !submittedRef.current) {
       submittedRef.current = true;
       setFinished(true);
+      GameHaptics.gameOver();
       submitFinalScore(score);
     }
   }, [cards.length, matchedCount, score, submitFinalScore]);
@@ -88,6 +90,7 @@ const MemoryGameScreen = () => {
       return;
     }
 
+    GameHaptics.tap();
     const nextFlipped = [...flippedIds, card.id];
     setFlippedIds(nextFlipped);
 
@@ -102,13 +105,17 @@ const MemoryGameScreen = () => {
           const nextCombo = combo + 1;
           setCombo(nextCombo);
           setFeedback(`${copy('games.match')}! x${nextCombo}`);
-          Vibration.vibrate(18);
+          GameHaptics.success();
+          if (nextCombo >= 2) {
+            GameHaptics.combo(nextCombo);
+          }
           setCards((current) =>
             current.map((item) => nextFlipped.includes(item.id) ? {...item, matched: true} : item),
           );
         } else {
           setCombo(1);
           setFeedback(copy('games.miss'));
+          GameHaptics.warning();
         }
         setFlippedIds([]);
         setLocked(false);
@@ -210,9 +217,9 @@ const styles = StyleSheet.create({
   content: {paddingBottom: SPACING.xl},
   grid: {flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.lg, justifyContent: 'center'},
   card: {width: '22%', aspectRatio: 0.82, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B1822', borderWidth: 1, borderColor: '#34303D', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 8, elevation: 4},
-  cardVisible: {backgroundColor: '#211936', borderColor: '#8B5CF6', transform: [{scale: 1.03}]},
-  cardMatched: {backgroundColor: 'rgba(72,224,138,0.13)', borderColor: '#48E08A', opacity: 0.82},
-  cardBack: {width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(167,139,250,0.08)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.16)'},
+  cardVisible: {backgroundColor: '#261C40', borderColor: '#A78BFA', borderWidth: 1.5, transform: [{scale: 1.05}], shadowColor: '#A78BFA', shadowOpacity: 0.35, shadowRadius: 10, elevation: 6},
+  cardMatched: {backgroundColor: 'rgba(72,224,138,0.18)', borderColor: '#48E08A', borderWidth: 1.5, shadowColor: '#48E08A', shadowOpacity: 0.3, shadowRadius: 8, elevation: 5},
+  cardBack: {width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(167,139,250,0.10)', borderWidth: 1.5, borderColor: 'rgba(167,139,250,0.28)'},
   helpText: {color: COLORS.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 19, marginTop: SPACING.lg},
 });
 

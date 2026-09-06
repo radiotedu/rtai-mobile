@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {PanResponder, StyleSheet, Text, TouchableOpacity, Vibration, View, useWindowDimensions} from 'react-native';
+import {Animated, PanResponder, StyleSheet, Text, TouchableOpacity, Vibration, View, useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -7,6 +7,7 @@ import {COLORS, SPACING} from '../../theme/theme';
 import {ArcadeGame} from '../../services/gamificationService';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 import {ComboMeter, FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {GameHaptics} from './gameHaptics';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {gameListCopy} from '../../i18n/gameListCopy';
@@ -54,6 +55,29 @@ const SnakeScreen = () => {
   const submittedRef = useRef(false);
   const roundIdRef = useRef('');
   const startedAtRef = useRef(Date.now());
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const foodScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(foodScale, {toValue: 1.2, duration: 420, useNativeDriver: true}),
+        Animated.timing(foodScale, {toValue: 0.92, duration: 420, useNativeDriver: true}),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [foodScale]);
+
+  const triggerShake = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, {toValue: -7, duration: 40, useNativeDriver: true}),
+      Animated.timing(shakeAnim, {toValue: 7, duration: 40, useNativeDriver: true}),
+      Animated.timing(shakeAnim, {toValue: -5, duration: 40, useNativeDriver: true}),
+      Animated.timing(shakeAnim, {toValue: 5, duration: 40, useNativeDriver: true}),
+      Animated.timing(shakeAnim, {toValue: 0, duration: 40, useNativeDriver: true}),
+    ]).start();
+  }, [shakeAnim]);
 
   useEffect(() => {
     directionRef.current = direction;
@@ -87,7 +111,7 @@ const SnakeScreen = () => {
     setRunning(false);
     setGameOver(true);
     setFeedback(copy('games.roundFinished'));
-    Vibration.vibrate([0, 50, 70, 50]);
+    GameHaptics.gameOver();
     submitFinalScore();
   }, [copy, submitFinalScore]);
 
@@ -115,6 +139,8 @@ const SnakeScreen = () => {
           setLives(nextLives);
           setCombo(1);
           comboRef.current = 1;
+          triggerShake();
+          GameHaptics.warning();
           if (nextLives <= 0) {
             finishGame();
             return current;
@@ -122,7 +148,6 @@ const SnakeScreen = () => {
           directionRef.current = 'right';
           setDirection('right');
           setFeedback(`♥ ${nextLives}`);
-          Vibration.vibrate([0, 60, 50, 60]);
           return START_SNAKE;
         }
 
@@ -140,7 +165,10 @@ const SnakeScreen = () => {
           setScore(nextScore);
           setNotesCollected(nextNotes);
           setFeedback(`+${gained}  x${nextCombo}`);
-          Vibration.vibrate(18);
+          GameHaptics.success();
+          if (nextCombo >= 3) {
+            GameHaptics.combo(nextCombo);
+          }
           let nextObstacles = obstacles;
           if (nextNotes % 4 === 0) {
             nextObstacles = [
@@ -158,7 +186,7 @@ const SnakeScreen = () => {
     }, Math.max(120, 245 - scoreRef.current / 10));
 
     return () => clearInterval(timer);
-  }, [finishGame, food, gameOver, goldenNote, obstacles, running]);
+  }, [finishGame, food, gameOver, goldenNote, obstacles, running, triggerShake]);
 
   const resetGame = () => {
     const nextSnake = START_SNAKE;
@@ -190,6 +218,7 @@ const SnakeScreen = () => {
     if (gameOver) {
       return;
     }
+    GameHaptics.tap();
     if (!roundIdRef.current) {
       roundIdRef.current = createClientRoundId(game);
       startedAtRef.current = Date.now();
@@ -209,6 +238,7 @@ const SnakeScreen = () => {
       return;
     }
 
+    GameHaptics.tap();
     setDirection(next);
   };
 
@@ -258,7 +288,7 @@ const SnakeScreen = () => {
           // Reserve the controls' natural height; fit the board into what remains.
           setCellSize(Math.max(1, Math.min(22, (Math.min(layout.width, layout.height) - 14) / BOARD_SIZE - 1)));
         }}>
-        <View style={styles.board} {...panResponder.panHandlers}>
+        <Animated.View style={[styles.board, {transform: [{translateX: shakeAnim}]}]} {...panResponder.panHandlers}>
           {Array.from({length: BOARD_SIZE}).map((_, y) => (
             <View key={y} style={styles.row}>
               {Array.from({length: BOARD_SIZE}).map((__, x) => {
@@ -279,14 +309,18 @@ const SnakeScreen = () => {
                       isObstacle && styles.obstacleCell,
                     ]}>
                     {isHead ? <View style={styles.snakeEye} /> : null}
-                    {isFood ? <Icon name={goldenNote ? 'star-four-points' : 'music-note-eighth'} size={13} color="#07150C" /> : null}
+                    {isFood ? (
+                      <Animated.View style={{transform: [{scale: foodScale}]}}>
+                        <Icon name={goldenNote ? 'star-four-points' : 'music-note-eighth'} size={13} color="#07150C" />
+                      </Animated.View>
+                    ) : null}
                     {isObstacle ? <View style={styles.obstacleCore} /> : null}
                   </View>
                 );
               })}
             </View>
           ))}
-        </View>
+        </Animated.View>
         </View>
 
         <View style={styles.controls}>

@@ -18,6 +18,8 @@ import {useRoute} from '@react-navigation/native';
 import {discoveryCopy} from '../../i18n/discoveryCopy';
 import {getLocalBest, loadLocalBest, recordLocalBest, subscribeToLocalBests} from '../../services/localGameBests';
 
+import {GameHaptics} from './gameHaptics';
+
 function useDeviceBest() {
   const {name} = useRoute();
   const best = useSyncExternalStore(subscribeToLocalBests, () => getLocalBest(name));
@@ -54,9 +56,39 @@ export function GameShell({
   const copy = (key: string) => appCopy(i18n.language, key);
   const progressCopy = discoveryCopy(i18n.language);
   const {best} = useDeviceBest();
+  const scoreScale = useRef(new Animated.Value(1)).current;
+  const ambientAnim = useRef(new Animated.Value(0.08)).current;
+  const prevScoreRef = useRef(score);
+
+  useEffect(() => {
+    if (score > prevScoreRef.current) {
+      Animated.sequence([
+        Animated.timing(scoreScale, {toValue: 1.15, duration: 80, useNativeDriver: true}),
+        Animated.spring(scoreScale, {toValue: 1, friction: 5, tension: 120, useNativeDriver: true}),
+      ]).start();
+    }
+    prevScoreRef.current = score;
+  }, [score, scoreScale]);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientAnim, {toValue: 0.15, duration: 2200, useNativeDriver: true}),
+        Animated.timing(ambientAnim, {toValue: 0.07, duration: 2200, useNativeDriver: true}),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [ambientAnim]);
+
+  const handleBack = () => {
+    GameHaptics.tap();
+    onBack();
+  };
+
   const chrome = (<>
       <View style={styles.navbar}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
         <View style={styles.headerText}>
@@ -75,7 +107,9 @@ export function GameShell({
         <View pointerEvents="none" style={[styles.scoreGlow, {backgroundColor: `${accentColor}18`}]} />
         <View>
           <Text style={styles.scoreLabel}>{copy('games.score')}</Text>
-          <Text style={[styles.scoreValue, {color: accentColor}]}>{score}</Text>
+          <Animated.Text style={[styles.scoreValue, {color: accentColor, transform: [{scale: scoreScale}]}]}>
+            {score}
+          </Animated.Text>
         </View>
         <View style={styles.scoreMeta}>
           {progressLabel ? <Text style={[styles.progressLabel, {borderColor: `${accentColor}55`}]}>{progressLabel}</Text> : null}
@@ -95,7 +129,7 @@ export function GameShell({
   </>);
   return (
     <View style={[styles.shell, sidebarContent ? styles.horizontalShell : null]}>
-      <View pointerEvents="none" style={[styles.ambientOrb, {backgroundColor: accentColor}]} />
+      <Animated.View pointerEvents="none" style={[styles.ambientOrb, {backgroundColor: accentColor, opacity: ambientAnim}]} />
       <View pointerEvents="none" style={[styles.ambientOrbSmall, {borderColor: accentColor}]} />
       {sidebarContent ? (
         <ScrollView style={styles.sidebar} contentContainerStyle={styles.sidebarContent}>
@@ -113,15 +147,18 @@ export function ComboMeter({label, value}: {label: string; value: number}) {
 
   useEffect(() => {
     Animated.sequence([
-      Animated.timing(scale, {toValue: 1.08, duration: 120, useNativeDriver: true}),
-      Animated.timing(scale, {toValue: 1, duration: 140, useNativeDriver: true}),
+      Animated.timing(scale, {toValue: value >= 3 ? 1.18 : 1.08, duration: 100, useNativeDriver: true}),
+      Animated.spring(scale, {toValue: 1, friction: 4, tension: 120, useNativeDriver: true}),
     ]).start();
   }, [scale, value]);
 
   return (
-    <Animated.View style={[styles.comboMeter, {transform: [{scale}]}]}>
-      <Text style={styles.comboLabel}>{label}</Text>
-      <Text style={styles.comboValue}>x{value}</Text>
+    <Animated.View style={[styles.comboMeter, {transform: [{scale}]}, value >= 3 && styles.comboMeterHot]}>
+      <View style={styles.comboHeader}>
+        {value >= 2 ? <Icon name="fire" size={13} color="#FF9800" style={{marginRight: 4}} /> : null}
+        <Text style={[styles.comboLabel, value >= 3 && styles.comboLabelHot]}>{label}</Text>
+      </View>
+      <Text style={[styles.comboValue, value >= 3 && styles.comboValueHot]}>x{value}</Text>
     </Animated.View>
   );
 }
@@ -153,6 +190,7 @@ export function FeedbackToast({text}: {text?: string | null}) {
 
   return (
     <Animated.View style={[styles.feedbackToast, {opacity, transform: [{translateY}]}]}>
+      <Icon name="star-four-points" size={13} color="#FFD54A" style={{marginRight: 6}} />
       <Text style={styles.feedbackText}>{text}</Text>
     </Animated.View>
   );
@@ -194,16 +232,32 @@ export function GameResultModal({
       return;
     }
     recordLocalBest(name, score).then(improved => {
-      if (active) { setNewBest(improved); }
+      if (active) {
+        setNewBest(improved);
+        if (improved) {
+          GameHaptics.success();
+        }
+      }
     });
     return () => { active = false; };
   }, [name, score, visible]);
+
+  const handleRestart = () => {
+    GameHaptics.tap();
+    onRestart();
+  };
+
+  const handleExit = () => {
+    GameHaptics.tap();
+    onExit();
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onExit}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleExit}>
       <ScrollView contentContainerStyle={styles.modalOverlay}>
         <View style={styles.resultCard}>
-          <View style={styles.resultIcon}>
-            <Icon name={practice ? 'controller-classic' : submitFailed ? 'wifi-alert' : 'trophy-award'} size={38} color={COLORS.primary} />
+          <View style={[styles.resultIcon, newBest && styles.resultIconNewBest]}>
+            <Icon name={practice ? 'controller-classic' : submitFailed ? 'wifi-alert' : newBest ? 'trophy' : 'trophy-award'} size={38} color={newBest ? '#F4C542' : COLORS.primary} />
           </View>
           <Text style={styles.resultTitle}>{title || copy('games.roundFinished')}</Text>
           <Text style={styles.resultScore}>
@@ -212,9 +266,14 @@ export function GameResultModal({
               : getGameResultMessage(score, awardedXp, copy('games.score'))}
           </Text>
           {best > 0 ? (
-            <View style={styles.recordCard} accessibilityLiveRegion="polite">
-              <Text style={styles.recordTitle}>{newBest ? progressCopy.newBest : progressCopy.best}</Text>
-              <Text style={styles.recordValue}>{best}</Text>
+            <View style={[styles.recordCard, newBest && styles.newRecordCard]} accessibilityLiveRegion="polite">
+              <View style={styles.recordHeader}>
+                {newBest ? <Icon name="star-shooting" size={16} color="#F4C542" style={{marginRight: 6}} /> : null}
+                <Text style={[styles.recordTitle, newBest && styles.newRecordTitle]}>
+                  {newBest ? progressCopy.newBest : progressCopy.best}
+                </Text>
+              </View>
+              <Text style={[styles.recordValue, newBest && styles.newRecordValue]}>{best}</Text>
             </View>
           ) : null}
           <Text style={styles.resultSubtitle}>
@@ -228,16 +287,16 @@ export function GameResultModal({
           </Text>
 
           {!practice && submitFailed && onRetrySubmit ? (
-            <TouchableOpacity accessibilityRole="button" style={[styles.primaryButton, styles.retryButton]} onPress={onRetrySubmit}>
+            <TouchableOpacity accessibilityRole="button" style={[styles.primaryButton, styles.retryButton]} onPress={() => { GameHaptics.tap(); onRetrySubmit(); }}>
               <Text style={styles.primaryButtonText}>{copy('games.retrySubmit')}</Text>
             </TouchableOpacity>
           ) : null}
 
           <View style={styles.resultActions}>
-            <TouchableOpacity accessibilityRole="button" style={styles.secondaryButton} onPress={onExit}>
+            <TouchableOpacity accessibilityRole="button" style={styles.secondaryButton} onPress={handleExit}>
               <Text style={styles.secondaryButtonText}>{copy('games.exit')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" style={styles.primaryButton} onPress={onRestart}>
+            <TouchableOpacity accessibilityRole="button" style={styles.primaryButton} onPress={handleRestart}>
               <Text style={styles.primaryButtonText}>{copy('games.restart')}</Text>
             </TouchableOpacity>
           </View>
@@ -252,8 +311,13 @@ const styles = StyleSheet.create({
   goalTrack: {height: 4, backgroundColor: COLORS.border, borderRadius: 2, marginTop: 6, overflow: 'hidden'},
   goalFill: {height: 4, borderRadius: 2},
   recordCard: {alignItems: 'center', width: '100%', padding: SPACING.md, marginTop: SPACING.md, borderRadius: 14, backgroundColor: COLORS.surface},
+  newRecordCard: {backgroundColor: 'rgba(244,197,66,0.12)', borderWidth: 1, borderColor: 'rgba(244,197,66,0.40)'},
+  recordHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   recordTitle: {color: COLORS.text, fontSize: 14, textAlign: 'center'},
+  newRecordTitle: {color: '#F4C542', fontWeight: '900', letterSpacing: 0.5},
   recordValue: {color: '#F4C542', fontSize: 28, fontWeight: '900', marginTop: 4},
+  newRecordValue: {color: '#FFD700', fontSize: 32},
+  resultIconNewBest: {backgroundColor: 'rgba(244,197,66,0.16)'},
   retryButton: {flex: 0, alignSelf: 'stretch'},
   horizontalShell: {flexDirection: 'row', gap: SPACING.md},
   sidebar: {width: '32%', flexGrow: 0},
@@ -270,7 +334,6 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 130,
-    opacity: 0.08,
     right: -120,
     top: 100,
   },
@@ -389,26 +452,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: SPACING.md,
   },
+  comboMeterHot: {
+    backgroundColor: 'rgba(255,107,0,0.18)',
+    borderColor: 'rgba(255,107,0,0.55)',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  comboHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   comboLabel: {
     color: COLORS.textMuted,
     fontSize: 10,
     fontWeight: '800',
     textTransform: 'uppercase',
   },
+  comboLabelHot: {
+    color: '#FFB27D',
+  },
   comboValue: {
     color: '#F4C542',
     fontSize: 18,
     fontWeight: '900',
+  },
+  comboValueHot: {
+    color: '#FF7A00',
+    fontSize: 20,
   },
   feedbackToast: {
     alignSelf: 'center',
     position: 'absolute',
     top: 138,
     zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: 999,
     backgroundColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 8,
   },
   feedbackText: {
     color: '#fff',

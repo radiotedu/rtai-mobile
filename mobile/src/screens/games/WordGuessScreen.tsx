@@ -12,6 +12,7 @@ import {ArcadeGame} from '../../services/gamificationService';
 import {COLORS, SPACING} from '../../theme/theme';
 import {logSafeError} from '../../utils/safeLog';
 import {FeedbackToast, GameResultModal, GameShell} from './GameChrome';
+import {GameHaptics} from './gameHaptics';
 import {isPracticeGame} from './gameRoutes';
 import {createClientRoundId, prepareVerifiedGameRound, submitMobileGameScore} from './gameSession';
 
@@ -73,11 +74,13 @@ const WordGuessScreen = () => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setFinished(true);
+    GameHaptics.gameOver();
     void submitFinalScore(finalScore);
   }, [submitFinalScore]);
 
   const resolveAnswer = useCallback((option: string) => {
     if (selected || finished || !currentQuestion) return;
+    GameHaptics.tap();
     const timedOut = option === TIMEOUT_MARKER;
     const isCorrect = !timedOut && option === currentQuestion.answer;
     const nextLives = isCorrect ? lives : Math.max(0, lives - 1);
@@ -91,7 +94,14 @@ const WordGuessScreen = () => {
     setScore(nextScore);
     setCorrect(nextCorrect);
     setFeedback(isCorrect ? `+${gained} · ${copy('games.correct')}` : timedOut ? copy('games.timeUp') : copy('games.wrong'));
-    if (isCorrect) Vibration.vibrate(18);
+    if (isCorrect) {
+      GameHaptics.success();
+      if (nextStreak >= 2) {
+        GameHaptics.combo(nextStreak);
+      }
+    } else {
+      GameHaptics.warning();
+    }
     transitionRef.current = setTimeout(() => {
       transitionRef.current = null;
       if (index >= questions.length - 1 || nextLives === 0) {
@@ -109,6 +119,9 @@ const WordGuessScreen = () => {
     if (timeLeft <= 0) {
       resolveAnswer(TIMEOUT_MARKER);
       return undefined;
+    }
+    if (timeLeft <= 3) {
+      GameHaptics.tap();
     }
     const timer = setTimeout(() => setTimeLeft(value => value - 1), 1000);
     return () => clearTimeout(timer);

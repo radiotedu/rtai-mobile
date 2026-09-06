@@ -22,6 +22,7 @@ import {
   fetchMarketItems,
 } from '../services/gamificationService';
 import {BUILTIN_GAMES, getGameRouteForSlug, isPracticeGame} from './games/gameRoutes';
+import {GameHaptics} from './games/gameHaptics';
 import {screenCopy} from '../i18n/screenCopy';
 import {Analytics} from '../services/analyticsService';
 import {gameListCopy} from '../i18n/gameListCopy';
@@ -112,6 +113,7 @@ const GamesScreen = () => {
   }, [games]);
 
   const handlePlay = (game: ArcadeGame) => {
+    GameHaptics.tap();
     if (isAccountRequired && !isPracticeGame(game)) {
       Analytics.interaction('games', 'open_game', 'login_required');
       Alert.alert(copy('study.loginRequired'), copy('games.account'));
@@ -132,7 +134,7 @@ const GamesScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.navbar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => { GameHaptics.tap(); navigation.goBack(); }} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.navbarTitle}>{copy('games.title')}</Text>
@@ -153,6 +155,7 @@ const GamesScreen = () => {
             accessibilityRole="button"
             style={styles.quickPlay}
             onPress={() => {
+              GameHaptics.tap();
               const playable = displayGames.filter(game => getGameRouteForSlug(game.slug) && (!isAccountRequired || isPracticeGame(game)));
               if (playable.length > 0) { handlePlay(playable[Math.floor(Math.random() * playable.length)]); }
             }}>

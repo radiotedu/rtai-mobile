@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -150,7 +150,7 @@ const HomeScreen = () => {
             <EmptyCard text={discoveryCopy(i18n.language).eventsError} />
           ) : displayEvents.length === 0 ? (
             <EmptyCard text={copy('home.noEvents')} />
-          ) : displayEvents.slice(0, 3).map(event => (
+          ) : displayEvents.slice(0, 3).map((event: AppEvent) => (
             <TouchableOpacity key={event.id} accessibilityRole="button" onPress={() => navigation.navigate('Events')}>
               <EventPreview event={event} />
             </TouchableOpacity>

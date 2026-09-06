@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Animated, PanResponder, StyleSheet, Text, TouchableOpacity, Vibration, View, useWindowDimensions} from 'react-native';
+import {Animated, PanResponder, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useNavigation, useRoute} from '@react-navigation/native';

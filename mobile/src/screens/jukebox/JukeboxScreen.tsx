@@ -348,7 +348,8 @@ const JukeboxScreen = ({ route }: any) => {
     </TouchableOpacity>
   );
 
-  const NowPlayingHero = ({ song }: { song: any }) => {
+  const renderNowPlayingHero = () => {
+    const song = nowPlaying;
     if (!song) return (
       <View style={styles.heroContainer}>
         <View style={styles.idleDisc}>
@@ -571,7 +572,7 @@ const JukeboxScreen = ({ route }: any) => {
             data={queue}
             ListHeaderComponent={
               <>
-                <NowPlayingHero song={nowPlaying} />
+                {renderNowPlayingHero()}
                 <View style={styles.queueHeader}>
                   <Text style={styles.sectionTitle}>{copy('juke.queue')}</Text>
                   <View style={styles.queueCountBadge}>
@@ -583,9 +584,9 @@ const JukeboxScreen = ({ route }: any) => {
             keyExtractor={(item: any) => item.id}
             renderItem={renderQueueItem}
             contentContainerStyle={styles.listContent}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={
               <Text style={styles.emptyText}>{copy('juke.empty')}</Text>
-            )}
+            }
           />
         )}
 

@@ -78,7 +78,8 @@ const PlayerScreen = ({route}: any) => {
   const {activeChannels} = useChannels();
   const {preferences, setPreferences} = useStreamPreferences();
   const {i18n} = useTranslation();
-  const copy = (key: string) => appCopy(i18n.language, key);
+  const copy = (key: string, values: Record<string, string | number> = {}) =>
+    appCopy(i18n.language, key, values);
   const {width, height} = useWindowDimensions();
 
   const {
@@ -611,11 +612,14 @@ const PlayerScreen = ({route}: any) => {
           onPress={() => setSleepMenuVisible(false)}>
           <View style={styles.qualityMenu} onStartShouldSetResponder={() => true}>
             <View style={styles.menuHandle} />
-            <Text style={styles.menuTitle}>Uyku Zamanlayıcısı</Text>
+            <Text style={styles.menuTitle}>{copy('player.sleepTimer')}</Text>
             <Text style={styles.menuSubtitle}>
               {isSleepActive && sleepRemaining !== null
-                ? `Kalan süre: ${Math.floor(sleepRemaining / 60)} dakika ${sleepRemaining % 60} saniye`
-                : 'Belirlenen süre sonunda yayın otomatik durdurulur'}
+                ? copy('player.sleepRemaining', {
+                    minutes: Math.floor(sleepRemaining / 60),
+                    seconds: sleepRemaining % 60,
+                  })
+                : copy('player.sleepSubtitle')}
             </Text>
 
             {[15, 30, 45, 60].map(minutes => (
@@ -628,8 +632,8 @@ const PlayerScreen = ({route}: any) => {
                 }}>
                 <Icon name="timer-sand" size={22} color={COLORS.primary} />
                 <View style={styles.menuOptionText}>
-                  <Text style={styles.menuOptionTitle}>{minutes} Dakika</Text>
-                  <Text style={styles.menuOptionDescription}>{minutes} dakika sonra duraklat</Text>
+                  <Text style={styles.menuOptionTitle}>{copy('player.sleepMinutes', {minutes})}</Text>
+                  <Text style={styles.menuOptionDescription}>{copy('player.sleepMinutesDesc', {minutes})}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -643,7 +647,7 @@ const PlayerScreen = ({route}: any) => {
                 }}>
                 <Icon name="close-circle-outline" size={22} color="#ff4444" />
                 <View style={styles.menuOptionText}>
-                  <Text style={[styles.menuOptionTitle, {color: '#ff4444'}]}>Zamanlayıcıyı Kapat</Text>
+                  <Text style={[styles.menuOptionTitle, {color: '#ff4444'}]}>{copy('player.sleepCancel')}</Text>
                 </View>
               </TouchableOpacity>
             ) : null}

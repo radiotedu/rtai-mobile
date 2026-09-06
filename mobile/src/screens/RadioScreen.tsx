@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -232,7 +232,7 @@ const RadioScreen = () => {
   const displayArtworkSource =
     typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
 
-  const renderHistoryItem = ({item}: {item: any}) => (
+  const renderHistoryItem = useCallback(({item}: {item: any}) => (
     <View style={styles.historyItem}>
       <View style={styles.historyInfo}>
         <Text style={styles.historyTitle} numberOfLines={1}>{item.title}</Text>
@@ -245,7 +245,7 @@ const RadioScreen = () => {
         })}
       </Text>
     </View>
-  );
+  ), []);
 
   return (
     <PageTransition>

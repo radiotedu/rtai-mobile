@@ -246,7 +246,7 @@ const PodcastScreen = () => {
             refreshing={refreshing}
             onRefresh={onRefresh}
             ListFooterComponent={renderFooter}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Icon name="microphone-off" size={48} color={COLORS.surface} />
                 <Text style={styles.emptyText}>
@@ -258,7 +258,7 @@ const PodcastScreen = () => {
                   <Text style={styles.retryText}>{copy('podcast.retry')}</Text>
                 </TouchableOpacity>
               </View>
-            )}
+            }
           />
         )}
       </SafeAreaView>

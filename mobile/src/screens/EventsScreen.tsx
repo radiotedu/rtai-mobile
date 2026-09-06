@@ -51,7 +51,12 @@ const EventsScreen = () => {
     try {
       const [nextEvents, nextMarket] = await Promise.all([
         fetchEvents(),
-        user ? fetchMarketItems() : Promise.resolve([]),
+        user
+          ? fetchMarketItems().catch(error => {
+              logSafeError('events.market', error);
+              return [];
+            })
+          : Promise.resolve([]),
       ]);
       setEvents(nextEvents);
       setMarket(nextMarket);

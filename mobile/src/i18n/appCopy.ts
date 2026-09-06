@@ -527,6 +527,57 @@ const LYRICS_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
   },
 };
 
+const SLEEP_TIMER_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
+  en: {
+    'player.sleepTimer': 'Sleep Timer',
+    'player.sleepSubtitle': 'Playback automatically stops after duration',
+    'player.sleepRemaining': ({minutes, seconds}) => `Remaining: ${minutes}m ${seconds}s`,
+    'player.sleepMinutes': ({minutes}) => `${minutes} Minutes`,
+    'player.sleepMinutesDesc': ({minutes}) => `Pause after ${minutes} minutes`,
+    'player.sleepCancel': 'Turn off timer',
+  },
+  tr: {
+    'player.sleepTimer': 'Uyku Zamanlayıcısı',
+    'player.sleepSubtitle': 'Belirlenen süre sonunda yayın otomatik durdurulur',
+    'player.sleepRemaining': ({minutes, seconds}) => `Kalan süre: ${minutes} dakika ${seconds} saniye`,
+    'player.sleepMinutes': ({minutes}) => `${minutes} Dakika`,
+    'player.sleepMinutesDesc': ({minutes}) => `${minutes} dakika sonra duraklat`,
+    'player.sleepCancel': 'Zamanlayıcıyı Kapat',
+  },
+  ru: {
+    'player.sleepTimer': 'Таймер сна',
+    'player.sleepSubtitle': 'Воспроизведение остановится через заданное время',
+    'player.sleepRemaining': ({minutes, seconds}) => `Осталось: ${minutes} мин. ${seconds} сек.`,
+    'player.sleepMinutes': ({minutes}) => `${minutes} минут`,
+    'player.sleepMinutesDesc': ({minutes}) => `Приостановить через ${minutes} мин.`,
+    'player.sleepCancel': 'Выключить таймер',
+  },
+  ar: {
+    'player.sleepTimer': 'مؤقت النوم',
+    'player.sleepSubtitle': 'يتوقف التشغيل تلقائياً بعد المدة المحددة',
+    'player.sleepRemaining': ({minutes, seconds}) => `الوقت المتبقي: ${minutes} دقيقة و${seconds} ثانية`,
+    'player.sleepMinutes': ({minutes}) => `${minutes} دقيقة`,
+    'player.sleepMinutesDesc': ({minutes}) => `إيقاف مؤقت بعد ${minutes} دقيقة`,
+    'player.sleepCancel': 'إيقاف المؤقت',
+  },
+  de: {
+    'player.sleepTimer': 'Schlaf-Timer',
+    'player.sleepSubtitle': 'Wiedergabe stoppt nach der gewählten Zeit',
+    'player.sleepRemaining': ({minutes, seconds}) => `Verbleibend: ${minutes}m ${seconds}s`,
+    'player.sleepMinutes': ({minutes}) => `${minutes} Minuten`,
+    'player.sleepMinutesDesc': ({minutes}) => `Nach ${minutes} Minuten anhalten`,
+    'player.sleepCancel': 'Timer ausschalten',
+  },
+  fr: {
+    'player.sleepTimer': 'Minuteur de sommeil',
+    'player.sleepSubtitle': 'La lecture s’arrête automatiquement après la durée',
+    'player.sleepRemaining': ({minutes, seconds}) => `Restant : ${minutes}m ${seconds}s`,
+    'player.sleepMinutes': ({minutes}) => `${minutes} minutes`,
+    'player.sleepMinutesDesc': ({minutes}) => `Mettre en pause après ${minutes} minutes`,
+    'player.sleepCancel': 'Désactiver le minuteur',
+  },
+};
+
 const APP_COPY_TABLES = [
   COPY,
   SOCIAL_COPY,
@@ -539,6 +590,7 @@ const APP_COPY_TABLES = [
   GAME_V2_COPY,
   LOCALE_FIX_COPY,
   LYRICS_COPY,
+  SLEEP_TIMER_COPY,
 ];
 
 export function missingAppCopyKeys(language: AppLanguage): string[] {
@@ -552,6 +604,6 @@ export function missingAppCopyKeys(language: AppLanguage): string[] {
 
 export function appCopy(language: string | undefined, key: string, values: Record<string, string | number> = {}): string {
   const lang = (language ?? 'en').split(/[-_]/)[0] as AppLanguage;
-  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? LYRICS_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? LYRICS_COPY.en[key] ?? key;
+  const value = COPY[lang]?.[key] ?? SOCIAL_COPY[lang]?.[key] ?? JUKEBOX_COPY[lang]?.[key] ?? VOTE_PANEL_COPY[lang]?.[key] ?? STUDY_COPY[lang]?.[key] ?? GAME_COPY[lang]?.[key] ?? GAME_FEEDBACK_COPY[lang]?.[key] ?? GAME_UI_COPY[lang]?.[key] ?? GAME_V2_COPY[lang]?.[key] ?? LOCALE_FIX_COPY[lang]?.[key] ?? LYRICS_COPY[lang]?.[key] ?? SLEEP_TIMER_COPY[lang]?.[key] ?? COPY.en[key] ?? SOCIAL_COPY.en[key] ?? JUKEBOX_COPY.en[key] ?? VOTE_PANEL_COPY.en[key] ?? STUDY_COPY.en[key] ?? GAME_COPY.en[key] ?? GAME_FEEDBACK_COPY.en[key] ?? GAME_UI_COPY.en[key] ?? GAME_V2_COPY.en[key] ?? LOCALE_FIX_COPY.en[key] ?? LYRICS_COPY.en[key] ?? SLEEP_TIMER_COPY.en[key] ?? key;
   return typeof value === 'function' ? value(values) : value;
 }

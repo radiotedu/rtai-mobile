@@ -760,3 +760,40 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Known limitations: None.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
 
+## 2026-09-06 code audit, typescript, eslint & i18n stability handoff snapshot
+
+- User-visible outcome:
+  - Fixed TypeScript compiler errors in `HomeScreen.tsx` (`useMemo` import missing, event parameter typing), eliminating runtime crash risk on app start.
+  - Resolved all 5 ESLint errors (`@typescript-eslint/no-unused-vars`) by pruning unused `Vibration` imports in `MemoryGameScreen.tsx`, `RhythmTapScreen.tsx`, `SnakeScreen.tsx`, `TetrisScreen.tsx`, and `WordGuessScreen.tsx`.
+  - Added localized Sleep Timer strings (`SLEEP_TIMER_COPY`) across all 6 supported languages (EN, TR, DE, FR, RU, AR) in `appCopy.ts` and updated `PlayerScreen.tsx`, ensuring international students see clean translated text in the sleep timer bottom sheet.
+  - Eliminated React unstable nested component anti-patterns (`react/no-unstable-nested-components`):
+    - Converted `NowPlayingHero` in `JukeboxScreen.tsx` to a helper function, preventing full subtree destruction on search/voting updates.
+    - Passed direct React elements to `ListEmptyComponent` in `JukeboxScreen.tsx` and `PodcastScreen.tsx`.
+    - Memoized `renderHistoryItem` with `useCallback` in `RadioScreen.tsx`.
+  - Hardened `EventsScreen.tsx` against network faults: wrapped `fetchMarketItems()` with catch fallback so market API downtime does not prevent campus party tickets from loading.
+- Exact files changed:
+  - `mobile/src/screens/HomeScreen.tsx`: Added `useMemo` import and typed `event: AppEvent`.
+  - `mobile/src/screens/games/MemoryGameScreen.tsx`: Pruned unused `Vibration` import.
+  - `mobile/src/screens/games/RhythmTapScreen.tsx`: Pruned unused `Vibration` import.
+  - `mobile/src/screens/games/SnakeScreen.tsx`: Pruned unused `Vibration` import.
+  - `mobile/src/screens/games/TetrisScreen.tsx`: Pruned unused `Vibration` import.
+  - `mobile/src/screens/games/WordGuessScreen.tsx`: Pruned unused `Vibration` import.
+  - `mobile/src/i18n/appCopy.ts`: Added `SLEEP_TIMER_COPY` for all 6 languages.
+  - `mobile/src/screens/PlayerScreen.tsx`: Used localized `copy(...)` for Sleep Timer and updated copy helper signature.
+  - `mobile/src/screens/jukebox/JukeboxScreen.tsx`: Converted `NowPlayingHero` to `renderNowPlayingHero` and direct empty component element.
+  - `mobile/src/screens/PodcastScreen.tsx`: Converted `ListEmptyComponent` to direct element.
+  - `mobile/src/screens/RadioScreen.tsx`: Wrapped `renderHistoryItem` in `useCallback`.
+  - `mobile/src/screens/EventsScreen.tsx`: Fault-tolerant `fetchMarketItems()` fallback.
+- Deployment / packaging action:
+  - Validated with TypeScript compiler (`npx tsc --noEmit`), ESLint (`npm run lint`), Jest (`npm test -- --runInBand`), Android publish audit (`node scripts/android-publish-audit.js`), root contracts, and terminal test suite.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint`).
+  - Mobile Jest: 96/96 suites passed (386/386 tests).
+  - Android Publish Audit: 36/36 passed.
+  - Terminal: 24/24 tests passed + syntax checks passed.
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+- Known limitations: None.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+

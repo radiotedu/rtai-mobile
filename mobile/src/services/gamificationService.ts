@@ -137,18 +137,34 @@ export async function fetchEvents(): Promise<AppEvent[]> {
   const now = Date.now();
   const isUpcoming = (event: AppEvent) => !event.ends_at || new Date(event.ends_at).getTime() >= now;
 
-  try {
-    const response = await api.get('/gamification/events');
-    const apiEvents: AppEvent[] = unwrapData<{events?: AppEvent[]}>(response)?.events ?? [];
-    if (Array.isArray(apiEvents) && apiEvents.length > 0) {
-      return apiEvents.filter(isUpcoming);
-    }
-  } catch {
-    // If backend is unreachable or returns error, proceed to direct fallback
+  const [apiResult, directResult] = await Promise.allSettled([
+    api.get('/gamification/events').then(res => unwrapData<{events?: AppEvent[]}>(res)?.events ?? []),
+    fetchBiletEventsDirect(),
+  ]);
+
+  const apiEvents: AppEvent[] = apiResult.status === 'fulfilled' && Array.isArray(apiResult.value)
+    ? apiResult.value.filter(isUpcoming)
+    : [];
+
+  const directEvents: AppEvent[] = directResult.status === 'fulfilled' && Array.isArray(directResult.value)
+    ? directResult.value.filter(isUpcoming)
+    : [];
+
+  const seenSlugs = new Set<string>();
+  const seenIds = new Set<string>();
+  const merged: AppEvent[] = [];
+
+  for (const event of [...directEvents, ...apiEvents]) {
+    const slug = (event.slug || '').toLowerCase().trim();
+    const id = String(event.id || '').trim();
+    if (slug && seenSlugs.has(slug)) continue;
+    if (id && seenIds.has(id)) continue;
+    if (slug) seenSlugs.add(slug);
+    if (id) seenIds.add(id);
+    merged.push(event);
   }
 
-  const directEvents = await fetchBiletEventsDirect();
-  return directEvents.filter(isUpcoming);
+  return merged;
 }
 
 export interface ArcadeGame {

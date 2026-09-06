@@ -23,6 +23,18 @@ jest.mock('../src/services/api', () => ({
 describe('gamificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    if (typeof global.fetch !== 'undefined') {
+      jest.spyOn(global, 'fetch').mockImplementation(() =>
+        Promise.resolve({
+          ok: false,
+          text: async () => '',
+        } as Response),
+      );
+    }
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('fetches the consolidated gamification home payload', async () => {

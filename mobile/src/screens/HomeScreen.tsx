@@ -117,7 +117,17 @@ const HomeScreen = () => {
 
   const accountHome = user ? home : null;
   const homeData = accountHome ?? emptyHome;
-  const displayEvents = homeData.events.length > 0 ? homeData.events : publicEvents;
+  const displayEvents = useMemo(() => {
+    const seen = new Set<string>();
+    const combined: AppEvent[] = [];
+    for (const ev of [...publicEvents, ...homeData.events]) {
+      const key = (ev.slug || ev.id || '').toLowerCase().trim();
+      if (key && seen.has(key)) continue;
+      if (key) seen.add(key);
+      combined.push(ev);
+    }
+    return combined;
+  }, [publicEvents, homeData.events]);
   const canUseRoomQr = erpIdentity?.linked === true &&
     erpIdentity.permissions.includes('room.attendance');
 

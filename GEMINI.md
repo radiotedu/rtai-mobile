@@ -739,3 +739,24 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Known limitations: None.
 - Push: Committed and pushed to `origin/main`.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+## 2026-09-06 live campus bilet parties & backend gamification events merge handoff snapshot
+
+- User-visible outcome:
+  - Fixed event visibility for authenticated/logged-in users: Previously, logging in loaded `/gamification/home` containing virtual gamification events (e.g., *"RadioTEDU Deep Dive"*), which caused `HomeScreen.tsx` to completely override and drop `publicEvents`, hiding real campus parties (such as *"Hello Campus Party"* at Le Porte Roof with ticket purchasing links).
+  - Merged event streams: `fetchEvents()` in `gamificationService.ts` now uses `Promise.allSettled` to query `/gamification/events` and direct bilet scraping (`fetchBiletEventsDirect()`) concurrently.
+  - `HomeScreen.tsx` combines `publicEvents` (campus bilet parties) with `homeData.events` (backend gamification events) with deduplication by slug and ID, prioritizing real campus parties so students always see campus party announcements and ticket purchase links whether browsing as guest or logged in.
+  - Unit test network isolation: `gamificationService.test.ts` now mocks global `fetch` to prevent unmocked live HTTP requests during Jest test runs.
+- Exact files changed:
+  - `mobile/src/services/gamificationService.ts`: Concurrent `Promise.allSettled` merge between REST API events and direct Bilet events with deduplication.
+  - `mobile/src/screens/HomeScreen.tsx`: `useMemo` combined event list merging `publicEvents` and `homeData.events`.
+  - `mobile/__tests__/gamificationService.test.ts`: Isolated `global.fetch` mock.
+- Deployment / packaging action:
+  - Validated with full mobile Jest test suite and Android publish audit.
+- Tests and counts:
+  - Mobile Jest: 96/96 suites passed (386/386 tests).
+  - Android Publish Audit: 36/36 passed.
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+- Known limitations: None.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+

@@ -525,10 +525,10 @@ const PlayerScreen = ({route}: any) => {
                       }}
                       style={styles.lyricsShareHeaderButton}
                       accessibilityRole="button"
-                      accessibilityLabel="Şarkı Sözünü Paylaş">
+                      accessibilityLabel={copy('lyrics.shareTitle')}>
                       <Icon name="share-variant-outline" size={14} color={currentChannel?.color || COLORS.primary} />
                       <Text style={[styles.lyricsShareHeaderText, {color: currentChannel?.color || COLORS.primary}]}>
-                        Paylaş
+                        {copy('lyrics.shareHeader')}
                       </Text>
                     </TouchableOpacity>
                   ) : null}

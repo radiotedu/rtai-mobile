@@ -915,3 +915,29 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Push details: Committed and pushed to `origin/main` using `akgularda` GitHub identity.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native `./gradlew` compilation on host machine.
 
+## 2026-09-06 multi-language share localization handoff snapshot
+
+- User-visible outcome:
+  - Full multi-language localization implemented across all 6 supported languages (`en`, `tr`, `ru`, `ar`, `de`, `fr`) for social sharing:
+    - PlayerScreen lyrics share pill button (`lyrics.shareHeader`: Share / Paylaş / Поделиться / مشاركة / Teilen / Partager) and accessibility label (`lyrics.shareTitle`).
+    - LyricsShareModal title, line selection prompt (`lyrics.selectLines`), close button (`common.close`), and primary action button (`lyrics.shareStory`: "Instagram & WhatsApp'ta Paylaş" / "Share to Story & WhatsApp" / etc.).
+    - Shared text format and listening footnote (`lyrics.listeningOn`: "RadioTEDU dinliyorum: https://radiotedu.com" / "Listening to RadioTEDU: https://radiotedu.com" / etc.).
+    - ProfileScreen listening recap share button (`stats.share`: "Özetimi Paylaş" / "Share My Recap" / etc.), dialog title (`stats.recapTitle`), duration formatter (`stats.hoursAndMinutes`, `stats.minutesOnly`), and full localized share message template (`stats.shareMessage`).
+  - Strict 6-language parity verified via `localeAuditFixes.test.ts` (0 missing keys across all 6 languages).
+- Exact source files changed:
+  - `mobile/src/i18n/appCopy.ts`: Added localized keys for all 6 languages (`lyrics.shareHeader`, `lyrics.listeningOn`, `stats.recapTitle`, `stats.hoursAndMinutes`, `stats.minutesOnly`, `stats.shareMessage`).
+  - `mobile/src/components/LyricsShareModal.tsx`: Connected `useTranslation` and dynamic `copy(...)` for headers, counters, buttons, and share text.
+  - `mobile/src/screens/PlayerScreen.tsx`: Localized lyrics share header button and accessibility label.
+  - `mobile/src/screens/ProfileScreen.tsx`: Localized recap share text and message formatter.
+  - `mobile/__tests__/lyricsShare.test.ts`: Added tests verifying localization across all 6 languages.
+  - `GEMINI.md`: Appended dated handoff notes.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint`).
+  - Mobile Jest: 99/99 suites passed (396/396 tests).
+  - Android publish audit: 36/36 passed.
+- Known limitations: None.
+- Push details: Committed and pushed to `origin/main` using `akgularda` GitHub identity.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+

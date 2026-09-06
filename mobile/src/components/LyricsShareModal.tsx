@@ -10,6 +10,8 @@ import {
   Share,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 import {COLORS, SPACING} from '../theme/theme';
 
 interface LyricsShareModalProps {
@@ -38,6 +40,9 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
   stationColor = COLORS.primary,
   stationName = 'RadioTEDU',
 }) => {
+  const {i18n} = useTranslation();
+  const copy = (key: string, values: Record<string, string | number> = {}) =>
+    appCopy(i18n.language, key, values);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
 
   useEffect(() => {
@@ -76,9 +81,10 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
   const handleShare = async () => {
     if (!selectedText) return;
     try {
-      const shareMessage = `“${selectedText}”\n\n🎵 ${trackTitle} — ${trackArtist}\n📻 RadioTEDU dinliyorum: https://radiotedu.com`;
+      const listeningText = copy('lyrics.listeningOn', {station: stationName || 'RadioTEDU'});
+      const shareMessage = `“${selectedText}”\n\n🎵 ${trackTitle} — ${trackArtist}\n📻 ${listeningText}`;
       await Share.share({
-        title: `${trackTitle} - ${trackArtist} (RadioTEDU)`,
+        title: `${trackTitle} - ${trackArtist} (${stationName || 'RadioTEDU'})`,
         message: shareMessage,
       });
     } catch {
@@ -97,13 +103,13 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Icon name="format-quote-close" size={22} color={stationColor} />
-              <Text style={styles.headerTitle}>Şarkı Sözünü Paylaş</Text>
+              <Text style={styles.headerTitle}>{copy('lyrics.shareTitle')}</Text>
             </View>
             <TouchableOpacity
               onPress={onClose}
               style={styles.closeButton}
               accessibilityRole="button"
-              accessibilityLabel="Kapat">
+              accessibilityLabel={copy('common.close')}>
               <Icon name="close" size={22} color={COLORS.text} />
             </TouchableOpacity>
           </View>
@@ -167,7 +173,7 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
             {/* Line Selection Tool */}
             <View style={styles.selectionSection}>
               <View style={styles.selectionHeader}>
-                <Text style={styles.selectionTitle}>Satır Seçin (Maks. 4)</Text>
+                <Text style={styles.selectionTitle}>{copy('lyrics.selectLines')}</Text>
                 <Text style={styles.selectionCounter}>
                   {selectedIndices.length}/{MAX_SELECTABLE_LINES}
                 </Text>
@@ -217,7 +223,7 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
               onPress={handleShare}
               activeOpacity={0.85}>
               <Icon name="share-variant" size={20} color="#000" style={styles.shareIcon} />
-              <Text style={styles.shareButtonText}>Instagram & WhatsApp'ta Paylaş</Text>
+              <Text style={styles.shareButtonText}>{copy('lyrics.shareStory')}</Text>
             </TouchableOpacity>
           </View>
         </View>

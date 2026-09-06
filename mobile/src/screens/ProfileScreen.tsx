@@ -553,12 +553,21 @@ const ProfileScreen = () => {
                 const top = listeningStats?.topGenre?.name || 'RadioTEDU';
                 const timeStr =
                   listeningStats && listeningStats.hoursThisWeek > 0
-                    ? `${listeningStats.hoursThisWeek} saat ${listeningStats.minutesRemainderThisWeek} dakika`
-                    : `${listeningStats?.totalMinutesThisWeek || 0} dakika`;
+                    ? copy('stats.hoursAndMinutes', {
+                        hours: listeningStats.hoursThisWeek,
+                        minutes: listeningStats.minutesRemainderThisWeek,
+                      })
+                    : copy('stats.minutesOnly', {
+                        minutes: listeningStats?.totalMinutesThisWeek || 0,
+                      });
                 const peakStr = listeningStats?.peakTimeLabel || '';
-                const msg = `📻 Bu hafta RadioTEDU'da ${timeStr} radyo dinledim!\n🎷 Favori türüm: ${top}\n🌙 Dinleme saatim: ${peakStr}\n\nSen de dinle: https://radiotedu.com`;
+                const msg = copy('stats.shareMessage', {
+                  time: timeStr,
+                  genre: top,
+                  peak: peakStr,
+                });
                 await Share.share({
-                  title: 'RadioTEDU Dinleme Özetim',
+                  title: copy('stats.recapTitle'),
                   message: msg,
                 });
               } catch {
@@ -567,7 +576,7 @@ const ProfileScreen = () => {
             }}
             activeOpacity={0.8}>
             <Icon name="share-variant-outline" size={16} color={COLORS.primary} style={{marginRight: 6}} />
-            <Text style={styles.recapShareText}>Özetimi Paylaş</Text>
+            <Text style={styles.recapShareText}>{copy('stats.share')}</Text>
           </TouchableOpacity>
         </View>
 

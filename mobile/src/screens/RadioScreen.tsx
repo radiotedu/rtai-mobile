@@ -229,8 +229,20 @@ const RadioScreen = () => {
   const displayArtist = stationOnlyPresentation ? '' : metadata?.artist || activeTrack?.artist || selectedCopy.description;
   const displayArtwork =
     stationOnlyPresentation ? activeTrack?.artwork || selectedChannel.logo : metadata?.artwork || activeTrack?.artwork || selectedChannel.logo;
-  const displayArtworkSource =
-    typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
+  const [imageError, setImageError] = useState(false);
+  useEffect(() => {
+    setImageError(false);
+  }, [displayArtwork]);
+
+  const effectiveArtworkSource = useMemo(() => {
+    if (imageError && selectedChannel?.logo) {
+      return selectedChannel.logo;
+    }
+    if (displayArtwork) {
+      return typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
+    }
+    return selectedChannel?.logo;
+  }, [imageError, selectedChannel?.logo, displayArtwork]);
 
   const renderHistoryItem = useCallback(({item}: {item: any}) => (
     <View style={styles.historyItem}>
@@ -259,7 +271,15 @@ const RadioScreen = () => {
             onPress={openPlayer}
             accessibilityLabel={copy('common.openPlayer')}>
             <View>
-              {displayArtworkSource ? <Image source={displayArtworkSource} style={styles.nowArtwork} /> : <View style={styles.nowArtworkPlaceholder} />}
+              {effectiveArtworkSource ? (
+                <Image
+                  source={effectiveArtworkSource}
+                  style={styles.nowArtwork}
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <View style={styles.nowArtworkPlaceholder} />
+              )}
             </View>
             <View style={styles.nowBody}>
               <View style={styles.liveRow}>

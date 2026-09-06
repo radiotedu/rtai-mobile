@@ -883,3 +883,35 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Commit hash pushed to `main`: `3160859` (feature commit).
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
 
+## 2026-09-06 lock screen, notification & offline cover art hardening handoff snapshot
+
+- User-visible outcome:
+  - Fixed radio cover art disappearing on Android lock screen, notification drawer, and player UI when connection drops, when stream is offline, or when remote artwork URLs fail.
+  - TrackPlayer on Android now uses compiled native offline drawables (`android.resource://com.radiotedumobile/drawable/car_station_*`) via `getStationNativeArtworkUri(channel.id)`.
+  - Android `MetadataContext` recovers TrackPlayer notification artwork to the native station drawable if connection drops or network fails during polling.
+  - Automatic metadata refresh on network reconnection via `NetInfo.addEventListener`.
+  - Added `imageError` state and `onError` fallback to local bundled station logos across `PlayerScreen.tsx`, `MiniPlayer.tsx`, and `RadioScreen.tsx`.
+- Exact source and live files changed:
+  - `mobile/src/services/playbackQueue.ts`
+  - `mobile/src/context/MetadataContext.tsx`
+  - `mobile/src/screens/PlayerScreen.tsx`
+  - `mobile/src/components/MiniPlayer.tsx`
+  - `mobile/src/screens/RadioScreen.tsx`
+  - `artifacts/release-v1.3.7/RadioTEDU-Mobile-v1.3.7.apk`
+  - `artifacts/release-v1.3.7/SHA256SUMS.txt`
+  - `artifacts/release-v1.3.7/RELEASE-SHA256SUMS.txt`
+- Deployment & packaging action:
+  - Bundled JS and assets via `npx react-native bundle --platform android --dev false`.
+  - Repacked, 16 KB page-aligned (`zipalign -p -f 4`), and signed with official production keystore (`RadioTEDU-release-v1.jks`, alias `radiotedu-release`).
+  - Production APK SHA-256: `eeccf1c034526fd7edc2d5280e647e3a2086d6792c5038e4dbb3de95dc8b81e5`.
+  - Uploaded updated `RadioTEDU-Mobile-v1.3.7.apk`, `SHA256SUMS.txt`, and `RELEASE-SHA256SUMS.txt` to GitHub Release `v1.3.7` via `gh release upload ... --clobber`.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint -- --quiet`).
+  - Mobile Jest: 99/99 suites passed (394/394 tests passed).
+  - Android Publish Audit: 36/36 passed.
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+- Known limitations: None.
+- Push details: Committed and pushed to `origin/main` using `akgularda` GitHub identity.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native `./gradlew` compilation on host machine.
+

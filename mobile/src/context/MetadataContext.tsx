@@ -1,10 +1,13 @@
 import React, {createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode} from 'react';
+import {Platform} from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import TrackPlayer, {Event, State, useTrackPlayerEvents} from 'react-native-track-player';
 import {RADIO_CHANNELS, shouldUseStationOnlyPresentation} from '../data/radioChannels';
 import {fetchAlbumArtwork} from '../utils/api';
 import {parseTrackPlayerMetadataEvent} from '../services/streamMetadata';
 import {fetchStationArtwork, fetchStationLiveMetadata} from '../services/stationArtwork';
 import {recordListeningTime} from '../services/listeningStatsService';
+import {getStationNativeArtworkUri} from '../services/playbackQueue';
 
 interface TrackMetadata {
   title: string;
@@ -64,9 +67,9 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       }
       lastMetadataKey.current = key;
 
-      const fallbackArtwork = String(
-        channel.artwork || 'https://radiotedu.com/logo.png',
-      );
+      const fallbackArtwork = Platform?.OS === 'android'
+        ? getStationNativeArtworkUri(channel.id)
+        : String(channel.artwork || 'https://radiotedu.com/logo.png');
       const immediate: TrackMetadata = {
         title: liveInfo.title,
         artist,
@@ -82,7 +85,28 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } catch {
-      // transient network errors ignored
+      // On network error / connection drop: ensure TrackPlayer notification retains native station artwork
+      try {
+        const track = await TrackPlayer.getActiveTrack();
+        if (track?.id) {
+          const ch = RADIO_CHANNELS.find(item => item.id === String(track.id));
+          if (ch) {
+            const index = await TrackPlayer.getActiveTrackIndex();
+            if (index !== undefined) {
+              const nativeArt = Platform?.OS === 'android'
+                ? getStationNativeArtworkUri(ch.id)
+                : String(ch.artwork || 'https://radiotedu.com/logo.png');
+              if (track.artwork !== nativeArt && (!track.artwork || String(track.artwork).startsWith('http'))) {
+                await TrackPlayer.updateMetadataForTrack(index, {
+                  artwork: nativeArt,
+                });
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
     }
   }, [clearMetadata, updateMetadata]);
 
@@ -91,7 +115,15 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
     const interval = setInterval(() => {
       void pollActiveStation();
     }, 8000);
-    return () => clearInterval(interval);
+    const unsubscribeNet = NetInfo.addEventListener(netState => {
+      if (netState.isConnected && netState.isInternetReachable !== false) {
+        void pollActiveStation();
+      }
+    });
+    return () => {
+      clearInterval(interval);
+      unsubscribeNet();
+    };
   }, [pollActiveStation]);
 
   useTrackPlayerEvents(
@@ -138,9 +170,9 @@ export const MetadataProvider = ({ children }: { children: ReactNode }) => {
       }
       lastMetadataKey.current = key;
 
-      const fallbackArtwork = String(
-        channel.artwork || 'https://radiotedu.com/logo.png',
-      );
+      const fallbackArtwork = Platform?.OS === 'android'
+        ? getStationNativeArtworkUri(channel.id)
+        : String(channel.artwork || 'https://radiotedu.com/logo.png');
       const immediate = {
         title: parsed.title,
         artist,

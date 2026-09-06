@@ -11,8 +11,7 @@
  */
 import TrackPlayer, {Capability, State, Track} from 'react-native-track-player';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Alert} from 'react-native';
-import {Image} from 'react-native';
+import {Alert, Image, Platform} from 'react-native';
 import i18n from '../i18n';
 import {
   buildStreamFallbacks,
@@ -103,9 +102,47 @@ export function isPodcastId(id: string | undefined | null): boolean {
   return !!id && id.startsWith(PODCAST_ID_PREFIX);
 }
 
+const ANDROID_DRAWABLE_PREFIX = 'android.resource://com.radiotedumobile/drawable/';
+
+/** Returns the cross-process bundled native drawable URI for Android media surfaces. */
+export function getStationNativeArtworkUri(channelId: string): string {
+  const baseId = channelId.replace(/-(?:low|flac|high|normal)$/, '');
+  switch (baseId) {
+    case 'radiotedu-main':
+    case 'radiotedu':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_radiotedu`;
+    case 'radiotedu-classic':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_classic`;
+    case 'radiotedu-jazz':
+    case 'radiotedu-cazz':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_cazz`;
+    case 'radiotedu-lofi':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_lofi`;
+    case 'radiotedu-energize':
+    case 'radiotedu-spark':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_energize`;
+    case 'radiotedu-rock':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_rock`;
+    case 'radiotedu-ai-en':
+    case 'radiotedu-en':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_en`;
+    case 'radiotedu-ai-fr':
+    case 'radiotedu-fr':
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_fr`;
+    default:
+      return `${ANDROID_DRAWABLE_PREFIX}car_station_radiotedu`;
+  }
+}
+
 export function channelArtwork(channel: RadioChannel): string {
+  // On Android, always provide the compiled native drawable resource URI.
+  // This guarantees lock screen, notification, and car media surfaces always
+  // display the official station logo even when completely offline or during connection drops.
+  if (Platform?.OS === 'android') {
+    return getStationNativeArtworkUri(channel.id);
+  }
   if (typeof channel.logo === 'number') {
-    const bundled = Image.resolveAssetSource(channel.logo);
+    const bundled = Image?.resolveAssetSource ? Image.resolveAssetSource(channel.logo) : null;
     if (bundled?.uri) {
       return bundled.uri;
     }

@@ -170,8 +170,20 @@ const PlayerScreen = ({route}: any) => {
     : isPodcast
     ? activeTrack?.artwork || FALLBACK_ARTWORK
     : metadata?.artwork || activeTrack?.artwork || currentChannel?.logo || FALLBACK_ARTWORK;
-  const displayArtworkSource =
-    typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
+  const [imageError, setImageError] = useState(false);
+  useEffect(() => {
+    setImageError(false);
+  }, [displayArtwork]);
+
+  const effectiveArtworkSource = useMemo(() => {
+    if (imageError && currentChannel?.logo) {
+      return currentChannel.logo;
+    }
+    if (displayArtwork) {
+      return typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
+    }
+    return currentChannel?.logo;
+  }, [imageError, currentChannel?.logo, displayArtwork]);
   const displayTitle = stationOnlyPresentation
     ? currentChannel?.name || 'Lo-Fi'
     : isPodcast
@@ -438,11 +450,12 @@ const PlayerScreen = ({route}: any) => {
             scrollOffsetY.current = event.nativeEvent.contentOffset.y;
           }}>
           <View style={styles.artWrap}>
-            {displayArtworkSource ? (
+            {effectiveArtworkSource ? (
               <Image
-                source={displayArtworkSource}
+                source={effectiveArtworkSource}
                 style={[styles.art, {width: artSize, height: artSize}]}
                 resizeMode="cover"
+                onError={() => setImageError(true)}
               />
             ) : <View style={[styles.art, styles.artPlaceholder, {width: artSize, height: artSize}]} />}
           </View>

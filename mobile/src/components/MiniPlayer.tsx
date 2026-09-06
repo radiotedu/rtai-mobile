@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -157,6 +157,42 @@ const MiniPlayer = () => {
     });
   }, [displayChannel?.name, displayTrack, metadata?.artist, metadata?.artwork, metadata?.title, progress.position, stationOnlyPresentation]);
 
+  // Use context metadata if available, fallback to track data (or last known track)
+  const isPodcast = String(displayTrack?.id || '').startsWith('podcast:');
+  const displayTitle = stationOnlyPresentation
+    ? 'Lo-Fi'
+    : isPodcast
+    ? displayTrack?.title
+    : metadata?.title || displayTrack?.title;
+  const displayArtist = stationOnlyPresentation
+    ? ''
+    : isPodcast
+    ? displayTrack?.artist
+    : metadata?.artist || displayTrack?.artist;
+  const displayArtwork = stationOnlyPresentation
+    ? displayTrack?.artwork
+    : isPodcast
+    ? displayTrack?.artwork
+    : metadata?.artwork || displayTrack?.artwork;
+
+  const [imageError, setImageError] = useState(false);
+  useEffect(() => {
+    setImageError(false);
+  }, [displayArtwork]);
+
+  const effectiveArtworkSource = useMemo(() => {
+    if (imageError && displayChannel?.logo) {
+      return displayChannel.logo;
+    }
+    if (
+      displayArtwork &&
+      displayArtwork !== 'https://radiotedu.com/logo.png'
+    ) {
+      return typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
+    }
+    return displayChannel?.logo;
+  }, [imageError, displayChannel?.logo, displayArtwork]);
+
   // Simplified visibility: Show if we have ANY track info (current or last known)
   // Only hide on specific screens.
   if (
@@ -259,25 +295,6 @@ const MiniPlayer = () => {
     }
   };
 
-  // Use context metadata if available, fallback to track data (or last known track)
-  const isPodcast = String(displayTrack?.id || '').startsWith('podcast:');
-  const displayTitle = stationOnlyPresentation
-    ? 'Lo-Fi'
-    : isPodcast
-    ? displayTrack?.title
-    : metadata?.title || displayTrack?.title;
-  const displayArtist = stationOnlyPresentation
-    ? ''
-    : isPodcast
-    ? displayTrack?.artist
-    : metadata?.artist || displayTrack?.artist;
-  const displayArtwork = stationOnlyPresentation
-    ? displayTrack?.artwork
-    : isPodcast
-    ? displayTrack?.artwork
-    : metadata?.artwork || displayTrack?.artwork;
-  const displayArtworkSource = typeof displayArtwork === 'string' ? {uri: displayArtwork} : displayArtwork;
-
   return (
     <View style={[styles.container, {bottom: bottomPosition}]}>
       <View style={styles.content}>
@@ -288,9 +305,12 @@ const MiniPlayer = () => {
             openPlayerModal();
           }}>
           <View style={styles.artworkContainer}>
-            {displayArtworkSource &&
-            displayArtwork !== 'https://radiotedu.com/logo.png' ? (
-              <Image source={displayArtworkSource} style={styles.artwork} />
+            {effectiveArtworkSource ? (
+              <Image
+                source={effectiveArtworkSource}
+                style={styles.artwork}
+                onError={() => setImageError(true)}
+              />
             ) : <View style={styles.placeholderArtwork} />}
           </View>
 

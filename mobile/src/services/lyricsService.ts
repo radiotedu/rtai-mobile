@@ -61,7 +61,7 @@ export const parseScrollableLyrics = (source: unknown): string[] =>
 
 export const LRCLIB_HEADERS: Record<string, string> = {
   Accept: 'application/json',
-  'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Mobile) RadioTEDU/1.3.7 (https://radiotedu.com)',
+  'User-Agent': 'Mozilla/5.0 (Linux; Android 14; Mobile) RadioTEDU/1.3.8 (https://radiotedu.com)',
 };
 
 export async function fetchScrollableLyrics({

@@ -702,7 +702,7 @@ export async function fetchBiletEvents(): Promise<any[]> {
     }
     try {
         const response = await fetch('https://radiotedu.com/bilet/', {
-            headers: { 'User-Agent': 'RadioTEDU-Sync/1.3.7' },
+            headers: { 'User-Agent': 'RadioTEDU-Sync/1.3.8' },
         });
         if (!response.ok) return cachedBiletEvents;
         const html = await response.text();

@@ -1,6 +1,6 @@
 # RadioTEDU Terminal
 
-A responsive radio player with keyboard and mouse controls, a focus timer and server-backed account balances. Version **1.3.7**.
+A responsive radio player with keyboard and mouse controls, a focus timer and server-backed account balances. Version **1.3.8**.
 
 ## Interface
 

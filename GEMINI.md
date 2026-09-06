@@ -956,3 +956,41 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Known limitations: None.
 - Push details: Committed and pushed to `origin/main` using `akgularda` GitHub identity.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+## 2026-09-07 release v1.3.8 & emulator verification handoff snapshot
+
+- User-visible outcome:
+  - Bumped version to `v1.3.8` (versionCode `13080`, TV `13081`, Wear `13082`, iOS marketing `1.3.8` build `13080`, terminal `1.3.8`).
+  - Generated production bundle via `npx react-native bundle --platform android --dev false`.
+  - Packaged, 16KB page-aligned (`zipalign -f -P 16 4`), and signed `RadioTEDU-Mobile-v1.3.8.apk` with official production keystore (`RadioTEDU-release-v1.jks`, alias `radiotedu-release`).
+  - Packaged `RadioTEDU-Terminal-v1.3.8.tgz` and `RadioTEDU-Terminal-v1.3.8.zip`.
+  - Full end-to-end testing verified on physical-dimension Pixel 5 phone emulator (`RadioTEDU-Phone-Test`, 1080x2340):
+    - Clean launch with dual RadioTEDU and RTAI marks.
+    - Home screen with clean header (username removed, profile circle only), station carousel ("Choose your station"), "Listen live" CTA.
+    - Audio playback: Icecast stream connected live with song title & artist ("Temperature (The Trinity) - Sean Paul"), official square station cover art, live MiniPlayer, expanded Player modal with `LYRICS` pill button, sleep timer stopwatch icon, and favorite heart toggle.
+    - Android Auto: `RadioTeduCarService` foreground service started cleanly; `cmd media_session list-sessions` confirmed active `androidx.media3.session.id.RadioTeduMediaLibrary` and `KotlinAudioPlayer`.
+- Exact source and release files changed:
+  - `mobile/package.json` & `mobile/package-lock.json`: Bumped to `1.3.8`.
+  - `terminal/package.json` & `terminal/README.md`: Bumped to `1.3.8`.
+  - `mobile/android/app/build.gradle`: `versionCode 13080`, `versionName "1.3.8"`.
+  - `mobile/android/tv/build.gradle`: `versionCode 13081`, `versionName "1.3.8"`.
+  - `mobile/android/wear/build.gradle`: `versionCode 13082`, `versionName "1.3.8"`.
+  - `mobile/ios/RadioTEDUMobile.xcodeproj/project.pbxproj`: `MARKETING_VERSION = 1.3.8;`, `CURRENT_PROJECT_VERSION = 13080;`.
+  - `mobile/__tests__/iosReadinessSource.test.ts` & `mobile/__tests__/androidFormFactorsSource.test.ts`: Updated version expectations.
+  - `tests/release-workflows.test.mjs`: Updated release version contract to `v1.3.8`.
+  - `mobile/src/services/lyricsService.ts`: User-Agent updated to `RadioTEDU/1.3.8`.
+  - `backend/src/routes/gamification.ts`: User-Agent updated to `RadioTEDU-Sync/1.3.8`.
+  - `README.md`: Updated release references.
+  - `artifacts/release-v1.3.8/`: Production APK, terminal packages, and SHA-256 checksums.
+  - `GEMINI.md`: Appended dated handoff notes.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint`).
+  - Mobile Jest: 99/99 suites passed (396/396 tests).
+  - Android publish audit: 36/36 passed.
+  - Root contract tests: 16/16 passed (`release-workflows.test.mjs`, `technology-rtai-story.test.mjs`, `production-account.test.mjs`).
+  - Study/Social: 46/46 files, 227/227 tests passed + 3/3 generation contracts.
+  - Terminal: 24/24 tests passed + syntax checks passed.
+  - Release version check: `node scripts/verify-release-version.mjs v1.3.8` passed.
+- Known limitations: None.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.

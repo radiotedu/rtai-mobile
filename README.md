@@ -21,9 +21,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ## What is included
 
-### Version 1.3.7 testing prerelease
+### Version 1.3.8 release
 
-[APK and terminal downloads](https://github.com/radiotedu/rtai-mobile/releases/tag/v1.3.7) · [Verification report and remaining issues](docs/RELEASE_1_3_7_VERIFICATION.md)
+[APK and terminal downloads](https://github.com/radiotedu/rtai-mobile/releases/tag/v1.3.8)
 
 Production-signed Android with Android Auto integration included; full Auto projection and Google Play readiness remain unverified. The report records the startup retry failure and other outstanding checks.
 

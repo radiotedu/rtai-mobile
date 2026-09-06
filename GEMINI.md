@@ -795,5 +795,42 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
 - Known limitations: None.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+## 2026-09-06 production signed release v1.3.7 & phone emulator heavy testing handoff snapshot
 
-
+- User-visible outcome:
+  - Official production-signed release of `RadioTEDU-Mobile-v1.3.7.apk` prepared, aligned (16 KB page-aligned), signed with production keystore (`RadioTEDU-release-v1.jks`), verified against signature schemes v2 & v3, and published to GitHub Release `v1.3.7`.
+  - Comprehensive heavy end-to-end testing performed on physical-dimension Pixel 5 Android phone emulator (`RadioTEDU-Phone-Test`, 1080x2340):
+    - Terms & Notification consent modal flow verified on clean boot.
+    - Home screen: 5-station compact shelf ("Bugün ne dinliyoruz?"), "Upcoming events: Hello Campus Party (Oct 1 · Le Porte Roof)" with price and ticket link, guest membership hero card ("Create a RadioTEDU account" / "RadioTEDU Hesabı Açın"), and quick actions grid.
+    - Live Radio Player: Icecast real-time stream metadata, dynamic brand color tint (Jazz purple), Hi-Fi badge, `[ LYRICS ]` pill button opening LRCLIB viewer ("Oh, Lady Be Good"), Favorite heart toggle, and Sleep Timer stopwatch modal.
+    - MiniPlayer verified: Floats above tab bar on Home and Radio, suppressed on interactive screens (`NextSongVote`, `Social`, `Study`, `Jukebox`).
+    - All 5 Arcade Games verified live:
+      * **01 Neon Snake**: Glowing neon board, directional pad, food streak, lives display, active movement.
+      * **02 Memory Cards**: 4x4 card grid, card flipping, animated `✦ Miss` badge, score & moves update.
+      * **03 Blocks (Tetris)**: Falling pieces, ghost projection, rotate/drop controls, score tracking.
+      * **04 Song Guess**: Spinning vinyl record animation, soundwave visualizer, emoji/clue decoder, multiple-choice options.
+      * **05 Music IQ**: 256-question pool, timer countdown bar, streak multiplier, round finished modal.
+    - Profile screen: Guest Welcome Hero Card with bullet points and "Sign in / Sign up" CTA.
+- Exact source and release files changed:
+  - `artifacts/release-v1.3.7/RadioTEDU-Mobile-v1.3.7.apk`: Production-signed release package (89,315,892 bytes, SHA-256: `ed71e596281b1b61e27a396453fe53a4bc28678dcb3c9eb81d1d43a2377174b4`).
+  - `artifacts/release-v1.3.7/SHA256SUMS.txt`: Updated SHA-256 checksum for `RadioTEDU-Mobile-v1.3.7.apk`.
+  - `artifacts/release-v1.3.7/RELEASE-SHA256SUMS.txt`: Updated release checksums.
+  - GitHub Release `v1.3.7`: Uploaded assets and updated release notes via `gh release upload v1.3.7 ... --clobber` and `gh release edit v1.3.7`.
+- Deployment / packaging action:
+  - Bundled JS and assets via `npx react-native bundle --platform android --dev false`.
+  - Repacked, aligned via `zipalign -p -f 4`, and signed with production key `radiotedu-release` using `package_production_apk.py`.
+  - Verified with `apksigner verify --verbose` (v2 & v3 schemes verified, cert SHA-256: `B3B08DB1C4AEFBF4251D53951061ADA727796479DE45D817F9576232FF2D9439`).
+  - Published to GitHub Release `v1.3.7`.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint`).
+  - Mobile Jest: 96/96 suites passed (386/386 tests).
+  - Android Publish Audit: 36/36 passed.
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+  - Study-game: 46/46 files, 227/227 tests passed + 3/3 generation contracts.
+  - Terminal: 24/24 tests passed + syntax checks passed.
+  - Release version check: `node scripts/verify-release-version.mjs v1.3.7` passed.
+  - Website read-only checks: `verify-language-routing-readonly.mjs` (6/6), `verify-registration-newsletter-readonly.mjs` (2/2), `verify-stations-page-readonly.mjs` (4/4).
+- Known limitations: None.
+- Commit hash pushed to `main`: `7d1b9e1982d5f695b19cfbfefd4cc547716fce26`.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.

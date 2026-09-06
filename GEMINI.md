@@ -834,3 +834,52 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Known limitations: None.
 - Commit hash pushed to `main`: `7d1b9e1982d5f695b19cfbfefd4cc547716fce26`.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+## 2026-09-06 Spotify-style lyrics quote card, focus companion PiP, and personal listening recap handoff snapshot
+
+- User-visible outcome:
+  - **Spotify-Style Lyrics Quote Card Generator & Social Share (Feature 2)**:
+    - 9:16 high-resolution vertical quote card generator built directly into `LyricsShareModal.tsx` and accessible from `PlayerScreen.tsx` via `[ 📤 Paylaş ]` or by tapping individual lyrics lines.
+    - Card features station-specific brand color tint, album artwork thumbnail, track title, artist name, station pill badge (`● Jazz`, `● Classical`, etc.), decorative quotation marks (`“`), selected lyric text, and official RadioTEDU white logo (`logo-03byz.png`) with `radiotedu.com` signature.
+    - Multi-line selector allows picking 1 to 4 lines of lyrics with live counter and selection checkmarks.
+    - Native share trigger via `Share.share` opens Android/iOS system sheet for Instagram Stories, WhatsApp, Telegram, Twitter/X, and direct messaging.
+  - **Focus Companion & Picture-in-Picture (PiP) Mode (Feature 3)**:
+    - Integrated with Pomodoro focus timer on `FocusScreen.tsx` (25/5 min cycles) alongside Lo-Fi and Classical stations.
+    - Picture-in-Picture permission flow: checks system PiP availability and opens an informative consent dialogue (`"Picture-in-Picture (PiP) İzni"`) prompting users to grant PiP permission via `android.settings.PICTURE_IN_PICTURE_SETTINGS`.
+    - Distraction-free high-contrast HUD timer and native Android PiP bridge support (`PipBridgeModule.kt`, `PipBridgePackage.kt`, `android:supportsPictureInPicture="true"` in AndroidManifest).
+  - **Personal Listening Stats & Mini Wrapped (Feature 5)**:
+    - Spotify Wrapped-style personal listening recap card displayed on the Profile screen (`ProfileScreen.tsx`) for both guests and authenticated users.
+    - Aggregates weekly listening duration (hours and minutes), top genre with percentage and brand color, peak listening time habit badges (*Gece Kuşu*, *Sabah Enerjisi*, *Gün Ortası Odak*, *Akşam Seansı*), and colored genre distribution progress bar.
+    - **Strict privacy compliance**: zero song titles and zero artist names are recorded or stored. Only anonymous duration per station and hour-of-day buckets are tracked locally in device storage (`@radiotedu/listening_stats`).
+    - One-tap social share button ("Özetimi Paylaş") generates formatted weekly recap text for WhatsApp and social networks.
+- Exact source files changed:
+  - `mobile/src/services/listeningStatsService.ts` [NEW]
+  - `mobile/__tests__/listeningStats.test.ts` [NEW]
+  - `mobile/src/components/LyricsShareModal.tsx` [NEW]
+  - `mobile/__tests__/lyricsShare.test.ts` [NEW]
+  - `mobile/src/services/pipService.ts` [NEW]
+  - `mobile/__tests__/pipService.test.ts` [NEW]
+  - `mobile/android/app/src/main/java/com/radiotedumobile/pip/PipBridgeModule.kt` [NEW]
+  - `mobile/android/app/src/main/java/com/radiotedumobile/pip/PipBridgePackage.kt` [NEW]
+  - `mobile/android/app/src/main/AndroidManifest.xml` [MODIFIED]
+  - `mobile/android/app/src/main/java/com/radiotedumobile/MainApplication.kt` [MODIFIED]
+  - `mobile/src/context/MetadataContext.tsx` [MODIFIED]
+  - `mobile/src/screens/PlayerScreen.tsx` [MODIFIED]
+  - `mobile/src/screens/FocusScreen.tsx` [MODIFIED]
+  - `mobile/src/screens/ProfileScreen.tsx` [MODIFIED]
+  - `mobile/src/i18n/appCopy.ts` [MODIFIED]
+- Deployment & packaging action:
+  - Bundled JS and assets via `npx react-native bundle --platform android --dev false`.
+  - Repacked, 16 KB page-aligned (`zipalign -p -f 4`), and signed with official production keystore (`RadioTEDU-release-v1.jks`, alias `radiotedu-release`).
+  - Production APK SHA-256: `4116fea43a70cc93ba81dfa6777941f614af28e7702c23be022d4a590348198e`.
+  - Uploaded updated `RadioTEDU-Mobile-v1.3.7.apk`, `SHA256SUMS.txt`, and `RELEASE-SHA256SUMS.txt` to GitHub Release `v1.3.7`.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint`).
+  - Mobile Jest: 99/99 suites passed (394/394 tests passed).
+  - Android Publish Audit: 36/36 passed.
+  - Root contract tests: 16/16 passed (`production-account.test.mjs`, `technology-rtai-story.test.mjs`).
+- Known limitations: None.
+- Commit hash pushed to `main`: `3160859` (feature commit).
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+

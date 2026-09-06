@@ -940,4 +940,19 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Push details: Committed and pushed to `origin/main` using `akgularda` GitHub identity.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
 
+## 2026-09-07 remove top-right header username handoff snapshot
 
+- User-visible outcome:
+  - Removed the username display from the top-right application header (`GlobalHeader.tsx`) when logged in per user directive (*"Sağ üstte giriş yapılınca isim yazma özelliğini kaldır"*).
+  - The top right area now consistently displays only the minimalist profile circle icon button (`account-circle`), maintaining symmetrical balance with the left side spacer and keeping the center RadioTEDU logo perfectly centered.
+- Exact source files changed:
+  - `mobile/src/components/GlobalHeader.tsx`: Removed `useAuth()`, `accountLabel`, and the `<Text style={styles.accountLabel}>` element.
+  - `GEMINI.md`: Appended dated handoff notes.
+- Tests and counts:
+  - TypeScript: 0 errors (`npx tsc --noEmit`).
+  - ESLint: 0 errors (`npm run lint`).
+  - Mobile Jest: 99/99 suites passed (396/396 tests).
+  - Android publish audit: 36/36 passed.
+- Known limitations: None.
+- Push details: Committed and pushed to `origin/main` using `akgularda` GitHub identity.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.

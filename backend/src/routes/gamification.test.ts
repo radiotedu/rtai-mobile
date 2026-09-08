@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   mockDbQuery,
@@ -22,8 +22,8 @@ const {
 
   const router: any = {};
   router.use = vi.fn(() => router);
-  router.get = vi.fn((path: string, handler: (...args: any[]) => any) => {
-    handlers.get[path] = handler;
+  router.get = vi.fn((path: string, ...routeHandlers: ((...args: any[]) => any)[]) => {
+    handlers.get[path] = routeHandlers[routeHandlers.length - 1];
     return router;
   });
   router.post = vi.fn((path: string, handler: (...args: any[]) => any) => {
@@ -64,6 +64,7 @@ vi.mock('../middleware/auth', () => ({
 
 vi.mock('../services/webSession', () => ({
   webAuthMiddleware: mockWebAuthMiddleware,
+  optionalWebAuthMiddleware: vi.fn((_req, _res, next) => next()),
   requireWebCsrf: mockRequireWebCsrf,
 }));
 
@@ -87,7 +88,9 @@ vi.mock('express', () => ({
 
 import './gamification';
 describe('gamification router', () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok: true, text: async () => '<html></html>'}));
     mockDbQuery.mockReset();
     mockClientQuery.mockReset();
     mockClientRelease.mockReset();

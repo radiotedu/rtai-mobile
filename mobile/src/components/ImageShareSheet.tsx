@@ -1,4 +1,4 @@
-import React, {forwardRef, useEffect, useRef, useState} from 'react';
+import React, {forwardRef, useRef, useState} from 'react';
 import {ActivityIndicator, Alert, findNodeHandle, Image, Modal, NativeModules, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 
@@ -47,7 +47,6 @@ export function ImageShareContent({data}: {data: ShareCardData}) {
   const [square, setSquare] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
-  useEffect(() => {setReady(false);}, [square]);
   const share = async (save = false) => {
     if (busy || !ready) {return;}
     setBusy(true);
@@ -58,7 +57,9 @@ export function ImageShareContent({data}: {data: ShareCardData}) {
   return <View>
     <View style={styles.formats}>{[false, true].map((value, index) =>
       <TouchableOpacity key={String(value)} accessibilityRole="button" accessibilityState={{selected: square === value}}
-        disabled={busy} onPress={() => setSquare(value)} style={[styles.format, square === value && styles.selected]}>
+        disabled={busy} onPress={() => {
+          if (square !== value) {setReady(false); setSquare(value);}
+        }} style={[styles.format, square === value && styles.selected]}>
         <Text style={styles.text}>{copy[index + 1]}</Text>
       </TouchableOpacity>)}</View>
     <View onLayout={() => setReady(true)}><ShareCard ref={ref} {...data} square={square} /></View>

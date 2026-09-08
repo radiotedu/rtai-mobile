@@ -78,14 +78,15 @@ export default function ImageShareSheet({data, onClose}: {data: ShareCardData | 
   return <Modal visible={!!data} transparent animationType="slide" onRequestClose={onClose}>
     <View style={styles.backdrop}><View style={styles.sheet}>
       <TouchableOpacity accessibilityRole="button" onPress={onClose} style={styles.close}><Text style={styles.text}>{copy[3]}</Text></TouchableOpacity>
-      <ScrollView contentContainerStyle={styles.scroll}>{data && <ImageShareContent data={data} />}</ScrollView>
+      <ScrollView style={styles.viewport} contentContainerStyle={styles.scroll}>{data && <ImageShareContent data={data} />}</ScrollView>
     </View></View>
   </Modal>;
 }
 
 const styles = StyleSheet.create({
   backdrop: {flex: 1, backgroundColor: '#0009', justifyContent: 'flex-end'},
-  sheet: {maxHeight: '92%', backgroundColor: '#111318', borderTopLeftRadius: 24, borderTopRightRadius: 24},
+  sheet: {height: '92%', backgroundColor: '#111318', borderTopLeftRadius: 24, borderTopRightRadius: 24},
+  viewport: {flex: 1},
   scroll: {padding: 20, paddingBottom: 44}, close: {padding: 18, alignItems: 'flex-end'},
   card: {width: '100%', backgroundColor: '#36131F', padding: 22, overflow: 'hidden'},
   brand: {color: '#FFF5E8', fontWeight: '900', fontSize: 18, marginBottom: 24},

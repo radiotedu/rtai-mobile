@@ -144,7 +144,7 @@ const ConsentScreen = () => {
             onPress={() => setShowDetailedNotice(prev => !prev)}
             accessibilityRole="button">
             <Text style={styles.detailsToggleText}>
-              {showDetailedNotice ? '▲ Ayrıntılı Yasal Metni Kapat' : '▼ Aydınlatma ve Gizlilik Detaylarını İncele'}
+              {`${showDetailedNotice ? '▲' : '▼'} ${t('privacy.viewPolicy')}`}
             </Text>
           </TouchableOpacity>
           {showDetailedNotice ? (
@@ -270,7 +270,7 @@ const ConsentScreen = () => {
             onPress={() => setShowTermsDetails(prev => !prev)}
             accessibilityRole="button">
             <Text style={styles.detailsToggleText}>
-              {showTermsDetails ? '▲ Şartlar Metnini Kapat' : '▼ Kullanım Şartları Detaylarını İncele'}
+              {`${showTermsDetails ? '▲' : '▼'} ${t('privacy.viewTerms')}`}
             </Text>
           </TouchableOpacity>
           {showTermsDetails ? (

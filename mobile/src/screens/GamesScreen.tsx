@@ -121,7 +121,7 @@ const GamesScreen = () => {
     GameHaptics.tap();
     if (isAccountRequired) {
       Analytics.interaction('games', 'open_game', 'login_required');
-      Alert.alert(copy('study.loginRequired'), options[6]);
+      navigation.navigate('Auth', {screen: 'Login'});
       return;
     }
     if (isPracticeGame(game)) {Alert.alert(copy('games.title'), options[7]); return;}
@@ -146,7 +146,7 @@ const GamesScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={{paddingHorizontal: 20, paddingVertical: 8}}>
-        <Text style={{color: COLORS.textMuted, fontSize: 12}}>{options[5]}</Text>
+        <Text style={{color: COLORS.textMuted, fontSize: 12}}>{options[0]}</Text>
         <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8}}>
           {(['calm', 'standard', 'lively'] as const).map((effects, index) =>
             <TouchableOpacity key={effects} accessibilityRole="button"
@@ -176,7 +176,7 @@ const GamesScreen = () => {
         showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Icon name="gamepad-variant" size={34} color="#111" />
-          <Text style={styles.title}>{copy('games.heroTitle')}</Text>
+          <Text style={styles.title}>{options[5]}</Text>
           <Text style={styles.subtitle}>
             {arcadeCopy.arcadeIntro}
           </Text>
@@ -185,8 +185,10 @@ const GamesScreen = () => {
             style={styles.quickPlay}
             onPress={() => {
               GameHaptics.tap();
-              const playable = displayGames.filter(game => getGameRouteForSlug(game.slug) && (!isAccountRequired || isPracticeGame(game)));
+              if (isAccountRequired) {navigation.navigate('Auth', {screen: 'Login'}); return;}
+              const playable = displayGames.filter(game => getGameRouteForSlug(game.slug) && !isPracticeGame(game));
               if (playable.length > 0) { handlePlay(playable[Math.floor(Math.random() * playable.length)]); }
+              else {Alert.alert(copy('games.title'), options[7]);}
             }}>
             <Icon name="play" size={22} color="#fff" />
             <Text style={styles.quickPlayText}>{arcadeCopy.quickPlay}</Text>
@@ -196,7 +198,7 @@ const GamesScreen = () => {
         {isAccountRequired ? (
           <View style={styles.accountCard}>
             <Icon name="lock-outline" size={24} color={COLORS.primary} />
-            <Text style={styles.accountText}>{copy('games.account')}</Text>
+            <Text style={styles.accountText}>{options[6]}</Text>
           </View>
         ) : null}
 
@@ -237,7 +239,7 @@ const GamesScreen = () => {
                   <Icon name="circle-multiple" size={15} color="#F4C542" />
                   <Text style={styles.rewardMeta}>
                     {isPracticeGame(game)
-                      ? options[7]
+                      ? (isAccountRequired ? options[6] : options[7])
                       : copy('games.dailyLimit', {points: game.daily_point_limit ?? 0})}
                   </Text>
                 </View>

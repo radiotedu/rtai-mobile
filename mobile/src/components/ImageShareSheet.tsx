@@ -65,7 +65,6 @@ export function ImageShareContent({data, fixedActions = false}: {data: ShareCard
     <View onLayout={() => setReady(true)}><ShareCard ref={ref} {...data} square={square} /></View>
   </>;
   return <View style={fixedActions ? styles.viewport : undefined}>
-    {fixedActions ? <ScrollView style={styles.viewport} contentContainerStyle={styles.scroll}>{preview}</ScrollView> : preview}
     <View style={fixedActions ? styles.actions : undefined}>
     <TouchableOpacity accessibilityRole="button" disabled={busy || !ready} onPress={() => share()} style={styles.share}>
       {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.text}>{copy[0]} · PNG</Text>}
@@ -74,6 +73,7 @@ export function ImageShareContent({data, fixedActions = false}: {data: ShareCard
       <Text style={styles.text}>{({tr: 'PNG kaydet', de: 'PNG speichern', fr: 'Enregistrer PNG', ru: 'Сохранить PNG', ar: 'حفظ PNG'} as Record<string, string>)[i18n.language.split('-')[0]] || 'Save PNG'}</Text>
     </TouchableOpacity>
     </View>
+    {fixedActions ? <ScrollView style={styles.viewport} contentContainerStyle={styles.scroll}>{preview}</ScrollView> : preview}
   </View>;
 }
 

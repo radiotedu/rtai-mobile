@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   headerTitle: {color: COLORS.text, fontSize: 18, fontWeight: 'bold'},
-  content: {padding: SPACING.md},
+  content: {padding: SPACING.md, paddingBottom: 120},
   intro: {color: COLORS.textMuted, fontSize: 14, lineHeight: 20, marginBottom: SPACING.md},
   legalCard: {backgroundColor: COLORS.card, borderRadius: 14, padding: SPACING.md, marginBottom: SPACING.md},
   legalHeading: {color: COLORS.text, fontSize: 14, fontWeight: '800', marginBottom: SPACING.xs},

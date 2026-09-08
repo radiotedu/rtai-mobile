@@ -2,10 +2,12 @@
 // This script never loads .env, opens a network DB connection, or starts a server.
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const {readFileSync} = require('node:fs');
 const {createRequire} = require('node:module');
 
 async function main() {
-  const [releaseRoot, toolsRoot] = process.argv.slice(2);
+  const [releaseRoot, toolsRoot, gameSlug = 'snake'] = process.argv.slice(2);
+  assert.ok(['snake', 'memory'].includes(gameSlug), 'Use snake or memory for the isolated game fixture');
   assert.ok(releaseRoot && toolsRoot, 'Usage: node scripts/verify-gold-isolated.cjs <backend-release-root> <directory-with-pglite-installed>');
   const requireBackend = createRequire(path.resolve(releaseRoot, 'package.json'));
   const requireTools = createRequire(path.resolve(toolsRoot, 'package.json'));
@@ -52,6 +54,8 @@ async function main() {
       );
       CREATE UNIQUE INDEX ledger_idempotency ON points_ledger(user_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
     `);
+    await pg.exec(readFileSync(path.resolve(releaseRoot,
+      'src/db/migrations/20260905_game_score_recovery.sql'), 'utf8'));
     await query('INSERT INTO users(id) VALUES ($1)', [userId]);
     const award = {userId, amount: 100, category: 'games', sourceType: 'isolated_game', sourceId: 'round-1', idempotencyKey: 'isolated-award-1'};
     const spend = {userId, amount: 35, category: 'market', sourceType: 'isolated_market', sourceId: 'item-1', idempotencyKey: 'isolated-spend-1'};
@@ -138,7 +142,7 @@ async function main() {
     `);
     const gameId = '00000000-0000-4000-8000-000000000002';
     await query(`INSERT INTO arcade_games (id, slug, title, point_rate, daily_point_limit, is_active, metadata)
-      VALUES ($1, 'snake', 'Snake', 0.02, 50, true, '{"verification":"client-timed-session","surface":"mobile"}'::jsonb)`, [gameId]);
+      VALUES ($1, $2, $2, 0.02, 50, true, '{"verification":"client-timed-session","surface":"mobile"}'::jsonb)`, [gameId, gameSlug]);
 
     const {handleGameScoreRequest, handleGameStartRequest} = requireBackend('./dist/routes/gamification');
     const {resetGameSessionProofsForTests} = requireBackend('./dist/services/gameSessionProof');
@@ -190,10 +194,8 @@ async function main() {
           body: scoreBody,
           user: { id: userId, role: 'user' },
         }, retryRes);
-        assert.equal(retryRes.statusCode, 200);
-        assert.equal(retryRes.body.data.score, 100);
-        assert.equal(retryRes.body.data.points_awarded, 2);
-        assert.equal(retryRes.body.data.replayed, true);
+        assert.equal(retryRes.statusCode, 201);
+        assert.deepEqual(retryRes.body, scoreRes.body);
         assert.equal(await ledgerCount(), ledgerBefore);
       });
 
@@ -208,6 +210,7 @@ async function main() {
       });
 
       await check('process restart simulation recovers committed result without in-memory proof', async () => {
+        const ledgerBefore = await ledgerCount();
         resetGameSessionProofsForTests();
         const restartRetryRes = createMockRes();
         await handleGameScoreRequest({
@@ -215,16 +218,15 @@ async function main() {
           body: scoreBody,
           user: { id: userId, role: 'user' },
         }, restartRetryRes);
-        assert.equal(restartRetryRes.statusCode, 200);
-        assert.equal(restartRetryRes.body.data.score, 100);
-        assert.equal(restartRetryRes.body.data.points_awarded, 2);
-        assert.equal(restartRetryRes.body.data.replayed, true);
+        assert.equal(restartRetryRes.statusCode, 201);
+        assert.deepEqual(restartRetryRes.body, scoreRes.body);
+        assert.equal(await ledgerCount(), ledgerBefore);
       });
     } finally {
       Date.now = realNow;
     }
 
-    console.log(`PASS | isolated Gold persistence | ${checks} checks | production database connections=0`);
+    console.log(`PASS | isolated Gold persistence | ${checks} checks | game=${gameSlug} | production database connections=0`);
   } finally {
     await pg.close();
     delete require.cache[dbModule];

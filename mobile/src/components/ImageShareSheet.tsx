@@ -40,7 +40,7 @@ export async function shareCardImage(view: View | null, title: string, save = fa
   await NativeModules.RadioTeduImageShare.share(tag, title, save);
 }
 
-export function ImageShareContent({data}: {data: ShareCardData}) {
+export function ImageShareContent({data, fixedActions = false}: {data: ShareCardData; fixedActions?: boolean}) {
   const {i18n} = useTranslation();
   const copy = labels[i18n.language.split('-')[0]] || labels.en;
   const ref = useRef<View>(null);
@@ -54,7 +54,7 @@ export function ImageShareContent({data}: {data: ShareCardData}) {
     catch {Alert.alert(copy[0], copy[4]);}
     finally {setBusy(false);}
   };
-  return <View>
+  const preview = <>
     <View style={styles.formats}>{[false, true].map((value, index) =>
       <TouchableOpacity key={String(value)} accessibilityRole="button" accessibilityState={{selected: square === value}}
         disabled={busy} onPress={() => {
@@ -63,12 +63,17 @@ export function ImageShareContent({data}: {data: ShareCardData}) {
         <Text style={styles.text}>{copy[index + 1]}</Text>
       </TouchableOpacity>)}</View>
     <View onLayout={() => setReady(true)}><ShareCard ref={ref} {...data} square={square} /></View>
+  </>;
+  return <View style={fixedActions ? styles.viewport : undefined}>
+    {fixedActions ? <ScrollView style={styles.viewport} contentContainerStyle={styles.scroll}>{preview}</ScrollView> : preview}
+    <View style={fixedActions ? styles.actions : undefined}>
     <TouchableOpacity accessibilityRole="button" disabled={busy || !ready} onPress={() => share()} style={styles.share}>
       {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.text}>{copy[0]} · PNG</Text>}
     </TouchableOpacity>
     <TouchableOpacity accessibilityRole="button" disabled={busy || !ready} onPress={() => share(true)} style={styles.format}>
       <Text style={styles.text}>{({tr: 'PNG kaydet', de: 'PNG speichern', fr: 'Enregistrer PNG', ru: 'Сохранить PNG', ar: 'حفظ PNG'} as Record<string, string>)[i18n.language.split('-')[0]] || 'Save PNG'}</Text>
     </TouchableOpacity>
+    </View>
   </View>;
 }
 
@@ -78,7 +83,7 @@ export default function ImageShareSheet({data, onClose}: {data: ShareCardData | 
   return <Modal visible={!!data} transparent animationType="slide" onRequestClose={onClose}>
     <View style={styles.backdrop}><View style={styles.sheet}>
       <TouchableOpacity accessibilityRole="button" onPress={onClose} style={styles.close}><Text style={styles.text}>{copy[3]}</Text></TouchableOpacity>
-      <ScrollView style={styles.viewport} contentContainerStyle={styles.scroll}>{data && <ImageShareContent data={data} />}</ScrollView>
+      {data && <ImageShareContent data={data} fixedActions />}
     </View></View>
   </Modal>;
 }
@@ -87,6 +92,7 @@ const styles = StyleSheet.create({
   backdrop: {flex: 1, backgroundColor: '#0009', justifyContent: 'flex-end'},
   sheet: {height: '92%', backgroundColor: '#111318', borderTopLeftRadius: 24, borderTopRightRadius: 24},
   viewport: {flex: 1},
+  actions: {paddingHorizontal: 20, paddingBottom: 28, backgroundColor: '#111318'},
   scroll: {padding: 20, paddingBottom: 44}, close: {padding: 18, alignItems: 'flex-end'},
   card: {width: '100%', backgroundColor: '#36131F', padding: 22, overflow: 'hidden'},
   brand: {color: '#FFF5E8', fontWeight: '900', fontSize: 18, marginBottom: 24},

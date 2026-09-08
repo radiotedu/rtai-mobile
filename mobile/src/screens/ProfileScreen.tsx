@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import ImageShareSheet, {ShareCardData} from '../components/ImageShareSheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -11,7 +12,6 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
-  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +50,7 @@ import {screenCopy} from '../i18n/screenCopy';
 const ACCOUNT_DELETE_CONFIRMATION = { confirmation: 'DELETE' } as const;
 
 const ProfileScreen = () => {
+  const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
   const navigation = useNavigation<any>();
   const { t, i18n } = useTranslation();
   const copy = useCallback(
@@ -479,10 +480,10 @@ const ProfileScreen = () => {
           <View style={styles.recapHeader}>
             <View style={styles.recapHeaderLeft}>
               <Icon name="chart-box-outline" size={20} color={COLORS.primary} style={{marginRight: 6}} />
-              <Text style={styles.recapTitle}>Dinleme İstatistiklerin</Text>
+              <Text style={styles.recapTitle}>{copy('stats.title')}</Text>
             </View>
             <View style={styles.recapBadge}>
-              <Text style={styles.recapBadgeText}>BU HAFTA</Text>
+              <Text style={styles.recapBadgeText}>{copy('stats.badge')}</Text>
             </View>
           </View>
 
@@ -490,10 +491,10 @@ const ProfileScreen = () => {
             <View style={styles.recapItem}>
               <Text style={styles.recapItemValue}>
                 {listeningStats && listeningStats.hoursThisWeek > 0
-                  ? `${listeningStats.hoursThisWeek} sa ${listeningStats.minutesRemainderThisWeek} dk`
-                  : `${listeningStats?.totalMinutesThisWeek || 0} dk`}
+                  ? copy('stats.hoursAndMinutes', {hours: listeningStats.hoursThisWeek, minutes: listeningStats.minutesRemainderThisWeek})
+                  : copy('stats.minutesOnly', {minutes: listeningStats?.totalMinutesThisWeek || 0})}
               </Text>
-              <Text style={styles.recapItemLabel}>Dinleme Süresi</Text>
+              <Text style={styles.recapItemLabel}>{copy('stats.duration')}</Text>
             </View>
             <View style={styles.recapItem}>
               <Text
@@ -505,7 +506,7 @@ const ProfileScreen = () => {
                 {listeningStats?.topGenre?.name || 'RadioTEDU'}
               </Text>
               <Text style={styles.recapItemLabel}>
-                En Çok Dinlenen ({listeningStats?.topGenre?.percentage || 0}%)
+                {copy('stats.topGenre')} ({listeningStats?.topGenre?.percentage || 0}%)
               </Text>
             </View>
           </View>
@@ -514,7 +515,7 @@ const ProfileScreen = () => {
           <View style={styles.recapPeakRow}>
             <Icon name="clock-time-four-outline" size={16} color={COLORS.primary} style={{marginRight: 6}} />
             <Text style={styles.recapPeakText}>
-              {listeningStats?.peakTimeLabel || 'Gece Kuşu (22:00 - 05:00)'}
+              {listeningStats?.totalMinutesAllTime ? ({night: '22:00–05:00', morning: '05:00–11:00', afternoon: '11:00–17:00', evening: '17:00–22:00'}[listeningStats.peakTimeCategory]) : '—'}
             </Text>
           </View>
 
@@ -560,16 +561,15 @@ const ProfileScreen = () => {
                     : copy('stats.minutesOnly', {
                         minutes: listeningStats?.totalMinutesThisWeek || 0,
                       });
-                const peakStr = listeningStats?.peakTimeLabel || '';
+                const peakStr = listeningStats?.totalMinutesAllTime
+                  ? ({night: '22:00–05:00', morning: '05:00–11:00', afternoon: '11:00–17:00', evening: '17:00–22:00'}[listeningStats.peakTimeCategory])
+                  : '—';
                 const msg = copy('stats.shareMessage', {
                   time: timeStr,
                   genre: top,
                   peak: peakStr,
                 });
-                await Share.share({
-                  title: copy('stats.recapTitle'),
-                  message: msg,
-                });
+                setShareCard({title: copy('stats.recapTitle'), body: msg, station: 'RadioTEDU'});
               } catch {
                 // Cancelled
               }
@@ -930,6 +930,7 @@ const ProfileScreen = () => {
           ) : null}
         </View>
       </ScrollView>
+    <ImageShareSheet data={shareCard} onClose={() => setShareCard(null)} />
     </SafeAreaView>
   );
 };

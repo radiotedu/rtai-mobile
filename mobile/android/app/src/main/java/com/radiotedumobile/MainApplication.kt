@@ -32,6 +32,7 @@ class MainApplication : Application(), ReactApplication {
           packages.add(CastBridgePackage())
           packages.add(LiveVoteBridgePackage())
           packages.add(PipBridgePackage())
+          packages.add(com.radiotedumobile.share.ImageSharePackage())
           return packages
         }
 

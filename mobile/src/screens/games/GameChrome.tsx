@@ -18,7 +18,10 @@ import {useRoute} from '@react-navigation/native';
 import {discoveryCopy} from '../../i18n/discoveryCopy';
 import {getLocalBest, loadLocalBest, recordLocalBest, subscribeToLocalBests} from '../../services/localGameBests';
 
+import {useGamePreferences} from '../../services/gamePreferences';
 import {GameHaptics} from './gameHaptics';
+import {readGameHistory, recordGameHistory, GameHistoryEntry} from '../../services/gameHistory';
+import {arcadeOptions} from '../../i18n/arcadeOptions';
 
 function useDeviceBest() {
   const {name} = useRoute();
@@ -56,21 +59,24 @@ export function GameShell({
   const copy = (key: string) => appCopy(i18n.language, key);
   const progressCopy = discoveryCopy(i18n.language);
   const {best} = useDeviceBest();
+  const preferences = useGamePreferences();
+  const animate = !preferences.reducedMotion && preferences.effects !== 'calm';
   const scoreScale = useRef(new Animated.Value(1)).current;
   const ambientAnim = useRef(new Animated.Value(0.08)).current;
   const prevScoreRef = useRef(score);
 
   useEffect(() => {
-    if (score > prevScoreRef.current) {
+    if (animate && score > prevScoreRef.current) {
       Animated.sequence([
         Animated.timing(scoreScale, {toValue: 1.15, duration: 80, useNativeDriver: true}),
         Animated.spring(scoreScale, {toValue: 1, friction: 5, tension: 120, useNativeDriver: true}),
       ]).start();
     }
     prevScoreRef.current = score;
-  }, [score, scoreScale]);
+  }, [score, scoreScale, animate]);
 
   useEffect(() => {
+    if (!animate || preferences.effects !== 'lively') {ambientAnim.setValue(0); return;}
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(ambientAnim, {toValue: 0.15, duration: 2200, useNativeDriver: true}),
@@ -79,7 +85,7 @@ export function GameShell({
     );
     loop.start();
     return () => loop.stop();
-  }, [ambientAnim]);
+  }, [ambientAnim, animate, preferences.effects]);
 
   const handleBack = () => {
     GameHaptics.tap();
@@ -144,13 +150,17 @@ export function GameShell({
 
 export function ComboMeter({label, value}: {label: string; value: number}) {
   const scale = useRef(new Animated.Value(1)).current;
+  const preferences = useGamePreferences();
 
   useEffect(() => {
+    if (preferences.reducedMotion || preferences.effects === 'calm') {
+      scale.stopAnimation(); scale.setValue(1); return;
+    }
     Animated.sequence([
       Animated.timing(scale, {toValue: value >= 3 ? 1.18 : 1.08, duration: 100, useNativeDriver: true}),
       Animated.spring(scale, {toValue: 1, friction: 4, tension: 120, useNativeDriver: true}),
     ]).start();
-  }, [scale, value]);
+  }, [scale, value, preferences.reducedMotion, preferences.effects]);
 
   return (
     <Animated.View style={[styles.comboMeter, {transform: [{scale}]}, value >= 3 && styles.comboMeterHot]}>
@@ -164,6 +174,7 @@ export function ComboMeter({label, value}: {label: string; value: number}) {
 }
 
 export function FeedbackToast({text}: {text?: string | null}) {
+  const preferences = useGamePreferences();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
 
@@ -173,6 +184,12 @@ export function FeedbackToast({text}: {text?: string | null}) {
       return;
     }
 
+    if (preferences.reducedMotion || preferences.effects === 'calm') {
+      opacity.stopAnimation(); translateY.stopAnimation();
+      translateY.setValue(0); opacity.setValue(1);
+      const timer = setTimeout(() => opacity.setValue(0), 1000);
+      return () => clearTimeout(timer);
+    }
     translateY.setValue(10);
     Animated.sequence([
       Animated.parallel([
@@ -182,7 +199,7 @@ export function FeedbackToast({text}: {text?: string | null}) {
       Animated.delay(680),
       Animated.timing(opacity, {toValue: 0, duration: 180, useNativeDriver: true}),
     ]).start();
-  }, [opacity, text, translateY]);
+  }, [opacity, text, translateY, preferences.reducedMotion, preferences.effects]);
 
   if (!text) {
     return null;
@@ -225,6 +242,19 @@ export function GameResultModal({
   const progressCopy = discoveryCopy(i18n.language);
   const {name, best} = useDeviceBest();
   const [newBest, setNewBest] = useState(false);
+  const [history, setHistory] = useState<GameHistoryEntry[]>([]);
+  const historyId = useRef<string>();
+  useEffect(() => {
+    if (!visible) {historyId.current = undefined; return;}
+    if (isSubmitting || submitFailed || practice) {return;}
+    const id = historyId.current || `${name}-${Date.now()}`;
+    historyId.current = id;
+    let active = true;
+    recordGameHistory({id, game: name, score: Math.max(0, Math.floor(score)),
+      gold: Math.max(0, Math.floor(awardedXp)), at: Date.now()})
+      .then(readGameHistory).then(entries => {if (active) {setHistory(entries.filter(entry => entry.game === name).slice(0, 3));}});
+    return () => {active = false;};
+  }, [visible, isSubmitting, submitFailed, practice, name, score, awardedXp]);
   useEffect(() => {
     let active = true;
     if (!visible) {
@@ -260,6 +290,12 @@ export function GameResultModal({
             <Icon name={practice ? 'controller-classic' : submitFailed ? 'wifi-alert' : newBest ? 'trophy' : 'trophy-award'} size={38} color={newBest ? '#F4C542' : COLORS.primary} />
           </View>
           <Text style={styles.resultTitle}>{title || copy('games.roundFinished')}</Text>
+          {history.length > 0 && <View style={styles.recordCard}>
+            <Text style={styles.recordTitle}>{arcadeOptions(i18n.language)[11]}</Text>
+            {history.map(entry => <Text key={entry.id} style={styles.personalBest}>
+              {new Date(entry.at).toLocaleDateString(i18n.language)} · {entry.score} · +{entry.gold} Gold
+            </Text>)}
+          </View>}
           <Text style={styles.resultScore}>
             {practice
               ? `${copy('games.score')} ${Math.max(0, Math.floor(score))}`
@@ -325,7 +361,7 @@ const styles = StyleSheet.create({
   gameContent: {flex: 1, minWidth: 0},
   shell: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#101318',
     paddingHorizontal: SPACING.lg,
     overflow: 'hidden',
   },
@@ -397,8 +433,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: SPACING.md,
-    borderRadius: 24,
-    backgroundColor: '#171719',
+    borderRadius: 18,
+    backgroundColor: '#1A2029',
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -418,7 +454,7 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     color: COLORS.primary,
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '900',
   },
   scoreMeta: {

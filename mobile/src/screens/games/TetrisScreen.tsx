@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   ghostCell: {borderWidth: 1.5, borderStyle: 'dashed', backgroundColor: 'rgba(255,255,255,0.03)'},
   sidePanel: {width: 86, alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.md, borderRadius: 22, backgroundColor: 'rgba(70,200,255,0.07)', borderWidth: 1, borderColor: 'rgba(70,200,255,0.22)'},
   nextTitle: {color: COLORS.textMuted, fontSize: 11, fontWeight: '900', textTransform: 'uppercase'},
-  miniBoard: {padding: SPACING.xs, borderRadius: 14, backgroundColor: '#0E1B22', borderWidth: 1, borderColor: 'rgba(70,200,255,0.34)'},
+  miniBoard: {padding: SPACING.xs, borderRadius: 14, backgroundColor: '#102234', borderWidth: 1, borderColor: 'rgba(70,200,255,0.34)'},
   miniRow: {flexDirection: 'row'},
   miniCell: {width: 14, height: 14, margin: 1, borderRadius: 4, backgroundColor: '#1B303D'},
   pauseButton: {width: 54, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1479A3'},
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   dpadMiddle: {flexDirection: 'row', alignItems: 'center', gap: 4},
   dpadBottom: {alignItems: 'center'},
   dpadCenter: {width: 52, height: 52},
-  controlButton: {width: 52, height: 52, borderRadius: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: '#13232C', borderWidth: 1, borderColor: 'rgba(70,200,255,0.28)'},
+  controlButton: {width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1C3345', borderWidth: 1, borderColor: 'rgba(70,200,255,0.28)'},
   disabled: {opacity: 0.5},
 });
 

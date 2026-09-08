@@ -51,7 +51,7 @@ const WordGuessScreen = () => {
   const startedAtRef = useRef(Date.now());
   const currentQuestion = questions[index];
 
-  useEffect(() => prepareVerifiedGameRound(game, roundIdRef.current), [game]);
+  useEffect(() => {prepareVerifiedGameRound(game, roundIdRef.current);}, [game]);
   useEffect(() => () => {
     if (transitionRef.current) clearTimeout(transitionRef.current);
   }, []);
@@ -209,14 +209,14 @@ const styles = StyleSheet.create({
   timerTrack: {height: 5, borderRadius: 3, backgroundColor: '#35211D', overflow: 'hidden', marginTop: SPACING.sm},
   timerFill: {height: '100%', backgroundColor: '#FF8A4C'},
   content: {paddingBottom: SPACING.xl},
-  stage: {marginTop: SPACING.lg, padding: SPACING.lg, borderRadius: 30, backgroundColor: '#1D1513', borderWidth: 1, borderColor: 'rgba(255,138,76,0.34)', shadowColor: '#FF8A4C', shadowOpacity: 0.16, shadowRadius: 18, elevation: 7},
+  stage: {marginTop: SPACING.lg, padding: SPACING.lg, borderRadius: 20, backgroundColor: '#261C19', borderWidth: 1, borderColor: 'rgba(255,138,76,0.34)', shadowColor: '#FF8A4C', shadowOpacity: 0.16, shadowRadius: 18, elevation: 7},
   categoryRow: {flexDirection: 'row', alignItems: 'center', gap: SPACING.sm},
   categoryIcon: {width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,112,67,0.12)', borderWidth: 1, borderColor: 'rgba(255,112,67,0.32)'},
   category: {color: '#FFB199', fontSize: 12, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase'},
   poolCount: {color: COLORS.textMuted, fontSize: 11, marginTop: 2},
   prompt: {color: COLORS.text, fontSize: 25, fontWeight: '900', lineHeight: 33, marginVertical: SPACING.xl},
   options: {gap: SPACING.sm},
-  option: {minHeight: 60, borderRadius: 19, flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, backgroundColor: '#29201E', borderWidth: 1, borderColor: '#493631'},
+  option: {minHeight: 60, borderRadius: 19, flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, backgroundColor: '#302722', borderWidth: 1, borderColor: '#493631'},
   optionLetter: {width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,112,67,0.12)', marginRight: SPACING.sm},
   optionLetterText: {color: '#FFB199', fontSize: 13, fontWeight: '900'},
   optionText: {flex: 1, color: COLORS.text, fontSize: 15, fontWeight: '800'},

@@ -53,6 +53,7 @@ export function prepareVerifiedGameRound(game: ArcadeGame, clientRoundId: string
     }
     verifiedRounds.set(clientRoundId, startOnlineVerifiedRound(game, clientRoundId));
   }
+  return verifiedRounds.get(clientRoundId);
 }
 
 export function buildGameScorePayload(params: {
@@ -93,28 +94,26 @@ export async function submitMobileGameScore(params: {
     return {points_awarded: 0, practice: true};
   }
 
+  const proof = await verifiedRounds.get(params.clientRoundId);
+  const payload = proof ? submittedPayloads.get(params.clientRoundId) ?? buildGameScorePayload({
+    ...params,
+    sessionId: proof.session.id,
+    nonce: proof.nonce,
+  }) : undefined;
+  if (payload) {submittedPayloads.set(params.clientRoundId, payload);}
   if (!(await canReachRewardServer())) {
-    verifiedRounds.delete(params.clientRoundId);
-    submittedPayloads.delete(params.clientRoundId);
     Analytics.gameCompleted(
       params.game.slug || String(params.game.id),
       params.score,
       Date.now() - params.startedAt,
       'offline',
     );
-    return {points_awarded: 0, offline: true};
+    throw new Error('Offline: reconnect and retry this result');
   }
 
-  const proof = await verifiedRounds.get(params.clientRoundId);
-  if (!proof) {
+  if (!proof || !payload) {
     throw new Error('Verified game session is unavailable');
   }
-  const payload = submittedPayloads.get(params.clientRoundId) ?? buildGameScorePayload({
-    ...params,
-    sessionId: proof.session.id,
-    nonce: proof.nonce,
-  });
-  submittedPayloads.set(params.clientRoundId, payload);
   let submitted = false;
   try {
     const result = await submitGameScore(params.game.id, payload);

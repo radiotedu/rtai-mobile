@@ -110,7 +110,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('tv/build.gradle');
     const manifest = read('tv/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 13081');
+    expect(gradle).toContain('versionCode 13091');
     expect(manifest).toContain('android.software.leanback');
     expect(manifest).toContain('android.intent.category.LEANBACK_LAUNCHER');
     expect(manifest).toContain('android.hardware.touchscreen');
@@ -121,7 +121,7 @@ describe('Android form-factor delivery', () => {
     const gradle = read('wear/build.gradle');
     const manifest = read('wear/src/main/AndroidManifest.xml');
     expect(gradle).toContain('applicationId "com.radiotedumobile"');
-    expect(gradle).toContain('versionCode 13082');
+    expect(gradle).toContain('versionCode 13092');
     expect(gradle).toContain('targetSdkVersion 35');
     expect(manifest).toContain('android.hardware.type.watch');
     expect(manifest).toContain('com.google.android.wearable.standalone');

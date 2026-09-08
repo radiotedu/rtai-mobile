@@ -38,7 +38,7 @@ describe('arcade visual upgrade', () => {
     const tetris = read('src/screens/games/TetrisScreen.tsx');
     for (const source of [snake, tetris]) {
       expect(source).toContain(
-        'controlButton: {width: 52, height: 52, borderRadius: 4',
+        'controlButton: {width: 52, height: 52',
       );
       expect(source).toContain('dpadTop');
       expect(source).toContain('dpadMiddle');

@@ -5,10 +5,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ScrollView,
-  Share,
 } from 'react-native';
+import {ImageShareContent} from './ImageShareSheet';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
@@ -78,19 +77,6 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
       .join('\n');
   }, [selectedIndices, lyricsLines]);
 
-  const handleShare = async () => {
-    if (!selectedText) return;
-    try {
-      const listeningText = copy('lyrics.listeningOn', {station: stationName || 'RadioTEDU'});
-      const shareMessage = `“${selectedText}”\n\n🎵 ${trackTitle} — ${trackArtist}\n📻 ${listeningText}`;
-      await Share.share({
-        title: `${trackTitle} - ${trackArtist} (${stationName || 'RadioTEDU'})`,
-        message: shareMessage,
-      });
-    } catch {
-      // User cancelled or share failure
-    }
-  };
 
   return (
     <Modal
@@ -118,57 +104,8 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
             style={styles.scrollArea}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}>
-            {/* Spotify-style Quote Card */}
-            <View style={[styles.card, {borderColor: `${stationColor}40`}]}>
-              {/* Card Top: Artwork + Info */}
-              <View style={styles.cardHeader}>
-                <Image
-                  source={{uri: artworkUrl || FALLBACK_ARTWORK}}
-                  style={styles.cardArtwork}
-                  resizeMode="cover"
-                />
-                <View style={styles.cardTrackInfo}>
-                  <Text style={styles.cardTrackTitle} numberOfLines={1}>
-                    {trackTitle || 'RadioTEDU'}
-                  </Text>
-                  <Text style={styles.cardTrackArtist} numberOfLines={1}>
-                    {trackArtist || 'RadioTEDU'}
-                  </Text>
-                  <View style={styles.cardStationBadge}>
-                    <View style={[styles.stationDot, {backgroundColor: stationColor}]} />
-                    <Text style={[styles.stationText, {color: stationColor}]}>
-                      {stationName}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Card Body: Lyrics */}
-              <View style={styles.cardBody}>
-                <Text style={[styles.quoteMark, {color: stationColor}]}>“</Text>
-                <Text style={styles.cardLyricsText}>
-                  {selectedText || lyricsLines[0] || '...'}
-                </Text>
-              </View>
-
-              {/* Card Footer: Official RadioTEDU logo & branding */}
-              <View style={styles.cardFooter}>
-                <View style={styles.footerLeft}>
-                  <Image
-                    source={require('../assets/images/logo-03byz.png')}
-                    style={styles.footerLogo}
-                    resizeMode="contain"
-                  />
-                  <View style={styles.footerTextWrap}>
-                    <Text style={styles.footerBrand}>RadioTEDU</Text>
-                    <Text style={styles.footerUrl}>radiotedu.com</Text>
-                  </View>
-                </View>
-                <View style={styles.footerRight}>
-                  <Icon name="waveform" size={20} color={stationColor} />
-                </View>
-              </View>
-            </View>
+            <ImageShareContent data={{title: trackTitle, artist: trackArtist,
+              body: selectedText, artwork: artworkUrl || FALLBACK_ARTWORK, station: stationName}} />
 
             {/* Line Selection Tool */}
             <View style={styles.selectionSection}>
@@ -218,13 +155,7 @@ export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
 
           {/* Bottom Actions */}
           <View style={styles.bottomActions}>
-            <TouchableOpacity
-              style={[styles.shareButton, {backgroundColor: stationColor}]}
-              onPress={handleShare}
-              activeOpacity={0.85}>
-              <Icon name="share-variant" size={20} color="#000" style={styles.shareIcon} />
-              <Text style={styles.shareButtonText}>{copy('lyrics.shareStory')}</Text>
-            </TouchableOpacity>
+
           </View>
         </View>
       </View>

@@ -11,6 +11,7 @@ import {GameHaptics} from './gameHaptics';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
 import {isPracticeGame} from './gameRoutes';
+import {arcadeOptions} from '../../i18n/arcadeOptions';
 import {logSafeError} from '../../utils/safeLog';
 
 type MemoryCard = {
@@ -36,6 +37,12 @@ const MemoryGameScreen = () => {
   const game = route.params?.game as ArcadeGame;
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
+  const options = arcadeOptions(i18n.language);
+  const [flash, setFlash] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const revealTimer = useRef<ReturnType<typeof setTimeout>>();
+  const matchTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => {clearTimeout(revealTimer.current); clearTimeout(matchTimer.current);}, []);
   const [cards, setCards] = useState<MemoryCard[]>(() => createDeck());
   const [flippedIds, setFlippedIds] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
@@ -86,7 +93,7 @@ const MemoryGameScreen = () => {
   }, [cards.length, matchedCount, score, submitFinalScore]);
 
   const handleFlip = (card: MemoryCard) => {
-    if (locked || finished || card.matched || flippedIds.includes(card.id)) {
+    if (previewing || locked || finished || card.matched || flippedIds.includes(card.id)) {
       return;
     }
 
@@ -100,7 +107,7 @@ const MemoryGameScreen = () => {
       const [first, second] = nextFlipped.map((id) => cards.find((item) => item.id === id));
       const isMatch = first?.symbol === second?.symbol;
 
-      setTimeout(() => {
+      matchTimer.current = setTimeout(() => {
         if (isMatch) {
           const nextCombo = combo + 1;
           setCombo(nextCombo);
@@ -124,6 +131,10 @@ const MemoryGameScreen = () => {
   };
 
   const resetGame = () => {
+    clearTimeout(matchTimer.current);
+    clearTimeout(revealTimer.current);
+    setPreviewing(flash);
+    if (flash) {revealTimer.current = setTimeout(() => setPreviewing(false), 3000);}
     submittedRef.current = false;
     roundIdRef.current = createClientRoundId(game);
     prepareVerifiedGameRound(game, roundIdRef.current);
@@ -151,13 +162,25 @@ const MemoryGameScreen = () => {
         progressLabel={`${matchedCount / 2}/${cards.length / 2} ${copy('games.memoryProgress')}`}
         rightLabel={`${moves} ${copy('games.memoryMoves')}`}
         onBack={() => navigation.goBack()}>
-        <FeedbackToast text={feedback} />
+        <View style={{flexDirection: 'row', gap: 10, marginTop: 12}}>
+          {[false, true].map((value, index) => <TouchableOpacity key={String(value)}
+            disabled={moves > 0 || locked || finished} accessibilityRole="button"
+            accessibilityState={{selected: flash === value, disabled: moves > 0 || locked || finished}}
+            onPress={() => {
+              clearTimeout(revealTimer.current);
+              setFlash(value); setPreviewing(value);
+              if (value) {revealTimer.current = setTimeout(() => setPreviewing(false), 3000);}
+            }} style={{padding: 12, borderRadius: 14, backgroundColor: flash === value ? '#554275' : '#24232B'}}>
+            <Text style={{color: COLORS.text}}>{options[8 + index]}</Text>
+          </TouchableOpacity>)}
+        </View>
+        <FeedbackToast text={previewing ? options[10] : feedback} />
         <ComboMeter label={copy('games.memoryCombo')} value={combo} />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.grid}>
             {cards.map((card) => {
-              const isVisible = card.matched || flippedIds.includes(card.id);
+              const isVisible = previewing || card.matched || flippedIds.includes(card.id);
               return (
                 <TouchableOpacity
                   key={card.id}
@@ -216,8 +239,8 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   content: {paddingBottom: SPACING.xl},
   grid: {flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.lg, justifyContent: 'center'},
-  card: {width: '22%', aspectRatio: 0.82, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B1822', borderWidth: 1, borderColor: '#34303D', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 8, elevation: 4},
-  cardVisible: {backgroundColor: '#261C40', borderColor: '#A78BFA', borderWidth: 1.5, transform: [{scale: 1.05}], shadowColor: '#A78BFA', shadowOpacity: 0.35, shadowRadius: 10, elevation: 6},
+  card: {width: '22%', aspectRatio: 0.82, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#211D30', borderWidth: 1, borderColor: '#34303D', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 8, elevation: 4},
+  cardVisible: {backgroundColor: '#392752', borderColor: '#A78BFA', borderWidth: 1.5, transform: [{scale: 1.05}], shadowColor: '#A78BFA', shadowOpacity: 0.35, shadowRadius: 10, elevation: 6},
   cardMatched: {backgroundColor: 'rgba(72,224,138,0.18)', borderColor: '#48E08A', borderWidth: 1.5, shadowColor: '#48E08A', shadowOpacity: 0.3, shadowRadius: 8, elevation: 5},
   cardBack: {width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(167,139,250,0.10)', borderWidth: 1.5, borderColor: 'rgba(167,139,250,0.28)'},
   helpText: {color: COLORS.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 19, marginTop: SPACING.lg},

@@ -28,10 +28,15 @@ import {Analytics} from '../services/analyticsService';
 import {gameListCopy} from '../i18n/gameListCopy';
 import {logSafeError} from '../utils/safeLog';
 import {discoveryCopy} from '../i18n/discoveryCopy';
+import NetInfo from '@react-native-community/netinfo';
+import {arcadeOptions} from '../i18n/arcadeOptions';
+import {setGamePreferences, useGamePreferences} from '../services/gamePreferences';
 
 const GamesScreen = () => {
   const navigation = useNavigation<any>();
   const {i18n} = useTranslation();
+  const options = arcadeOptions(i18n.language);
+  const preferences = useGamePreferences();
   const arcadeCopy = discoveryCopy(i18n.language);
   const copy = useCallback(
     (key: string, values?: Record<string, string | number>) =>
@@ -112,13 +117,20 @@ const GamesScreen = () => {
     return [...builtins, ...extras];
   }, [games]);
 
-  const handlePlay = (game: ArcadeGame) => {
+  const handlePlay = async (game: ArcadeGame) => {
     GameHaptics.tap();
-    if (isAccountRequired && !isPracticeGame(game)) {
+    if (isAccountRequired) {
       Analytics.interaction('games', 'open_game', 'login_required');
-      Alert.alert(copy('study.loginRequired'), copy('games.account'));
+      Alert.alert(copy('study.loginRequired'), options[6]);
       return;
     }
+    if (isPracticeGame(game)) {Alert.alert(copy('games.title'), options[7]); return;}
+    try {
+      const connection = await NetInfo.fetch();
+      if (connection.isConnected === false || connection.isInternetReachable === false) {
+        Alert.alert(copy('games.title'), options[6]); return;
+      }
+    } catch {Alert.alert(copy('games.title'), options[6]); return;}
 
     const routeName = getGameRouteForSlug(game.slug);
     if (!routeName) {
@@ -133,6 +145,23 @@ const GamesScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={{paddingHorizontal: 20, paddingVertical: 8}}>
+        <Text style={{color: COLORS.textMuted, fontSize: 12}}>{options[5]}</Text>
+        <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8}}>
+          {(['calm', 'standard', 'lively'] as const).map((effects, index) =>
+            <TouchableOpacity key={effects} accessibilityRole="button"
+              accessibilityLabel={`${options[0]}: ${options[index + 1]}`}
+              accessibilityState={{selected: preferences.effects === effects}}
+              onPress={() => setGamePreferences({effects})}
+              style={{padding: 10, borderRadius: 12, backgroundColor: preferences.effects === effects ? '#653747' : '#24242A'}}>
+              <Text style={{color: COLORS.text}}>{options[index + 1]}</Text>
+            </TouchableOpacity>)}
+          <TouchableOpacity accessibilityRole="switch" accessibilityState={{checked: preferences.haptics}}
+            onPress={() => setGamePreferences({haptics: !preferences.haptics})} style={{padding: 10}}>
+            <Text style={{color: COLORS.text}}>{options[4]} {preferences.haptics ? '✓' : '—'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <View style={styles.navbar}>
         <TouchableOpacity onPress={() => { GameHaptics.tap(); navigation.goBack(); }} style={styles.backButton}>
           <Icon name="chevron-left" size={30} color={COLORS.text} />
@@ -208,7 +237,7 @@ const GamesScreen = () => {
                   <Icon name="circle-multiple" size={15} color="#F4C542" />
                   <Text style={styles.rewardMeta}>
                     {isPracticeGame(game)
-                      ? copy('games.practiceNoRewards')
+                      ? options[7]
                       : copy('games.dailyLimit', {points: game.daily_point_limit ?? 0})}
                   </Text>
                 </View>

@@ -1,3 +1,4 @@
+import {getGamePreferences} from '../../services/gamePreferences';
 import {Vibration} from 'react-native';
 
 /**
@@ -7,6 +8,7 @@ import {Vibration} from 'react-native';
 export const GameHaptics = {
   /** Crisp micro-tap for buttons, d-pad presses, card flips (12ms) */
   tap: () => {
+    if (!getGamePreferences().haptics) {return;}
     try {
       Vibration.vibrate(12);
     } catch {
@@ -16,6 +18,7 @@ export const GameHaptics = {
 
   /** Satisfying pulse for positive events: food eaten, card match, correct quiz answer, line clear */
   success: () => {
+    if (!getGamePreferences().haptics) {return;}
     try {
       Vibration.vibrate([0, 15, 35, 20]);
     } catch {}
@@ -23,6 +26,7 @@ export const GameHaptics = {
 
   /** Escalating pulse for streaks and combos */
   combo: (multiplier: number = 2) => {
+    if (!getGamePreferences().haptics) {return;}
     try {
       if (multiplier >= 5) {
         Vibration.vibrate([0, 15, 25, 20, 25, 30]);
@@ -34,6 +38,7 @@ export const GameHaptics = {
 
   /** Solid impact for Tetris hard drop or collision */
   impact: () => {
+    if (!getGamePreferences().haptics) {return;}
     try {
       Vibration.vibrate(22);
     } catch {}
@@ -41,6 +46,7 @@ export const GameHaptics = {
 
   /** Warning alert on life loss or wrong answer */
   warning: () => {
+    if (!getGamePreferences().haptics) {return;}
     try {
       Vibration.vibrate([0, 40, 50, 40]);
     } catch {}
@@ -48,6 +54,7 @@ export const GameHaptics = {
 
   /** End-of-round completion feedback */
   gameOver: () => {
+    if (!getGamePreferences().haptics) {return;}
     try {
       Vibration.vibrate([0, 50, 60, 40]);
     } catch {}

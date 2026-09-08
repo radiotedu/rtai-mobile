@@ -1,4 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {useGamePreferences} from '../../services/gamePreferences';
 import {Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -47,9 +48,10 @@ const RhythmTapScreen = () => {
   const currentQuestion = questions[index];
   const score = useMemo(() => correct * 160 + Math.max(0, streak - 1) * 35, [correct, streak]);
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const preferences = useGamePreferences();
 
   useEffect(() => {
-    if (previewState === 'playing') {
+    if (previewState === 'playing' && !preferences.reducedMotion && preferences.effects !== 'calm') {
       const loop = Animated.loop(
         Animated.timing(spinAnim, {
           toValue: 1,
@@ -63,7 +65,7 @@ const RhythmTapScreen = () => {
     } else {
       spinAnim.setValue(0);
     }
-  }, [previewState, spinAnim]);
+  }, [previewState, spinAnim, preferences.reducedMotion, preferences.effects]);
 
   const spin = spinAnim.interpolate({
     inputRange: [0, 1],
@@ -272,7 +274,7 @@ function shuffle<T>(items: T[]): T[] {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   content: {paddingBottom: SPACING.xl},
-  stage: {marginTop: SPACING.lg, padding: SPACING.md, borderRadius: 30, backgroundColor: '#191812', borderWidth: 1, borderColor: 'rgba(255,213,74,0.32)', shadowColor: '#FFD54A', shadowOpacity: 0.14, shadowRadius: 18, elevation: 6},
+  stage: {marginTop: SPACING.lg, padding: SPACING.md, borderRadius: 20, backgroundColor: '#191812', borderWidth: 1, borderColor: 'rgba(255,213,74,0.32)', shadowColor: '#FFD54A', shadowOpacity: 0.14, shadowRadius: 18, elevation: 6},
   progressDots: {flexDirection: 'row', gap: 6, marginBottom: SPACING.lg},
   progressDot: {flex: 1, height: 4, borderRadius: 2, backgroundColor: '#373529'},
   progressDotActive: {backgroundColor: '#FFD54A'},

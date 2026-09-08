@@ -3,6 +3,33 @@ import {describe, expect, it, jest} from '@jest/globals';
 import {createRunOnceWhenActive} from '../src/services/playerForegroundBootstrap';
 
 describe('player foreground bootstrap', () => {
+  it('recovers the native foreground race without another app switch', async () => {
+    jest.useFakeTimers();
+    const task = jest.fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('app must be in the foreground'))
+      .mockResolvedValueOnce(undefined);
+    const runner = createRunOnceWhenActive(task, jest.fn());
+    await runner.handleAppStateChange('active');
+    await jest.advanceTimersByTimeAsync(250);
+    expect(task).toHaveBeenCalledTimes(2);
+    runner.cancel();
+    jest.useRealTimers();
+  });
+
+  it('cancels a pending retry on background and bounds repeated failures', async () => {
+    jest.useFakeTimers();
+    const task = jest.fn(async () => {throw new Error('foreground required');});
+    const runner = createRunOnceWhenActive(task, jest.fn());
+    await runner.handleAppStateChange('active');
+    runner.handleAppStateChange('background');
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(task).toHaveBeenCalledTimes(1);
+    await runner.handleAppStateChange('active');
+    await jest.advanceTimersByTimeAsync(10000);
+    expect(task).toHaveBeenCalledTimes(5);
+    runner.cancel();
+    jest.useRealTimers();
+  });
   it('waits for foreground and runs a successful task only once', async () => {
     const task = jest.fn(async () => undefined);
     const onError = jest.fn();

@@ -21,6 +21,24 @@ import {startGameSession, submitGameScore} from '../src/services/gamificationSer
 import NetInfo from '@react-native-community/netinfo';
 
 describe('gameSession helpers', () => {
+  it('retains the original online round and score across an offline result retry', async () => {
+    const game = {id: 'online-memory', slug: 'memory', title: 'Memory', daily_point_limit: 20};
+    jest.mocked(startGameSession).mockResolvedValue({session: {id: 'proof-offline', game_id: game.id,
+      client_round_id: 'interrupted-round', started_at: new Date().toISOString()},
+      nonce: 'nonce-offline', minimum_play_seconds: 3, expires_after_seconds: 1200});
+    await prepareVerifiedGameRound(game, 'interrupted-round');
+    jest.mocked(submitGameScore).mockClear();
+    jest.mocked(NetInfo.fetch).mockResolvedValue({isConnected: false, isInternetReachable: false} as never);
+    const params = {game, score: 300, clientRoundId: 'interrupted-round', startedAt: Date.now() - 5000};
+    await expect(submitMobileGameScore(params)).rejects.toThrow('Offline');
+    expect(submitGameScore).not.toHaveBeenCalled();
+    jest.mocked(NetInfo.fetch).mockResolvedValue({isConnected: true, isInternetReachable: true} as never);
+    jest.mocked(submitGameScore).mockResolvedValue({points_awarded: 2} as never);
+    await submitMobileGameScore({...params, score: 900});
+    expect(submitGameScore).toHaveBeenCalledWith(game.id, expect.objectContaining({
+      score: 300, session_id: 'proof-offline', nonce: 'nonce-offline', client_round_id: 'interrupted-round',
+    }));
+  });
   beforeEach(() => {
     jest.mocked(NetInfo.fetch).mockReset();
     jest.mocked(NetInfo.fetch).mockResolvedValue({
@@ -154,7 +172,7 @@ describe('gameSession helpers', () => {
         clientRoundId: 'offline-round',
         startedAt: 1,
       }),
-    ).resolves.toEqual({points_awarded: 0, offline: true});
+    ).rejects.toThrow('Offline');
     expect(startGameSession).not.toHaveBeenCalled();
     expect(submitGameScore).not.toHaveBeenCalled();
   });

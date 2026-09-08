@@ -17,7 +17,7 @@ import TrackPlayer, {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {COLORS} from '../theme/theme';
-import {useNavigationState} from '@react-navigation/native';
+import {playerBottomOffset, usePlayerTabHeight} from '../navigation/playerLayout';
 import {
   pausePlaybackByUser,
   playChannelById,
@@ -73,14 +73,14 @@ export function getDeepestActiveRouteName(state: any): string | undefined {
 
 export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean {
   if (!activeRouteName) {
-    return false;
+    return true;
   }
   return HIDDEN_MINIPLAYER_ROUTES.has(activeRouteName);
 }
 
 const TAB_ROUTES = new Set(['Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);
 
-const MiniPlayer = () => {
+const MiniPlayer = ({activeRouteName}: {activeRouteName?: string}) => {
   const playbackState = usePlaybackState();
   const track = useActiveTrack();
   const insets = useSafeAreaInsets();
@@ -89,7 +89,7 @@ const MiniPlayer = () => {
   const [isChangingChannel, setIsChangingChannel] = React.useState(false);
   const progress = useProgress(5);
 
-  const activeRouteName = useNavigationState(getDeepestActiveRouteName);
+  const tabHeight = usePlayerTabHeight();
   const shouldHideForRoute = shouldHideMiniPlayerForRoute(activeRouteName);
 
   const state = playbackState?.state;
@@ -203,9 +203,8 @@ const MiniPlayer = () => {
   }
 
   const isTabRoute = !!activeRouteName && TAB_ROUTES.has(activeRouteName);
-  const bottomPosition = isTabRoute
-    ? (Platform.OS === 'ios' ? 88 : 80)
-    : Math.max(insets.bottom, 10) + 8;
+  const bottomPosition = playerBottomOffset(isTabRoute, tabHeight, insets.bottom);
+  if (bottomPosition === null) {return null;}
 
   const skipToPrevious = async () => {
     console.log(

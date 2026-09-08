@@ -1,7 +1,7 @@
 const {version} = require('../package.json');
 
 const RESET = '\x1b[0m';
-const palette = {brand: '\x1b[1;38;2;244;93;108m', text: '\x1b[38;2;237;233;225m', muted: '\x1b[38;2;145;153;169m', selected: '\x1b[48;2;56;34;43m\x1b[1;38;2;255;210;213m'};
+const palette = {brand: '\x1b[1;38;2;238;143;157m', text: '\x1b[38;2;237;233;225m', muted: '\x1b[38;2;143;148;158m', selected: '\x1b[48;2;52;34;42m\x1b[1;38;2;255;237;227m'};
 const segments = new Intl.Segmenter('en', {granularity: 'grapheme'});
 
 // Network metadata and account labels must never inject terminal control sequences.
@@ -51,7 +51,7 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     }
     if (line) flush();
   };
-  add(` RadioTEDU / TERMINAL  ${version}`, 'brand');
+  add(cols >= 74 ? fit(' RadioTEDU', cols - 24) + fit(`TERMINAL  ${version}`, 24) : ` RadioTEDU  ${version}`, 'brand');
   buttons([['1 Stations', '1'], ['2 Audio', '2'], ['3 Focus', '3'], ['4 Account', '4']]);
   add('─'.repeat(cols), 'muted');
   const modal = state.modal;
@@ -84,21 +84,32 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     const detail = [playing ? 'Player active' : state.paused ? 'Paused' : 'Ready', state.active ? state.codec : '', state.active ? state.quality : ''].filter(Boolean).join(' / ');
     if (tab === 1) {
       add(` STATIONS / ${state.stations.length} channels`, 'brand');
+      const panel = [
+        'NOW PLAYING', state.active?.name || 'Select a station',
+        state.active ? (state.paused ? 'Paused' : 'Player active') : 'Ready to listen',
+        state.active ? state.codec : '', state.active ? `Quality  ${state.quality}` : '',
+        `Volume   ${state.volume ?? 80}%`,
+        state.account?.label || 'Guest',
+        Number.isInteger(state.account?.gold) ? `${state.account.gold} Gold / last refresh` : '',
+      ];
       const capacity = Math.max(1, height - lines.length - 7);
       const first = Math.max(0, Math.min(state.selected - capacity + 1, state.stations.length - capacity));
       for (let i = first; i < Math.min(state.stations.length, first + capacity); i++) {
         const station = state.stations[i];
         const selected = i === state.selected;
         const label = ` ${selected ? '›' : ' '} ${station.name}${state.active?.id === station.id ? '  / active' : ''}`;
-        add(cols >= 82 ? fit(label, 37) + clean(station.description) : label, selected ? 'selected' : 'text', {station: i});
+        const listing = cols >= 82 ? fit(label, 28) + clean(station.description) : label;
+        const divider = Math.floor(cols * 0.64);
+        add(cols >= 110 ? fit(listing, divider) + ' │ ' + (panel[i - first] || '') : listing,
+          selected ? 'selected' : 'text', {station: i, ...(cols >= 110 ? {endX: divider} : {})});
       }
     } else if (tab === 2) {
       add(' AUDIO / OUTPUT', 'brand');
       add(` Engine    ${state.playerName || 'Not installed'}`);
       add(` Format    ${state.active ? `${state.codec} / ${state.quality}` : 'No active stream'}`);
       add(` Volume    ${state.volume ?? 80}%`);
-      add(' Playback status reflects the player process.', 'muted');
-      add(' Signal strength and spectrum are not measured.', 'muted');
+      add(` Station   ${state.active?.name || '—'}`);
+      add(` State     ${state.active ? state.paused ? 'Paused' : 'Player active' : 'Stopped'}`);
       buttons([['[F] Change quality', 'f'], ['[M] Mute / restore', 'm']]);
     } else if (tab === 3) {
       const pomo = state.pomodoro || {};

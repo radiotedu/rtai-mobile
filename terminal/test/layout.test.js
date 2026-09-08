@@ -23,6 +23,13 @@ test('scrolled station click selects the visible station, not an absolute row', 
   assert.equal(mouseAction(frame, {button: 0, release: true, x: 3, y: hit.y}).station, 8);
   assert.equal(mouseAction(frame, {button: 0, release: false, x: 3, y: hit.y}), null);
 });
+test('wide playback details are not station selection targets', () => {
+  const frame = buildFrame(state, {columns: 140, rows: 30});
+  const hit = frame.hits.find(item => item.station === 0);
+  assert.ok(hit);
+  assert.equal(mouseAction(frame, {button: 0, release: true, x: 130, y: hit.y}), null);
+  assert.equal(mouseAction(frame, {button: 0, release: true, x: 4, y: hit.y}).station, 0);
+});
 test('Unicode labels and hostile metadata cannot overflow or control the terminal', () => {
   const frame = buildFrame({...state, metadata: '\x1b[2J中🎵e\u0301\nInjected', active: state.stations[0]}, {columns: 60, rows: 24});
   assert.ok(frame.lines.every(line => width(line) === 59));

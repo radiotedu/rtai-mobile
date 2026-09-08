@@ -1,5 +1,5 @@
 import React from 'react';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {BottomTabBar, BottomTabBarProps, createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ActivityIndicator, Text, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
@@ -34,6 +34,8 @@ import PlayerScreen from '../screens/PlayerScreen';
 import MyTicketsScreen from '../screens/MyTicketsScreen';
 import RoomQrScreen from '../screens/RoomQrScreen';
 import {COLORS} from '../theme/theme';
+import {setPlayerTabHeight} from './playerLayout';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -48,10 +50,18 @@ function AuthStack() {
   );
 }
 
+function MeasuredTabBar(props: BottomTabBarProps) {
+  return <View onLayout={event => setPlayerTabHeight(event.nativeEvent.layout.height)}>
+    <BottomTabBar {...props} />
+  </View>;
+}
+
 function MainTabs() {
   const {t} = useTranslation();
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
+      tabBar={MeasuredTabBar}
       backBehavior="history"
       screenOptions={({route}) => ({
         tabBarLabelPosition: 'below-icon',
@@ -107,9 +117,9 @@ function MainTabs() {
         tabBarStyle: {
           backgroundColor: COLORS.background,
           borderTopColor: COLORS.border,
-          height: 72,
+          height: 62 + Math.max(insets.bottom, 10),
           paddingTop: 6,
-          paddingBottom: 10,
+          paddingBottom: Math.max(insets.bottom, 10),
         },
         tabBarItemStyle: {
           flexDirection: 'column',

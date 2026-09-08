@@ -237,6 +237,7 @@ function ConsentGate({
 }): React.JSX.Element | null {
   const { consent, ready } = useConsent();
   const routeNameRef = React.useRef<string | undefined>();
+  const [playerRoute, setPlayerRoute] = React.useState<string | undefined>();
 
   useEffect(() => {
     if (!consent.decided) {
@@ -306,19 +307,21 @@ function ConsentGate({
         linking={linking}
         onReady={() => {
           routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+          setPlayerRoute(routeNameRef.current);
           if (routeNameRef.current) {
             Analytics.screenView(routeNameRef.current);
           }
         }}
         onStateChange={() => {
           const routeName = navigationRef.getCurrentRoute()?.name;
+          setPlayerRoute(routeName);
           if (routeName && routeName !== routeNameRef.current) {
             routeNameRef.current = routeName;
             Analytics.screenView(routeName);
           }
         }}>
         <RootNavigator />
-        <MiniPlayer />
+        <MiniPlayer activeRouteName={playerRoute} />
       </NavigationContainer>
     );
   }

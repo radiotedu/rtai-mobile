@@ -994,3 +994,5 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Release version check: `node scripts/verify-release-version.mjs v1.3.8` passed.
 - Known limitations: None.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or notifications sent. No native Android compilation on host machine.
+
+2026-09-08 approved v1.3.9 work: measured tab-bar layout and explicit navigation readiness; bounded foreground setup retry; native PNG share/save bridges for lyrics, recap and now playing; online-only game entry, Flash Memory mode using existing Memory scoring/rewards, effects/haptics, local result history; offline result retry preserves proof and frozen payload; terminal wide details and refined spacing. Existing 1.3.8 CI failed on Media3 Builder.setSmallIcon; moved call to built provider. Full source backup release139-20260908-065823. TypeScript/lint, 18 targeted regressions, 25 terminal tests and Android audit 36/36 pass. Final Actions build and device stress tests remain pending; do not claim release-ready. No backend or production Gold changes.

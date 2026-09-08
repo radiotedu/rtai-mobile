@@ -223,8 +223,7 @@ class RadioTeduCarService : MediaLibraryService() {
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR)
         setMediaNotificationProvider(
             DefaultMediaNotificationProvider.Builder(this)
-                .setSmallIcon(R.drawable.ic_launcher_monochrome)
-                .build(),
+                .build().apply { setSmallIcon(R.drawable.ic_launcher_monochrome) },
         )
 
         CarBridge.onCatalogChanged = {

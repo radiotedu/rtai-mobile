@@ -49,6 +49,7 @@ import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 import {fetchScrollableLyrics} from '../services/lyricsService';
 import {useSleepTimer} from '../services/sleepTimer';
+import ImageShareSheet from '../components/ImageShareSheet';
 import LyricsShareModal from '../components/LyricsShareModal';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -101,6 +102,7 @@ const PlayerScreen = ({route}: any) => {
   const [manualLyricsRequestedKey, setManualLyricsRequestedKey] = useState('');
   const [isLyricsLoading, setIsLyricsLoading] = useState(false);
   const [lyricsShareVisible, setLyricsShareVisible] = useState(false);
+  const [songShareVisible, setSongShareVisible] = useState(false);
   const [lyricsShareIndex, setLyricsShareIndex] = useState(0);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
@@ -461,6 +463,11 @@ const PlayerScreen = ({route}: any) => {
           </View>
 
           <View style={styles.metaRow}>
+            <TouchableOpacity onPress={() => setSongShareVisible(true)}
+              style={styles.heartButton} accessibilityRole="button"
+              accessibilityLabel={copy('lyrics.shareHeader')}>
+              <Icon name="share-variant-outline" size={24} color={COLORS.text} />
+            </TouchableOpacity>
             <View style={styles.metaText}>
               {currentChannel ? (
                 <View style={styles.stationTag}>
@@ -743,6 +750,12 @@ const PlayerScreen = ({route}: any) => {
         </TouchableOpacity>
       </Modal>
 
+      <ImageShareSheet data={songShareVisible ? {
+        title: resolvedTrackTitle || lyricsTrackTitle || 'RadioTEDU',
+        artist: resolvedTrackArtist || lyricsTrackArtist,
+        artwork: typeof displayArtwork === 'string' ? displayArtwork : currentChannel?.artwork,
+        station: currentChannel?.name || 'RadioTEDU',
+      } : null} onClose={() => setSongShareVisible(false)} />
       <LyricsShareModal
         visible={lyricsShareVisible}
         onClose={() => setLyricsShareVisible(false)}

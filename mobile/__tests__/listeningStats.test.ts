@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   calculatePeakTime,
+  LISTENING_STATS_KEY,
   getListeningStats,
   normalizeStationId,
   recordListeningTime,
@@ -62,5 +63,18 @@ describe('listeningStatsService', () => {
     const statsWeek2 = await getListeningStats(week2);
     expect(statsWeek2.totalMinutesThisWeek).toBe(0);
     expect(statsWeek2.totalMinutesAllTime).toBe(60); // All-time preserved
+  });
+
+  test('preserves a legacy recap after a timezone change within the same week', async () => {
+    const friday = new Date('2026-09-11T12:00:00Z');
+    await recordListeningTime('radiotedu-main', 960, friday);
+    const stored = JSON.parse((await AsyncStorage.getItem(LISTENING_STATS_KEY))!);
+    delete stored.weekStartDate;
+    stored.weekStartTimestamp -= 3 * 60 * 60 * 1000;
+    await AsyncStorage.setItem(LISTENING_STATS_KEY, JSON.stringify(stored));
+    expect((await getListeningStats(friday)).totalMinutesThisWeek).toBe(16);
+    await recordListeningTime('radiotedu-main', 60, friday);
+    expect((await getListeningStats(friday)).totalMinutesThisWeek).toBe(17);
+    expect((await getListeningStats(new Date('2026-09-14T12:00:00Z'))).totalMinutesThisWeek).toBe(0);
   });
 });

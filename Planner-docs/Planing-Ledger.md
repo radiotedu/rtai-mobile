@@ -7,3 +7,5 @@
 2026-09-11: redesigned sharing posters in native views; no new dependencies or API changes. 403 tests and TypeScript pass; final signed build/export visual QA pending.
 
 2026-09-11: recordings 55–57 verify redesigned PNG exports and expose podcast-share metadata bug. Fixed snapshot to use displayed metadata; preserved artwork and existing radio presentation. Backup share-podcast-20260911-090128.
+
+2026-09-11: fixed timezone-sensitive recap week rollover, with failing-before/passing-after isolated regression. Backup share-timezone-20260911-090509. New signed candidate required; native poster layout already verified on 917f835.

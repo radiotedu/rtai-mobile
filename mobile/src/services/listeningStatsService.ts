@@ -6,6 +6,7 @@ export const LISTENING_STATS_KEY = '@radiotedu/listening_stats';
 export interface RawListeningStats {
   version: number;
   weekStartTimestamp: number;
+  weekStartDate?: string;
   secondsThisWeek: number;
   secondsAllTime: number;
   secondsByStation: Record<string, number>;
@@ -68,10 +69,24 @@ function getTodayIso(now: Date = new Date()): string {
   return now.toISOString().split('T')[0];
 }
 
+function weekDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+function isSameListeningWeek(stats: RawListeningStats, start: number): boolean {
+  if (stats.weekStartDate) {return stats.weekStartDate === weekDate(start);}
+  // Legacy records store Monday midnight in the previous local timezone.
+  // UTC offsets span at most 26 hours; adjacent weeks remain clearly separate.
+  return Number.isFinite(stats.weekStartTimestamp) &&
+    Math.abs(stats.weekStartTimestamp - start) <= 26 * 60 * 60 * 1000;
+}
+
 function createDefaultStats(now: Date = new Date()): RawListeningStats {
   return {
     version: 1,
     weekStartTimestamp: getWeekStartTimestamp(now),
+    weekStartDate: weekDate(getWeekStartTimestamp(now)),
     secondsThisWeek: 0,
     secondsAllTime: 0,
     secondsByStation: {},
@@ -117,11 +132,12 @@ export async function recordListeningTime(
     let stats: RawListeningStats = raw ? JSON.parse(raw) : createDefaultStats(now);
 
     // Reset weekly counts if a new calendar week has started
-    if (!stats.weekStartTimestamp || stats.weekStartTimestamp !== currentWeekStart) {
-      stats.weekStartTimestamp = currentWeekStart;
+    if (!isSameListeningWeek(stats, currentWeekStart)) {
       stats.secondsThisWeek = 0;
       stats.activeDaysThisWeek = [];
     }
+    stats.weekStartTimestamp = currentWeekStart;
+    stats.weekStartDate = weekDate(currentWeekStart);
 
     stats.secondsThisWeek += durationSeconds;
     stats.secondsAllTime += durationSeconds;
@@ -192,7 +208,7 @@ export async function getListeningStats(customNow?: Date): Promise<ListeningStat
     const raw = await AsyncStorage.getItem(LISTENING_STATS_KEY);
     let stats: RawListeningStats = raw ? JSON.parse(raw) : createDefaultStats(now);
 
-    if (stats.weekStartTimestamp !== currentWeekStart) {
+    if (!isSameListeningWeek(stats, currentWeekStart)) {
       stats.weekStartTimestamp = currentWeekStart;
       stats.secondsThisWeek = 0;
       stats.activeDaysThisWeek = [];

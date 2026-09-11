@@ -25,7 +25,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 [Signed candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34579190307) · [Verification and remaining release gates](docs/RELEASE_1_3_9_VERIFICATION.md)
 
-Redesigned PNG sharing, measured mini-player positioning, Flash Memory using the existing online Gold rules, and a refreshed terminal. Production-signed APK includes Android Auto integration; full projection and Google Play readiness remain unverified. Main-radio service returned an upstream 502 during September 11 testing.
+Redesigned PNG sharing, measured mini-player positioning, Flash Memory using the existing online Gold rules, and a refreshed terminal. Production-signed APK includes Android Auto integration; full projection and Google Play readiness remain unverified. All 12 stream variants passed real audio decoding in the [September 11 service recheck](docs/RELEASE_1_3_9_RECHECK_2026_09_11.md).
+
+[Cloud phone/tablet evidence](docs/RELEASE_1_3_9_CLOUD_DEVICE_QA.md) covers guest navigation, consent-preserving restarts and layout captures from the signed `700fdf4` APK. Visual review prompted a compact phone-landscape homepage adjustment; its newer signed candidate still requires device verification. Authenticated Gold and Android Auto projection checks remain open.
 
 These are actual PNG exports from the signed `700fdf4` APK. The recap displays its real 16-minute total, restored after fixing a timezone-related week reset. Podcast sharing preserves the full episode title and publisher.
 

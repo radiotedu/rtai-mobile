@@ -21,6 +21,21 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ## What is included
 
+### Version 1.3.9 candidate
+
+[Signed candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34579190307) · [Verification and remaining release gates](docs/RELEASE_1_3_9_VERIFICATION.md)
+
+Redesigned PNG sharing, measured mini-player positioning, Flash Memory using the existing online Gold rules, and a refreshed terminal. Production-signed APK includes Android Auto integration; full projection and Google Play readiness remain unverified. Main-radio service returned an upstream 502 during September 11 testing.
+
+These are actual PNG exports from the signed `700fdf4` APK. The recap displays its real 16-minute total, restored after fixing a timezone-related week reset. Podcast sharing preserves the full episode title and publisher.
+
+<p>
+  <img src="docs/images/release-1.3.9/recap-story-700fdf4.png" width="230" alt="Actual Story recap PNG exported by RadioTEDU 1.3.9">
+  <img src="docs/images/release-1.3.9/podcast-square-700fdf4.png" width="300" alt="Actual Square podcast PNG exported by RadioTEDU 1.3.9">
+</p>
+
+![RadioTEDU 1.3.9 terminal, actual captured session](docs/images/release-1.3.9/terminal.png)
+
 ### Version 1.3.8 release
 
 [APK and terminal downloads](https://github.com/radiotedu/rtai-mobile/releases/tag/v1.3.8)

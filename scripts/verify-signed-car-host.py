@@ -19,7 +19,13 @@ def adb(*args, binary=False, check=True):
 
 
 def capture(name):
-    (out / (name + '.png')).write_bytes(adb('exec-out', 'screencap', '-p', binary=True))
+    displays = adb('shell', 'dumpsys', 'SurfaceFlinger', '--display-id')
+    (out / 'display-ids.txt').write_text(displays, encoding='utf-8')
+    ids = re.findall(r'Display (\d+)', displays)
+    assert ids, 'No explicit physical display ID found'
+    png = adb('exec-out', 'screencap', '-p', '-d', ids[0], binary=True)
+    assert png.startswith(b'\x89PNG\r\n\x1a\n'), 'Screen capture is not a clean PNG'
+    (out / (name + '.png')).write_bytes(png)
     for attempt in range(4):
         remote = f'/sdcard/car-{name}-{attempt}.xml'
         adb('shell', 'uiautomator', 'dump', remote, check=False)
@@ -49,7 +55,8 @@ try:
     recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
                                   '/sdcard/automotive-host.mp4'])
     launch = adb('shell', 'am', 'start', '-W', '-a', 'android.car.intent.action.MEDIA_TEMPLATE',
-                 '--es', 'media_package', 'com.radiotedumobile')
+                 '--es', 'android.car.intent.extra.MEDIA_COMPONENT',
+                 'com.radiotedumobile/com.radiotedumobile.car.RadioTeduCarService')
     (out / 'host-launch.txt').write_text(launch, encoding='utf-8')
     time.sleep(20)
     root = capture('01-car-root')

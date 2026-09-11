@@ -69,7 +69,7 @@ export const ShareCard = forwardRef<View, ShareCardData & {square: boolean}>((da
         style={[s.lyrics, font(data.square ? 22 : 30)]}>“{data.body}”</Text>}
       <View style={[s.trackInfo, data.square && !data.body && {flex: 1}]}>
         <Text allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit style={[s.trackTitle, font(data.square ? 22 : 30)]}>{data.title}</Text>
-        {!!data.artist && <Text allowFontScaling={false} numberOfLines={1} style={[s.artist, font(14)]}>{data.artist}</Text>}
+        {!!data.artist && <Text allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit style={[s.artist, font(14)]}>{data.artist}</Text>}
         {!!data.station && <Text allowFontScaling={false} numberOfLines={1} style={[s.station, font(10)]}>{data.station}</Text>}
       </View>
     </View>}

@@ -1,5 +1,5 @@
 import React, {useCallback, useState} from 'react';
-import {ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -15,6 +15,8 @@ import {logSafeError} from '../utils/safeLog';
 
 export default function HomeDiscovery({refreshKey}: {refreshKey: number}) {
   const navigation = useNavigation<any>();
+  const {width, height} = useWindowDimensions();
+  const compact = width > height && height < 500;
   const {i18n} = useTranslation();
   const copy = discoveryCopy(i18n.language);
   const [episodes, setEpisodes] = useState<Podcast[]>([]);
@@ -50,11 +52,13 @@ export default function HomeDiscovery({refreshKey}: {refreshKey: number}) {
 
   return (
     <View>
-      <View style={styles.hero}>
-        <Text style={styles.brand}>RadioTEDU</Text>
-        <Text style={styles.headline}>{copy.headline}</Text>
-        <Text style={styles.intro}>{copy.intro}</Text>
-        <TouchableOpacity accessibilityRole="button" style={styles.listen} onPress={() => play('radiotedu-main')}>
+      <View style={[styles.hero, compact && styles.compactHero]}>
+        <View style={compact && styles.compactCopy}>
+          <Text style={styles.brand}>RadioTEDU</Text>
+          <Text style={[styles.headline, compact && styles.compactHeadline]}>{copy.headline}</Text>
+          <Text style={[styles.intro, compact && styles.compactIntro]}>{copy.intro}</Text>
+        </View>
+        <TouchableOpacity accessibilityRole="button" style={[styles.listen, compact && styles.compactListen]} onPress={() => play('radiotedu-main')}>
           <Icon name="play" size={22} color="#fff" />
           <Text style={styles.listenText}>{copy.listen}</Text>
         </TouchableOpacity>
@@ -113,6 +117,11 @@ export default function HomeDiscovery({refreshKey}: {refreshKey: number}) {
 
 const styles = StyleSheet.create({
   hero: {padding: SPACING.lg, borderRadius: 22, backgroundColor: '#23090B'},
+  compactHero: {flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.md},
+  compactCopy: {flex: 1, minWidth: 0},
+  compactHeadline: {fontSize: 22, lineHeight: 27, marginTop: 4},
+  compactIntro: {marginTop: 4},
+  compactListen: {alignSelf: 'center', marginTop: 0, maxWidth: '35%'},
   brand: {color: '#fff', fontSize: 14, fontWeight: '800'},
   headline: {color: '#fff', fontSize: 28, lineHeight: 35, fontWeight: '900', marginTop: SPACING.md},
   intro: {color: '#D7CBCD', fontSize: 14, lineHeight: 21, marginTop: SPACING.sm},

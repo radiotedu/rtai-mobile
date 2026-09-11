@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useTranslation} from 'react-i18next';
@@ -45,6 +46,8 @@ const emptyHome: GamificationHome = {
 };
 
 const HomeScreen = () => {
+  const {width, height} = useWindowDimensions();
+  const compact = width > height && height < 500;
   const navigation = useNavigation<any>();
   const {t, i18n} = useTranslation();
   const copy = useCallback(
@@ -136,7 +139,7 @@ const HomeScreen = () => {
       <SafeAreaView style={styles.container}>
         <GlobalHeader />
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, compact && styles.compactContent]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
           }
@@ -287,6 +290,7 @@ function EmptyCard({text}: {text: string}) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: COLORS.background},
   content: {padding: SPACING.lg, paddingBottom: 170},
+  compactContent: {paddingTop: SPACING.sm},
   goldSection: {marginTop: SPACING.xl},
   hero: {
     overflow: 'hidden',

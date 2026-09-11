@@ -84,8 +84,8 @@ try:
     for attempt in range(3):
         if find(root, "Pixel Launcher isn't responding") is None:
             break
-        checks.append('Environment: Pixel Launcher ANR; selected Wait')
-        tap(find(root, 'Wait'))
+        checks.append('Environment: Pixel Launcher ANR; closed hung launcher')
+        tap(find(root, 'Close app'))
         start()
         root = snapshot('launcher-recovery-' + str(attempt + 1))
     if find(root, 'Continue without analytics') is not None:

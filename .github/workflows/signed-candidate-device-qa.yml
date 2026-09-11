@@ -2,6 +2,15 @@ name: Signed Candidate Device QA
 
 on:
   workflow_dispatch:
+    inputs:
+      device:
+        description: Device coverage to run
+        type: choice
+        default: both
+        options:
+          - both
+          - phone
+          - tablet
 
 permissions:
   contents: read
@@ -14,11 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - device: phone
-            profile: pixel_7
-          - device: tablet
-            profile: pixel_c
+        include: ${{ fromJSON(inputs.device == 'phone' && '[{"device":"phone","profile":"pixel_7"}]' || inputs.device == 'tablet' && '[{"device":"tablet","profile":"pixel_c"}]' || '[{"device":"phone","profile":"pixel_7"},{"device":"tablet","profile":"pixel_c"}]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

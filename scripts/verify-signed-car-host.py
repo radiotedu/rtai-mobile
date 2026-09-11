@@ -130,10 +130,23 @@ try:
     assert seen == expected, 'Car catalog missing: ' + ', '.join(sorted(expected - seen))
     checks.append('Initialized car catalog contains all nine stations, including Lo-Fi')
     for attempt in range(8):
-        if find(root, 'RadioTEDU Lo-Fi'):
-            select(root, 'RadioTEDU Lo-Fi')
-            break
-        swipe(root, upward=False)
+        bounds = find(root, 'RadioTEDU Lo-Fi')
+        if bounds:
+            toolbar = next(n for n in root.iter('node') if n.get('resource-id', '').endswith('/car_ui_toolbar_background'))
+            controls = next(n for n in root.iter('node') if n.get('resource-id', '').endswith('/minimized_playback_controls'))
+            top = int(re.findall(r'\d+', toolbar.get('bounds'))[3])
+            bottom = int(re.findall(r'\d+', controls.get('bounds'))[1])
+            center = (bounds[1] + bounds[3]) // 2
+            if top < center < bottom:
+                select(root, 'RadioTEDU Lo-Fi')
+                break
+            # Move the row away from the host's transparent toolbar/player overlays.
+            middle = (top + bottom) // 2
+            shift = 130 if center <= top else -130
+            adb('shell', 'input', 'swipe', '600', str(middle), '600', str(middle + shift), '450')
+            time.sleep(2)
+        else:
+            swipe(root, upward=False)
         root = capture('02-find-lofi-' + str(attempt))
     else:
         raise RuntimeError('Lo-Fi could not be reached for playback')
@@ -141,8 +154,8 @@ try:
     while True:
         media = adb('shell', 'dumpsys', 'media_session')
         audio = adb('shell', 'dumpsys', 'media.audio_flinger')
-        sessions = [part for part in re.split(r'(?m)^\s+package=', media)
-                    if part.startswith('com.radiotedumobile\n')]
+        sessions = [part for part in re.split(r'(?m)^    (?=\S)', media)
+                    if part.startswith('androidx.media3.session.id.RadioTeduMediaLibrary com.radiotedumobile/')]
         pids = adb('shell', 'pidof', 'com.radiotedumobile').split()
         playing = any(re.search(r'state=PlaybackState \{state=(PLAYING\(3\)|3),', s) for s in sessions)
         active = any(re.search(r'\byes\s+' + re.escape(pid) + r'\s', audio) for pid in pids)

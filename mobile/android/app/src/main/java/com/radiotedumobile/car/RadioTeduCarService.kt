@@ -527,23 +527,23 @@ class RadioTeduCarService : MediaLibraryService() {
      * Fetch each distinct catalog cover once and attach its bytes to Media3.
      */
     private fun preloadCatalogArtwork() {
-        val urls = mutableSetOf<String>()
-        fun collect(json: JSONObject) {
+        val artworkParents = mutableMapOf<String, MutableSet<String>>()
+        fun collect(json: JSONObject, parentId: String) {
             json.optString("artwork")
                 .takeIf { it.startsWith("https://") }
-                ?.let(urls::add)
+                ?.let { artworkParents.getOrPut(it) { mutableSetOf() }.add(parentId) }
             json.optJSONArray("items")?.let { items ->
                 for (index in 0 until items.length()) {
-                    items.optJSONObject(index)?.let(::collect)
+                    items.optJSONObject(index)?.let { collect(it, json.optString("id", parentId)) }
                 }
             }
         }
         readCatalog().optJSONArray("categories")?.let { categories ->
             for (index in 0 until categories.length()) {
-                categories.optJSONObject(index)?.let(::collect)
+                categories.optJSONObject(index)?.let { collect(it, it.optString("parentId", ROOT_ID)) }
             }
         }
-        urls.filter {
+        artworkParents.keys.filter {
             cachedCarArtworkUri(this, it) == null &&
                 !remoteArtworkCache.containsKey(it) &&
                 pendingRemoteArtwork.add(it)
@@ -555,7 +555,8 @@ class RadioTeduCarService : MediaLibraryService() {
                     if (bytes != null) {
                         cacheCarArtwork(this, artwork, bytes)
                         remoteArtworkCache[artwork] = bytes
-                        mainHandler.post { notifyCatalogChanged() }
+                        // A podcast cover must not invalidate Live Radio or reset its scroll position.
+                        mainHandler.post { notifyCatalogChanged(artworkParents.getValue(artwork)) }
                     }
                 }
             }
@@ -771,14 +772,17 @@ class RadioTeduCarService : MediaLibraryService() {
         librarySession.sendError(SessionError(code, message))
     }
 
-    private fun notifyCatalogChanged() {
+    private fun notifyCatalogChanged(affectedParents: Set<String>? = null) {
         if (!::librarySession.isInitialized) return
         val catalog = readCatalog()
         val categories = catalog.optJSONArray("categories")
-        librarySession.notifyChildrenChanged(ROOT_ID, ROOT_CATEGORY_IDS.size, null)
+        if (affectedParents == null || ROOT_ID in affectedParents) {
+            librarySession.notifyChildrenChanged(ROOT_ID, ROOT_CATEGORY_IDS.size, null)
+        }
         categories ?: return
         for (category in allowedCatalogCategories(categories)) {
             val id = category.optString("id")
+            if (affectedParents != null && id !in affectedParents) continue
             val items = category.optJSONArray("items")
             val count = if (items == null) {
                 0

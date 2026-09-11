@@ -11,6 +11,10 @@ on:
           - both
           - phone
           - tablet
+      media:
+        description: Verify real radio audio, background controls and offline recovery
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -51,7 +55,7 @@ jobs:
           arch: x86_64
           profile: ${{ matrix.profile }}
           disable-animations: true
-          script: python3 scripts/verify-signed-candidate-device.py candidate/RadioTEDU-Mobile-v1.3.9.apk evidence
+          script: python3 scripts/verify-signed-candidate-device.py candidate/RadioTEDU-Mobile-v1.3.9.apk evidence ${{ inputs.media && '--media' || '' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

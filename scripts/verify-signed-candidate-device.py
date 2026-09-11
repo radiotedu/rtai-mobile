@@ -71,7 +71,38 @@ def start():
     time.sleep(12)
 
 
+def audio_state(label, expected='PLAYING', timeout=60):
+    """Require this app's session and active AudioFlinger client, not another player."""
+    deadline = time.monotonic() + timeout
+    while True:
+        media = adb('shell', 'dumpsys', 'media_session')
+        audio = adb('shell', 'dumpsys', 'media.audio_flinger')
+        pids = adb('shell', 'pidof', PACKAGE).split()
+        sessions = [part for part in re.split(r'(?m)^\s+package=', media)
+                    if part.startswith(PACKAGE + '\n')]
+        state_ok = any(re.search(r'state=PlaybackState \{state=' + expected + r'\(', part)
+                       for part in sessions)
+        track_ok = any(re.search(r'\byes\s+' + re.escape(pid) + r'\s', audio) for pid in pids)
+        if state_ok and (expected != 'PLAYING' or track_ok):
+            break
+        if time.monotonic() >= deadline:
+            (output / f'{label}-media.txt').write_text(media, encoding='utf-8')
+            (output / f'{label}-audio.txt').write_text(audio, encoding='utf-8')
+            raise RuntimeError(f'{label}: expected {expected} app session/rendered audio')
+        time.sleep(3)
+    (output / f'{label}-media.txt').write_text(media, encoding='utf-8')
+    (output / f'{label}-audio.txt').write_text(audio, encoding='utf-8')
+    checks.append(label + ': ' + expected + (' with active app AudioFlinger track' if expected == 'PLAYING' else ''))
+
+
+def stop_recording(process, name):
+    adb('shell', 'pkill', '-2', 'screenrecord', check=False)
+    process.wait(timeout=20)
+    adb('pull', '/sdcard/' + name + '.mp4', str(output / (name + '.mp4')), check=False)
+
+
 recording = None
+recording_name = 'signed-candidate'
 try:
     installed = adb('install', '-r', sys.argv[1], timeout=120)
     assert 'Success' in installed, installed
@@ -133,12 +164,44 @@ try:
     time.sleep(5)
     snapshot('landscape-requested')
     checks.append('Captured rotation request; actual orientation requires review')
+    if '--media' in sys.argv:
+        stop_recording(recording, recording_name)
+        recording = None
+        recording_name = 'radio-background-offline'
+        recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
+                                      '--size', '540x960', '/sdcard/' + recording_name + '.mp4'])
+        adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
+        adb('shell', 'settings', 'put', 'system', 'user_rotation', '0')
+        start()
+        root = snapshot('before-radio')
+        tap(find(root, 'Listen live'))
+        audio_state('radio-playing')
+        snapshot('radio-player-artwork-lyrics')
+        adb('shell', 'input', 'keyevent', '3')
+        time.sleep(5)
+        audio_state('background-playing')
+        adb('shell', 'input', 'keyevent', '127')
+        audio_state('background-paused', 'PAUSED')
+        adb('shell', 'input', 'keyevent', '126')
+        audio_state('background-resumed')
+        adb('shell', 'svc', 'wifi', 'disable')
+        adb('shell', 'svc', 'data', 'disable')
+        time.sleep(8)
+        start()
+        snapshot('radio-offline')
+        adb('shell', 'svc', 'wifi', 'enable')
+        adb('shell', 'svc', 'data', 'enable')
+        audio_state('radio-online-recovered')
+        snapshot('radio-recovered')
+        adb('shell', 'input', 'keyevent', '127')
+        audio_state('radio-final-paused', 'PAUSED')
     crashes = adb('logcat', '-d', '-b', 'crash')
     (output / 'crash-buffer.txt').write_text(crashes, encoding='utf-8')
     assert PACKAGE not in crashes, 'App entry in crash buffer; investigate'
     checks.append('No app entry in Android crash buffer')
     result = {'status': 'passed', 'checks': checks,
-              'limits': ['Guest-only; no authenticated Gold, Auto, audio or release readiness claim',
+              'limits': ['Guest-only; no authenticated Gold, Auto or release readiness claim',
+                         'Audio checks run only with --media; they verify rendered tracks, not physical speaker output',
                          'Screenshots and recording require human visual review']}
 except Exception as error:
     result = {'status': 'failed', 'checks': checks, 'error': str(error)}
@@ -146,6 +209,4 @@ except Exception as error:
 finally:
     (output / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     if recording is not None:
-        adb('shell', 'pkill', '-2', 'screenrecord', check=False)
-        recording.wait(timeout=20)
-        adb('pull', '/sdcard/signed-candidate.mp4', str(output / 'session.mp4'), check=False)
+        stop_recording(recording, recording_name)

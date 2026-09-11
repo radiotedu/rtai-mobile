@@ -59,6 +59,11 @@ def select(root, title):
 
 
 def swipe(root, upward=True):
+    # Automotive uses explicit paging controls; a drag can hit its player overlay.
+    page = 'Scroll down' if upward else 'Scroll up'
+    if find(root, page):
+        select(root, page)
+        return
     surface = next((n for n in root.iter('node') if n.get('scrollable') == 'true'), next(root.iter('node')))
     x1, y1, x2, y2 = map(int, re.findall(r'-?\d+', surface.get('bounds', '')))
     low, high = y1 + (y2 - y1) // 5, y1 + (y2 - y1) * 4 // 5

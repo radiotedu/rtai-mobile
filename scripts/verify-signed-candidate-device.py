@@ -42,7 +42,12 @@ def label(node):
 
 
 def find(root, text):
-    return next((n for n in root.iter('node') if text in label(n)), None)
+    return next((n for n in root.iter('node') if text in label(n) and usable(n)), None)
+
+
+def usable(node):
+    coords = list(map(int, re.findall(r'-?\d+', node.get('bounds', ''))))
+    return len(coords) == 4 and coords[2] > coords[0] and coords[3] > coords[1]
 
 
 def tap(node):
@@ -76,6 +81,13 @@ try:
                                   '--size', '540x960', '/sdcard/signed-candidate.mp4'])
     start()
     root = snapshot('first-launch')
+    for attempt in range(3):
+        if find(root, "Pixel Launcher isn't responding") is None:
+            break
+        checks.append('Environment: Pixel Launcher ANR; selected Wait')
+        tap(find(root, 'Wait'))
+        start()
+        root = snapshot('launcher-recovery-' + str(attempt + 1))
     if find(root, 'Continue without analytics') is not None:
         for _ in range(8):
             terms = find(root, 'I accept the Terms of Use.')

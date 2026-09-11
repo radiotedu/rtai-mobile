@@ -43,6 +43,15 @@ These are actual PNG exports from the signed `700fdf4` APK. The recap displays i
 
 ![RadioTEDU 1.3.9 terminal, actual captured session](docs/images/release-1.3.9/terminal.png)
 
+Actual now-playing PNGs exported by the final `27ddb0c` APK:
+
+<p>
+  <img src="docs/images/release-1.3.9/now-playing-story-27ddb0c.png" width="230" alt="Native Story PNG with actual song artwork and metadata">
+  <img src="docs/images/release-1.3.9/now-playing-square-27ddb0c.png" width="300" alt="Native Square PNG with undistorted artwork">
+</p>
+
+[Latest share/car recheck](docs/RELEASE_1_3_9_SHARE_EXPORT_RECHECK.md): both PNG formats passed; the initialized native car browser exposed only the main station. That catalog failure remains under investigation.
+
 ### Version 1.3.8 release
 
 [APK and terminal downloads](https://github.com/radiotedu/rtai-mobile/releases/tag/v1.3.8)

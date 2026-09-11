@@ -22,8 +22,9 @@ RCT_EXPORT_METHOD(share:(nonnull NSNumber *)tag title:(NSString *)title save:(BO
     if (!view || view.bounds.size.width <= 0 || view.bounds.size.height <= 0) {
       reject(@"E_CAPTURE", @"Image is not ready", nil); return;
     }
-    CGFloat height = round(1080 * view.bounds.size.height / view.bounds.size.width);
-    if (height < 540 || height > 2400) { reject(@"E_CAPTURE", @"Invalid image dimensions", nil); return; }
+    CGFloat ratio = view.bounds.size.height / view.bounds.size.width;
+    CGFloat height = fabs(ratio - 1) < 0.01 ? 1080 : fabs(ratio - 16.0 / 9.0) < 0.01 ? 1920 : 0;
+    if (!height) { reject(@"E_CAPTURE", @"Invalid image dimensions", nil); return; }
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(1080, height), YES, 1);
     [view drawViewHierarchyInRect:CGRectMake(0, 0, 1080, height) afterScreenUpdates:YES];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();

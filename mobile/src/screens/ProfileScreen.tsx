@@ -551,25 +551,14 @@ const ProfileScreen = () => {
             style={styles.recapShareButton}
             onPress={async () => {
               try {
-                const top = listeningStats?.topGenre?.name || 'RadioTEDU';
-                const timeStr =
-                  listeningStats && listeningStats.hoursThisWeek > 0
-                    ? copy('stats.hoursAndMinutes', {
-                        hours: listeningStats.hoursThisWeek,
-                        minutes: listeningStats.minutesRemainderThisWeek,
-                      })
-                    : copy('stats.minutesOnly', {
-                        minutes: listeningStats?.totalMinutesThisWeek || 0,
-                      });
                 const peakStr = listeningStats?.totalMinutesAllTime
                   ? ({night: '22:00–05:00', morning: '05:00–11:00', afternoon: '11:00–17:00', evening: '17:00–22:00'}[listeningStats.peakTimeCategory])
-                  : '—';
-                const msg = copy('stats.shareMessage', {
-                  time: timeStr,
-                  genre: top,
+                  : null;
+                setShareCard({title: copy('stats.recapTitle'), recap: {
+                  minutes: listeningStats?.totalMinutesThisWeek || 0,
+                  favorite: listeningStats?.topGenre?.name || null,
                   peak: peakStr,
-                });
-                setShareCard({title: copy('stats.recapTitle'), body: msg, station: 'RadioTEDU'});
+                }, station: 'RadioTEDU'});
               } catch {
                 // Cancelled
               }

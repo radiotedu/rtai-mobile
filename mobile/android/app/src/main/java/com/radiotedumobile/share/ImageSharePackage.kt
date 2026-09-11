@@ -50,13 +50,17 @@ class ImageShareModule(private val context: ReactApplicationContext) : ReactCont
                 val activity = currentActivity ?: throw IllegalStateException("App is not foreground")
                 val view = hierarchy.resolveView(viewTag)
                 require(view.width > 0 && view.height > 0) { "Image is not ready" }
-                val height = (1080f * view.height / view.width).toInt()
-                require(height in 540..2400) { "Invalid image dimensions" }
+                val ratio = view.height.toFloat() / view.width
+                val height = when {
+                    kotlin.math.abs(ratio - 1f) < 0.01f -> 1080
+                    kotlin.math.abs(ratio - 16f / 9f) < 0.01f -> 1920
+                    else -> throw IllegalArgumentException("Invalid image dimensions")
+                }
                 val image = Bitmap.createBitmap(1080, height, Bitmap.Config.ARGB_8888)
                 bitmap = image
                 val canvas = Canvas(image)
                 canvas.drawColor(android.graphics.Color.rgb(18, 20, 26))
-                canvas.scale(1080f / view.width, 1080f / view.width)
+                canvas.scale(1080f / view.width, height.toFloat() / view.height)
                 view.draw(canvas)
                 val folder = File(context.cacheDir, "share-cards").apply { mkdirs() }
                 val file = File(folder, "RadioTEDU-${UUID.randomUUID()}.png")

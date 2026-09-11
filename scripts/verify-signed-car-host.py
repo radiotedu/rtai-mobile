@@ -78,6 +78,53 @@ def stop_recording():
     adb('pull', '/sdcard/' + recording_name + '.mp4', str(out / (recording_name + '.mp4')), check=False)
 
 
+def select_id(root, resource):
+    node = next(n for n in root.iter('node') if n.get('resource-id') == 'com.android.car.media:id/' + resource)
+    x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
+    assert node.get('enabled') == 'true' and x2 > x1 and y2 > y1, 'Unavailable control: ' + resource
+    adb('shell', 'input', 'tap', str((x1 + x2) // 2), str((y1 + y2) // 2))
+    time.sleep(3)
+
+
+def native_state(name, state, title=None):
+    deadline = time.monotonic() + 60
+    while True:
+        media = adb('shell', 'dumpsys', 'media_session')
+        audio = adb('shell', 'dumpsys', 'media.audio_flinger')
+        sessions = [part for part in re.split(r'(?m)^    (?=\S)', media)
+                    if part.startswith('androidx.media3.session.id.RadioTeduMediaLibrary com.radiotedumobile/')]
+        pids = adb('shell', 'pidof', 'com.radiotedumobile').split()
+        number = 3 if state == 'PLAYING' else 2
+        matched = any(re.search(r'state=PlaybackState \{state=(' + state + r'\(' + str(number) + r'\)|' + str(number) + r'),', s)
+                      and (title is None or title in s) for s in sessions)
+        rendered = any(re.search(r'\byes\s+' + re.escape(pid) + r'\s', audio) for pid in pids)
+        passed = matched and (state != 'PLAYING' or rendered)
+        if passed or time.monotonic() >= deadline:
+            break
+        time.sleep(3)
+    (out / (name + '-session.txt')).write_text(media, encoding='utf-8')
+    (out / (name + '-audio.txt')).write_text(audio, encoding='utf-8')
+    root = capture(name)
+    assert passed, 'Native car state did not reach ' + state + ': ' + name
+    return root
+
+
+def select_first_catalog_title(root):
+    toolbar = next(n for n in root.iter('node') if n.get('resource-id', '').endswith('/car_ui_toolbar_background'))
+    top = int(re.findall(r'\d+', toolbar.get('bounds'))[3])
+    controls = next((n for n in root.iter('node') if n.get('resource-id', '').endswith('/minimized_playback_controls')), None)
+    bottom = int(re.findall(r'\d+', controls.get('bounds'))[1]) if controls is not None else 624
+    for node in root.iter('node'):
+        if node.get('resource-id') != 'com.android.car.media:id/title' or not node.get('text'):
+            continue
+        bounds = list(map(int, re.findall(r'\d+', node.get('bounds'))))
+        if top < (bounds[1] + bounds[3]) // 2 < bottom:
+            title = node.get('text')
+            select(root, title)
+            return title
+    raise RuntimeError('No uncovered podcast catalog title available')
+
+
 try:
     assert 'Success' in adb('install', '-r', sys.argv[1])
     adb('shell', 'pm', 'grant', 'com.radiotedumobile', 'android.permission.POST_NOTIFICATIONS')
@@ -167,9 +214,33 @@ try:
     capture('03-car-playing')
     assert playing and active, 'Native car playback session/rendered audio not established'
     checks.append('Native car host starts Lo-Fi with active rendered audio track')
+    stop_recording()
+    recording = None
+    recording_name = 'automotive-controls-podcast'
+    recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
+                                  '/sdcard/' + recording_name + '.mp4'])
+    root = capture('04-before-pause')
+    select_id(root, 'play_pause_stop')
+    root = native_state('05-car-paused', 'PAUSED')
+    select_id(root, 'play_pause_stop')
+    root = native_state('06-car-resumed', 'PLAYING')
+    checks.append('Native car touch controls pause and resume rendered radio playback')
+    select(root, 'Back')
+    root = capture('07-car-browse')
+    select(root, 'Podcasts')
+    root = capture('08-car-podcast-series')
+    series_title = select_first_catalog_title(root)
+    root = capture('09-car-podcast-episodes')
+    episode_title = select_first_catalog_title(root)
+    root = native_state('10-car-podcast-playing', 'PLAYING', episode_title)
+    (out / 'podcast-selection.json').write_text(json.dumps({'series': series_title, 'episode': episode_title}, ensure_ascii=False), encoding='utf-8')
+    checks.append('Native car browses podcast series and plays selected episode with matching metadata and rendered audio')
+    select_id(root, 'play_pause_stop')
+    native_state('11-car-podcast-paused', 'PAUSED', episode_title)
+    checks.append('Native car touch control pauses selected podcast')
     result = {'status': 'passed', 'checks': checks,
               'limits': ['Automotive host only; Android Auto projection remains unverified',
-                         'Station presence and Lo-Fi playback only; no complete podcast/car-control coverage',
+                         'One podcast episode and radio pause/resume tested; no complete car-control or lifecycle coverage',
                          'No authenticated data, Gold or physical speaker claim']}
 except Exception as error:
     result = {'status': 'failed', 'checks': checks, 'error': str(error)}

@@ -11,6 +11,7 @@ out = Path(sys.argv[2])
 out.mkdir(parents=True, exist_ok=True)
 checks = []
 recording = None
+recording_name = 'automotive-setup'
 
 
 def adb(*args, binary=False, check=True):
@@ -37,23 +38,62 @@ def capture(name):
     raise RuntimeError('Fresh car-host UI unavailable: ' + name)
 
 
-def select(root, title):
+def find(root, title):
     for node in root.iter('node'):
         if title not in (node.get('text'), node.get('content-desc')):
             continue
         bounds = list(map(int, re.findall(r'-?\d+', node.get('bounds', ''))))
         if len(bounds) == 4 and bounds[2] > bounds[0] and bounds[3] > bounds[1]:
-            adb('shell', 'input', 'tap', str((bounds[0] + bounds[2]) // 2),
-                str((bounds[1] + bounds[3]) // 2))
-            time.sleep(8)
-            return
+            return bounds
+    return None
+
+
+def select(root, title):
+    bounds = find(root, title)
+    if bounds:
+        adb('shell', 'input', 'tap', str((bounds[0] + bounds[2]) // 2),
+            str((bounds[1] + bounds[3]) // 2))
+        time.sleep(3)
+        return
     raise RuntimeError('Car host item missing: ' + title)
+
+
+def swipe(root, upward=True):
+    bounds = list(map(int, re.findall(r'-?\d+', next(root.iter('node')).get('bounds', ''))))
+    width, height = bounds[2], bounds[3]
+    start, end = (height * 3 // 4, height // 3) if upward else (height // 3, height * 3 // 4)
+    adb('shell', 'input', 'swipe', str(width // 2), str(start), str(width // 2), str(end), '450')
+    time.sleep(1)
+
+
+def stop_recording():
+    adb('shell', 'pkill', '-2', 'screenrecord', check=False)
+    recording.wait(timeout=20)
+    adb('pull', '/sdcard/' + recording_name + '.mp4', str(out / (recording_name + '.mp4')), check=False)
 
 
 try:
     assert 'Success' in adb('install', '-r', sys.argv[1])
+    adb('shell', 'pm', 'grant', 'com.radiotedumobile', 'android.permission.POST_NOTIFICATIONS')
     recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
-                                  '/sdcard/automotive-host.mp4'])
+                                  '/sdcard/' + recording_name + '.mp4'])
+    adb('shell', 'am', 'start', '-W', '-n', 'com.radiotedumobile/.MainActivity')
+    time.sleep(15)
+    root = capture('00-app-first-launch')
+    for attempt in range(8):
+        if find(root, 'I accept the Terms of Use.'):
+            select(root, 'I accept the Terms of Use.')
+            break
+        swipe(root)
+        root = capture('00-consent-scroll-' + str(attempt))
+    else:
+        raise RuntimeError('First-app consent checkbox not reachable')
+    root = capture('00-terms-selected')
+    select(root, 'Continue without analytics')
+    time.sleep(20)
+    root = capture('00-app-initialized')
+    assert any('Your campus.' in n.get('text', '') for n in root.iter('node')), 'Guest home not initialized'
+    checks.append('First app setup completed as guest with optional analytics declined')
     launch = adb('shell', 'am', 'start', '-W', '-a', 'android.car.intent.action.MEDIA_TEMPLATE',
                  '--es', 'android.car.intent.extra.MEDIA_COMPONENT',
                  'com.radiotedumobile/com.radiotedumobile.car.RadioTeduCarService')
@@ -62,8 +102,31 @@ try:
     root = capture('01-car-root')
     select(root, 'Live Radio')
     checks.append('Native car host displays Live Radio category')
+    stop_recording()
+    recording = None
+    recording_name = 'automotive-catalog-lofi'
+    recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
+                                  '/sdcard/' + recording_name + '.mp4'])
     root = capture('02-station-list')
-    select(root, 'RadioTEDU')
+    expected = {'RadioTEDU', 'Classical', 'Jazz', 'Lo-Fi', 'Energize', 'Rock', 'English', 'Français', 'Voting'}
+    seen = set()
+    for attempt in range(8):
+        seen.update(title for title in expected if find(root, title))
+        if seen == expected:
+            break
+        swipe(root)
+        root = capture('02-catalog-scroll-' + str(attempt))
+    (out / 'catalog-stations.json').write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding='utf-8')
+    assert seen == expected, 'Car catalog missing: ' + ', '.join(sorted(expected - seen))
+    checks.append('Initialized car catalog contains all nine stations, including Lo-Fi')
+    for attempt in range(8):
+        if find(root, 'Lo-Fi'):
+            select(root, 'Lo-Fi')
+            break
+        swipe(root, upward=False)
+        root = capture('02-find-lofi-' + str(attempt))
+    else:
+        raise RuntimeError('Lo-Fi could not be reached for playback')
     deadline = time.monotonic() + 60
     while True:
         media = adb('shell', 'dumpsys', 'media_session')
@@ -80,16 +143,15 @@ try:
     (out / 'car-rendered-audio.txt').write_text(audio, encoding='utf-8')
     capture('03-car-playing')
     assert playing and active, 'Native car playback session/rendered audio not established'
-    checks.append('Native car host starts RadioTEDU with active rendered audio track')
+    checks.append('Native car host starts Lo-Fi with active rendered audio track')
     result = {'status': 'passed', 'checks': checks,
               'limits': ['Automotive host only; Android Auto projection remains unverified',
-                         'No authenticated data, Gold, physical speaker or complete car catalog claim']}
+                         'Station presence and Lo-Fi playback only; no complete podcast/car-control coverage',
+                         'No authenticated data, Gold or physical speaker claim']}
 except Exception as error:
     result = {'status': 'failed', 'checks': checks, 'error': str(error)}
     raise
 finally:
     (out / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     if recording is not None:
-        adb('shell', 'pkill', '-2', 'screenrecord', check=False)
-        recording.wait(timeout=20)
-        adb('pull', '/sdcard/automotive-host.mp4', str(out / 'automotive-host.mp4'), check=False)
+        stop_recording()

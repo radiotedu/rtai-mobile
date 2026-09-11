@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import struct
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -101,6 +102,33 @@ def stop_recording(process, name):
     adb('pull', '/sdcard/' + name + '.mp4', str(output / (name + '.mp4')), check=False)
 
 
+def save_share_png(shape):
+    root = snapshot('share-preview-' + shape)
+    tap(find(root, 'Save PNG'))
+    root = snapshot('share-file-picker-' + shape)
+    name = next((n.get('text') for n in root.iter('node')
+                 if n.get('class') == 'android.widget.EditText' and n.get('text', '').endswith('.png')), None)
+    assert name and '/' not in name, 'PNG save filename missing'
+    button = next((n for n in root.iter('node') if n.get('text', '').upper() == 'SAVE' and usable(n)), None)
+    tap(button)
+    remote = '/sdcard/Download/' + name
+    for _ in range(15):
+        size = adb('shell', 'stat', '-c', '%s', remote, check=False).strip()
+        if size.isdigit() and int(size) > 0:
+            break
+        time.sleep(1)
+    else:
+        raise RuntimeError('Native share PNG was not written')
+    path = output / ('now-playing-' + shape + '.png')
+    assert not path.exists(), 'Preserve earlier export'
+    adb('pull', remote, str(path))
+    data = path.read_bytes()
+    assert data.startswith(b'\x89PNG\r\n\x1a\n') and data[-8:-4] == b'IEND', 'Invalid PNG envelope'
+    dimensions = struct.unpack('>II', data[16:24])
+    assert dimensions == ((1080, 1920) if shape == 'story' else (1080, 1080)), dimensions
+    checks.append('Native now-playing ' + shape + ' PNG saved at ' + str(dimensions))
+
+
 recording = None
 recording_name = 'signed-candidate'
 try:
@@ -195,6 +223,12 @@ try:
         snapshot('radio-recovered')
         adb('shell', 'input', 'keyevent', '127')
         audio_state('radio-final-paused', 'PAUSED')
+        root = snapshot('before-image-share')
+        tap(find(root, 'Share'))
+        save_share_png('story')
+        root = snapshot('before-square-share')
+        tap(find(root, 'Square'))
+        save_share_png('square')
     crashes = adb('logcat', '-d', '-b', 'crash')
     (output / 'crash-buffer.txt').write_text(crashes, encoding='utf-8')
     assert PACKAGE not in crashes, 'App entry in crash buffer; investigate'

@@ -93,6 +93,9 @@ try:
     select(root, 'Continue without analytics')
     time.sleep(20)
     root = capture('00-app-initialized')
+    if any(n.get('text', '').startswith('Allow RadioTEDU to send') for n in root.iter('node')):
+        select(root, 'Allow')
+        root = capture('00-app-notifications-allowed')
     assert any('Your campus.' in n.get('text', '') for n in root.iter('node')), 'Guest home not initialized'
     checks.append('First app setup completed as guest with optional analytics declined')
     launch = adb('shell', 'am', 'start', '-W', '-a', 'android.car.intent.action.MEDIA_TEMPLATE',

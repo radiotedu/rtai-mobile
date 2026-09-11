@@ -59,10 +59,11 @@ def select(root, title):
 
 
 def swipe(root, upward=True):
-    bounds = list(map(int, re.findall(r'-?\d+', next(root.iter('node')).get('bounds', ''))))
-    width, height = bounds[2], bounds[3]
-    start, end = (height * 3 // 4, height // 3) if upward else (height // 3, height * 3 // 4)
-    adb('shell', 'input', 'swipe', str(width // 2), str(start), str(width // 2), str(end), '450')
+    surface = next((n for n in root.iter('node') if n.get('scrollable') == 'true'), next(root.iter('node')))
+    x1, y1, x2, y2 = map(int, re.findall(r'-?\d+', surface.get('bounds', '')))
+    low, high = y1 + (y2 - y1) // 5, y1 + (y2 - y1) * 4 // 5
+    start, end = (high, low) if upward else (low, high)
+    adb('shell', 'input', 'swipe', str((x1 + x2) // 2), str(start), str((x1 + x2) // 2), str(end), '450')
     time.sleep(1)
 
 

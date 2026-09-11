@@ -464,8 +464,8 @@ const PlayerScreen = ({route}: any) => {
 
           <View style={styles.metaRow}>
             <TouchableOpacity onPress={() => setSongShareData({
-              title: resolvedTrackTitle || lyricsTrackTitle || 'RadioTEDU',
-              artist: resolvedTrackArtist || lyricsTrackArtist,
+              title: displayTitle,
+              artist: displayArtist,
               artwork: typeof displayArtwork === 'string' ? displayArtwork : currentChannel?.artwork,
               station: currentChannel?.name || 'RadioTEDU',
             })}

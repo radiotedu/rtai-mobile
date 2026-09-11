@@ -112,7 +112,8 @@ try:
     recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
                                   '/sdcard/' + recording_name + '.mp4'])
     root = capture('02-station-list')
-    expected = {'RadioTEDU', 'Classical', 'Jazz', 'Lo-Fi', 'Energize', 'Rock', 'English', 'Français', 'Voting'}
+    expected = {'RadioTEDU'} | {'RadioTEDU ' + name for name in
+                               ('Classical', 'Jazz', 'Lo-Fi', 'Energize', 'Rock', 'English', 'Français', 'Voting')}
     seen = set()
     for attempt in range(8):
         seen.update(title for title in expected if find(root, title))
@@ -124,8 +125,8 @@ try:
     assert seen == expected, 'Car catalog missing: ' + ', '.join(sorted(expected - seen))
     checks.append('Initialized car catalog contains all nine stations, including Lo-Fi')
     for attempt in range(8):
-        if find(root, 'Lo-Fi'):
-            select(root, 'Lo-Fi')
+        if find(root, 'RadioTEDU Lo-Fi'):
+            select(root, 'RadioTEDU Lo-Fi')
             break
         swipe(root, upward=False)
         root = capture('02-find-lofi-' + str(attempt))

@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -527,23 +526,23 @@ class RadioTeduCarService : MediaLibraryService() {
      * Fetch each distinct catalog cover once and attach its bytes to Media3.
      */
     private fun preloadCatalogArtwork() {
-        val artworkParents = mutableMapOf<String, MutableSet<String>>()
-        fun collect(json: JSONObject, parentId: String) {
+        val urls = mutableSetOf<String>()
+        fun collect(json: JSONObject) {
             json.optString("artwork")
                 .takeIf { it.startsWith("https://") }
-                ?.let { artworkParents.getOrPut(it) { mutableSetOf() }.add(parentId) }
+                ?.let(urls::add)
             json.optJSONArray("items")?.let { items ->
                 for (index in 0 until items.length()) {
-                    items.optJSONObject(index)?.let { collect(it, json.optString("id", parentId)) }
+                    items.optJSONObject(index)?.let(::collect)
                 }
             }
         }
         readCatalog().optJSONArray("categories")?.let { categories ->
             for (index in 0 until categories.length()) {
-                categories.optJSONObject(index)?.let { collect(it, it.optString("parentId", ROOT_ID)) }
+                categories.optJSONObject(index)?.let(::collect)
             }
         }
-        artworkParents.keys.filter {
+        urls.filter {
             cachedCarArtworkUri(this, it) == null &&
                 !remoteArtworkCache.containsKey(it) &&
                 pendingRemoteArtwork.add(it)
@@ -555,59 +554,16 @@ class RadioTeduCarService : MediaLibraryService() {
                     if (bytes != null) {
                         cacheCarArtwork(this, artwork, bytes)
                         remoteArtworkCache[artwork] = bytes
-                        // A podcast cover must not invalidate Live Radio or reset its scroll position.
-                        mainHandler.post { notifyCatalogChanged(artworkParents.getValue(artwork)) }
+                        // Hosts load covers through the read-only provider. An image
+                        // completion must never invalidate their browse lists.
                     }
                 }
             }
     }
 
-    private fun downloadArtwork(uri: String): ByteArray? = runCatching {
-        val connection = openArtworkConnection(URL(uri))
-        try {
-            if (connection.responseCode !in 200..299) return@runCatching null
-            if (!connection.contentType.orEmpty().startsWith("image/")) return@runCatching null
-            connection.inputStream.use { input ->
-                val output = ByteArrayOutputStream()
-                val buffer = ByteArray(8 * 1024)
-                while (true) {
-                    val count = input.read(buffer)
-                    if (count < 0) break
-                    if (output.size() + count > TRACK_ARTWORK_MAX_BYTES) return@runCatching null
-                    output.write(buffer, 0, count)
-                }
-                normalizeRemoteArtwork(output.toByteArray())
-            }
-        } finally {
-            connection.disconnect()
-        }
-    }.getOrNull()
+    private fun downloadArtwork(uri: String): ByteArray? = downloadCarArtwork(uri)
 
-    private fun normalizeRemoteArtwork(source: ByteArray): ByteArray? {
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(source, 0, source.size, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-        var sample = 1
-        while (bounds.outWidth / sample > CAR_TILE_SIZE_PX * 2 ||
-            bounds.outHeight / sample > CAR_TILE_SIZE_PX * 2
-        ) {
-            sample *= 2
-        }
-        val decoded = BitmapFactory.decodeByteArray(
-            source,
-            0,
-            source.size,
-            BitmapFactory.Options().apply { inSampleSize = sample },
-        ) ?: return null
-        val scaled = Bitmap.createScaledBitmap(decoded, CAR_TILE_SIZE_PX, CAR_TILE_SIZE_PX, true)
-        if (scaled !== decoded) decoded.recycle()
-        val bytes = ByteArrayOutputStream().use { output ->
-            scaled.compress(Bitmap.CompressFormat.JPEG, 88, output)
-            output.toByteArray()
-        }
-        scaled.recycle()
-        return bytes.takeIf { it.size <= CAR_TILE_MAX_BYTES }
-    }
+    private fun normalizeRemoteArtwork(source: ByteArray): ByteArray? = normalizeCarArtwork(source)
 
     private data class TrackArtwork(val uri: String, val data: ByteArray)
 
@@ -772,17 +728,14 @@ class RadioTeduCarService : MediaLibraryService() {
         librarySession.sendError(SessionError(code, message))
     }
 
-    private fun notifyCatalogChanged(affectedParents: Set<String>? = null) {
+    private fun notifyCatalogChanged() {
         if (!::librarySession.isInitialized) return
         val catalog = readCatalog()
         val categories = catalog.optJSONArray("categories")
-        if (affectedParents == null || ROOT_ID in affectedParents) {
-            librarySession.notifyChildrenChanged(ROOT_ID, ROOT_CATEGORY_IDS.size, null)
-        }
+        librarySession.notifyChildrenChanged(ROOT_ID, ROOT_CATEGORY_IDS.size, null)
         categories ?: return
         for (category in allowedCatalogCategories(categories)) {
             val id = category.optString("id")
-            if (affectedParents != null && id !in affectedParents) continue
             val items = category.optJSONArray("items")
             val count = if (items == null) {
                 0
@@ -1539,6 +1492,7 @@ class RadioTeduCarService : MediaLibraryService() {
         val tileData = bundledTileResource(artwork)?.let(::renderBundledTile)
         val remoteData = remoteArtworkCache[artwork]
         val cachedRemoteUri = cachedCarArtworkUri(this@RadioTeduCarService, artwork)
+            ?: artwork.takeIf { it.startsWith("https://") }?.let(::carArtworkUri)
         if (cachedRemoteUri != null) {
             runCatching { setArtworkUri(cachedRemoteUri) }
             if (remoteData != null) {

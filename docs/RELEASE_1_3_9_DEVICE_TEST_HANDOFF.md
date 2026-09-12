@@ -1,6 +1,6 @@
 # Remaining device-test prerequisites
 
-September 11, 2026. Candidate APK source: `27ddb0cf440d590d7cf2c786e13ba42895b2f0c2`. Public release remains gated by the open checks in the verification reports.
+September 12, 2026. Current candidate APK source: `a99c37e58abb136e2a4e572e89505aa5f600d200`, APK SHA-256 `3d17a72c8d753dc995e2614c4a3fab053de25c3aaead0bb1a9b70e561ef26c11`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks.
 
 ## Isolated authenticated APK testing
 
@@ -14,7 +14,7 @@ Required device cases: registration and verification; login; token refresh/rotat
 
 ## Android Auto projection and sharing recipients
 
-Provide a USB-debugging Android device with full Android Auto installed, or sufficient local storage for a supported phone emulator and full Android Auto setup. Current local check: no ADB devices; C: and G: each below 1 GB free. Do not delete backups, wipe emulators or bypass the SDK disk guard.
+Provide a USB-debugging Android device with full Android Auto installed, or a supported phone emulator with full Android Auto setup. Disk space was freed and is no longer the current setup blocker. The only connected device is the preserved `RadioTEDU-AndroidAuto-Play` emulator; its installed Auto package is `1.2.542030-stub`. Play Store previously reported Android Auto incompatible and now requires sign-in. No physical device or full Auto installation is available. Do not delete backups, wipe emulators or bypass SDK guards.
 
 Native Android Automotive catalog and Lo-Fi playback evidence is available, but it does not prove Android Auto projection. Projection must be tested separately with the actual signed APK, including browsing, transport controls, playback/background transitions and reconnect behavior.
 

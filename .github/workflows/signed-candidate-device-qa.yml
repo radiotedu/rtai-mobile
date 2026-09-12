@@ -35,7 +35,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 34600299328
+          run-id: 34608554985
           name: RadioTEDU-Android-v1.3.9
           path: candidate
       - name: Verify exact existing candidate
@@ -43,8 +43,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p evidence
-          echo 'c46f4d298d7e1c139441010b65fb0199a867286924b73c4713916a917ae23874  candidate/RadioTEDU-Mobile-v1.3.9.apk' | sha256sum --check
-          python3 scripts/verify-android-identity.py candidate/RadioTEDU-Mobile-v1.3.9.apk --tools "$ANDROID_HOME/build-tools/35.0.0" --sha 27ddb0cf440d590d7cf2c786e13ba42895b2f0c2 --version 1.3.9 --version-code 13090 > evidence/identity.json
+          echo '14411e13df60114797738aa42e989723e306bef23a19ebae785c7acde5ed6c91  candidate/RadioTEDU-Mobile-v1.3.9.apk' | sha256sum --check
+          python3 scripts/verify-android-identity.py candidate/RadioTEDU-Mobile-v1.3.9.apk --tools "$ANDROID_HOME/build-tools/35.0.0" --sha 6e1e8b59395f382df6d0345b9900b4c3b9ea84d9 --version 1.3.9 --version-code 13090 > evidence/identity.json
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -75,15 +75,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
-          run-id: 34600299328
+          run-id: 34608554985
           name: RadioTEDU-Android-v1.3.9
           path: candidate
       - name: Verify exact existing candidate
         run: |
           set -euo pipefail
           mkdir -p evidence
-          echo 'c46f4d298d7e1c139441010b65fb0199a867286924b73c4713916a917ae23874  candidate/RadioTEDU-Mobile-v1.3.9.apk' | sha256sum --check
-          python3 scripts/verify-android-identity.py candidate/RadioTEDU-Mobile-v1.3.9.apk --tools "$ANDROID_HOME/build-tools/35.0.0" --sha 27ddb0cf440d590d7cf2c786e13ba42895b2f0c2 --version 1.3.9 --version-code 13090 > evidence/identity.json
+          echo '14411e13df60114797738aa42e989723e306bef23a19ebae785c7acde5ed6c91  candidate/RadioTEDU-Mobile-v1.3.9.apk' | sha256sum --check
+          python3 scripts/verify-android-identity.py candidate/RadioTEDU-Mobile-v1.3.9.apk --tools "$ANDROID_HOME/build-tools/35.0.0" --sha 6e1e8b59395f382df6d0345b9900b4c3b9ea84d9 --version 1.3.9 --version-code 13090 > evidence/identity.json
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

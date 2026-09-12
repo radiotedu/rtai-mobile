@@ -19,7 +19,7 @@ def adb(*args, binary=False, check=True):
                           check=check, timeout=90).stdout
 
 
-def capture(name):
+def capture(name, require_ui=True):
     displays = adb('shell', 'dumpsys', 'SurfaceFlinger', '--display-id')
     (out / 'display-ids.txt').write_text(displays, encoding='utf-8')
     ids = re.findall(r'Display (\d+)', displays)
@@ -27,6 +27,8 @@ def capture(name):
     png = adb('exec-out', 'screencap', '-p', '-d', ids[0], binary=True)
     assert png.startswith(b'\x89PNG\r\n\x1a\n'), 'Screen capture is not a clean PNG'
     (out / (name + '.png')).write_bytes(png)
+    if not require_ui:
+        return None
     for attempt in range(4):
         remote = f'/sdcard/car-{name}-{attempt}.xml'
         adb('shell', 'uiautomator', 'dump', remote, check=False)
@@ -86,7 +88,7 @@ def select_id(root, resource):
     time.sleep(3)
 
 
-def native_state(name, state, title=None):
+def native_state(name, state, title=None, require_ui=True):
     deadline = time.monotonic() + 60
     while True:
         media = adb('shell', 'dumpsys', 'media_session')
@@ -104,7 +106,7 @@ def native_state(name, state, title=None):
         time.sleep(3)
     (out / (name + '-session.txt')).write_text(media, encoding='utf-8')
     (out / (name + '-audio.txt')).write_text(audio, encoding='utf-8')
-    root = capture(name)
+    root = capture(name, require_ui=require_ui)
     assert passed, 'Native car state did not reach ' + state + ': ' + name
     return root
 
@@ -232,12 +234,17 @@ try:
     series_title = select_first_catalog_title(root)
     root = capture('09-car-podcast-episodes')
     episode_title = select_first_catalog_title(root)
-    root = native_state('10-car-podcast-playing', 'PLAYING', episode_title)
+    # The host updates podcast progress every second, so UiAutomator may never
+    # become idle. Verify session/audio plus screenshot; obtain a fresh tree
+    # after media-key pause, before any further touch interaction.
+    native_state('10-car-podcast-playing', 'PLAYING', episode_title, require_ui=False)
     (out / 'podcast-selection.json').write_text(json.dumps({'series': series_title, 'episode': episode_title}, ensure_ascii=False), encoding='utf-8')
     checks.append('Native car browses podcast series and plays selected episode with matching metadata and rendered audio')
+    adb('shell', 'input', 'keyevent', '127')
+    root = native_state('11-car-podcast-paused', 'PAUSED', episode_title)
     select_id(root, 'play_pause_stop')
-    native_state('11-car-podcast-paused', 'PAUSED', episode_title)
-    checks.append('Native car touch control pauses selected podcast')
+    native_state('12-car-podcast-resumed', 'PLAYING', episode_title, require_ui=False)
+    checks.append('Native car media-key pause and touch resume work for selected podcast')
     result = {'status': 'passed', 'checks': checks,
               'limits': ['Automotive host only; Android Auto projection remains unverified',
                          'One podcast episode and radio pause/resume tested; no complete car-control or lifecycle coverage',

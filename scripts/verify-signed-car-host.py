@@ -165,6 +165,11 @@ try:
     recording_name = 'automotive-catalog-lofi'
     recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
                                   '/sdcard/' + recording_name + '.mp4'])
+    if '--offline-catalog' in sys.argv:
+        adb('shell', 'svc', 'wifi', 'disable')
+        adb('shell', 'svc', 'data', 'disable')
+        time.sleep(12)
+        checks.append('Diagnostic: networking paused during cached catalog browsing; not a normal online browsing pass')
     root = capture('02-station-list')
     expected = {'RadioTEDU'} | {'RadioTEDU ' + name for name in
                                ('Classical', 'Jazz', 'Lo-Fi', 'Energize', 'Rock', 'English', 'Français', 'Voting')}
@@ -178,6 +183,10 @@ try:
     (out / 'catalog-stations.json').write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding='utf-8')
     assert seen == expected, 'Car catalog missing: ' + ', '.join(sorted(expected - seen))
     checks.append('Initialized car catalog contains all nine stations, including Lo-Fi')
+    if '--offline-catalog' in sys.argv:
+        adb('shell', 'svc', 'wifi', 'enable')
+        adb('shell', 'svc', 'data', 'enable')
+        time.sleep(5)
     for attempt in range(8):
         bounds = find(root, 'RadioTEDU Lo-Fi')
         if bounds:
@@ -253,6 +262,9 @@ except Exception as error:
     result = {'status': 'failed', 'checks': checks, 'error': str(error)}
     raise
 finally:
+    if '--offline-catalog' in sys.argv:
+        adb('shell', 'svc', 'wifi', 'enable', check=False)
+        adb('shell', 'svc', 'data', 'enable', check=False)
     (out / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     # Disposable guest emulator only. Keep diagnostics separate from publication assets.
     for name, command in [

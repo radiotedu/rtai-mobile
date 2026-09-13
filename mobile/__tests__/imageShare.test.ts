@@ -1,3 +1,4 @@
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');
 import {NativeModules, findNodeHandle} from 'react-native';
 import {shareCardImage} from '../src/components/ImageShareSheet';
 

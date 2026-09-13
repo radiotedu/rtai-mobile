@@ -23,9 +23,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ### Version 1.3.9 candidate
 
-[Latest c9ef48b candidate, verified binary and remaining device checks](docs/RELEASE_1_3_9_C9EF48B_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
+[Latest b63037c candidate, verified binary and remaining device checks](docs/RELEASE_1_3_9_B63037C_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
 
-[Player layout correction after visual review](docs/RELEASE_1_3_9_PLAYER_LAYOUT_CORRECTION.md): signed c9ef48b passed phone/tablet metadata and lyrics layout checks. A profile accessibility follow-up is awaiting a replacement build.
+[Player layout correction after visual review](docs/RELEASE_1_3_9_PLAYER_LAYOUT_CORRECTION.md): the b63037c APK also verifies the profile accessibility fix and playback on all nine stations. Social wording is being refined; the external Jukebox locale/branding defect needs the [server handoff](docs/JUKE_CONTROLLER_LOCALE_SERVER_HANDOFF.md).
 
 [Current store image candidates and capture provenance](docs/images/release-1.3.9/store/README.md)
 

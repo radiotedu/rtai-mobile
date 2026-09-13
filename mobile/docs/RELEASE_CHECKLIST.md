@@ -1,5 +1,7 @@
 # RadioTEDU — Release & Compliance Checklist
 
+Current September 13, 2026 evidence: [b63037c candidate verification](../../docs/RELEASE_1_3_9_B63037C_VERIFICATION.md). The older `[done]` labels below often describe implementation, not final runtime or store approval. Android Auto projection and isolated authenticated Gold/device flows remain open. The deletion information page now exists and has been opened from the app; no deletion was submitted. Do not use this historical checklist alone to claim release readiness.
+
 Production readiness for a real university radio (TED University). Every item is
 tagged: **[done]**, **[code]** (implemented or implementable here), **[you]**
 (needs a human/account), or **[blocked]** (external production dependency).

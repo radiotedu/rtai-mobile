@@ -1,6 +1,6 @@
 # Remaining device-test prerequisites
 
-September 13, 2026. Current verified candidate APK source: `c9ef48b03c747c4469746f62c20bef0f91341b05`, APK SHA-256 `48fc0dd498a9074f1731cc3c20ad27e2c46f76303e018d3fcd6ea078a55337f6`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_C9EF48B_VERIFICATION.md). A profile accessibility follow-up still needs its replacement APK; do not mix binary identities.
+September 13, 2026. Current verified candidate APK source: `b63037c0ada52fc0c9e2ee85306951ebf7aacff6`, APK SHA-256 `14162252a654213edeefefa17d89bd30ba7e9985151845b5db775c8af1455568`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_B63037C_VERIFICATION.md). A Social wording follow-up still needs its replacement APK; do not mix binary identities. The external Jukebox locale/branding defect is covered by a separate [server handoff](JUKE_CONTROLLER_LOCALE_SERVER_HANDOFF.md).
 
 ## Isolated authenticated APK testing
 

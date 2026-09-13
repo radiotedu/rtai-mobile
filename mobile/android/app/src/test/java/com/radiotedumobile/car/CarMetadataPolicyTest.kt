@@ -8,6 +8,14 @@ class CarMetadataPolicyTest {
     private val icySong = CarMetadataText(title = "Song", artist = "Artist")
 
     @Test
+    fun podcastCatalogIdentityWinsOverEmbeddedBroadcastTags() {
+        val episode = CarMetadataText("BPW Talks #2", "BPW Ankara x RadioTEDU")
+        val embedded = CarMetadataText("RadioTEDU Live Broadcast", null)
+        assertEquals(episode, CarMetadataPolicy.sourceText("podcast-series:bpw", episode, embedded))
+        assertEquals(embedded, CarMetadataPolicy.sourceText(null, episode, embedded))
+    }
+
+    @Test
     fun lowAndNormalLofiReplaceIcyWithStationIdentity() {
         for (quality in listOf("low", "normal")) {
             assertEquals(

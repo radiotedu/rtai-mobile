@@ -365,6 +365,25 @@ class RadioTeduCarService : MediaLibraryService() {
             title = mediaMetadata.title?.toString()?.trim().orEmpty(),
             artist = mediaMetadata.artist?.toString()?.trim().orEmpty().ifEmpty { null },
         )
+        if (fallback.seriesId != null) {
+            // File tags can contain generic broadcast labels. The selected
+            // episode's catalog identity remains authoritative for podcasts.
+            val episode = CarMetadataPolicy.sourceText(
+                fallback.seriesId,
+                CarMetadataText(fallback.title, fallback.artist.ifEmpty { null }),
+                incoming,
+            )
+            if (incoming != episode || mediaMetadata.displayTitle?.toString() != episode.title) {
+                replaceCurrentMetadata(index, current, current.mediaMetadata.buildUpon()
+                    .setTitle(episode.title)
+                    .setDisplayTitle(episode.title)
+                    .setArtist(episode.artist)
+                    .setSubtitle(episode.artist)
+                    .setStation(null)
+                    .build())
+            }
+            return
+        }
         val stationSafe = CarMetadataPolicy.sanitizeIcy(
             mediaId = fallback.id,
             quality = fallback.quality,
@@ -1744,6 +1763,9 @@ internal data class CarMetadataText(val title: String, val artist: String?)
 
 /** Prevents station-only streams from leaking incoming ICY text to system surfaces. */
 internal object CarMetadataPolicy {
+    fun sourceText(seriesId: String?, catalog: CarMetadataText, incoming: CarMetadataText): CarMetadataText =
+        if (seriesId != null) catalog else incoming
+
     fun sanitizeIcy(
         mediaId: String,
         quality: String?,

@@ -398,14 +398,21 @@ const PlayerScreen = ({route}: any) => {
     : Math.min(width - SPACING.lg * 4, height * (showLyricsPanel ? 0.24 : 0.38), 320);
 
   const artworkCard = (<View style={[styles.artWrap, isLandscape && styles.landscapeArt]}>
+            <View style={[styles.art, {width: artSize, height: artSize}]}>
+              <Image
+                source={currentChannel?.logo || RADIO_CHANNELS[0].logo}
+                style={[StyleSheet.absoluteFillObject, styles.artImage]}
+                resizeMode="cover"
+              />
             {effectiveArtworkSource ? (
               <Image
                 source={effectiveArtworkSource}
-                style={[styles.art, {width: artSize, height: artSize}]}
+                style={[StyleSheet.absoluteFillObject, styles.artImage]}
                 resizeMode="cover"
                 onError={() => setImageError(true)}
               />
-            ) : <View style={[styles.art, styles.artPlaceholder, {width: artSize, height: artSize}]} />}
+            ) : null}
+            </View>
           </View>);
 
   const trackDetails = (<><View style={styles.metaRow}>
@@ -870,8 +877,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: COLORS.surface,
   },
-  artPlaceholder: {
-    borderWidth: 0,
+  artImage: {
+    borderRadius: 16,
+    backgroundColor: 'transparent',
   },
   metaRow: {
     flexDirection: 'row',

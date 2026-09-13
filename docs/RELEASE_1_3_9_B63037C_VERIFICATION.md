@@ -26,6 +26,8 @@ The local station catalog briefly reported five available stations after a foreg
 
 Guest Social still exposes internal “server-owned” wording in b630. A source-only follow-up replaces the six localized subtitles with user-facing study/avatar descriptions; the b630 APK does not contain it.
 
+Subsequent screenshot review found a blank artwork tile on the English station (`16-station-6-playing.png` in the local all-stations evidence). The earlier playback pass does not establish artwork success. The player only supplied its station fallback after an image error; pending remote loads retained an opaque empty tile. A source follow-up keeps bundled station artwork underneath a transparent remote-image layer, including a bundled main-station fallback for podcasts. It requires a replacement signed APK and visual verification; the b630 artifact does not include it.
+
 Guest Jukebox opens in Turkish despite English app locale and displays dotted-İ `RADİOTEDU`. A fresh English browser reproduces this at the explicit `?lang=en` URL. See the [server frontend correction handoff](JUKE_CONTROLLER_LOCALE_SERVER_HANDOFF.md); do not claim an APK rebuild fixes the external page.
 
 ## Remaining completion gates

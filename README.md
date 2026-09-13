@@ -23,9 +23,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ### Version 1.3.9 candidate
 
-[Verified a99c37e candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34722591025) · [Verification and remaining release gates](docs/RELEASE_1_3_9_A99C37E_VERIFICATION.md)
+[Verified 3d87704 candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34744863377) · [Verification and remaining release gates](docs/RELEASE_1_3_9_3D87704_VERIFICATION.md)
 
-The signed `a99c37e` APK passed recorded phone/tablet media and PNG export checks, two normal online Automotive catalog/playback runs, and a guest upgrade from 1.3.7. A later lyric-sharing check found that an open composer changed with the live song. Source `3d87704` fixes that; its [replacement build](https://github.com/radiotedu/rtai-mobile/actions/runs/34744863377) requires binary and device verification. The GitHub release remains draft. Full Android Auto projection and isolated authenticated Gold/account checks remain open.
+The signed `3d87704` APK passed recorded phone/tablet media and PNG export checks and normal online Automotive catalog/playback checks. Its lyric composer preserves the selected song across live metadata changes; closing/reopening captures the new song, verified on the installed APK. Package/version, production signing and 16 KB native/packaging alignment passed. The GitHub release remains draft. Full Android Auto projection and isolated authenticated Gold/account checks remain open.
 
 Redesigned PNG sharing, measured mini-player positioning, Flash Memory using the existing online Gold rules, and a refreshed terminal. Production-signed APK includes Android Auto integration; full projection and Google Play readiness remain unverified. All 12 stream variants passed real audio decoding in the [September 11 service recheck](docs/RELEASE_1_3_9_RECHECK_2026_09_11.md).
 

@@ -1,0 +1,21 @@
+# 6414c3c candidate findings — not release-ready
+
+September 13, 2026. Source `6414c3ca9b610257f21f8cfb3ee189b484ae3fe6` built successfully in [34761669968](https://github.com/radiotedu/rtai-mobile/actions/runs/34761669968). Exact-source [CI 34761668510](https://github.com/radiotedu/rtai-mobile/actions/runs/34761668510) passed, including iOS simulator compilation.
+
+Actual APK: `com.radiotedumobile`, 1.3.9, versionCode 13090, clean embedded source; SHA-256 `85e829412a49fd4a08b9a73c7b43821d08b858003ab7b0eb4bd56cc27f072551`. Production certificate SHA-256 `b3b08db1c4aefbf4251d53951061ada727796479de45d817f9576232ff2d9439`. APK and AAB pass all 26 ELF checks; APK packaging passes 16 KB zipalign. AAB SHA-256 `a974e9b363be9be2b836b54cc9e3833f01c349b5ec5501275922b9de38b93384`. Actual target SDK is 36, matching the current [Google Play target requirement](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en); this is only one submission gate.
+
+## Runtime failures retained
+
+- [Phone/tablet automation 34762360829](https://github.com/radiotedu/rtai-mobile/actions/runs/34762360829) passed. [Automotive 34762362910](https://github.com/radiotedu/rtai-mobile/actions/runs/34762362910) failed because its catalog omitted English, French and Voting. Driver source: `6bdc61b5fe48a18af5dce8773c56f5a7473151a7`. Failed log retained at `output/641-automotive-failure.log`.
+- Local first run passed six stations' short rendered-audio/artwork checks, then stopped because English was absent from the catalog: `output/641-stations-social-20260913-151945/`. A cold-start retry also omitted English. Fresh host HEAD checks for the canonical `/en`, `/fr` and `/spark` URLs returned 200 with audio types. A foreground refresh subsequently exposed those stations. These observations do not establish continuous stream availability.
+- After refresh, English and French both rendered native audio for eight seconds but still had blank artwork: `output/641-refreshed-stations-20260913-153054/06-station-0-playing.png` and the corresponding station-1 capture. Keeping the remote layer invisible before load did not resolve this failure. Both bundled PNGs were inspected inside the actual APK and are valid, nonuniform 2048×2048 images.
+- The later Voting check rendered audio for eight seconds, but the UI dump changed to Play before the scripted Pause action. Its earlier screenshot shows Pause. The cause of this transition is unproven; the run is not counted as a successful pause test. Evidence remains in the same refreshed-stations directory and recording.
+- Native heap allocation was approximately 206 MiB during investigation. This is an observation, not proof of an out-of-memory failure. React Native's default automatic decode resizing excludes resource URIs; the replacement explicitly downsamples station and player images to their display sizes and adds safe image-load error diagnostics.
+
+## Replacement source
+
+`7441ad1c052221363b75f9ff8855d7630addb8b2` adds explicit image decode resizing, shared in-flight stream probes between phone/car callers, serialized/coalesced phone refreshes, and one bounded retry for connection failures. HTTP errors and non-audio responses still fail immediately; a timeout never counts as a live stream. No station, stream URL, production data or reward rule was changed.
+
+Regression tests reproduced duplicate requests in the prior implementation and pass with the fix. Final checks: 413 tests in 103 suites, TypeScript, changed-file lint (zero errors, existing warnings), release-version validation and Android audit pass. Replacement [signed build 34763532391](https://github.com/radiotedu/rtai-mobile/actions/runs/34763532391) still needs actual artifact and device verification. The visual/cold-start failures above remain unresolved until that evidence exists.
+
+All 19 terminal ZIP contents match the previously tested package; terminal TGZ hash is unchanged. The previously verified landscape metadata/lyrics layout and 5f deletion-page navigation are retained as scoped evidence, not a blanket claim about this candidate. Full Android Auto projection, isolated authenticated Gold/account/game tests, recipient-app PNG receipt and the external Jukebox frontend repair remain open. No public release or Play submission has occurred.

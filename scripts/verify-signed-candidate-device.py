@@ -269,5 +269,10 @@ except Exception as error:
     raise
 finally:
     (output / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
+    try:
+        (output / 'guest-system-log.txt').write_text(
+            adb('logcat', '-d', '-t', '2500', check=False), encoding='utf-8')
+    except Exception as diagnostic_error:
+        print('System diagnostic unavailable:', type(diagnostic_error).__name__)
     if recording is not None:
         stop_recording(recording, recording_name)

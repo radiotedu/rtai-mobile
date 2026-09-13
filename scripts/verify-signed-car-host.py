@@ -268,6 +268,7 @@ finally:
     (out / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
     # Disposable guest emulator only. Keep diagnostics separate from publication assets.
     for name, command in [
+        ('guest-system-log.txt', ('logcat', '-d', '-t', '2500')),
         ('catalog-runtime-log.txt', ('logcat', '-d', '-s', 'ReactNativeJS:I', 'RadioTeduCarService:I')),
         ('car-user.txt', ('shell', 'am', 'get-current-user')),
         ('car-services.txt', ('shell', 'dumpsys', 'activity', 'services', 'com.radiotedumobile')),

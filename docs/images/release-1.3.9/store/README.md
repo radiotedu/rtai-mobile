@@ -2,6 +2,8 @@
 
 Three 1080 × 1920 HTML-rendered previews using actual app captures from signed source `3d8770486040f08c9257bb2b33250e4db5060403`. These are listing candidates, not evidence of store approval or completion of the release gates.
 
+Also included: a 2560 × 1800 [tablet preview](tablet.png), rendered from `tablet.html` with Manrope confirmed loaded. Its unedited capture `raw/tablet-home-e32e04c.png` comes from signed e32e04c tablet run 34755099298, `08-tab-home.png`; identity output matches that candidate. The Home and mini-player source used here is unchanged by c9ef48b's separate full-player layout correction. Both the original capture and rendered tablet poster were visually reviewed. The earlier `05-home.png` capture still showed podcast loading and was not used. Tablet proportions are preserved with width-only scaling.
+
 | Preview | Original capture | Provenance |
 | --- | --- | --- |
 | [Radio](radio.png) | `raw/home.png` | Phone run 34745830092, `05-home.png` |
@@ -14,4 +16,4 @@ Open `poster.html?card=radio`, `?card=podcasts`, or `?card=share`. Render at 108
 
 The original cloud podcast screenshot caught a launcher transition despite its UI tree containing episode nodes. It was rejected for this listing. A subsequent local loading screenshot was also rejected. Both remain in local output backups; only the fully loaded capture is included here.
 
-Tablet, website and Android Auto-specific listing material and final Play Console declarations remain outstanding. These assets do not establish WhatsApp/Instagram receipt or Android Auto projection support.
+Website and Android Auto-specific listing material and final Play Console declarations remain outstanding. These assets do not establish WhatsApp/Instagram receipt or Android Auto projection support. Final listing review must also assess the subsequently corrected player layouts; this tablet Home preview does not certify those layouts.

@@ -34,5 +34,17 @@
     "width": 1080,
     "height": 1920,
     "sha256": "853b5b5c9a38cc13733fe4cade16f4af225d3dad6c78723c5c5f0139767d905f"
+  },
+  {
+    "file": "tablet.png",
+    "width": 2560,
+    "height": 1800,
+    "sha256": "456b972701fa14c3a0979d7582c7b2982214c1cffbf37866ea50b31ee1a67472"
+  },
+  {
+    "file": "raw/tablet-home-e32e04c.png",
+    "width": 2560,
+    "height": 1800,
+    "sha256": "a4f56ae97dd1b7b44a2ead8307900c54007c455d22c73ba044509b4b5c94905e"
   }
 ]

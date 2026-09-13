@@ -25,6 +25,8 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 [Latest e32e04c candidate, verified binary and remaining device checks](docs/RELEASE_1_3_9_E32E04C_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
 
+[Player layout correction after visual review](docs/RELEASE_1_3_9_PLAYER_LAYOUT_CORRECTION.md): c9ef48b addresses clipped lyrics and hidden landscape metadata; its signed APK/device verification is pending.
+
 [Current store image candidates and capture provenance](docs/images/release-1.3.9/store/README.md)
 
 <p align="center">
@@ -32,6 +34,13 @@ separated: Study opens `radiotedu.com/study`, voting opens
   <img src="docs/images/release-1.3.9/store/podcasts.png" width="230" alt="Podcast preview with actual app screenshot">
   <img src="docs/images/release-1.3.9/store/share.png" width="230" alt="Native song story export preview">
 </p>
+
+<details>
+<summary>Tablet store preview — actual app capture</summary>
+
+<img src="docs/images/release-1.3.9/store/tablet.png" width="720" alt="RadioTEDU tablet store preview using a real screenshot, with original tablet proportions">
+
+</details>
 
 [Earlier 63494e4 signed build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34747150086) · [Historical verification report](docs/RELEASE_1_3_9_63494E4_VERIFICATION.md)
 

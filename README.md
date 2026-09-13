@@ -23,7 +23,7 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ### Version 1.3.9 candidate
 
-[Latest 7df67f8 candidate, verified binary and unresolved device failures](docs/RELEASE_1_3_9_7DF67F8_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
+[Latest e32e04c candidate, verified binary and remaining device checks](docs/RELEASE_1_3_9_E32E04C_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
 
 [Current store image candidates and capture provenance](docs/images/release-1.3.9/store/README.md)
 
@@ -33,7 +33,7 @@ separated: Study opens `radiotedu.com/study`, voting opens
   <img src="docs/images/release-1.3.9/store/share.png" width="230" alt="Native song story export preview">
 </p>
 
-[Current 63494e4 signed build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34747150086) · [Verification and remaining release gates](docs/RELEASE_1_3_9_63494E4_VERIFICATION.md)
+[Earlier 63494e4 signed build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34747150086) · [Historical verification report](docs/RELEASE_1_3_9_63494E4_VERIFICATION.md)
 
 The current APK additionally fixes jingle artwork and podcast placeholders. Exact-APK phone/tablet/Automotive results are pending review. The following paragraph describes the earlier 3d87704 candidate.
 
@@ -64,7 +64,7 @@ Actual now-playing PNGs exported by the final `27ddb0c` APK:
   <img src="docs/images/release-1.3.9/now-playing-square-27ddb0c.png" width="300" alt="Native Square PNG with undistorted artwork">
 </p>
 
-[Latest share/car recheck](docs/RELEASE_1_3_9_SHARE_EXPORT_RECHECK.md): both PNG formats passed. The earlier missing-car-stations report was a test-name mismatch; native station titles include the RadioTEDU prefix. Complete catalog/playback verification continues with the corrected driver.
+[Earlier share/car recheck](docs/RELEASE_1_3_9_SHARE_EXPORT_RECHECK.md): both PNG formats passed. The earlier missing-car-stations report was a test-name mismatch; native station titles include the RadioTEDU prefix. See the latest candidate report above for current results.
 
 ### Version 1.3.8 release
 

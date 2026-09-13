@@ -1,6 +1,6 @@
 # Remaining device-test prerequisites
 
-September 13, 2026. Current candidate APK source: `3d8770486040f08c9257bb2b33250e4db5060403`, APK SHA-256 `f0eeece213e6cfbf1fb4f7fafacb5df3e293aa2c34c11979549e271601d1d5e3`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_3D87704_VERIFICATION.md).
+September 13, 2026. Current candidate APK source: `63494e4f5eedc61d196efe99daa7e6694d633e4a`, APK SHA-256 `bc4852eaec08ac3af13152b212ed272fc9b19e24300a5c48203998e42ca76f01`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_63494E4_VERIFICATION.md).
 
 ## Isolated authenticated APK testing
 
@@ -14,7 +14,7 @@ Required device cases: registration and verification; login; token refresh/rotat
 
 ## Android Auto projection and sharing recipients
 
-Provide a USB-debugging Android device with full Android Auto installed, or a supported phone emulator with full Android Auto setup. September 13 recheck: only `emulator-5556` is connected and its installed Auto package remains `1.2.542030-stub`. No physical device or full Auto installation is available. Play Store previously reported incompatibility/sign-in requirements; these are historical observations, not a fresh store check. C: now has approximately 541 MiB free, so additional local emulator installation also requires storage. Do not delete backups, wipe emulators or bypass SDK guards.
+Provide a USB-debugging Android device with full Android Auto installed, or a supported phone emulator with full Android Auto setup. September 13 recheck: only `emulator-5556` is connected and its installed Auto package remains `1.2.542030-stub`. No physical device or full Auto installation is available. Play Store previously reported incompatibility/sign-in requirements; these are historical observations, not a fresh store check. Storage was subsequently freed; the latest APK was downloaded and installed. Storage is no longer the immediate blocker. Do not delete backups, wipe emulators or bypass SDK guards.
 
 Native Android Automotive catalog and Lo-Fi playback evidence is available, but it does not prove Android Auto projection. Projection must be tested separately with the actual signed APK, including browsing, transport controls, playback/background transitions and reconnect behavior.
 

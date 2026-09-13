@@ -31,7 +31,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
   <img src="docs/images/release-1.3.9/store/share.png" width="230" alt="Native song story export preview">
 </p>
 
-[Verified 3d87704 candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34744863377) · [Verification and remaining release gates](docs/RELEASE_1_3_9_3D87704_VERIFICATION.md)
+[Current 63494e4 signed build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34747150086) · [Verification and remaining release gates](docs/RELEASE_1_3_9_63494E4_VERIFICATION.md)
+
+The current APK additionally fixes jingle artwork and podcast placeholders. Exact-APK phone/tablet/Automotive results are pending review. The following paragraph describes the earlier 3d87704 candidate.
 
 The signed `3d87704` APK passed recorded phone/tablet media and PNG export checks and normal online Automotive catalog/playback checks. Its lyric composer preserves the selected song across live metadata changes; closing/reopening captures the new song, verified on the installed APK. Package/version, production signing and 16 KB native/packaging alignment passed. The GitHub release remains draft. Full Android Auto projection and isolated authenticated Gold/account checks remain open.
 

@@ -1018,3 +1018,29 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 2026-09-12 candidate6e1e8b5 verified: build34608554985 and CI34608707640 passed; APK14411e13df60114797738aa42e989723e306bef23a19ebae785c7acde5ed6c91, permanent cert/version/ELF/ZIP passed and matching assets uploaded through akgularda to draft. Phone34720802751 passed media/offline/PNG cases. Existing local Release139 upgraded after system boot crashes; real16 minutes retained; fresh native recap-story-6e1e8b5.png decoded1080x1920, recorded. Profile still mislabeled station as genre; six locale labels corrected in source, tsc/lint passed, not yet rebuilt. Car34720800362 passed catalog/LoFi/touch pause-resume and actual podcast playback but UI dump failed on moving progress. Driverc1b4d7d handles progress; repeat34721326084 failed earlier with intermittent catalog paging reset. Artwork scoping fix remains incomplete; no broad car pass. Disk now available ~8GB; no physical Auto device, prior Play emulator incompatible. See docs/RELEASE_1_3_9_6E1E8B5_VERIFICATION.md. Goal active; release draft; no production mutations.
 
 2026-09-12 car diagnosis: offline-catalog run34721856873 passed all9 cached stations; networking restored before actual LoFi/radio and podcast playback/control checks, which passed. This is diagnostic, not normal online paging proof. New provider implementation serves only registered HTTPS catalog images on demand via read-only content URI, preserves thumbnail limits and uses atomic cache writes; image completions no longer broadcast catalog changes. Normal catalog changes still notify. Native registered-source/path/protocol tests added; native CI not yet run. 404 mobile tests, tsc, quiet lint, version and Android36/36 passed. Includes pending six-language profile station-label correction. New signed build and normal online car recheck required before replacing candidate6e. Auto emulator still AndroidAutoStubPrebuilt1.2.542030-stub; Play Store now asks Google reauthentication. Physical Auto device question pending; no auth/Gold backend supplied. No production mutations; release draft.
+
+## 2026-09-13 Antigravity & akgularda release finalization
+
+- User-visible outcome:
+  - Resolved cold-start race condition where Now Playing MiniPlayer overlaid the bottom tab menu on first launch before jumping above on second start; added `'MainTabs'` to `TAB_ROUTES` in `MiniPlayer.tsx` and initialized `playerRoute` to `'Home'` in `App.tsx` so MiniPlayer is never positioned over tab navigation.
+  - Enhanced native Story/Square PNG share intent in `ImageSharePackage.kt` with `Intent.EXTRA_TEXT` so messaging and social apps (WhatsApp, Instagram, Telegram, Twitter/X) receive both the high-res PNG image and the song title/link cleanly with explicit URI grant flags on the system chooser.
+  - Verified `GlobalHeader.tsx` profile button presents clean circular icon without username text.
+  - Verified multi-language share sheet translations (TR, EN, DE, FR, RU, AR).
+  - Tracked and committed `docs/RELEASE_1_3_9_CAR_FOLLOWUP.md`.
+- Exact source files changed:
+  - `mobile/src/components/MiniPlayer.tsx`
+  - `mobile/App.tsx`
+  - `mobile/__tests__/miniPlayerVisibility.test.ts`
+  - `mobile/android/app/src/main/java/com/radiotedumobile/share/ImageSharePackage.kt`
+  - `docs/RELEASE_1_3_9_CAR_FOLLOWUP.md`
+  - `GEMINI.md`
+- Tests and counts:
+  - Mobile Jest: 103/103 suites passed (413/413 tests).
+  - Android publish audit: 36/36 passed.
+  - Study/Social: 46/46 files, 227/227 tests passed + 3/3 contract tests passed.
+  - Terminal: 25/25 tests passed.
+  - Live emulator verification: Pixel 5 phone emulator tested end-to-end; cold start confirmed clean with MiniPlayer floating above bottom navigation; full Player modal, Story/Square PNG generation, and Android system sharesheet verified with screenshots.
+- Commit hash pushed to `origin/main`: `afce009` and follow-up docs commit (pushed under `akgularda` account).
+- Zero divergence between HEAD and origin/main confirmed.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No host native Android compilation.
+

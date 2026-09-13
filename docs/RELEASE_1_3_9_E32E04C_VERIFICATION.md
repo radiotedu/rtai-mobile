@@ -2,6 +2,8 @@
 
 Not release-ready. This candidate fixes stream recovery overriding a user pause and keeps player transport controls outside the scrolling content. Earlier artifacts and failed tests remain preserved.
 
+User visual review rejected this layout: the portrait lyrics card is cut off by the outer scrolling viewport, and landscape station/song/artist details fall below the visible area. Passing transport-only checks did not establish an acceptable complete player layout. A source follow-up moves the full lyrics card outside outer scrolling content and places landscape artwork beside metadata/lyrics. See [the layout correction record](RELEASE_1_3_9_PLAYER_LAYOUT_CORRECTION.md); its APK verification is pending.
+
 ## Actual binary
 
 - Source: `e32e04c4bccc50b7333f2f55d82c5ca4fdaaeb2f`, clean embedded source verified.

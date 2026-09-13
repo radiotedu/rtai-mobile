@@ -72,6 +72,7 @@ def transport_controls(root):
     densities = re.findall(r'(?:Physical|Override) density: (\d+)', density_output)
     assert densities, 'Device display density unavailable'
     minimum = 48 * int(densities[-1]) / 160
+    control_tops = []
     for title in ('Previous', 'Pause', 'Next'):
         matches = []
         def visit(node, scrolling=False):
@@ -86,6 +87,31 @@ def transport_controls(root):
         assert not scrolling, title + ': transport remains inside scrolling content'
         x1, y1, x2, y2 = map(int, re.findall(r'-?\d+', node.get('bounds', '')))
         assert x2-x1 >= minimum and y2-y1 >= minimum, title + ': touch target clipped or below 48dp'
+        control_tops.append(y1)
+    png = adb('exec-out', 'screencap', '-p', binary=True)
+    width, height = struct.unpack('>II', png[16:24])
+    def identified(name):
+        return [node for node in root.iter('node') if node.get('resource-id', '').split('/')[-1] == name]
+    for name in ('player-station-name', 'player-track-title', 'player-track-artist'):
+        matches = identified(name)
+        assert len(matches) == 1, name + ': missing or duplicated'
+        node = matches[0]
+        assert label(node).strip(), name + ': empty text'
+        x1, y1, x2, y2 = map(int, re.findall(r'-?\d+', node.get('bounds', '')))
+        assert 0 <= x1 < x2 <= width and 0 <= y1 < y2 <= min(control_tops), name + ': outside visible content area'
+        assert y2-y1 >= minimum / 4, name + ': text clipped to a sliver'
+    panels = identified('player-lyrics-panel')
+    if panels:
+        assert len(panels) == 1, 'Multiple lyrics cards'
+        panel = panels[0]
+        x1, y1, x2, y2 = map(int, re.findall(r'-?\d+', panel.get('bounds', '')))
+        assert 0 <= x1 < x2 <= width and 0 <= y1 < y2 <= min(control_tops), 'Lyrics card extends under controls'
+        assert y2-y1 >= minimum * 78 / 48, 'Lyrics card cannot fit its header and one line'
+        parents = {child: parent for parent in root.iter() for child in parent}
+        while panel in parents:
+            panel = parents[panel]
+            assert panel.get('scrollable') != 'true', 'Lyrics card is clipped by an outer scroller'
+    checks.append('Visible station/song/artist; ' + ('complete lyrics card outside outer scrolling content' if panels else 'lyrics card absent in this capture'))
 
 
 def orient_screen(landscape, validator=home, prefix=''):

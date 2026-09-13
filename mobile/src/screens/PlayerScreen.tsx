@@ -389,70 +389,15 @@ const PlayerScreen = ({route}: any) => {
     }
   };
 
-  const artSize = Math.min(width - SPACING.lg * 4, height * 0.38, 320);
+  const isLandscape = width > height;
+  const showLyricsPanel = !isPodcast && !stationOnlyPresentation &&
+    (isLyricsPanelOpen || ((lyricsLines.length > 0 || isLyricsLoading) && !isCellular)) &&
+    lyricsDismissedTrackKey !== lyricsTrackKey;
+  const artSize = isLandscape
+    ? Math.min(width * 0.26, height * 0.42, 240)
+    : Math.min(width - SPACING.lg * 4, height * (showLyricsPanel ? 0.24 : 0.38), 320);
 
-  return (
-    <Animated.View
-      style={[styles.container, {transform: [{translateY: dismissY}]}]}
-      {...panResponder.panHandlers}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
-      {/* Soft brand tint behind the art */}
-      <View
-        style={[
-          styles.tint,
-          {backgroundColor: currentChannel?.color || COLORS.primary},
-        ]}
-      />
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.topButton}
-            accessibilityLabel={copy('player.close')}>
-            <Icon name="chevron-down" size={30} color={COLORS.text} />
-          </TouchableOpacity>
-          <View style={styles.topLabelContainer}>
-            <Text style={styles.topLabel} numberOfLines={1}>
-              {currentChannel ? `RadioTEDU · ${currentChannel.name}` : isLive ? copy('player.live') : copy('player.playing')}
-            </Text>
-            {isSleepActive && sleepRemaining !== null ? (
-              <Text style={styles.sleepBadgeText}>
-                🌙 {Math.floor(sleepRemaining / 60)}:{(sleepRemaining % 60).toString().padStart(2, '0')}
-              </Text>
-            ) : null}
-          </View>
-          <View style={styles.topRightActions}>
-            <TouchableOpacity
-              onPress={() => setSleepMenuVisible(true)}
-              style={styles.topButton}
-              accessibilityLabel="Sleep Timer">
-              <Icon
-                name={isSleepActive ? 'timer-sand' : 'timer-outline'}
-                size={23}
-                color={isSleepActive ? COLORS.primary : COLORS.text}
-              />
-            </TouchableOpacity>
-            {currentChannel ? (
-              <TouchableOpacity
-                onPress={() => setQualityMenuVisible(true)}
-                style={styles.topButton}
-                accessibilityLabel={copy('player.qualityMenu')}>
-                <Icon name="tune-variant" size={23} color={COLORS.text} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
-
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollBody}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          scrollEventThrottle={16}
-          onScroll={event => {
-            scrollOffsetY.current = event.nativeEvent.contentOffset.y;
-          }}>
-          <View style={styles.artWrap}>
+  const artworkCard = (<View style={[styles.artWrap, isLandscape && styles.landscapeArt]}>
             {effectiveArtworkSource ? (
               <Image
                 source={effectiveArtworkSource}
@@ -461,9 +406,9 @@ const PlayerScreen = ({route}: any) => {
                 onError={() => setImageError(true)}
               />
             ) : <View style={[styles.art, styles.artPlaceholder, {width: artSize, height: artSize}]} />}
-          </View>
+          </View>);
 
-          <View style={styles.metaRow}>
+  const trackDetails = (<><View style={styles.metaRow}>
             <TouchableOpacity onPress={() => setSongShareData({
               title: displayTitle,
               artist: displayArtist,
@@ -475,16 +420,16 @@ const PlayerScreen = ({route}: any) => {
               <Icon name="share-variant-outline" size={24} color={COLORS.text} />
             </TouchableOpacity>
             <View style={styles.metaText}>
-              {currentChannel ? (
+              {currentChannel && !isLandscape ? (
                 <View style={styles.stationTag}>
                   <View style={[styles.stationTagDot, {backgroundColor: currentChannel.color || COLORS.primary}]} />
-                  <Text style={[styles.stationTagText, {color: currentChannel.color || COLORS.primary}]}>{currentChannel.name}</Text>
+                  <Text testID="player-station-name" style={[styles.stationTagText, {color: currentChannel.color || COLORS.primary}]}>{currentChannel.name}</Text>
                 </View>
               ) : null}
-              <Text style={styles.title} numberOfLines={2}>
+              <Text testID="player-track-title" style={[styles.title, isLandscape && styles.landscapeTitle]} numberOfLines={2}>
                 {displayTitle}
               </Text>
-              <Text style={styles.artist} numberOfLines={1}>
+              <Text testID="player-track-artist" style={styles.artist} numberOfLines={1}>
                 {displayArtist}
               </Text>
             </View>
@@ -520,13 +465,10 @@ const PlayerScreen = ({route}: any) => {
             </View>
           ) : (
             <View style={styles.spacer} />
-          )}
+          )}</>);
 
-          {!isPodcast &&
-          (isLyricsPanelOpen || ((lyricsLines.length > 0 || isLyricsLoading) && !isCellular)) &&
-          lyricsDismissedTrackKey !== lyricsTrackKey &&
-          !stationOnlyPresentation ? (
-            <View style={styles.lyricsPanel} accessibilityLabel={copy('player.lyrics')}>
+  const lyricsCard = (showLyricsPanel ? (
+            <View testID="player-lyrics-panel" style={[styles.lyricsPanel, isLandscape && styles.landscapeLyrics]} accessibilityLabel={copy('player.lyrics')}>
               <View style={styles.lyricsHeader}>
                 <Text style={styles.lyricsTitle}>{copy('player.lyrics')}</Text>
                 <View style={styles.lyricsHeaderActions}>
@@ -566,7 +508,7 @@ const PlayerScreen = ({route}: any) => {
                 </View>
               ) : lyricsLines.length > 0 ? (
                 <ScrollView
-                  style={styles.lyricsScroller}
+                  style={isLandscape ? styles.landscapeLyricsScroller : styles.lyricsScroller}
                   contentContainerStyle={styles.lyricsContent}
                   nestedScrollEnabled
                   persistentScrollbar
@@ -617,11 +559,84 @@ const PlayerScreen = ({route}: any) => {
                 </Text>
               </TouchableOpacity>
             </View>
-          ) : null}
+          ) : null);
 
-        </ScrollView>
 
-        <View style={styles.controls}>
+  return (
+    <Animated.View
+      style={[styles.container, {transform: [{translateY: dismissY}]}]}
+      {...panResponder.panHandlers}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+      {/* Soft brand tint behind the art */}
+      <View
+        style={[
+          styles.tint,
+          {backgroundColor: currentChannel?.color || COLORS.primary},
+        ]}
+      />
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.topButton}
+            accessibilityLabel={copy('player.close')}>
+            <Icon name="chevron-down" size={30} color={COLORS.text} />
+          </TouchableOpacity>
+          <View style={styles.topLabelContainer}>
+            <Text testID={isLandscape ? 'player-station-name' : undefined} style={styles.topLabel} numberOfLines={1}>
+              {currentChannel ? currentChannel.name : isLive ? copy('player.live') : copy('player.playing')}
+            </Text>
+            {isSleepActive && sleepRemaining !== null ? (
+              <Text style={styles.sleepBadgeText}>
+                🌙 {Math.floor(sleepRemaining / 60)}:{(sleepRemaining % 60).toString().padStart(2, '0')}
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.topRightActions}>
+            <TouchableOpacity
+              onPress={() => setSleepMenuVisible(true)}
+              style={styles.topButton}
+              accessibilityLabel="Sleep Timer">
+              <Icon
+                name={isSleepActive ? 'timer-sand' : 'timer-outline'}
+                size={23}
+                color={isSleepActive ? COLORS.primary : COLORS.text}
+              />
+            </TouchableOpacity>
+            {currentChannel ? (
+              <TouchableOpacity
+                onPress={() => setQualityMenuVisible(true)}
+                style={styles.topButton}
+                accessibilityLabel={copy('player.qualityMenu')}>
+                <Icon name="tune-variant" size={23} color={COLORS.text} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={[styles.playerBody, isLandscape && styles.landscapeBody]}>
+          {isLandscape ? <>
+            {artworkCard}
+            <View style={styles.landscapeDetails}>
+              {trackDetails}
+              {lyricsCard}
+            </View>
+          </> : <>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollBody}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              scrollEventThrottle={16}
+              onScroll={event => {scrollOffsetY.current = event.nativeEvent.contentOffset.y;}}>
+              {artworkCard}
+              {trackDetails}
+            </ScrollView>
+            {lyricsCard}
+          </>}
+        </View>
+
+        <View style={[styles.controls, isLandscape && styles.landscapeControls]}>
           <TouchableOpacity
             onPress={() => currentChannel ? goToOffset(-1) : seekPodcastBy(-15)}
             style={styles.sideButton}
@@ -631,7 +646,7 @@ const PlayerScreen = ({route}: any) => {
 
           <TouchableOpacity
             onPress={togglePlayback}
-            style={styles.playButton}
+            style={[styles.playButton, isLandscape && styles.landscapePlayButton]}
             accessibilityLabel={isPlaying ? copy('player.pause') : copy('player.play')}>
             {isBuffering ? (
               <ActivityIndicator size="large" color="#fff" />
@@ -785,6 +800,15 @@ const styles = StyleSheet.create({
   },
   safe: {flex: 1, paddingHorizontal: SPACING.lg},
   scroll: {flex: 1},
+  playerBody: {flex: 1, minHeight: 0},
+  landscapeBody: {flexDirection: 'row', gap: SPACING.lg},
+  landscapeArt: {alignSelf: 'center', marginVertical: 0},
+  landscapeDetails: {flex: 1, minWidth: 0, minHeight: 0},
+  landscapeTitle: {fontSize: 18, lineHeight: 22},
+  landscapeLyrics: {flex: 1, minHeight: 0, marginTop: SPACING.sm},
+  landscapeLyricsScroller: {flex: 1, minHeight: 0},
+  landscapeControls: {marginTop: SPACING.sm, marginBottom: 4},
+  landscapePlayButton: {width: 56, height: 56, borderRadius: 28},
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -906,6 +930,7 @@ const styles = StyleSheet.create({
   liveBarFill: {width: '100%', height: '100%', backgroundColor: COLORS.primary, opacity: 0.5},
   spacer: {height: SPACING.md},
   lyricsPanel: {
+    flexShrink: 0,
     marginTop: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,

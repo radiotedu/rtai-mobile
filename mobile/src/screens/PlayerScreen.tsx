@@ -404,6 +404,8 @@ const PlayerScreen = ({route}: any) => {
                 source={currentChannel?.logo || RADIO_CHANNELS[0].logo}
                 style={[StyleSheet.absoluteFillObject, styles.artImage, {width: artSize, height: artSize}]}
                 resizeMode="cover"
+                resizeMethod="resize"
+                onError={event => logSafeError('player.stationArtwork', new Error(event.nativeEvent.error))}
               />
             {effectiveArtworkSource ? (
               <Image
@@ -412,9 +414,13 @@ const PlayerScreen = ({route}: any) => {
                   {width: artSize, height: artSize},
                   loadedArtworkSource !== effectiveArtworkSource && styles.artLoading]}
                 resizeMode="cover"
+                resizeMethod="resize"
                 fadeDuration={0}
                 onLoad={() => setLoadedArtworkSource(effectiveArtworkSource)}
-                onError={() => setImageError(true)}
+                onError={event => {
+                  setImageError(true);
+                  logSafeError('player.coverArtwork', new Error(event.nativeEvent.error));
+                }}
               />
             ) : null}
             </View>

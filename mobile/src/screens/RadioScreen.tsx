@@ -274,6 +274,7 @@ const RadioScreen = () => {
               {effectiveArtworkSource ? (
                 <Image
                   source={effectiveArtworkSource}
+                  resizeMethod="resize"
                   style={styles.nowArtwork}
                   onError={() => setImageError(true)}
                 />
@@ -416,7 +417,7 @@ function FavoriteCard({
       style={[styles.favoriteCard, isActive && {borderColor: channel.color}]}
       onPress={onPress}
       activeOpacity={0.82}>
-      <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" />
+      <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" resizeMethod="resize" />
       <Text style={styles.favoriteName} numberOfLines={1}>{channelCopy.name}</Text>
       {channel.streams.flac ? <Text style={styles.stationFlacText}>Hi-Fi</Text> : null}
       {!isStationOnlyChannel(channel) ? <Text style={styles.favoriteDesc} numberOfLines={1}>{channelCopy.description}</Text> : null}
@@ -455,7 +456,7 @@ function ChannelGridCard({
       onPress={onPress}
       activeOpacity={0.84}>
       <View style={styles.cardTopRow}>
-        <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" />
+        <Image source={channel.logo} style={styles.stationLogo} resizeMode="cover" resizeMethod="resize" />
         <TouchableOpacity onPress={onToggleFavorite} hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}>
           <Icon name={isFavorite ? 'heart' : 'heart-outline'} size={19} color={isFavorite ? COLORS.primary : COLORS.textMuted} />
         </TouchableOpacity>

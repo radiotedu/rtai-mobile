@@ -34,9 +34,25 @@ export const fetchAlbumArtwork = async (
   }
 };
 
-// Check if a stream URL is available/reachable
-export const checkStreamAvailability = async (
+const pendingStreamChecks = new Map<string, Promise<boolean>>();
+
+// Phone and car catalogs request the same mounts during startup. Share only
+// in-flight work; a later refresh must still detect stopped or recovered streams.
+export const checkStreamAvailability = (streamUrl: string): Promise<boolean> => {
+  const pending = pendingStreamChecks.get(streamUrl);
+  if (pending) {
+    return pending;
+  }
+  const check = probeStreamAvailability(streamUrl).finally(() => {
+    pendingStreamChecks.delete(streamUrl);
+  });
+  pendingStreamChecks.set(streamUrl, check);
+  return check;
+};
+
+const probeStreamAvailability = async (
   streamUrl: string,
+  attempt = 0,
 ): Promise<boolean> => {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -88,6 +104,11 @@ export const checkStreamAvailability = async (
       clearTimeout(timeoutId);
     }
     logSafeError('stream.availability', error);
+    // Cold-start connection failures are inconclusive. Retry once with a fresh
+    // five-second deadline; HTTP failures and non-audio responses never retry.
+    if (attempt === 0) {
+      return probeStreamAvailability(streamUrl, 1);
+    }
     return false;
   }
 };

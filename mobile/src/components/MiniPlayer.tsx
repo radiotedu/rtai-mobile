@@ -308,6 +308,7 @@ const MiniPlayer = ({activeRouteName}: {activeRouteName?: string}) => {
               <Image
                 source={effectiveArtworkSource}
                 style={styles.artwork}
+                resizeMethod="resize"
                 onError={() => setImageError(true)}
               />
             ) : <View style={styles.placeholderArtwork} />}

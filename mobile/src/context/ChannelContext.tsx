@@ -3,6 +3,8 @@ import React, {
   useState,
   useContext,
   useEffect,
+  useRef,
+  useCallback,
   ReactNode,
 } from 'react';
 import {AppState} from 'react-native';
@@ -32,8 +34,15 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
     useState<RadioChannel[]>(channelsVisibleWithoutLiveCheck());
   const [isChecking, setIsChecking] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
+  const checkingRef = useRef(false);
+  const queuedRefreshRef = useRef(false);
 
-  const checkAllStreams = async () => {
+  const checkAllStreams = useCallback(async function checkAllStreams() {
+    if (checkingRef.current) {
+      queuedRefreshRef.current = true;
+      return;
+    }
+    checkingRef.current = true;
     setIsChecking(true);
     // Minimum load time for UX consistency (optional, can be removed if speed is preferred)
     const minimumLoadTime = new Promise(resolve => setTimeout(resolve, 1500));
@@ -73,10 +82,15 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
       setRuntimeVisibleChannels(fallback);
       setActiveChannels(fallback);
     } finally {
+      checkingRef.current = false;
       setIsChecking(false);
       setHasChecked(true);
+      if (queuedRefreshRef.current) {
+        queuedRefreshRef.current = false;
+        await checkAllStreams();
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkAllStreams();
@@ -86,7 +100,7 @@ export const ChannelProvider: React.FC<{children: ReactNode}> = ({
       }
     });
     return () => subscription.remove();
-  }, []);
+  }, [checkAllStreams]);
 
   return (
     <ChannelContext.Provider

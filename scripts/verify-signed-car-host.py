@@ -185,7 +185,7 @@ try:
             name = '02-catalog-scroll-' + str(attempt - 1)
             capture(name, require_ui=False)
             text = subprocess.check_output(
-                ['tesseract', str(out / (name + '.png')), 'stdout', '--psm', '11'],
+                ['tesseract', str(out / (name + '.png')), 'stdout', '-l', 'fra+eng', '--psm', '11'],
                 text=True, timeout=30)
             (out / (name + '-ocr.txt')).write_text(text, encoding='utf-8')
             seen.update(title for title in expected if normalized_text(title) in normalized_text(text))

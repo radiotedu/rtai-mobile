@@ -23,11 +23,13 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ### Version 1.3.9 candidate
 
-[Latest signed candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34600299328) · [Verification and remaining release gates](docs/RELEASE_1_3_9_27DDB0C_VERIFICATION.md)
+[Verified a99c37e candidate build and artifacts](https://github.com/radiotedu/rtai-mobile/actions/runs/34722591025) · [Verification and remaining release gates](docs/RELEASE_1_3_9_A99C37E_VERIFICATION.md)
+
+The signed `a99c37e` APK passed recorded phone/tablet media and PNG export checks, two normal online Automotive catalog/playback runs, and a guest upgrade from 1.3.7. A later lyric-sharing check found that an open composer changed with the live song. Source `3d87704` fixes that; its [replacement build](https://github.com/radiotedu/rtai-mobile/actions/runs/34744863377) requires binary and device verification. The GitHub release remains draft. Full Android Auto projection and isolated authenticated Gold/account checks remain open.
 
 Redesigned PNG sharing, measured mini-player positioning, Flash Memory using the existing online Gold rules, and a refreshed terminal. Production-signed APK includes Android Auto integration; full projection and Google Play readiness remain unverified. All 12 stream variants passed real audio decoding in the [September 11 service recheck](docs/RELEASE_1_3_9_RECHECK_2026_09_11.md).
 
-[Cloud phone/tablet evidence](docs/RELEASE_1_3_9_CLOUD_DEVICE_QA.md) prompted a compact phone-landscape homepage adjustment. The newer signed `27ddb0c` APK passed recorded phone radio/background/offline checks and native Automotive cold-start playback. Wi-Fi lyrics and album art displayed during the phone run. Authenticated Gold, full car catalog coverage and Android Auto projection remain open.
+[Earlier cloud phone/tablet evidence](docs/RELEASE_1_3_9_CLOUD_DEVICE_QA.md) prompted a compact phone-landscape homepage adjustment. The historical `27ddb0c` captures below show that layout and native Automotive playback. Current verification and remaining limits are in the report above.
 
 <p>
   <img src="docs/images/release-1.3.9/phone-landscape-27ddb0c.png" width="620" alt="Verified compact landscape homepage in the signed 27ddb0c APK">

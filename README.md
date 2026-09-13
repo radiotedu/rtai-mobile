@@ -23,6 +23,8 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ### Version 1.3.9 candidate
 
+[Latest 7df67f8 candidate, verified binary and unresolved device failures](docs/RELEASE_1_3_9_7DF67F8_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
+
 [Current store image candidates and capture provenance](docs/images/release-1.3.9/store/README.md)
 
 <p align="center">

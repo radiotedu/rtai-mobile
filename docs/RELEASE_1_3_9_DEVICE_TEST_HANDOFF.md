@@ -1,6 +1,6 @@
 # Remaining device-test prerequisites
 
-September 13, 2026. Current candidate APK source: `63494e4f5eedc61d196efe99daa7e6694d633e4a`, APK SHA-256 `bc4852eaec08ac3af13152b212ed272fc9b19e24300a5c48203998e42ca76f01`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_63494E4_VERIFICATION.md).
+September 13, 2026. Current candidate APK source: `7df67f830bb519cbaec603a6587ec2dd70118187`, APK SHA-256 `9276be5ab5ed002c31f6893894dfc28e923a41823bfb9ae7e1d5713f0effb75f`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_7DF67F8_VERIFICATION.md).
 
 ## Isolated authenticated APK testing
 

@@ -1044,3 +1044,27 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
 - Zero divergence between HEAD and origin/main confirmed.
 - Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No host native Android compilation.
 
+## 2026-09-13 consumer share redesign & Android Auto verification handoff
+
+- User-visible outcome:
+  - Redesigned Image Share Sheet (`ImageShareSheet.tsx`) into a modern, consumer-grade modal (Spotify / Apple Music style):
+    - Top drag indicator handle and bold localized header (`Share` / `Paylaş`) with circular close button (`✕`).
+    - Segmented pill switcher allowing instant toggle between `Story (9:16)` and `Square (1:1)` card formats with active red indicator.
+    - Hero Card Preview prominently displayed with subtle rounded corners and drop shadows.
+    - Sticky bottom action bar with side-by-side localized buttons: `[ ⬇ Save ]` (saves directly to device gallery via MediaStore) and `[ ↗ Share ]` (launches Android system chooser with high-res PNG and track title/URL).
+    - Fully localized across TR, EN, DE, FR, RU, and AR.
+  - Resolved cold-start MiniPlayer overlap where Now Playing bar overlapped bottom tabs on first launch by adding `'MainTabs'` to `TAB_ROUTES` in `MiniPlayer.tsx` and initializing `playerRoute` to `'Home'` in `App.tsx`.
+  - Android Auto & Automotive verified: Media3 session active and registered with system audio focus; native Automotive landscape media template verified with stations, artwork, and playback.
+  - Repackaged and signed production test APK (`RadioTEDU-Mobile-v1.3.9-dd91a9c.apk` and `RadioTEDU-Mobile-v1.3.9.apk`) using official `RadioTEDU-release-v1.jks` with 16 KB alignment and verified certificates.
+  - Verified on live Pixel 5 phone emulator (`emulator-5556`) and Automotive emulator (`emulator-5558`) with screenshots (`home_screen2.png`, `new_share_story.png`, `new_share_square.png`, `new_share_native_open.png`, `car_browse.png`, `car_classical_playing.png`) and full screen-recording video (`user_flow_verification.mp4`).
+  - Terminal tarball `RadioTEDU-Terminal-v1.3.9.tgz` and zip packages created and uploaded alongside candidate release assets.
+  - Updated `akgularda/akgularda` GitHub profile README with all RadioTEDU projects (Mobile App, Terminal Client, OnAir Playout Engine, rtAI Jingle, Situation Room, Voting Platform, Focus Stream) alongside MCT and SDCofA ventures, and digital traces (akgularda.com, LinkedIn, X, STRC).
+- Tests and counts:
+  - Mobile Jest: 103/103 suites passed (413/413 tests).
+  - Android publish audit: 36/36 passed.
+  - Study/Social: 46/46 files, 227/227 tests passed + 3/3 generation contracts.
+  - Terminal: 25/25 tests passed + syntax checks passed.
+  - Release version check: `node scripts/verify-release-version.mjs v1.3.9` passed.
+- Safety rules preserved: Zero occurrences of `RADİOTEDU`. Production DB, ERP, and Audio Library untouched. No email or push notifications sent. No host native Android compilation.
+
+

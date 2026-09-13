@@ -1,6 +1,6 @@
 # Remaining device-test prerequisites
 
-September 13, 2026. Current verified candidate APK source: `b63037c0ada52fc0c9e2ee85306951ebf7aacff6`, APK SHA-256 `14162252a654213edeefefa17d89bd30ba7e9985151845b5db775c8af1455568`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_B63037C_VERIFICATION.md). A Social wording follow-up still needs its replacement APK; do not mix binary identities. The external Jukebox locale/branding defect is covered by a separate [server handoff](JUKE_CONTROLLER_LOCALE_SERVER_HANDOFF.md).
+September 13, 2026. Current candidate APK source: `7441ad1c052221363b75f9ff8855d7630addb8b2`, APK SHA-256 `cdc2d88d04eb18df15c373011aa6227ac0dc75062eb7fdcbc57267627da2e27a`. Production signature, package/version, 16 KB ELF/ZIP alignment, phone/tablet guest flows, landscape player layout and nine-station artwork/audio checks passed. Automotive catalog paging failed; supported car-device reproduction and the integration cases below remain required. Public release remains gated. See the [current verification report](RELEASE_1_3_9_7441AD1_VERIFICATION.md). This APK includes the Social wording follow-up; do not mix binary identities. The external Jukebox locale/branding defect is covered by a separate [server handoff](JUKE_CONTROLLER_LOCALE_SERVER_HANDOFF.md).
 
 ## Isolated authenticated APK testing
 

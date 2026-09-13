@@ -186,6 +186,7 @@ const PlayerScreen = ({route}: any) => {
     }
     return currentChannel?.logo;
   }, [imageError, currentChannel?.logo, displayArtwork]);
+  const [loadedArtworkSource, setLoadedArtworkSource] = useState<typeof effectiveArtworkSource>();
   const displayTitle = stationOnlyPresentation
     ? currentChannel?.name || 'Lo-Fi'
     : isPodcast
@@ -407,8 +408,12 @@ const PlayerScreen = ({route}: any) => {
             {effectiveArtworkSource ? (
               <Image
                 source={effectiveArtworkSource}
-                style={[StyleSheet.absoluteFillObject, styles.artImage, {width: artSize, height: artSize}]}
+                style={[StyleSheet.absoluteFillObject, styles.artImage,
+                  {width: artSize, height: artSize},
+                  loadedArtworkSource !== effectiveArtworkSource && styles.artLoading]}
                 resizeMode="cover"
+                fadeDuration={0}
+                onLoad={() => setLoadedArtworkSource(effectiveArtworkSource)}
                 onError={() => setImageError(true)}
               />
             ) : null}
@@ -881,6 +886,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'transparent',
   },
+  artLoading: {opacity: 0},
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',

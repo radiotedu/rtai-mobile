@@ -76,6 +76,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Install screenshot text verifier
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}

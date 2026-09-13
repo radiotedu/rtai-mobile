@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import time
+import unicodedata
 import xml.etree.ElementTree as ET
 
 out = Path(sys.argv[2])
@@ -174,15 +175,30 @@ try:
     expected = {'RadioTEDU'} | {'RadioTEDU ' + name for name in
                                ('Classical', 'Jazz', 'Lo-Fi', 'Energize', 'Rock', 'English', 'Français', 'Voting')}
     seen = set()
+    def normalized_text(value):
+        return ' '.join(''.join(c for c in unicodedata.normalize('NFKD', value)
+                               if not unicodedata.combining(c)).casefold().split())
     for attempt in range(8):
-        seen.update(title for title in expected if find(root, title))
+        if attempt == 0:
+            seen.update(title for title in expected if find(root, title))
+        else:
+            name = '02-catalog-scroll-' + str(attempt - 1)
+            capture(name, require_ui=False)
+            text = subprocess.check_output(
+                ['tesseract', str(out / (name + '.png')), 'stdout', '--psm', '11'],
+                text=True, timeout=30)
+            (out / (name + '-ocr.txt')).write_text(text, encoding='utf-8')
+            seen.update(title for title in expected if normalized_text(title) in normalized_text(text))
         if seen == expected:
             break
+        # Repeated UiAutomator connections restart the host RotaryController.
+        # Use the observed fixed paging-button bounds and inspect real pixels
+        # between pages, retaining every capture and OCR result for review.
         swipe(root)
-        root = capture('02-catalog-scroll-' + str(attempt))
     (out / 'catalog-stations.json').write_text(json.dumps(sorted(seen), ensure_ascii=False), encoding='utf-8')
     assert seen == expected, 'Car catalog missing: ' + ', '.join(sorted(expected - seen))
     checks.append('Initialized car catalog contains all nine stations, including Lo-Fi')
+    root = capture('03-catalog-verified')
     if '--offline-catalog' in sys.argv:
         adb('shell', 'svc', 'wifi', 'enable')
         adb('shell', 'svc', 'data', 'enable')

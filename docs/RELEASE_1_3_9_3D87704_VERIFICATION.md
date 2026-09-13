@@ -29,4 +29,6 @@ All four current phone/tablet PNG exports fully decoded at their required Story/
 
 ## Open release gates
 
+Three [store image candidates](images/release-1.3.9/store/README.md) now use current APK captures with proportional scaling and Manrope typography. The cloud phone podcast screenshot caught a launcher transition; its episode UI tree alone was insufficient visual evidence. Store artwork instead uses a fresh, visually checked local capture of loaded episodes. This observation limits screenshot coverage without changing the recorded driver results.
+
 Full Android Auto projection needs a full Auto installation; only the local stub is available. Isolated authenticated registration/session/account/Gold/Memory/Flash/retry and authenticated upgrade verification requires the environment in the [device handoff](RELEASE_1_3_9_DEVICE_TEST_HANDOFF.md). WhatsApp/Instagram receipt, remaining language/device/stress coverage and store listing/declarations remain open. No production balances or stream infrastructure changed; no public release or Google Play submission made.

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>RadioTEDU store preview</title>
+<style>
+@font-face{font-family:Manrope;src:url('../../release-1.3.7/fonts/Manrope.ttf')}
+*{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden}
+body{background:#f6f0e5;color:#151515;font-family:Manrope,Arial,sans-serif}
+header{position:absolute;left:76px;right:76px;top:62px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:34px;font-weight:800;letter-spacing:-1.3px}.category{font-size:18px;letter-spacing:2px;font-weight:700}
+h1{position:absolute;top:142px;left:76px;margin:0;font-size:104px;line-height:1.03;letter-spacing:-5px;font-weight:800;z-index:2}
+h1 em{font-style:normal;color:#db142a}
+.subtitle{position:absolute;top:384px;left:80px;font-size:26px;line-height:1.4;margin:0;color:#57534c}
+.disc{position:absolute;width:850px;height:850px;border-radius:50%;background:#e52335;left:-390px;top:800px}
+.disc:after{content:'';position:absolute;inset:85px;border:2px solid #b81223;border-radius:50%;box-shadow:0 0 0 60px #e52335,0 0 0 62px #b81223,0 0 0 122px #e52335,0 0 0 124px #b81223}
+.screen{position:absolute;left:235px;top:510px;width:610px;padding:8px;background:#151515;border-radius:43px;box-shadow:0 25px 55px #18181825;z-index:2}
+.screen img{display:block;width:594px;height:auto;border-radius:35px}
+footer{position:absolute;bottom:33px;left:76px;right:76px;display:flex;justify-content:space-between;color:#57534c;font-size:18px;letter-spacing:1px}
+body.podcasts .disc{left:640px;top:740px;background:#f0bd4c}body.podcasts .disc:after{display:none}
+body.share{background:#171717;color:#f6f0e5}body.share h1 em{color:#fa6574}body.share .subtitle,body.share footer{color:#bcb7af}
+body.share .screen{top:525px;left:181px;width:718px;padding:8px;border:1px solid #4c4740;border-radius:20px}
+body.share .screen img{width:700px;border-radius:12px}body.share .disc{left:630px;top:830px}
+</style>
+<header><span class="brand">RadioTEDU</span><span class="category" id="category"></span></header>
+<h1 id="headline"></h1><p class="subtitle" id="subtitle"></p><div class="disc"></div>
+<div class="screen"><img id="capture" alt="Actual RadioTEDU app capture"></div>
+<footer><span id="footer-label"></span><span>radiotedu.com</span></footer>
+<script>
+const cards={
+ radio:{category:'LIVE RADIO',headline:'Find your<br><em>frequency.</em>',subtitle:'From Lo-Fi to jazz. Your campus, your sound.',image:'raw/home.png',footer:'TUNE IN. STAY A WHILE.'},
+ podcasts:{category:'PODCASTS',headline:'Good voices.<br><em>Great company.</em>',subtitle:'Campus conversations worth making time for.',image:'raw/podcasts-loaded.png',footer:'LISTEN TO SOMETHING NEW.'},
+ share:{category:'SHARE YOUR SOUND',headline:'Your song.<br><em>Your story.</em>',subtitle:'Turn what you’re playing into a shareable image.',image:'raw/share-story.png',footer:'A MOMENT WORTH SHARING.'}
+};
+const key=new URLSearchParams(location.search).get('card')||'radio';const card=cards[key]||cards.radio;
+document.body.className=key;document.querySelector('#category').textContent=card.category;
+document.querySelector('#headline').innerHTML=card.headline;document.querySelector('#subtitle').textContent=card.subtitle;
+document.querySelector('#capture').src=card.image;document.querySelector('#footer-label').textContent=card.footer;
+</script></html>

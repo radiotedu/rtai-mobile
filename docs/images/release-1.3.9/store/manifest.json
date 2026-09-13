@@ -1,0 +1,38 @@
+[
+  {
+    "file": "podcasts.png",
+    "width": 1080,
+    "height": 1920,
+    "sha256": "959d6ce6323178975c51e6d6ee807f2a98ea8a876df30af5bb10c879fb8b1c3b"
+  },
+  {
+    "file": "radio.png",
+    "width": 1080,
+    "height": 1920,
+    "sha256": "08b45709fc867c53c7a3fb2e81eec3f65cfe6897149b11adcf0047e4b07a82f1"
+  },
+  {
+    "file": "raw/home.png",
+    "width": 1080,
+    "height": 2400,
+    "sha256": "a9d80c20fa7077f84d0aced5f4840698d7d23b9928154e82c13546a7d4b271c9"
+  },
+  {
+    "file": "raw/podcasts-loaded.png",
+    "width": 1080,
+    "height": 2340,
+    "sha256": "3adca1d7579d4f58c1a56f145f07e80b847aed53ad5f0c851d65bc6d9564c442"
+  },
+  {
+    "file": "raw/share-story.png",
+    "width": 1080,
+    "height": 1920,
+    "sha256": "b0baab3cf1218359a949e6945b23cdba20ab11cb626b09e01de2cb439ad51238"
+  },
+  {
+    "file": "share.png",
+    "width": 1080,
+    "height": 1920,
+    "sha256": "853b5b5c9a38cc13733fe4cade16f4af225d3dad6c78723c5c5f0139767d905f"
+  }
+]

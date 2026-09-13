@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
 import time
@@ -28,6 +29,11 @@ def capture(name, require_ui=True):
     png = adb('exec-out', 'screencap', '-p', '-d', ids[0], binary=True)
     assert png.startswith(b'\x89PNG\r\n\x1a\n'), 'Screen capture is not a clean PNG'
     (out / (name + '.png')).write_bytes(png)
+    width, height = struct.unpack('>II', png[16:24])
+    (out / (name + '-dimensions.json')).write_text(
+        json.dumps({'width': width, 'height': height}), encoding='utf-8')
+    assert width >= 800 and height >= 480 and width > height, (
+        f'Expected Automotive landscape hardware profile, got {width}x{height}')
     if not require_ui:
         return None
     for attempt in range(4):

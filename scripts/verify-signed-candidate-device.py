@@ -224,7 +224,17 @@ try:
         adb('shell', 'input', 'keyevent', '127')
         audio_state('radio-final-paused', 'PAUSED')
         root = snapshot('before-image-share')
-        tap(find(root, 'Share'))
+        # Live lyrics can disappear during a station jingle, moving the player
+        # controls between the dump and tap. Retry only from a fresh tree and
+        # require the actual PNG composer before proceeding.
+        for attempt in range(3):
+            button = next((n for n in root.iter('node')
+                           if n.get('content-desc') == 'Share' and usable(n)), None)
+            tap(button)
+            root = snapshot('image-share-open-' + str(attempt))
+            if find(root, 'Save PNG') is not None:
+                break
+        assert find(root, 'Save PNG') is not None, 'PNG composer did not open after fresh-coordinate retries'
         save_share_png('story')
         root = snapshot('before-square-share')
         tap(find(root, 'Square'))

@@ -195,17 +195,16 @@ const PodcastScreen = () => {
       onPress={() => handlePodcastPress(item)}
       activeOpacity={0.7}
       disabled={playingId === item.id}>
-      {item.imageUrl ? (
-        <Image
-          source={{uri: item.imageUrl}}
-          style={styles.podcastCover}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.podcastIcon}>
-          <Icon name="microphone-variant" size={24} color={COLORS.primary} />
-        </View>
-      )}
+      <View style={styles.podcastIcon}>
+        <Icon name="microphone-variant" size={24} color={COLORS.primary} />
+        {item.imageUrl ? (
+          <Image
+            source={{uri: item.imageUrl}}
+            style={styles.podcastCover}
+            resizeMode="cover"
+          />
+        ) : null}
+      </View>
       <View style={styles.podcastInfo}>
         <Text style={styles.podcastTitle} numberOfLines={2}>
           {item.title}
@@ -290,20 +289,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   podcastIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    overflow: 'hidden',
     backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
   },
   podcastCover: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    backgroundColor: COLORS.background,
-    marginRight: SPACING.md,
+    ...StyleSheet.absoluteFillObject,
   },
   podcastInfo: { flex: 1, marginRight: SPACING.sm },
   podcastTitle: {

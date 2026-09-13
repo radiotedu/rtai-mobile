@@ -67,7 +67,28 @@ def home(root):
     assert find(root, 'Choose your station') is not None, 'Station section missing'
 
 
-def orient_screen(landscape):
+def transport_controls(root):
+    density_output = adb('shell', 'wm', 'density')
+    densities = re.findall(r'(?:Physical|Override) density: (\d+)', density_output)
+    assert densities, 'Device display density unavailable'
+    minimum = 48 * int(densities[-1]) / 160
+    for title in ('Previous', 'Pause', 'Next'):
+        matches = []
+        def visit(node, scrolling=False):
+            scrolling = scrolling or node.get('scrollable') == 'true'
+            if node.get('content-desc') == title and node.get('clickable') == 'true':
+                matches.append((node, scrolling))
+            for child in node:
+                visit(child, scrolling)
+        visit(root)
+        assert len(matches) == 1, title + ': expected one transport control'
+        node, scrolling = matches[0]
+        assert not scrolling, title + ': transport remains inside scrolling content'
+        x1, y1, x2, y2 = map(int, re.findall(r'-?\d+', node.get('bounds', '')))
+        assert x2-x1 >= minimum and y2-y1 >= minimum, title + ': touch target clipped or below 48dp'
+
+
+def orient_screen(landscape, validator=home, prefix=''):
     # Tablets may have a landscape natural orientation. Rotation=1 alone
     # therefore does not prove a landscape viewport.
     adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0')
@@ -78,11 +99,11 @@ def orient_screen(landscape):
         assert png[:8] == b'\x89PNG\r\n\x1a\n', 'Invalid orientation screenshot'
         width, height = struct.unpack('>II', png[16:24])
         if width != height and (width > height) == landscape:
-            name = 'landscape' if landscape else 'portrait'
+            name = prefix + ('landscape' if landscape else 'portrait')
             (output / (name + '-dimensions.json')).write_text(
                 json.dumps({'width': width, 'height': height, 'rotation': rotation}), encoding='utf-8')
             root = snapshot(name + '-verified')
-            home(root)
+            validator(root)
             return
     raise AssertionError('Device did not enter requested orientation')
 
@@ -90,6 +111,19 @@ def orient_screen(landscape):
 def start():
     adb('shell', 'am', 'start', '-W', '-n', PACKAGE + '/.MainActivity')
     time.sleep(12)
+
+
+def configure_player_font(scale):
+    # Android can recreate the activity when the system font changes.
+    # Reopen the player from the resulting Home screen before inspecting it.
+    adb('shell', 'settings', 'put', 'system', 'font_scale', str(scale))
+    start()
+    root = snapshot('font-configured-' + str(scale))
+    button = find(root, 'Listen live')
+    if button is not None:
+        tap(button)
+    audio_state('font-' + str(scale) + '-playing')
+    transport_controls(snapshot('font-' + str(scale) + '-controls'))
 
 
 def audio_state(label, expected='PLAYING', timeout=60):
@@ -212,7 +246,7 @@ try:
     if '--media' in sys.argv:
         stop_recording(recording, recording_name)
         recording = None
-        recording_name = 'radio-background-offline'
+        recording_name = 'player-layout-playback'
         recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
                                       '--size', '540x960', '/sdcard/' + recording_name + '.mp4'])
         adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
@@ -221,7 +255,17 @@ try:
         root = snapshot('before-radio')
         tap(find(root, 'Listen live'))
         audio_state('radio-playing')
-        snapshot('radio-player-artwork-lyrics')
+        transport_controls(snapshot('radio-player-artwork-lyrics'))
+        configure_player_font(1.3)
+        orient_screen(True, transport_controls, 'player-')
+        orient_screen(False, transport_controls, 'player-')
+        configure_player_font(1.0)
+        checks.append('Transport controls stay outside scrolling content with at least 48dp touch targets at large font size in both actual orientations')
+        stop_recording(recording, recording_name)
+        recording = None
+        recording_name = 'radio-background-offline'
+        recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
+                                      '--size', '540x960', '/sdcard/' + recording_name + '.mp4'])
         adb('shell', 'input', 'keyevent', '3')
         time.sleep(5)
         audio_state('background-playing')

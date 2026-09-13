@@ -18,6 +18,8 @@ Provide a USB-debugging Android device with full Android Auto installed, or a su
 
 Native Android Automotive catalog and Lo-Fi playback evidence is available, but it does not prove Android Auto projection. Projection must be tested separately with the actual signed APK, including browsing, transport controls, playback/background transitions and reconnect behavior.
 
+Fresh Play Store recheck on September 13 at emulator time 11:32: Google's Android Auto listing explicitly says the app is no longer compatible with this device and offers no installation/update action. Screenshot retained at `output/auto-store-recheck-20260913-1132.png`. The installed package is still the stub. Full projection therefore still needs a supported device/setup; this is now a current observation, not just the historical store result above.
+
 For WhatsApp/Instagram image compatibility, a test device with those recipient apps is needed. Neither package is installed on the connected emulator in the September 13 recheck. Verify the generated PNG reaches their composer with correct artwork, text and proportions; do not send a message or publish a post without explicit authorization for its recipient/destination.
 
 ## Evidence boundaries

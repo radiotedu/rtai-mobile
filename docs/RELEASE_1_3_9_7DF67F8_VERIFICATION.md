@@ -9,7 +9,7 @@ Not release-ready. Source `7df67f830bb519cbaec603a6587ec2dd70118187`; fixes nati
 - APK SHA-256 `9276be5ab5ed002c31f6893894dfc28e923a41823bfb9ae7e1d5713f0effb75f`.
 - AAB SHA-256 `58c274afa77a7d9b1e7ada2c82f4b0b6ea3e0015a9bdd0cddc5ee996d4516c0b`.
 - Actual APK signature, identity, all 26 64-bit ELF libraries and APK ZIP alignment passed. AAB ELF checks also passed.
-- [Signed build](https://github.com/radiotedu/rtai-mobile/actions/runs/34751673739) passed. [CI Android verification](https://github.com/radiotedu/rtai-mobile/actions/runs/34751841133) passed on the same app code with test-driver changes; iOS job remains pending completion review. No local native build was performed.
+- [Signed build](https://github.com/radiotedu/rtai-mobile/actions/runs/34751673739) passed. [CI Android verification](https://github.com/radiotedu/rtai-mobile/actions/runs/34751841133) passed on the same app code with test-driver changes; iOS simulator compilation also passed. No local native build was performed.
 - Upgrade from 63494e4 succeeded without uninstall. A real broadcast jingle was observed while playback was paused: mini-player title `RadioTEDU Jingle` and RadioTEDU station artwork both visually confirmed. This checks metadata presentation, not jingle audio. Evidence: `output/device-7df67f8/`.
 
 ## Device results and unresolved failures
@@ -23,3 +23,9 @@ Same-APK diagnostic reruns: [Automotive 34752633441](https://github.com/radioted
 ## Remaining release gates
 
 Full Android Auto projection still requires a full Auto installation/device. Isolated registration, authentication/session, Gold consistency, earning/spending/duplicates and authenticated upgrade tests need the [backend test handoff](RELEASE_1_3_9_DEVICE_TEST_HANDOFF.md). Recipient-app sharing, remaining language/stress/device coverage and final store declarations remain open. The draft is not approval to publish or submit to Google Play.
+
+## Diagnostic rerun review
+
+Run 34752634500 passed on phone and tablet. All four exports fully decoded at 1080×1920 / 1080×1080. Both device orientations were verified from actual dimensions: phone 2400×1080 and 1080×2400; tablet 2560×1800 and 1800×2560. Landscape captures were visually reviewed. This rerun does not explain or erase the preceding phone playback error.
+
+Car run 34752633441 reproduced the Paging/Voting failure. Its system log shows RotaryController being destroyed and recreated after repeated UiAutomator captures, implicating the observation method; catalog-change causation is unproven. Run 34752977874 now uses screenshot/OCR observations between page-button taps while still requiring all nine station labels. Original failures remain preserved. This diagnostic run is pending.

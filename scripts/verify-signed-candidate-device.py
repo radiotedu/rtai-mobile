@@ -65,6 +65,13 @@ def tap(node):
 def home(root):
     assert find(root, 'Your campus.') is not None, 'Home hero missing'
     assert find(root, 'Choose your station') is not None, 'Station section missing'
+    profiles = [n for n in root.iter('node') if n.get('content-desc') == 'Profile' and n.get('clickable') == 'true']
+    assert len(profiles) == 1, 'English Home must expose one translated Profile button'
+    density = re.findall(r'(?:Physical|Override) density: (\d+)', adb('shell', 'wm', 'density'))
+    assert density, 'Display density unavailable'
+    minimum = 48 * int(density[-1]) / 160
+    left, top, right, bottom = map(int, re.findall(r'-?\d+', profiles[0].get('bounds', '')))
+    assert right - left >= minimum and bottom - top >= minimum, 'Profile target smaller than 48dp'
 
 
 def transport_controls(root):

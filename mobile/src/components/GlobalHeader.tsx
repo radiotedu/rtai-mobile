@@ -8,10 +8,13 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
+import {appCopy} from '../i18n/appCopy';
 import { SPACING } from '../theme/theme';
 
 const GlobalHeader = () => {
   const navigation = useNavigation<any>();
+  const {i18n} = useTranslation();
   const {width, height} = useWindowDimensions();
   const compact = width > height && height < 500;
 
@@ -31,7 +34,7 @@ const GlobalHeader = () => {
         onPress={handleProfilePress}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel="Profil"
+        accessibilityLabel={appCopy(i18n.language, 'profile.title')}
         style={styles.profileButton}>
         <Icon name="account-circle" size={28} color="#fff" />
       </TouchableOpacity>
@@ -60,7 +63,8 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     flex: 1,
-    minWidth: 28,
+    minWidth: 48,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',

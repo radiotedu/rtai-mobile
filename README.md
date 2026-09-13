@@ -23,9 +23,9 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 ### Version 1.3.9 candidate
 
-[Latest e32e04c candidate, verified binary and remaining device checks](docs/RELEASE_1_3_9_E32E04C_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
+[Latest c9ef48b candidate, verified binary and remaining device checks](docs/RELEASE_1_3_9_C9EF48B_VERIFICATION.md). Public release remains gated. The build links and summaries below describe earlier candidates.
 
-[Player layout correction after visual review](docs/RELEASE_1_3_9_PLAYER_LAYOUT_CORRECTION.md): c9ef48b addresses clipped lyrics and hidden landscape metadata; its signed APK/device verification is pending.
+[Player layout correction after visual review](docs/RELEASE_1_3_9_PLAYER_LAYOUT_CORRECTION.md): signed c9ef48b passed phone/tablet metadata and lyrics layout checks. A profile accessibility follow-up is awaiting a replacement build.
 
 [Current store image candidates and capture provenance](docs/images/release-1.3.9/store/README.md)
 

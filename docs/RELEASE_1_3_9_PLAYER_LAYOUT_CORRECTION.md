@@ -29,3 +29,5 @@ Build [34755606689](https://github.com/radiotedu/rtai-mobile/actions/runs/347556
 ![Portrait with complete lyrics card at 130% text size](images/release-1.3.9/player-c9ef48b/portrait-large-text.png)
 
 [Local device assertions](images/release-1.3.9/player-c9ef48b/result.json). Cloud phone/tablet/Automotive checks and exact-source iOS CI are pending at this checkpoint. Full Android Auto projection and isolated authenticated Gold checks remain unresolved; this is not a release-ready declaration.
+
+Later checkpoint: cloud phone/tablet run 34756444772 and Automotive run 34756446458 passed against this exact APK. CI 34755596304 passed Android verification and iOS simulator compilation. See the [consolidated c9 report](RELEASE_1_3_9_C9EF48B_VERIFICATION.md) for evidence boundaries and the subsequent profile accessibility finding.

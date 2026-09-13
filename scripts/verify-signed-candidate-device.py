@@ -67,6 +67,26 @@ def home(root):
     assert find(root, 'Choose your station') is not None, 'Station section missing'
 
 
+def orient_screen(landscape):
+    # Tablets may have a landscape natural orientation. Rotation=1 alone
+    # therefore does not prove a landscape viewport.
+    adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0')
+    for rotation in (0, 1):
+        adb('shell', 'settings', 'put', 'system', 'user_rotation', str(rotation))
+        time.sleep(5)
+        png = adb('exec-out', 'screencap', '-p', binary=True)
+        assert png[:8] == b'\x89PNG\r\n\x1a\n', 'Invalid orientation screenshot'
+        width, height = struct.unpack('>II', png[16:24])
+        if width != height and (width > height) == landscape:
+            name = 'landscape' if landscape else 'portrait'
+            (output / (name + '-dimensions.json')).write_text(
+                json.dumps({'width': width, 'height': height, 'rotation': rotation}), encoding='utf-8')
+            root = snapshot(name + '-verified')
+            home(root)
+            return
+    raise AssertionError('Device did not enter requested orientation')
+
+
 def start():
     adb('shell', 'am', 'start', '-W', '-n', PACKAGE + '/.MainActivity')
     time.sleep(12)
@@ -187,11 +207,8 @@ try:
     root = snapshot('large-font')
     home(root)
     checks.append('Home content present at 1.3 font scale; screenshot requires review')
-    adb('shell', 'settings', 'put', 'system', 'accelerometer_rotation', '0')
-    adb('shell', 'settings', 'put', 'system', 'user_rotation', '1')
-    time.sleep(5)
-    snapshot('landscape-requested')
-    checks.append('Captured rotation request; actual orientation requires review')
+    orient_screen(True)
+    checks.append('Landscape dimensions verified with home content present; layout needs visual review')
     if '--media' in sys.argv:
         stop_recording(recording, recording_name)
         recording = None
@@ -199,7 +216,7 @@ try:
         recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '180',
                                       '--size', '540x960', '/sdcard/' + recording_name + '.mp4'])
         adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
-        adb('shell', 'settings', 'put', 'system', 'user_rotation', '0')
+        orient_screen(False)
         start()
         root = snapshot('before-radio')
         tap(find(root, 'Listen live'))

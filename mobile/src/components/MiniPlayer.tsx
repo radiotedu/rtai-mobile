@@ -78,7 +78,7 @@ export function shouldHideMiniPlayerForRoute(activeRouteName?: string): boolean 
   return HIDDEN_MINIPLAYER_ROUTES.has(activeRouteName);
 }
 
-const TAB_ROUTES = new Set(['Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);
+const TAB_ROUTES = new Set(['MainTabs', 'Home', 'Radio', 'Podcasts', 'Jukebox', 'Study']);
 
 const MiniPlayer = ({activeRouteName}: {activeRouteName?: string}) => {
   const playbackState = usePlaybackState();

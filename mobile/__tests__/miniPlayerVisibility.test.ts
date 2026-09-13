@@ -77,5 +77,6 @@ describe('MiniPlayer route visibility', () => {
   it('uses the first route while navigation state is still initializing', () => {
     expect(getDeepestActiveRouteName({routes: [{name: 'MainTabs'}]})).toBe('MainTabs');
     expect(getDeepestActiveRouteName(undefined)).toBeUndefined();
+    expect(shouldHideMiniPlayerForRoute('MainTabs')).toBe(false);
   });
 });

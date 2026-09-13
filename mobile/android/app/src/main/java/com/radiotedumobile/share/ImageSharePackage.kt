@@ -77,14 +77,19 @@ class ImageShareModule(private val context: ReactApplicationContext) : ReactCont
                     return@addUIBlock
                 }
                 val uri = FileProvider.getUriForFile(context, "${context.packageName}.sharecards", file)
+                val shareText = if (title.isNotBlank()) "$title - RadioTEDU\nhttps://radiotedu.com" else "RadioTEDU\nhttps://radiotedu.com"
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/png"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     putExtra(Intent.EXTRA_TITLE, title.take(200))
+                    putExtra(Intent.EXTRA_TEXT, shareText)
                     clipData = ClipData.newRawUri("RadioTEDU PNG", uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                activity.startActivity(Intent.createChooser(intent, title.take(200)))
+                val chooser = Intent.createChooser(intent, title.take(200)).apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                activity.startActivity(chooser)
                 promise.resolve(uri.toString())
             } catch (error: Exception) {
                 promise.reject("E_CAPTURE", error.message, error)

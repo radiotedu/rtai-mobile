@@ -237,7 +237,7 @@ function ConsentGate({
 }): React.JSX.Element | null {
   const { consent, ready } = useConsent();
   const routeNameRef = React.useRef<string | undefined>();
-  const [playerRoute, setPlayerRoute] = React.useState<string | undefined>();
+  const [playerRoute, setPlayerRoute] = React.useState<string | undefined>('Home');
 
   useEffect(() => {
     if (!consent.decided) {

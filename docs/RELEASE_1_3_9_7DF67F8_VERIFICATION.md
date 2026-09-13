@@ -18,7 +18,7 @@ Not release-ready. Source `7df67f830bb519cbaec603a6587ec2dd70118187`; fixes nati
 
 [Automotive run 34752246845](https://github.com/radiotedu/rtai-mobile/actions/runs/34752246845) failed catalog traversal before podcast testing. Eight station labels were observed; the list repeatedly returned toward the top before reaching Voting. This does not prove Voting is absent and does not validate the podcast-title fix. Catalog refresh/paging behavior needs further investigation.
 
-Same-APK diagnostic reruns: [Automotive 34752633441](https://github.com/radiotedu/rtai-mobile/actions/runs/34752633441), [phone/tablet 34752634500](https://github.com/radiotedu/rtai-mobile/actions/runs/34752634500). Assertions remain unchanged; bounded system logs were added to distinguish app/service errors from host/test failures. Results are pending review.
+Same-APK diagnostic reruns: [Automotive 34752633441](https://github.com/radiotedu/rtai-mobile/actions/runs/34752633441), [phone/tablet 34752634500](https://github.com/radiotedu/rtai-mobile/actions/runs/34752634500). Assertions remain unchanged; bounded system logs were added to distinguish app/service errors from host/test failures. Reviewed results follow below.
 
 ## Remaining release gates
 
@@ -30,4 +30,12 @@ Run 34752634500 passed on phone and tablet. All four exports fully decoded at 10
 
 Car run 34752633441 reproduced the Paging/Voting failure. Its system log shows RotaryController being destroyed and recreated after repeated UiAutomator captures, implicating the observation method; catalog-change causation is unproven.
 
-Run 34752977874 used screenshot/OCR observations between page-button taps. It reached Voting but failed to recognize Français. Visual inspection of `02-catalog-scroll-5.png` confirms both station labels are present; the retained English OCR output reads `RadioTEDU Frangais`. This is an observed OCR error, not evidence of a missing station. Test commit `3cd5eff` adds French OCR language data without removing the nine-station assertion. Same-APK rerun [34753442185](https://github.com/radiotedu/rtai-mobile/actions/runs/34753442185) is in progress. Original failures remain preserved.
+Run 34752977874 used screenshot/OCR observations between page-button taps. It reached Voting but failed to recognize Français. Visual inspection of `02-catalog-scroll-5.png` confirms both station labels are present; the retained English OCR output reads `RadioTEDU Frangais`. This is an observed OCR error, not evidence of a missing station. Test commit `3cd5eff` adds French OCR language data without removing the nine-station assertion. Original failures remain preserved.
+
+## Reviewed Automotive pass
+
+Same-APK run [34753442185](https://github.com/radiotedu/rtai-mobile/actions/runs/34753442185) passed all nine station labels, Lo-Fi rendered audio, radio touch pause/resume, podcast series/episode browsing, and podcast media-key pause/touch resume. Identity output confirms source `7df67f8`, version/code and production certificate above. Actual playing/resumed screenshots show `BPW Talks #2 – Kariyer Yolculuğu ve Girişimcilik`, its publisher and cover, rather than the previously incorrect broadcast title. Native session metadata agrees; the resumed screenshot shows 0:03 / 15:57. This verifies a short episode-start regression, not full-episode playback.
+
+Catalog and controls recording contact sheets were visually reviewed. All three original screen recordings decoded completely with normalized output timing; direct null-muxer validation emitted duplicate-DTS warnings for variable-rate screenrecord timestamps. Originals remain unchanged. Sampled visual review is not frame-by-frame review, and these screen recordings do not establish physical speaker output.
+
+Evidence directory: `output/cloud-car-34753442185/signed-candidate-automotive-34753442185/`. This Automotive pass does not validate Android Auto projection, authenticated flows, Gold or complete car lifecycle/stress coverage. The prior intermittent phone playback ERROR remains unexplained despite the passing phone/tablet rerun.

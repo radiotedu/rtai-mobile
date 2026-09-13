@@ -12,6 +12,7 @@ import {
 } from '../src/services/playbackQueue';
 import {RADIO_CHANNELS} from '../src/data/radioChannels';
 import {resetStreamPreferencesCacheForTests} from '../src/services/streamPreferences';
+import {markPlaybackPaused, markPlaybackRequested} from '../src/services/playbackIntent';
 
 jest.mock('react-native', () => ({
   Alert: {alert: jest.fn()},
@@ -36,6 +37,7 @@ jest.mock('react-native-track-player', () => ({
     skip: jest.fn(async () => undefined),
     load: jest.fn(async () => undefined),
     play: jest.fn(async () => undefined),
+    pause: jest.fn(async () => undefined),
   },
 }));
 
@@ -139,5 +141,25 @@ describe('FLAC cellular playback protection', () => {
     await expect(fallbackActiveChannelStream()).resolves.toBe(false);
     expect(TrackPlayer.skip).not.toHaveBeenCalled();
     expect(TrackPlayer.load).not.toHaveBeenCalled();
+  });
+
+  it.each(['queue', 'load'])('does not restart after the user pauses during fallback %s', async phase => {
+    const channel = RADIO_CHANNELS.find(item => item.id === 'radiotedu-main')!;
+    let active = buildChannelTrack(channel, 'normal');
+    markPlaybackRequested();
+    (TrackPlayer.getActiveTrack as any).mockImplementation(async () => active);
+    (TrackPlayer.getQueue as any).mockImplementation(async () => {
+      if (phase === 'queue') {markPlaybackPaused();}
+      return [active];
+    });
+    (TrackPlayer.load as any).mockImplementation(async (track: typeof active) => {
+      active = track;
+      if (phase === 'load') {markPlaybackPaused();}
+    });
+
+    await expect(fallbackActiveChannelStream()).resolves.toBe(false);
+    expect(TrackPlayer.play).not.toHaveBeenCalled();
+    if (phase === 'queue') {expect(TrackPlayer.load).not.toHaveBeenCalled();}
+    if (phase === 'load') {expect(TrackPlayer.pause).toHaveBeenCalled();}
   });
 });

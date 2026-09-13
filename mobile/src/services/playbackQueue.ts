@@ -565,7 +565,9 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
 
   const queue = await TrackPlayer.getQueue();
   const queueIndex = queue.findIndex(item => item.id === channelId);
-  if (queueIndex === -1) {
+  const current = await TrackPlayer.getActiveTrack();
+  if (queueIndex === -1 || !shouldAutoRecoverPlayback() ||
+      current?.id !== track?.id || current?.url !== track?.url) {
     return false;
   }
 
@@ -573,6 +575,10 @@ export async function fallbackActiveChannelStream(): Promise<boolean> {
     `[playbackQueue] Fallback for ${channelId}: switching to ${next.quality} (${next.url})`,
   );
   await TrackPlayer.load(channelTrackFromStream(channel, next));
+  if (!shouldAutoRecoverPlayback()) {
+    await TrackPlayer.pause();
+    return false;
+  }
   await TrackPlayer.play();
   startConnectionWatchdog(channel, next.quality);
   return true;

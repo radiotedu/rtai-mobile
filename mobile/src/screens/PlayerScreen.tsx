@@ -444,6 +444,7 @@ const PlayerScreen = ({route}: any) => {
         </View>
 
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={styles.scrollBody}
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -618,38 +619,39 @@ const PlayerScreen = ({route}: any) => {
             </View>
           ) : null}
 
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onPress={() => currentChannel ? goToOffset(-1) : seekPodcastBy(-15)}
-              style={styles.sideButton}
-              accessibilityLabel={currentChannel ? copy('player.previous') : copy('player.rewind15')}>
-              <Icon name={currentChannel ? 'skip-previous' : 'rewind-15'} size={40} color={COLORS.text} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={togglePlayback}
-              style={styles.playButton}
-              accessibilityLabel={isPlaying ? copy('player.pause') : copy('player.play')}>
-              {isBuffering ? (
-                <ActivityIndicator size="large" color="#fff" />
-              ) : (
-                <Icon
-                  name={isPlaying ? 'pause' : 'play'}
-                  size={40}
-                  color="#fff"
-                  style={!isPlaying ? styles.playIcon : undefined}
-                />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => currentChannel ? goToOffset(1) : seekPodcastBy(30)}
-              style={styles.sideButton}
-              accessibilityLabel={currentChannel ? copy('player.next') : copy('player.forward30')}>
-              <Icon name={currentChannel ? 'skip-next' : 'fast-forward-30'} size={40} color={COLORS.text} />
-            </TouchableOpacity>
-          </View>
         </ScrollView>
+
+        <View style={styles.controls}>
+          <TouchableOpacity
+            onPress={() => currentChannel ? goToOffset(-1) : seekPodcastBy(-15)}
+            style={styles.sideButton}
+            accessibilityLabel={currentChannel ? copy('player.previous') : copy('player.rewind15')}>
+            <Icon name={currentChannel ? 'skip-previous' : 'rewind-15'} size={40} color={COLORS.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={togglePlayback}
+            style={styles.playButton}
+            accessibilityLabel={isPlaying ? copy('player.pause') : copy('player.play')}>
+            {isBuffering ? (
+              <ActivityIndicator size="large" color="#fff" />
+            ) : (
+              <Icon
+                name={isPlaying ? 'pause' : 'play'}
+                size={40}
+                color="#fff"
+                style={!isPlaying ? styles.playIcon : undefined}
+              />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => currentChannel ? goToOffset(1) : seekPodcastBy(30)}
+            style={styles.sideButton}
+            accessibilityLabel={currentChannel ? copy('player.next') : copy('player.forward30')}>
+            <Icon name={currentChannel ? 'skip-next' : 'fast-forward-30'} size={40} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
 
       <Modal
@@ -782,6 +784,7 @@ const styles = StyleSheet.create({
     opacity: 0.18,
   },
   safe: {flex: 1, paddingHorizontal: SPACING.lg},
+  scroll: {flex: 1},
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1048,6 +1051,7 @@ const styles = StyleSheet.create({
   menuOptionGold: {color: '#FFD700'},
   menuOptionDescription: {color: COLORS.textMuted, fontSize: 12, marginTop: 3},
   controls: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

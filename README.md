@@ -29,6 +29,11 @@ separated: Study opens `radiotedu.com/study`, voting opens
 
 [Current store image candidates and capture provenance](docs/images/release-1.3.9/store/README.md)
 
+<details>
+<summary>Desktop website preview — actual browser capture</summary>
+<img src="docs/images/release-1.3.9/store/desktop.png" width="720" alt="RadioTEDU desktop website preview with original screenshot proportions">
+</details>
+
 <p align="center">
   <img src="docs/images/release-1.3.9/store/radio.png" width="230" alt="Radio preview with actual app screenshot">
   <img src="docs/images/release-1.3.9/store/podcasts.png" width="230" alt="Podcast preview with actual app screenshot">

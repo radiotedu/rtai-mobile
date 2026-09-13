@@ -46,5 +46,17 @@
     "width": 2560,
     "height": 1800,
     "sha256": "a4f56ae97dd1b7b44a2ead8307900c54007c455d22c73ba044509b4b5c94905e"
+  },
+  {
+    "file": "desktop.png",
+    "width": 2560,
+    "height": 1800,
+    "sha256": "cb1f771e3fc7a97cf67369410bc6fdf3c8dbc1b09f8a40a6d1f17d2b3ad619d1"
+  },
+  {
+    "file": "raw/website-home-20260913.png",
+    "width": 1440,
+    "height": 1000,
+    "sha256": "8840e8c57dff202538ca347d4a3b93e39b165e6a059b87c0984a914b3f6dc201"
   }
 ]

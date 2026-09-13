@@ -28,6 +28,8 @@ The preserved local AndroidAuto-Play emulator accepted an in-place upgrade from 
 
 ## Remaining gates
 
+Later Wi-Fi lyric testing exposed a current-candidate defect: while the lyric composer remains open, incoming song metadata replaces its lyrics, title and artwork. Story (1080×1920) and Square (1080×1080) exports both saved and decoded, and Wi-Fi lyrics loaded automatically, but the open selection did not remain fixed. Source now captures one song per composer session; a regression test verifies stability during metadata updates and fresh data after closing/reopening. The attached `a99c37e` APK does not contain this later fix and must not be finalized. A new build/device check is required. Local evidence is in `output/a99-local-upgrade/lyrics-*`; the 118.8-second recording and lyric text remain local. Intermittent null UI-dump results occurred on this emulator and were not counted as a clean stress pass.
+
 Full Android Auto projection requires a full Auto installation; only the stub is available locally. Isolated authenticated registration/session/account/Gold/Memory/Flash/retry and authenticated upgrade tests still require the environment described in the [device handoff](RELEASE_1_3_9_DEVICE_TEST_HANDOFF.md). Actual receipt in WhatsApp/Instagram, lyric export, remaining language/stress/device/runtime cases and store listing/declarations still need verification. The profile label was visually checked in English; other profile languages remain source-test evidence.
 
 No production balances, stations or stream infrastructure changed. No public release or Google Play submission made. Guest and Automotive evidence does not establish overall release readiness.

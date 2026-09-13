@@ -28,7 +28,17 @@ interface LyricsShareModalProps {
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
 const MAX_SELECTABLE_LINES = 4;
 
-export const LyricsShareModal: React.FC<LyricsShareModalProps> = ({
+// Keep the selected song stable while live radio metadata continues updating.
+// Closing unmounts this session so reopening captures the current song.
+const LyricsShareSession: React.FC<LyricsShareModalProps> = props => {
+  const [snapshot] = useState(() => ({...props, lyricsLines: [...props.lyricsLines]}));
+  return <LyricsShareEditor {...snapshot} onClose={props.onClose} />;
+};
+
+export const LyricsShareModal: React.FC<LyricsShareModalProps> = props =>
+  props.visible ? <LyricsShareSession {...props} /> : null;
+
+const LyricsShareEditor: React.FC<LyricsShareModalProps> = ({
   visible,
   onClose,
   lyricsLines,

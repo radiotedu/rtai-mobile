@@ -1,3 +1,5 @@
+import {isJingleOrStationId} from './streamMetadata';
+
 const normalize = (value: unknown) => String(value ?? '').normalize('NFKD')
   .replace(/[\u0300-\u036f]/g, '').toLowerCase()
   .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
@@ -66,6 +68,10 @@ export async function fetchStationLiveMetadata(
       return null;
     }
     const artist = String(data.artist || '').trim();
+    if (isJingleOrStationId(track, artist)) {
+      // Station IDs are not songs; upstream search art can match unrelated albums.
+      return {title: 'RadioTEDU Jingle', artist: 'RadioTEDU', artwork: ''};
+    }
     const artwork = String(data.artwork_url || '').trim();
     return {
       title: track,

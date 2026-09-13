@@ -1,6 +1,6 @@
 # Remaining device-test prerequisites
 
-September 12, 2026. Current candidate APK source: `a99c37e58abb136e2a4e572e89505aa5f600d200`, APK SHA-256 `3d17a72c8d753dc995e2614c4a3fab053de25c3aaead0bb1a9b70e561ef26c11`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks.
+September 13, 2026. Current candidate APK source: `3d8770486040f08c9257bb2b33250e4db5060403`, APK SHA-256 `f0eeece213e6cfbf1fb4f7fafacb5df3e293aa2c34c11979549e271601d1d5e3`. Production signature, package/version and 16 KB ELF/ZIP alignment verified. Public release remains gated by the open runtime checks. See the [current verification report](RELEASE_1_3_9_3D87704_VERIFICATION.md).
 
 ## Isolated authenticated APK testing
 
@@ -14,11 +14,11 @@ Required device cases: registration and verification; login; token refresh/rotat
 
 ## Android Auto projection and sharing recipients
 
-Provide a USB-debugging Android device with full Android Auto installed, or a supported phone emulator with full Android Auto setup. Disk space was freed and is no longer the current setup blocker. The only connected device is the preserved `RadioTEDU-AndroidAuto-Play` emulator; its installed Auto package is `1.2.542030-stub`. Play Store previously reported Android Auto incompatible and now requires sign-in. No physical device or full Auto installation is available. Do not delete backups, wipe emulators or bypass SDK guards.
+Provide a USB-debugging Android device with full Android Auto installed, or a supported phone emulator with full Android Auto setup. September 13 recheck: only `emulator-5556` is connected and its installed Auto package remains `1.2.542030-stub`. No physical device or full Auto installation is available. Play Store previously reported incompatibility/sign-in requirements; these are historical observations, not a fresh store check. C: now has approximately 541 MiB free, so additional local emulator installation also requires storage. Do not delete backups, wipe emulators or bypass SDK guards.
 
 Native Android Automotive catalog and Lo-Fi playback evidence is available, but it does not prove Android Auto projection. Projection must be tested separately with the actual signed APK, including browsing, transport controls, playback/background transitions and reconnect behavior.
 
-For WhatsApp/Instagram image compatibility, a test device with those recipient apps is needed. Verify the generated PNG reaches their composer with correct artwork, text and proportions; do not send a message or publish a post without explicit authorization for its recipient/destination.
+For WhatsApp/Instagram image compatibility, a test device with those recipient apps is needed. Neither package is installed on the connected emulator in the September 13 recheck. Verify the generated PNG reaches their composer with correct artwork, text and proportions; do not send a message or publish a post without explicit authorization for its recipient/destination.
 
 ## Evidence boundaries
 

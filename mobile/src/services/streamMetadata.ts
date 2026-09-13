@@ -78,7 +78,6 @@ export function parseTrackPlayerMetadataEvent(
       title: 'RadioTEDU Jingle',
       artist: 'RadioTEDU',
       isJingle: true,
-      ...(artwork ? {artwork} : {}),
     };
   }
 

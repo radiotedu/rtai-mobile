@@ -401,13 +401,13 @@ const PlayerScreen = ({route}: any) => {
             <View style={[styles.art, {width: artSize, height: artSize}]}>
               <Image
                 source={currentChannel?.logo || RADIO_CHANNELS[0].logo}
-                style={[StyleSheet.absoluteFillObject, styles.artImage]}
+                style={[StyleSheet.absoluteFillObject, styles.artImage, {width: artSize, height: artSize}]}
                 resizeMode="cover"
               />
             {effectiveArtworkSource ? (
               <Image
                 source={effectiveArtworkSource}
-                style={[StyleSheet.absoluteFillObject, styles.artImage]}
+                style={[StyleSheet.absoluteFillObject, styles.artImage, {width: artSize, height: artSize}]}
                 resizeMode="cover"
                 onError={() => setImageError(true)}
               />

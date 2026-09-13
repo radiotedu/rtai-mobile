@@ -101,7 +101,7 @@ jobs:
           system-image-api-level: 34-ext9
           target: android-automotive
           arch: x86_64
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1280x720
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: python3 scripts/verify-signed-car-host.py candidate/RadioTEDU-Mobile-v1.3.9.apk evidence ${{ inputs.offline_catalog && '--offline-catalog' || '' }}
       - uses: actions/upload-artifact@v4

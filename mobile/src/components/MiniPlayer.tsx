@@ -29,7 +29,7 @@ import {shouldUseStationOnlyPresentation, RADIO_CHANNELS} from '../data/radioCha
 import {logSafeError} from '../utils/safeLog';
 import AirPlayRoutePicker from './AirPlayRoutePicker';
 import {clearOutputMedia, showCastRoutePicker, updateOutputMedia} from '../services/outputRouting';
-import {openPlayerModal} from '../navigation/navigationRef';
+import {openPlayerModal, openPodcastPlayer} from '../navigation/navigationRef';
 
 const HIDDEN_MINIPLAYER_ROUTES = new Set([
   'Auth',
@@ -46,6 +46,7 @@ const HIDDEN_MINIPLAYER_ROUTES = new Set([
   'AvatarCloset',
   'NextSongVote',
   'Player',
+  'PodcastPlayer',
   'SnakeGame',
   'MemoryGame',
   'TetrisGame',
@@ -301,7 +302,19 @@ const MiniPlayer = ({activeRouteName}: {activeRouteName?: string}) => {
           style={styles.touchableArea}
           activeOpacity={0.85}
           onPress={() => {
-            openPlayerModal();
+            const trackIsPodcast = String(displayTrack?.id || '').startsWith('podcast:');
+            if (trackIsPodcast) {
+              openPodcastPlayer({
+                podcast: {
+                  id: String(displayTrack?.id || '').replace(/^podcast:/, ''),
+                  title: displayTitle || displayTrack?.title || '',
+                  artist: displayArtist || displayTrack?.artist || '',
+                  imageUrl: typeof displayArtwork === 'string' ? displayArtwork : displayTrack?.artwork,
+                },
+              });
+            } else {
+              openPlayerModal();
+            }
           }}>
           <View style={styles.artworkContainer}>
             {effectiveArtworkSource ? (

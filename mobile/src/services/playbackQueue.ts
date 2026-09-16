@@ -39,6 +39,7 @@ import {
   isCellularNetwork,
   resolveCurrentStreamPreferences,
 } from './streamPreferences';
+import {audioDspService} from './audioDspService';
 
 export const PODCAST_ID_PREFIX = 'podcast:';
 
@@ -343,11 +344,15 @@ export async function playTrackById(id: string): Promise<boolean> {
   if (activeTrack?.id === id && activeTrack?.url === queue[index]?.url) {
     await TrackPlayer.play();
   } else {
+    const targetVolume = audioDspService.getNormalizedVolume({
+      id,
+      isLiveStream: !isPodcast,
+    });
     await TrackPlayer.setVolume(0.2).catch(() => {});
     await TrackPlayer.skip(index);
     await TrackPlayer.play();
     setTimeout(() => {
-      TrackPlayer.setVolume(1.0).catch(() => {});
+      TrackPlayer.setVolume(targetVolume).catch(() => {});
     }, 150);
   }
   recordRecent(queue[index]).catch(() => {});
@@ -639,4 +644,14 @@ export function findChannelByQuery(query: string): RadioChannel {
     }
   }
   return getRuntimeVisibleChannels()[0] || RADIO_CHANNELS[0];
+}
+
+export {audioDspService} from './audioDspService';
+
+export async function setAudioDspLeveling(enabled: boolean): Promise<void> {
+  await audioDspService.setLevelingEnabled(enabled);
+}
+
+export function isAudioDspLeveling(): boolean {
+  return audioDspService.isLevelingEnabled();
 }

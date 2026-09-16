@@ -51,6 +51,7 @@ import {fetchScrollableLyrics} from '../services/lyricsService';
 import {useSleepTimer} from '../services/sleepTimer';
 import ImageShareSheet, {ShareCardData} from '../components/ImageShareSheet';
 import LyricsShareModal from '../components/LyricsShareModal';
+import StandByTunerModal from '../components/StandByTunerModal';
 import NetInfo from '@react-native-community/netinfo';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
@@ -104,6 +105,7 @@ const PlayerScreen = ({route}: any) => {
   const [lyricsShareVisible, setLyricsShareVisible] = useState(false);
   const [songShareData, setSongShareData] = useState<ShareCardData | null>(null);
   const [lyricsShareIndex, setLyricsShareIndex] = useState(0);
+  const [standbyTunerVisible, setStandbyTunerVisible] = useState(false);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
 
@@ -612,6 +614,15 @@ const PlayerScreen = ({route}: any) => {
           </View>
           <View style={styles.topRightActions}>
             <TouchableOpacity
+              testID="standby-tuner-button"
+              onPress={() => setStandbyTunerVisible(true)}
+              style={styles.standbyButton}
+              accessibilityRole="button"
+              accessibilityLabel="STANDBY">
+              <Icon name="radio" size={16} color={COLORS.text} />
+              <Text style={styles.standbyButtonText}>STANDBY</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => setSleepMenuVisible(true)}
               style={styles.topButton}
               accessibilityLabel="Sleep Timer">
@@ -802,6 +813,16 @@ const PlayerScreen = ({route}: any) => {
         stationColor={currentChannel?.color || COLORS.primary}
         stationName={currentChannel?.name || 'RadioTEDU'}
       />
+      <StandByTunerModal
+        visible={standbyTunerVisible}
+        onClose={() => setStandbyTunerVisible(false)}
+        currentChannel={currentChannel}
+        activeTrack={activeTrack}
+        isPlaying={isPlaying}
+        metadata={metadata}
+        onSelectChannel={channelId => playChannelById(channelId)}
+        onTogglePlay={togglePlayback}
+      />
     </Animated.View>
   );
 };
@@ -843,6 +864,24 @@ const styles = StyleSheet.create({
   topRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  standbyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginRight: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  standbyButtonText: {
+    color: COLORS.text,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   topLabel: {
     color: COLORS.text,

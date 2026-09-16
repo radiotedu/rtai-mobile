@@ -230,6 +230,9 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'profile.status.available': 'Available', 'profile.status.permissionRequired': 'Permission required', 'profile.status.unavailable': 'Unavailable', 'profile.status.fallback': 'Fallback', 'profile.status.liveUpdate': 'Live Update', 'profile.status.mediaNotification': 'Media notification', 'profile.status.standardNotification': 'Standard notification', 'profile.status.none': 'None', 'profile.status.splitReady': 'Split-screen ready', 'profile.status.phoneOnly': 'Phone only', 'profile.status.ready': 'Ready', 'profile.status.needsWork': 'Needs work', 'profile.status.highQuality': 'High quality', 'profile.status.basic': 'Basic', 'profile.status.disabled': 'Disabled',
     'profile.notification.podcast': 'Podcasts', 'profile.notification.radio': 'Radio', 'profile.notification.jukebox': 'Jukebox', 'profile.notification.events': 'Events',
     'profile.podcastFeeds': 'Podcast feeds', 'profile.feedTitle': 'Feed title', 'profile.syncing': 'Syncing…', 'profile.syncAll': 'Sync all', 'profile.activeFeeds': 'Active feeds', 'profile.noFeeds': 'No podcast feeds yet.', 'profile.lastSynced': ({date}) => `Last synced: ${date}`, 'profile.lastSyncError': ({error}) => `Last sync error: ${error}`, 'profile.appSection': 'App',
+    'profile.wrappedTitle': 'RadioTEDU Wrapped (Dinleme Karnem)',
+    'profile.wrappedSubtitle': 'Discover your monthly & annual listening recap, share to story',
+    'profile.wrappedButton': 'View Recap',
     'leaderboard.category.total': 'Overall', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Listening', 'leaderboard.category.events': 'Events', 'leaderboard.category.games': 'Games', 'leaderboard.category.social': 'Social',
   },
   tr: {
@@ -280,6 +283,9 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'profile.status.available': 'Kullanılabilir', 'profile.status.permissionRequired': 'İzin gerekli', 'profile.status.unavailable': 'Kullanılamıyor', 'profile.status.fallback': 'Yedek görünüm', 'profile.status.liveUpdate': 'Canlı Güncelleme', 'profile.status.mediaNotification': 'Medya bildirimi', 'profile.status.standardNotification': 'Standart bildirim', 'profile.status.none': 'Yok', 'profile.status.splitReady': 'Bölünmüş ekrana hazır', 'profile.status.phoneOnly': 'Yalnızca telefon', 'profile.status.ready': 'Hazır', 'profile.status.needsWork': 'Geliştirme gerekli', 'profile.status.highQuality': 'Yüksek kalite', 'profile.status.basic': 'Temel', 'profile.status.disabled': 'Kapalı',
     'profile.notification.podcast': 'Podcastler', 'profile.notification.radio': 'Radyo', 'profile.notification.jukebox': 'Jukebox', 'profile.notification.events': 'Etkinlikler',
     'profile.podcastFeeds': 'Podcast akışları', 'profile.feedTitle': 'Akış başlığı', 'profile.syncing': 'Eşitleniyor…', 'profile.syncAll': 'Tümünü eşitle', 'profile.activeFeeds': 'Aktif akışlar', 'profile.noFeeds': 'Henüz podcast akışı yok.', 'profile.lastSynced': ({date}) => `Son eşitleme: ${date}`, 'profile.lastSyncError': ({error}) => `Son eşitleme hatası: ${error}`, 'profile.appSection': 'Uygulama',
+    'profile.wrappedTitle': 'RadioTEDU Wrapped (Dinleme Karnem)',
+    'profile.wrappedSubtitle': 'Aylık ve yıllık dinleme karneni gör, hikâyende paylaş',
+    'profile.wrappedButton': 'Karnemi Aç',
     'leaderboard.category.total': 'Genel', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Dinleme', 'leaderboard.category.events': 'Etkinlikler', 'leaderboard.category.games': 'Oyunlar', 'leaderboard.category.social': 'Social',
   },
   ru: {
@@ -300,6 +306,9 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'profile.status.available': 'Доступно', 'profile.status.permissionRequired': 'Нужно разрешение', 'profile.status.unavailable': 'Недоступно', 'profile.status.fallback': 'Резервный режим', 'profile.status.liveUpdate': 'Live Update', 'profile.status.mediaNotification': 'Медиауведомление', 'profile.status.standardNotification': 'Обычное уведомление', 'profile.status.none': 'Нет', 'profile.status.splitReady': 'Готово к разделённому экрану', 'profile.status.phoneOnly': 'Только телефон', 'profile.status.ready': 'Готово', 'profile.status.needsWork': 'Требуется доработка', 'profile.status.highQuality': 'Высокое качество', 'profile.status.basic': 'Базовый', 'profile.status.disabled': 'Отключено',
     'profile.notification.podcast': 'Подкасты', 'profile.notification.radio': 'Радио', 'profile.notification.jukebox': 'Jukebox', 'profile.notification.events': 'События',
     'profile.podcastFeeds': 'Ленты подкастов', 'profile.feedTitle': 'Название ленты', 'profile.syncing': 'Синхронизация…', 'profile.syncAll': 'Синхронизировать все', 'profile.activeFeeds': 'Активные ленты', 'profile.noFeeds': 'Лент подкастов пока нет.', 'profile.lastSynced': ({date}) => `Последняя синхронизация: ${date}`, 'profile.lastSyncError': ({error}) => `Ошибка последней синхронизации: ${error}`, 'profile.appSection': 'Приложение',
+    'profile.wrappedTitle': 'RadioTEDU Wrapped (Dinleme Karnem)',
+    'profile.wrappedSubtitle': 'Узнайте свои ежемесячные и годовые итоги и делитесь в Stories',
+    'profile.wrappedButton': 'Открыть итоги',
     'leaderboard.category.total': 'Общий', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Прослушивание', 'leaderboard.category.events': 'События', 'leaderboard.category.games': 'Игры', 'leaderboard.category.social': 'Social',
   },
   ar: {
@@ -320,6 +329,9 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'profile.status.available': 'متاح', 'profile.status.permissionRequired': 'يتطلب إذناً', 'profile.status.unavailable': 'غير متاح', 'profile.status.fallback': 'وضع احتياطي', 'profile.status.liveUpdate': 'تحديث مباشر', 'profile.status.mediaNotification': 'إشعار وسائط', 'profile.status.standardNotification': 'إشعار عادي', 'profile.status.none': 'لا يوجد', 'profile.status.splitReady': 'جاهز لتقسيم الشاشة', 'profile.status.phoneOnly': 'الهاتف فقط', 'profile.status.ready': 'جاهز', 'profile.status.needsWork': 'يحتاج إلى تطوير', 'profile.status.highQuality': 'جودة عالية', 'profile.status.basic': 'أساسي', 'profile.status.disabled': 'معطل',
     'profile.notification.podcast': 'البودكاست', 'profile.notification.radio': 'الراديو', 'profile.notification.jukebox': 'Jukebox', 'profile.notification.events': 'الفعاليات',
     'profile.podcastFeeds': 'خلاصات البودكاست', 'profile.feedTitle': 'عنوان الخلاصة', 'profile.syncing': 'جارٍ المزامنة…', 'profile.syncAll': 'مزامنة الكل', 'profile.activeFeeds': 'الخلاصات النشطة', 'profile.noFeeds': 'لا توجد خلاصات بودكاست بعد.', 'profile.lastSynced': ({date}) => `آخر مزامنة: ${date}`, 'profile.lastSyncError': ({error}) => `خطأ آخر مزامنة: ${error}`, 'profile.appSection': 'التطبيق',
+    'profile.wrappedTitle': 'RadioTEDU Wrapped (Dinleme Karnem)',
+    'profile.wrappedSubtitle': 'اكتشف تقرير الاستماع الشهري والسنوي وشاركه في القصة',
+    'profile.wrappedButton': 'عرض التقرير',
     'leaderboard.category.total': 'الإجمالي', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'الاستماع', 'leaderboard.category.events': 'الفعاليات', 'leaderboard.category.games': 'الألعاب', 'leaderboard.category.social': 'Social',
   },
   de: {
@@ -340,6 +352,9 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'profile.status.available': 'Verfügbar', 'profile.status.permissionRequired': 'Berechtigung nötig', 'profile.status.unavailable': 'Nicht verfügbar', 'profile.status.fallback': 'Ersatzmodus', 'profile.status.liveUpdate': 'Live Update', 'profile.status.mediaNotification': 'Medienbenachrichtigung', 'profile.status.standardNotification': 'Standardbenachrichtigung', 'profile.status.none': 'Keine', 'profile.status.splitReady': 'Geteilter Bildschirm bereit', 'profile.status.phoneOnly': 'Nur Smartphone', 'profile.status.ready': 'Bereit', 'profile.status.needsWork': 'Nacharbeit nötig', 'profile.status.highQuality': 'Hohe Qualität', 'profile.status.basic': 'Basis', 'profile.status.disabled': 'Deaktiviert',
     'profile.notification.podcast': 'Podcasts', 'profile.notification.radio': 'Radio', 'profile.notification.jukebox': 'Jukebox', 'profile.notification.events': 'Events',
     'profile.podcastFeeds': 'Podcast-Feeds', 'profile.feedTitle': 'Feed-Titel', 'profile.syncing': 'Synchronisierung…', 'profile.syncAll': 'Alle synchronisieren', 'profile.activeFeeds': 'Aktive Feeds', 'profile.noFeeds': 'Noch keine Podcast-Feeds.', 'profile.lastSynced': ({date}) => `Zuletzt synchronisiert: ${date}`, 'profile.lastSyncError': ({error}) => `Letzter Synchronisierungsfehler: ${error}`, 'profile.appSection': 'App',
+    'profile.wrappedTitle': 'RadioTEDU Wrapped (Dinleme Karnem)',
+    'profile.wrappedSubtitle': 'Entdecke deinen monatlichen und jährlichen Hörbericht',
+    'profile.wrappedButton': 'Bericht öffnen',
     'leaderboard.category.total': 'Gesamt', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Hören', 'leaderboard.category.events': 'Events', 'leaderboard.category.games': 'Spiele', 'leaderboard.category.social': 'Social',
   },
   fr: {
@@ -360,6 +375,9 @@ const PROFILE_COPY: Record<AppLanguage, Record<string, CopyValue>> = {
     'profile.status.available': 'Disponible', 'profile.status.permissionRequired': 'Autorisation requise', 'profile.status.unavailable': 'Indisponible', 'profile.status.fallback': 'Mode de secours', 'profile.status.liveUpdate': 'Live Update', 'profile.status.mediaNotification': 'Notification multimédia', 'profile.status.standardNotification': 'Notification standard', 'profile.status.none': 'Aucun', 'profile.status.splitReady': 'Écran partagé prêt', 'profile.status.phoneOnly': 'Téléphone uniquement', 'profile.status.ready': 'Prêt', 'profile.status.needsWork': 'À améliorer', 'profile.status.highQuality': 'Haute qualité', 'profile.status.basic': 'Basique', 'profile.status.disabled': 'Désactivé',
     'profile.notification.podcast': 'Podcasts', 'profile.notification.radio': 'Radio', 'profile.notification.jukebox': 'Jukebox', 'profile.notification.events': 'Événements',
     'profile.podcastFeeds': 'Flux de podcasts', 'profile.feedTitle': 'Titre du flux', 'profile.syncing': 'Synchronisation…', 'profile.syncAll': 'Tout synchroniser', 'profile.activeFeeds': 'Flux actifs', 'profile.noFeeds': 'Aucun flux de podcast pour le moment.', 'profile.lastSynced': ({date}) => `Dernière synchronisation : ${date}`, 'profile.lastSyncError': ({error}) => `Erreur de la dernière synchronisation : ${error}`, 'profile.appSection': 'Application',
+    'profile.wrappedTitle': 'RadioTEDU Wrapped (Dinleme Karnem)',
+    'profile.wrappedSubtitle': 'Découvrez votre bilan d’écoute mensuel et annuel',
+    'profile.wrappedButton': 'Voir le bilan',
     'leaderboard.category.total': 'Général', 'leaderboard.category.jukebox': 'Jukebox', 'leaderboard.category.listening': 'Écoute', 'leaderboard.category.events': 'Événements', 'leaderboard.category.games': 'Jeux', 'leaderboard.category.social': 'Social',
   },
 };

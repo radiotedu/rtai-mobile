@@ -31,6 +31,7 @@ import LanguageScreen from '../screens/LanguageScreen';
 import FocusScreen from '../screens/FocusScreen';
 import PrivacyScreen from '../screens/PrivacyScreen';
 import PlayerScreen from '../screens/PlayerScreen';
+import PodcastPlayerScreen from '../screens/PodcastPlayerScreen';
 import MyTicketsScreen from '../screens/MyTicketsScreen';
 import RoomQrScreen from '../screens/RoomQrScreen';
 import {COLORS} from '../theme/theme';
@@ -192,6 +193,16 @@ export function RootNavigator() {
       <Stack.Screen
         name="Player"
         component={PlayerScreen}
+        options={{
+          presentation: 'transparentModal',
+          animation: 'slide_from_bottom',
+          gestureEnabled: false,
+          contentStyle: {backgroundColor: 'transparent'},
+        }}
+      />
+      <Stack.Screen
+        name="PodcastPlayer"
+        component={PodcastPlayerScreen}
         options={{
           presentation: 'transparentModal',
           animation: 'slide_from_bottom',

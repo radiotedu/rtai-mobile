@@ -1,4 +1,4 @@
-﻿import {createNavigationContainerRef} from '@react-navigation/native';
+import {createNavigationContainerRef} from '@react-navigation/native';
 
 export const navigationRef =
   typeof createNavigationContainerRef === 'function'
@@ -15,5 +15,11 @@ export const navigationRef =
 export function openPlayerModal(stationId?: string) {
   if (navigationRef && typeof navigationRef.isReady === 'function' && navigationRef.isReady()) {
     navigationRef.navigate('Player', stationId ? {stationId} : undefined);
+  }
+}
+
+export function openPodcastPlayer(params?: any) {
+  if (navigationRef && typeof navigationRef.isReady === 'function' && navigationRef.isReady()) {
+    navigationRef.navigate('PodcastPlayer', params);
   }
 }

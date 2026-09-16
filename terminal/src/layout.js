@@ -56,27 +56,52 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
   add('─'.repeat(cols), 'muted');
   const modal = state.modal;
   if (modal) {
-    add(' SIGN IN / CONNECTION', 'brand');
-    if (modal.type === 'choice') {
-      buttons([['[1] Open browser sign-in', '1'], ['[2] Email and password', '2'], ['[3] TEDU / ERP code', '3']]);
-    } else if (modal.type === 'creds') {
-      add(`${modal.field === 'email' ? '>' : ' '} Email: ${modal.email || ''}`);
-      add(`${modal.field === 'password' ? '>' : ' '} Password: ${'*'.repeat(Math.min(40, modal.password?.length || 0))}`);
-      buttons([['[Tab] Switch field', 'tab'], ['[Enter] Sign in', 'enter']]);
-    } else if (modal.type === 'device_poll') {
-      add(modal.url || 'https://radiotedu.com/device');
-      add(` Approval code: ${modal.userCode || 'Waiting...'}`, 'brand');
-      buttons([['[O] Open browser', 'o']]);
-    } else if (modal.type === 'pair') {
-      add(' radiotedu.com/erp/device');
-      add(` Code: ${modal.code || ''}`, 'brand');
-      buttons([['[Enter] Connect', 'enter']]);
-    } else if (modal.type === 'audio_engine_missing') {
-      add(' Install an audio engine to listen.');
-      buttons([['[1] Download portable ffplay', '1'], ['[2] Install with winget', '2']]);
+    if (modal.type === 'wrapped') {
+      const w = modal.data || {};
+      add(' RADIOTEDU WRAPPED 2026', 'brand');
+      add(` Listener:     ${w.account || 'RadioTEDU Member'}`);
+      add(` Top Station:  ${w.topStation || 'RadioTEDU'}`);
+      add(` Total Time:   ${w.listeningMinutes || 0} mins (${w.listeningHours || 0} hrs)`);
+      add(` Audio Codec:  ${w.favoriteQuality || 'HE-AAC v2'}`);
+      add(` Gold Earned:  +${w.goldEarned || 0} Gold`);
+      add(` Campus Study: ${w.studyMinutes || 0} mins (${w.pomodorosCompleted || 0} sessions)`);
+      add(' Loudness:     ITU-R BS.1770-5 / EBU R128 (-16 LUFS)', 'muted');
+      add(modal.status || '', 'muted');
+      buttons([['[Esc] Close', 'escape']]);
+    } else if (modal.type === 'diagnostics') {
+      const d = modal.snapshot || {};
+      add(' STREAM HEALTH & BITRATE DIAGNOSTICS', 'brand');
+      add(` Station:      ${d.stationName || 'RadioTEDU'} (${d.mount || '/radiotedu'})`);
+      add(` Format:       ${d.quality || 'NORMAL'} · ${d.codec || 'HE-AAC v2'} · ${d.bitrate || '64 kbps'}`);
+      add(` Decoder:      ${d.engine || 'ffplay'} · Status: ${d.playbackStatus || 'Active'}`);
+      add(` Buffer:       ${d.bufferHealth || '100%'} · Latency: ${d.estimatedLatency || '~42 ms'}`);
+      add(` DSP Norm:     ${d.dsp || 'OFF'} (EBU R128 · -16 LUFS)`);
+      add(` Controls:     ${d.mediaControls || 'Active'}`);
+      add(modal.status || '', 'muted');
+      buttons([['[D] Toggle DSP', 'd'], ['[Esc] Close', 'escape']]);
+    } else {
+      add(' SIGN IN / CONNECTION', 'brand');
+      if (modal.type === 'choice') {
+        buttons([['[1] Open browser sign-in', '1'], ['[2] Email and password', '2'], ['[3] TEDU / ERP code', '3']]);
+      } else if (modal.type === 'creds') {
+        add(`${modal.field === 'email' ? '>' : ' '} Email: ${modal.email || ''}`);
+        add(`${modal.field === 'password' ? '>' : ' '} Password: ${'*'.repeat(Math.min(40, modal.password?.length || 0))}`);
+        buttons([['[Tab] Switch field', 'tab'], ['[Enter] Sign in', 'enter']]);
+      } else if (modal.type === 'device_poll') {
+        add(modal.url || 'https://radiotedu.com/device');
+        add(` Approval code: ${modal.userCode || 'Waiting...'}`, 'brand');
+        buttons([['[O] Open browser', 'o']]);
+      } else if (modal.type === 'pair') {
+        add(' radiotedu.com/erp/device');
+        add(` Code: ${modal.code || ''}`, 'brand');
+        buttons([['[Enter] Connect', 'enter']]);
+      } else if (modal.type === 'audio_engine_missing') {
+        add(' Install an audio engine to listen.');
+        buttons([['[1] Download portable ffplay', '1'], ['[2] Install with winget', '2']]);
+      }
+      add(modal.status || '', 'muted');
+      buttons([['[Esc] Cancel', 'escape']]);
     }
-    add(modal.status || '', 'muted');
-    buttons([['[Esc] Cancel', 'escape']]);
   } else {
     const tab = state.activeTab || 1;
     const playing = state.active && !state.paused;
@@ -108,29 +133,33 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
       add(` Engine    ${state.playerName || 'Not installed'}`);
       add(` Format    ${state.active ? `${state.codec} / ${state.quality}` : 'No active stream'}`);
       add(` Volume    ${state.volume ?? 80}%`);
+      add(` DSP Norm  ${state.dspEnabled ? 'ON (EBU R128 · -16 LUFS)' : 'OFF (Bypass)'}`);
       add(` Station   ${state.active?.name || '—'}`);
       add(` State     ${state.active ? state.paused ? 'Paused' : 'Player active' : 'Stopped'}`);
-      buttons([['[F] Change quality', 'f'], ['[M] Mute / restore', 'm']]);
+      buttons([['[F] Change quality', 'f'], ['[D] DSP Loudnorm', 'd'], ['[M] Mute / restore', 'm']]);
     } else if (tab === 3) {
       const pomo = state.pomodoro || {};
       const seconds = pomo.secondsLeft || 0;
       add(' FOCUS / YOUR SESSION', 'brand');
       add(` ${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}   ${pomo.phase || 'focus'} / ${pomo.running ? 'running' : 'paused'}`, 'brand');
       add(` Preset ${pomo.preset || '25/5'}   Completed ${pomo.completedFocus || 0}`);
-      buttons([['[S] Start / pause', 's'], ['[P] Preset', 'p'], ['[B] Phase', 'b'], ['[R] Reset', 'r']]);
+      buttons([['[T] Start / pause', 't'], ['[P] Preset', 'p'], ['[B] Phase', 'b'], ['[R] Reset', 'r']]);
     } else {
       add(' ACCOUNT / RADIOTEDU', 'brand');
       add(` ${state.account?.label || 'Guest'}`);
       add(Number.isInteger(state.account?.gold) ? ` ${state.account.gold} Gold / last account refresh` : ' Sign in to view your account and Gold.');
       buttons(state.account?.label && state.account.label !== 'Guest' ? [['[A] Refresh', 'a'], ['[X] Sign out', 'x']] : [['[L] Sign in', 'l']]);
     }
-    const footerRows = cols >= 74 ? 6 : 7;
+    const footerRows = cols >= 80 ? 6 : (cols >= 50 ? 7 : 8);
     while (lines.length < height - footerRows) add();
     add('─'.repeat(cols), 'muted');
     add(` ${name}`, 'brand');
     add(` ${state.metadata || detail}`);
     add(` ${state.status || `${detail} / Volume ${state.volume ?? 80}%`}`, 'muted');
-    buttons([['[Space] Play/pause', 'space'], ['[F] Quality', 'f'], ['[+] Louder', '+'], ['[-] Quieter', '-'], ['[Q] Quit', 'q']]);
+    const footerButtons = cols >= 80
+      ? [['[Space] Play/pause', 'space'], ['[W] Wrapped', 'w'], ['[D] DSP', 'd'], ['[S] Diag', 's'], ['[F] Quality', 'f'], ['[+] Louder', '+'], ['[-] Quieter', '-'], ['[Q] Quit', 'q']]
+      : [['[Space] Play', 'space'], ['[W] Wrap', 'w'], ['[D] DSP', 'd'], ['[S] Diag', 's'], ['[F] Quality', 'f'], ['[Q] Quit', 'q']];
+    buttons(footerButtons);
   }
   while (lines.length < height) add();
   return {lines, hits, columns: cols, rows: height};

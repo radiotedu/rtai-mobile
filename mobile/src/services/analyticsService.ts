@@ -16,21 +16,41 @@ const bridge = NativeModules?.RadioTeduAnalyticsBridge as
 let analyticsAllowed = false;
 let preferredListeningContext: string | null = null;
 
+function getBridge(): AnalyticsBridge | undefined {
+  return (
+    (NativeModules?.RadioTeduAnalyticsBridge as AnalyticsBridge | undefined) ??
+    bridge
+  );
+}
+
+export function isAnalyticsAllowed(): boolean {
+  return analyticsAllowed;
+}
+
+export function getPreferredListeningContext(): string | null {
+  return preferredListeningContext;
+}
+
 export function setAnalyticsConsent(
   allowed: boolean,
   demo?: {ageRange?: string | null; gender?: string | null; listeningContext?: string | null},
 ): void {
+  const activeBridge = getBridge();
   analyticsAllowed =
     allowed &&
     (Platform.OS === 'android' || Platform.OS === 'ios') &&
-    Boolean(bridge);
-  bridge?.setCollectionEnabled(analyticsAllowed, CONSENT_VERSION);
-  bridge?.setDemographics(
-    analyticsAllowed ? demo?.ageRange ?? null : null,
-    analyticsAllowed ? demo?.gender ?? null : null,
-  );
-  preferredListeningContext = analyticsAllowed ? demo?.listeningContext ?? null : null;
-  bridge?.setListeningContext(preferredListeningContext);
+    Boolean(activeBridge);
+  try {
+    activeBridge?.setCollectionEnabled(analyticsAllowed, CONSENT_VERSION);
+    activeBridge?.setDemographics(
+      analyticsAllowed ? demo?.ageRange ?? null : null,
+      analyticsAllowed ? demo?.gender ?? null : null,
+    );
+    preferredListeningContext = analyticsAllowed ? demo?.listeningContext ?? null : null;
+    activeBridge?.setListeningContext(preferredListeningContext);
+  } catch {
+    // Analytics bridge is best-effort and must never crash the app.
+  }
 }
 
 function send(
@@ -41,9 +61,15 @@ function send(
     return;
   }
   try {
-    bridge?.logEvent(name, {
+    let appLanguage = 'tr';
+    try {
+      appLanguage = getCurrentLanguage() || 'tr';
+    } catch {
+      appLanguage = 'tr';
+    }
+    getBridge()?.logEvent(name, {
       ...params,
-      app_language: getCurrentLanguage(),
+      app_language: appLanguage,
       ...(preferredListeningContext ? {listening_context: preferredListeningContext} : {}),
     });
   } catch {
@@ -96,6 +122,19 @@ export const Analytics = {
     }),
   webView: (feature: 'social' | 'jukebox' | 'voting', action: string, result: string) =>
     send('webview_event', {feature, action, result}),
+  wrappedViewed: (monthOrYear: string) =>
+    send('wrapped_viewed', {period: monthOrYear, month_or_year: monthOrYear}),
+  wrappedShared: (monthOrYear: string, platform: string) =>
+    send('wrapped_shared', {period: monthOrYear, month_or_year: monthOrYear, platform}),
+  transcriptSeek: (episodeId: string, timestampSeconds: number) =>
+    send('transcript_seek', {
+      episode_id: episodeId,
+      timestamp_seconds: Math.max(0, Math.round(timestampSeconds)),
+    }),
+  standByOpened: () =>
+    send('standby_opened', {}),
+  dspNormalizationToggled: (enabled: boolean) =>
+    send('dsp_normalization_toggled', {enabled}),
 };
 
 export type PlaybackAnalyticsContext = {

@@ -38,6 +38,7 @@ import {
 import {resolveCurrentStreamPreferences} from '../services/streamPreferences';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
+import {openPodcastPlayer} from '../navigation/navigationRef';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 
@@ -164,6 +165,7 @@ const PodcastScreen = () => {
         await playTrackById(trackId);
       }
       await resumePlaybackByUser();
+      openPodcastPlayer({podcast});
     } catch (error) {
       logSafeError('podcasts.play', error);
       Alert.alert(copy('common.error'), copy('podcast.playError'));

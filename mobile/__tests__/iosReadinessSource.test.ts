@@ -45,8 +45,8 @@ describe('iOS release readiness', () => {
 
   it('uses the current cross-platform release version', () => {
     const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
-    expect(project).toContain('MARKETING_VERSION = 1.3.9;');
-    expect(project).toContain('CURRENT_PROJECT_VERSION = 13090;');
+    expect(project).toContain('MARKETING_VERSION = 1.3.10;');
+    expect(project).toContain('CURRENT_PROJECT_VERSION = 13100;');
   });
 
   it('forwards ERP login deep links to React Native on iPhone and iPad', () => {

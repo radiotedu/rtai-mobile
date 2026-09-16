@@ -103,15 +103,25 @@ function findPlayer(configured = process.env.RADIOTEDU_PLAYER) {
   return null;
 }
 
-function playerArguments(command, url, title, volume = 80) {
+function playerArguments(command, url, title, volume = 80, dspOptions = null) {
   const lower = String(command || '').toLowerCase();
+  const dspFilter = typeof dspOptions === 'string'
+    ? dspOptions
+    : (dspOptions?.enabled ? (dspOptions.filter || 'loudnorm=I=-16:TP=-1.5:LRA=11') : null);
+
   if (lower.includes('ffplay')) {
-    return ['-nodisp', '-vn', '-hide_banner', '-loglevel', 'error', '-volume', String(volume), url];
+    const args = ['-nodisp', '-vn', '-hide_banner', '-loglevel', 'error', '-volume', String(volume)];
+    if (dspFilter) args.push('-af', dspFilter);
+    args.push(url);
+    return args;
   }
   if (lower.includes('vlc')) {
     return ['-I', 'dummy', '--no-video', url];
   }
-  return ['--no-video', '--force-window=no', '--input-terminal=yes', `--title=RadioTEDU - ${title}`, `--volume=${volume}`, url];
+  const args = ['--no-video', '--force-window=no', '--input-terminal=yes', `--title=RadioTEDU - ${title}`, `--volume=${volume}`];
+  if (dspFilter) args.push(`--af=${dspFilter}`);
+  args.push(url);
+  return args;
 }
 
 function downloadPortablePlayer(onProgress) {
@@ -247,6 +257,8 @@ class Player {
     this.last = null;
     this.paused = false;
     this.volume = 80;
+    this.dspEnabled = false;
+    this.dspFilter = 'loudnorm=I=-16:TP=-1.5:LRA=11';
     this.lastError = null;
     this.lastExitCode = null;
     this.driverIndex = 0;
@@ -268,7 +280,8 @@ class Player {
       env.SDL_AUDIODRIVER = activeDriver;
     }
 
-    const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume), {
+    const dspOpts = this.dspEnabled ? {enabled: true, filter: this.dspFilter} : null;
+    const child = spawn(this.command, playerArguments(this.command, this.last.url, this.last.title, this.volume, dspOpts), {
       stdio: ['ignore', 'ignore', 'pipe'],
       windowsHide: true,
       env,
@@ -355,6 +368,20 @@ class Player {
       this.launch(0);
     }
     return this.volume;
+  }
+  setDsp(enabled, filter = null) {
+    this.dspEnabled = Boolean(enabled);
+    if (filter) this.dspFilter = filter;
+    if (this.process && !this.paused && this.last) {
+      const last = this.last;
+      this.stop();
+      this.last = last;
+      this.launch(0);
+    }
+    return this.dspEnabled;
+  }
+  toggleDsp() {
+    return this.setDsp(!this.dspEnabled);
   }
   stop() { if (this.process) this.process.kill(); this.process = null; this.last = null; this.paused = false; }
   get playing() { return Boolean(this.process); }

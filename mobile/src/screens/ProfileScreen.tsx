@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ImageShareSheet, {ShareCardData} from '../components/ImageShareSheet';
+import WrappedModal from '../components/WrappedModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -51,6 +52,7 @@ const ACCOUNT_DELETE_CONFIRMATION = { confirmation: 'DELETE' } as const;
 
 const ProfileScreen = () => {
   const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
+  const [wrappedVisible, setWrappedVisible] = useState(false);
   const navigation = useNavigation<any>();
   const { t, i18n } = useTranslation();
   const copy = useCallback(
@@ -567,6 +569,20 @@ const ProfileScreen = () => {
             <Icon name="share-variant-outline" size={16} color={COLORS.primary} style={{marginRight: 6}} />
             <Text style={styles.recapShareText}>{copy('stats.share')}</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="open-wrapped-button"
+            style={[styles.recapShareButton, {marginTop: 8, backgroundColor: 'rgba(227, 30, 36, 0.12)', borderColor: COLORS.primary}]}
+            onPress={() => setWrappedVisible(true)}
+            activeOpacity={0.8}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={copy('profile.wrappedTitle') || 'RadioTEDU Wrapped (Dinleme Karnem)'}>
+            <Icon name="star-four-points" size={16} color={COLORS.primary} style={{marginRight: 6}} />
+            <Text style={[styles.recapShareText, {color: COLORS.primary, fontWeight: '700'}]}>
+              {copy('profile.wrappedTitle') || 'RadioTEDU Wrapped (Dinleme Karnem)'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {!user || user.is_guest ? (
@@ -920,6 +936,12 @@ const ProfileScreen = () => {
         </View>
       </ScrollView>
     <ImageShareSheet data={shareCard} onClose={() => setShareCard(null)} />
+    <WrappedModal
+      visible={wrappedVisible}
+      onClose={() => setWrappedVisible(false)}
+      listeningStats={listeningStats}
+      user={user}
+    />
     </SafeAreaView>
   );
 };

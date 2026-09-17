@@ -1219,4 +1219,39 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Mobile Jest unit test `src/__tests__/campusJam.test.ts` passed.
   - Zero regression on existing site: `/`, `/kesfet/`, `/discover`, `/technology/`, `/apply/`, `/bilet/`, and `/wp-json/radiotedu/v1/stations` all returning HTTP 200.
 
+## 2026-09-17 social-audio (Clubhouse / X Spaces / Spotify Jam) visuals & live animation elevation handoff snapshot
 
+- User directive: "visual'ler çok çok iyi olsun. sosyal-müzik gibi uygulamalar, clubhouse-x gibi uygulamalr ve diğerlerini iyice değerlendir ve ardından animasyonları, birlikte dinleme ortamlarını vb. en iyi şekilde ayarla."
+- Visual & animation architecture implemented in `mobile/src/components/CampusJamModal.tsx`:
+  - **Stage & Broadcaster Hero (Clubhouse / X Spaces speaking halo):**
+    - Concentric Acoustic Ripple Rings: Dual animated circular pulse rings (`ripple1Scale` 1.0 -> 1.55, `ripple2Scale` 1.0 -> 1.7) expanding and fading outwards with quad easing around the Host avatar and Idle headphones beacon.
+    - Host Stage Card: Gold border (`#f59e0b`), floating golden crown badge `👑`, `👑 ODA KURUCUSU / HOST` pill, host name display, and official station tag.
+    - Real-Time 7-Bar Stereo Equalizer: 7 animated vertical frequency bars with staggered sinusoidal rhythms and harmonic bounce.
+    - High-Fidelity Audio Badge: Emerald green beacon dot with `128k AAC · STEREO` label.
+  - **Dynamic Station Ambient Backlight:**
+    - Top ambient breathing light orb automatically keyed to the active station's designated brand color (RadioTEDU red `#E31E24`, Classical gold `#E5A000`, Jazz purple `#9C27B0`, Lo-Fi cyan `#00BCD4`, Energize yellow `#F36F21`, Rock orange `#FF6B2C`).
+  - **Campus Listeners Audience Cluster (Clubhouse Room Grid):**
+    - Live sync indicator: Green online beacon (`#22c55e`) on listener avatars.
+    - Circular listener cards with initials, names, and dashed `+ Davet Et` bubble for instant sharing.
+  - **Session PIN Hero (Spotify Jam Style):**
+    - Monospace spaced digits (`6 2 7 5 5 8`) with circular copy action bubble and instant toast banner feedback.
+  - **Physics-Driven Reaction Particles (TikTok / Instagram Live / Clubhouse Float):**
+    - Particles rise from bottom to top with sinusoidal lateral sway, entrance scale-pop (`0.3 -> 1.35 -> 1.0`), slight rotation (`-15deg` to `+15deg`), and cubic float.
+    - Micro-spring bounce on emoji button tap (`EmojiReactionButton` springing `1.0 -> 0.8 -> 1.0`).
+- Verification on Android Phone Emulator (`RadioTEDU-Phone-Test`):
+  - Idle state with acoustic ripples, station preview, 7-bar equalizer, and 6-box PIN entry verified (`phone_flow2_jam_idle_modal.png`).
+  - Active room stage with host halo, 7-bar equalizer, and audience verified (`phone_jam_stage_open.png`).
+  - Multi-emoji particle burst verified floating with rotation and sway (`phone_jam_floating_burst.png`).
+  - Dynamic channel switch to Classical verified with live transition to Classical Gold (`phone_jam_code_copied.png`).
+  - Host session exit verified returning to idle state (`phone_jam_after_leave.png`).
+- Tests and build counts:
+  - Mobile Jest: 117/117 suites passed (538/538 tests passed, 100% success).
+  - TypeScript: `npx tsc --noEmit` passed with 0 errors.
+  - Android publish audit: 36/36 passed (`node scripts/android-publish-audit.js`).
+  - Production APK repackaged, 16KB aligned, signed, and verified (`RadioTEDU-Mobile-v1.3.10.apk`, SHA-256: `ef975618fcbb243688a574de0135b4d371108b89e226d97c8625e375e530af68`).
+  - GitHub release `v1.3.10` asset updated via `gh release upload --clobber`.
+- Safety rules preserved:
+  - Zero database/ERP writes.
+  - Strict brand casing: `RadioTEDU` (title case) and `RADIOTEDU` (all caps), zero occurrences of `RADİOTEDU`.
+  - No email or push notifications sent.
+  - Host native Android compilation avoided.

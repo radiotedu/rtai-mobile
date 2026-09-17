@@ -31,8 +31,16 @@ const JAM_USERNAME_KEY = '@radiotedu/jam_username_v1';
 export const POPULAR_JAM_EMOJIS = ['🔥', '🎧', '🎓', '❤️', '⚡', '🎉'];
 
 let activeRoom: CampusJamRoom | null = null;
+let localListenerId: string = `listener-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+let pollTimer: any = null;
+const seenReactionIds = new Set<string>();
+
 const roomListeners = new Set<(room: CampusJamRoom | null) => void>();
 const reactionListeners = new Set<(reaction: JamReaction) => void>();
+
+export function getLocalListenerId(): string {
+  return localListenerId;
+}
 
 function generateRoomCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -82,6 +90,97 @@ export async function setStoredJamUsername(name: string): Promise<void> {
 export const JAM_API_ENDPOINT = 'https://radiotedu.com/wp-json/radiotedu/v1/jam';
 
 /**
+ * Starts background polling to keep room listeners and reactions synchronized across devices
+ */
+export function startJamPolling(roomCode: string): void {
+  stopJamPolling();
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
+  pollTimer = setInterval(async () => {
+    if (!activeRoom || activeRoom.code !== roomCode) {
+      stopJamPolling();
+      return;
+    }
+
+    try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeout = setTimeout(() => controller?.abort(), 4000);
+      const res = await fetch(`${JAM_API_ENDPOINT}/rooms/${roomCode}/state`, {
+        signal: controller?.signal,
+      });
+      clearTimeout(timeout);
+
+      if (res.status === 404) {
+        // Room was closed or expired on server
+        stopJamPolling();
+        activeRoom = null;
+        notifyRoomSubscribers();
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        if (!activeRoom || activeRoom.code !== roomCode) {
+          return;
+        }
+
+        // 1. Sync Listeners
+        if (Array.isArray(data.listeners)) {
+          const mappedListeners: JamListener[] = data.listeners.map((l: any) => ({
+            id: l.id,
+            name: l.name,
+            isHost: Boolean(l.is_host),
+            joinedAt: (l.joined_at || 0) * 1000,
+          }));
+
+          const countChanged = mappedListeners.length !== activeRoom.listeners.length;
+          const idsChanged = mappedListeners.some(
+            (ml, idx) => activeRoom?.listeners[idx]?.id !== ml.id,
+          );
+
+          if (countChanged || idsChanged) {
+            activeRoom = {
+              ...activeRoom,
+              listeners: mappedListeners,
+            };
+            notifyRoomSubscribers();
+          }
+        }
+
+        // 2. Sync Incoming Reactions from other listeners
+        if (Array.isArray(data.recent_reactions)) {
+          for (const rx of data.recent_reactions) {
+            if (rx && rx.id && !seenReactionIds.has(rx.id)) {
+              seenReactionIds.add(rx.id);
+              notifyReactionSubscribers({
+                id: rx.id,
+                emoji: rx.emoji,
+                senderName: rx.sender_name || 'Dinleyici',
+                timestamp: (rx.timestamp || 0) * 1000,
+              });
+            }
+          }
+        }
+      }
+    } catch {
+      // Non-blocking network drop tolerance
+    }
+  }, 2500);
+}
+
+/**
+ * Stops background polling
+ */
+export function stopJamPolling(): void {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+/**
  * Creates a new synchronized Jam Room for a channel
  */
 export async function createJamRoom(
@@ -90,12 +189,14 @@ export async function createJamRoom(
   customHostName?: string,
 ): Promise<CampusJamRoom> {
   const hostName = customHostName || (await getStoredJamUsername());
+  const hostListenerId = `listener-host-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  localListenerId = hostListenerId;
   let code = generateRoomCode();
 
   if (process.env.NODE_ENV !== 'test') {
     try {
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeout = setTimeout(() => controller?.abort(), 2000);
+      const timeout = setTimeout(() => controller?.abort(), 6000);
       const res = await fetch(`${JAM_API_ENDPOINT}/create`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -103,6 +204,7 @@ export async function createJamRoom(
           channel_id: channelId,
           channel_name: channelName,
           host_name: hostName,
+          host_id: hostListenerId,
         }),
         signal: controller?.signal,
       });
@@ -114,12 +216,12 @@ export async function createJamRoom(
         }
       }
     } catch (e) {
-      // Gracefully fallback to local room code
+      logSafeError('campusJam.createApi', e);
     }
   }
 
   const hostListener: JamListener = {
-    id: `listener-${Date.now()}`,
+    id: hostListenerId,
     name: hostName,
     isHost: true,
     joinedAt: Date.now(),
@@ -135,7 +237,9 @@ export async function createJamRoom(
     createdAt: Date.now(),
   };
 
+  seenReactionIds.clear();
   notifyRoomSubscribers();
+  startJamPolling(code);
   return activeRoom;
 }
 
@@ -157,42 +261,78 @@ export async function joinJamRoom(
   let targetChannelId = channelId;
   let targetChannelName = channelName;
   let remoteHostName = 'TEDÜ Campus Host';
+  const myListenerId = `listener-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  localListenerId = myListenerId;
+
+  let initialListeners: JamListener[] = [];
 
   if (process.env.NODE_ENV !== 'test') {
     try {
+      // 1. First get room details
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeout = setTimeout(() => controller?.abort(), 2000);
+      const timeout = setTimeout(() => controller?.abort(), 6000);
       const res = await fetch(`${JAM_API_ENDPOINT}/rooms/${cleanCode}`, {
         signal: controller?.signal,
       });
       clearTimeout(timeout);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.channel_id) {
-          targetChannelId = data.channel_id;
-          targetChannelName = data.channel_name || channelName;
-          remoteHostName = data.host_name || remoteHostName;
+      if (!res.ok) {
+        return null;
+      }
+      const data = await res.json();
+      if (data && data.channel_id) {
+        targetChannelId = data.channel_id;
+        targetChannelName = data.channel_name || channelName;
+        remoteHostName = data.host_name || remoteHostName;
+      }
+
+      // 2. Register participant with POST /join
+      const joinController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const joinTimeout = setTimeout(() => joinController?.abort(), 6000);
+      const joinRes = await fetch(`${JAM_API_ENDPOINT}/rooms/${cleanCode}/join`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          listener_id: myListenerId,
+          listener_name: listenerName,
+        }),
+        signal: joinController?.signal,
+      });
+      clearTimeout(joinTimeout);
+
+      if (joinRes.ok) {
+        // Fetch current state to get full listener list
+        try {
+          const stateRes = await fetch(`${JAM_API_ENDPOINT}/rooms/${cleanCode}/state`);
+          if (stateRes.ok) {
+            const stateData = await stateRes.json();
+            if (Array.isArray(stateData.listeners)) {
+              initialListeners = stateData.listeners.map((l: any) => ({
+                id: l.id,
+                name: l.name,
+                isHost: Boolean(l.is_host),
+                joinedAt: (l.joined_at || 0) * 1000,
+              }));
+            }
+          }
+        } catch {
+          // ignore
         }
       }
     } catch (e) {
-      // Fallback to local
+      logSafeError('campusJam.joinApi', e);
+      return null;
     }
   }
 
   const myListener: JamListener = {
-    id: `listener-${Date.now()}`,
+    id: myListenerId,
     name: listenerName,
     isHost: false,
     joinedAt: Date.now(),
   };
 
-  activeRoom = {
-    code: cleanCode,
-    channelId: targetChannelId,
-    channelName: targetChannelName,
-    hostName: remoteHostName,
-    isHost: false,
-    listeners: [
+  if (initialListeners.length === 0) {
+    initialListeners = [
       {
         id: 'host-1',
         name: remoteHostName,
@@ -200,7 +340,18 @@ export async function joinJamRoom(
         joinedAt: Date.now() - 60000,
       },
       myListener,
-    ],
+    ];
+  } else if (!initialListeners.some(l => l.id === myListenerId)) {
+    initialListeners.push(myListener);
+  }
+
+  activeRoom = {
+    code: cleanCode,
+    channelId: targetChannelId,
+    channelName: targetChannelName,
+    hostName: remoteHostName,
+    isHost: false,
+    listeners: initialListeners,
     createdAt: Date.now() - 60000,
   };
 
@@ -211,16 +362,35 @@ export async function joinJamRoom(
     logSafeError('campusJam.syncPlayback', err);
   }
 
+  seenReactionIds.clear();
   notifyRoomSubscribers();
+  startJamPolling(cleanCode);
   return activeRoom;
 }
 
 /**
- * Leaves the active room
+ * Leaves the active room and informs the server
  */
 export function leaveJamRoom(): void {
+  const roomToLeave = activeRoom;
+  const leavingListenerId = localListenerId;
+
+  stopJamPolling();
   activeRoom = null;
+  seenReactionIds.clear();
   notifyRoomSubscribers();
+
+  if (roomToLeave && process.env.NODE_ENV !== 'test') {
+    fetch(`${JAM_API_ENDPOINT}/rooms/${roomToLeave.code}/leave`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        listener_id: leavingListenerId,
+      }),
+    }).catch(err => {
+      logSafeError('campusJam.leaveApi', err);
+    });
+  }
 }
 
 /**
@@ -238,14 +408,45 @@ export function sendJamReaction(emoji: string, senderName?: string): JamReaction
     return null;
   }
 
+  const reactionId = `rx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  seenReactionIds.add(reactionId);
+
   const reaction: JamReaction = {
-    id: `rx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: reactionId,
     emoji,
-    senderName: senderName || activeRoom.listeners[0]?.name || 'Dinleyici',
+    senderName:
+      senderName ||
+      activeRoom.listeners.find(l => l.id === localListenerId)?.name ||
+      activeRoom.listeners[0]?.name ||
+      'Dinleyici',
     timestamp: Date.now(),
   };
 
   notifyReactionSubscribers(reaction);
+
+  if (process.env.NODE_ENV !== 'test') {
+    const roomCode = activeRoom.code;
+    fetch(`${JAM_API_ENDPOINT}/rooms/${roomCode}/react`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        emoji,
+        sender_name: reaction.senderName,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.reaction?.id) {
+            seenReactionIds.add(data.reaction.id);
+          }
+        }
+      })
+      .catch(err => {
+        logSafeError('campusJam.sendReactionApi', err);
+      });
+  }
+
   return reaction;
 }
 

@@ -8,6 +8,9 @@ import {
   subscribeToJamReactions,
   addSimulatedListener,
   POPULAR_JAM_EMOJIS,
+  getLocalListenerId,
+  startJamPolling,
+  stopJamPolling,
 } from '../services/campusJamService';
 import * as playbackQueue from '../services/playbackQueue';
 
@@ -83,5 +86,14 @@ describe('Campus Jam Service (Birlikte Dinle)', () => {
 
     leaveJamRoom();
     expect(getActiveJamRoom()).toBeNull();
+  });
+
+  it('tracks local listener ID and manages polling lifecycle', () => {
+    expect(getLocalListenerId()).toMatch(/^listener-/);
+
+    expect(() => {
+      startJamPolling('123456');
+      stopJamPolling();
+    }).not.toThrow();
   });
 });

@@ -1292,3 +1292,37 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps), zero occurrences of RADİOTEDU.
   - No email or push notifications sent.
   - Host native Android compilation avoided.
+
+
+## 2026-09-17 Campus Jam live REST API verification & full multi-device synchronization handoff snapshot
+
+- User directive: "api çalışıyor mu"
+- Backend REST API Health on Live Production Server (https://radiotedu.com/wp-json/radiotedu/v1/jam):
+  - Verified live with automated probe scripts across all endpoints:
+    - POST /jam/create -> HTTP 201 Created (6-digit code, ephemeral 2-hour TTL).
+    - GET /jam/rooms/{code} -> HTTP 200 OK.
+    - POST /jam/rooms/{code}/join -> HTTP 200 OK (registers listener with listener_id and listener_name).
+    - POST /jam/rooms/{code}/react -> HTTP 200 OK (stores reaction in 60s sliding window).
+    - GET /jam/rooms/{code}/state -> HTTP 200 OK (returns active listeners and recent reactions).
+    - POST /jam/rooms/{code}/leave -> HTTP 200 OK (host leave terminates and cleans up transient room -> returns 404 on subsequent queries).
+    - OPTIONS /jam/* -> HTTP 200 with CORS preflight.
+- Mobile Client Synchronization Hardening (mobile/src/services/campusJamService.ts):
+  - Added unique local listener ID tracking (localListenerId).
+  - Added live participant registration via POST /jam/rooms/{code}/join in joinJamRoom().
+  - Added background emoji reaction broadcasting via POST /jam/rooms/{code}/react in sendJamReaction().
+  - Added clean host/participant exit signaling via POST /jam/rooms/{code}/leave in leaveJamRoom().
+  - Implemented real-time background polling loop (startJamPolling / stopJamPolling) querying GET /jam/rooms/{code}/state every 2.5 seconds:
+    - Synchronizes new listeners and listener counts dynamically across real physical devices.
+    - Broadcasts newly arrived emoji reactions from peer listeners, popping floating animated bubbles on every participant screen.
+    - Automatically detects host room closure (HTTP 404) and cleanly resets local modal state.
+  - Raised network timeout from 2000ms to 6000ms to accommodate mobile cellular network latency.
+- Tests & Verification:
+  - Multi-device automated live roundtrip probe: 100% passed (Device 1 creates, Device 2 joins, Device 2 sends emoji, Device 1 polls state and receives reaction, Device 1 leaves and room auto-closes with 404).
+  - Mobile Jest: 117/117 suites passed, 540/540 tests passed (100% success).
+  - Android static publish audit: 36/36 passed (node scripts/android-publish-audit.js).
+  - Production APK repackaged, 16KB-aligned, signed, and clobber-uploaded to GitHub release v1.3.10 (RadioTEDU-Mobile-v1.3.10.apk, SHA-256: e0418a3aaa22aa82a24c15d2c257620b68fbc0c773c96cc47986dbdb8e43a8f3).
+- Safety rules preserved:
+  - Zero database/ERP writes. Only WordPress Transient API used.
+  - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps), zero occurrences of RADİOTEDU.
+  - No email or push notifications sent.
+  - Host native Android compilation avoided.

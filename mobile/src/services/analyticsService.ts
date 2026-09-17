@@ -135,6 +135,19 @@ export const Analytics = {
     send('standby_opened', {}),
   dspNormalizationToggled: (enabled: boolean) =>
     send('dsp_normalization_toggled', {enabled}),
+  jamModalOpened: (channelId: string) =>
+    send('jam_modal_opened', {channel_id: String(channelId || '').slice(0, 80)}),
+  jamRoomCreated: (channelId: string, channelName: string) =>
+    send('jam_room_created', {
+      channel_id: String(channelId || '').slice(0, 80),
+      channel_name: String(channelName || '').slice(0, 80),
+    }),
+  jamRoomJoined: (channelId: string) =>
+    send('jam_room_joined', {channel_id: String(channelId || '').slice(0, 80)}),
+  jamReactionSent: (emoji: string) =>
+    send('jam_reaction_sent', {emoji: String(emoji || '').slice(0, 10)}),
+  jamRoomLeft: (isHost: boolean) =>
+    send('jam_room_left', {is_host: isHost ? 'yes' : 'no'}),
 };
 
 export type PlaybackAnalyticsContext = {

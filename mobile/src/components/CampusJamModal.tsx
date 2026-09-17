@@ -29,6 +29,7 @@ import {
   subscribeToJamRoom,
 } from '../services/campusJamService';
 import {logSafeError} from '../utils/safeLog';
+import {Analytics} from '../services/analyticsService';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -141,6 +142,10 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     const unsubRx = subscribeToJamReactions(rx => {
       spawnFloatingEmoji(rx.emoji);
     });
+
+    if (visible) {
+      Analytics.jamModalOpened(channelId);
+    }
 
     if (process.env.NODE_ENV === 'test') {
       return () => {
@@ -338,6 +343,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     setJoinError(null);
     try {
       await createJamRoom(channelId, channelName);
+      Analytics.jamRoomCreated(channelId, channelName);
     } catch (err) {
       logSafeError('campusJam.createRoom', err);
     }
@@ -356,6 +362,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
         setJoinError('Oda bulunamadı. Kodu kontrol edin.');
       } else {
         setJoinCodeInput('');
+        Analytics.jamRoomJoined(channelId);
       }
     } catch (err) {
       logSafeError('campusJam.joinRoom', err);
@@ -382,12 +389,16 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     }
   };
 
-  const handleSendReaction = (emoji: string) => {
-    sendJamReaction(emoji);
+  const handleSendReaction = (emoji?: string) => {
+    const em = emoji || '🔥';
+    sendJamReaction(em);
+    Analytics.jamReactionSent(em);
   };
 
   const handleLeaveRoom = () => {
+    const isHost = Boolean(activeRoom?.isHost);
     leaveJamRoom();
+    Analytics.jamRoomLeft(isHost);
   };
 
   return (

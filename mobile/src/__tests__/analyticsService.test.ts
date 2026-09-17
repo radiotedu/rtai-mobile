@@ -341,5 +341,50 @@ describe('analyticsService', () => {
         listening_context: 'driving',
       });
     });
+
+    test('Campus Jam events dispatch with sanitized, truncated parameters and consent context', () => {
+      Analytics.jamModalOpened('radiotedu-main');
+      expect(mockBridge.logEvent).toHaveBeenCalledWith('jam_modal_opened', {
+        channel_id: 'radiotedu-main',
+        app_language: 'en',
+        listening_context: 'driving',
+      });
+
+      Analytics.jamRoomCreated('radiotedu-classic', 'Classical');
+      expect(mockBridge.logEvent).toHaveBeenCalledWith('jam_room_created', {
+        channel_id: 'radiotedu-classic',
+        channel_name: 'Classical',
+        app_language: 'en',
+        listening_context: 'driving',
+      });
+
+      Analytics.jamRoomJoined('radiotedu-jazz');
+      expect(mockBridge.logEvent).toHaveBeenCalledWith('jam_room_joined', {
+        channel_id: 'radiotedu-jazz',
+        app_language: 'en',
+        listening_context: 'driving',
+      });
+
+      Analytics.jamReactionSent('🔥');
+      expect(mockBridge.logEvent).toHaveBeenCalledWith('jam_reaction_sent', {
+        emoji: '🔥',
+        app_language: 'en',
+        listening_context: 'driving',
+      });
+
+      Analytics.jamRoomLeft(true);
+      expect(mockBridge.logEvent).toHaveBeenCalledWith('jam_room_left', {
+        is_host: 'yes',
+        app_language: 'en',
+        listening_context: 'driving',
+      });
+
+      Analytics.jamRoomLeft(false);
+      expect(mockBridge.logEvent).toHaveBeenCalledWith('jam_room_left', {
+        is_host: 'no',
+        app_language: 'en',
+        listening_context: 'driving',
+      });
+    });
   });
 });

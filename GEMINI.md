@@ -1255,3 +1255,40 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Strict brand casing: `RadioTEDU` (title case) and `RADIOTEDU` (all caps), zero occurrences of `RADİOTEDU`.
   - No email or push notifications sent.
   - Host native Android compilation avoided.
+
+## 2026-09-17 GA4 telemetry completion & GDPR/KVKK comprehensive audit handoff snapshot
+
+- User directive: "telemetry işini tamamla. zaten ga4 vb. hepsi içeride var. onları kontrol et. tüm bilgileri gdpr çerçevesinde inceleyelim."
+- Comprehensive GDPR / KVKK Compliance Audit & Findings:
+  1. **Lawfulness & Transparency (GDPR Art. 6, 7 & KVKK Madde 4, 5):**
+     - Full Opt-In Consent Architecture: By default, analyticsAllowed = false. Google Analytics 4 (Firebase Analytics) collection is completely disabled until affirmative user consent on ConsentScreen.
+     - Google Consent Mode v2: functions.php and AnalyticsBridgeModule.kt initialize defaults to DENIED across all sensitive categories (ANALYTICS_STORAGE, AD_STORAGE, AD_USER_DATA, AD_PERSONALIZATION).
+     - Advertising and profiling are permanently blocked (AD_STORAGE: DENIED, allow_google_signals: false, allow_ad_personalization_signals: false).
+  2. **Data Minimization & Zero PII (GDPR Art. 5(1)(c) & KVKK Madde 4):**
+     - Zero Personally Identifiable Information: No emails, real names, phone numbers, student IDs, IP addresses, or hardware serial numbers are ever passed in telemetry events or user properties.
+     - Auth state is coarse-grained: 'signed_out' | 'guest' | 'registered' (no user identifiers).
+     - String truncation: Error codes sliced to 80 characters, titles to 120 characters, emojis to 10 characters to prevent buffer overflows or accidental token leakage.
+  3. **Minor Protection (GDPR Art. 8 & Children's Privacy):**
+     - minorConsentPolicy.ts: When age is under18, analytics and demographics are hard-forced to false. Minors cannot opt in to telemetry or demographic profiling even if toggled.
+  4. **Right to Withdraw / Erasure (GDPR Art. 7(3), 17 & KVKK Madde 11):**
+     - User can withdraw consent at any time in PrivacyScreen (Ayarlar -> Gizlilik).
+     - On revocation: setCollectionEnabled(false), resetAnalyticsData() (scrubs Firebase instance identifier locally), and rotateInstallId() unlinks historical sessions.
+     - Web: clearAnalyticsCookies() immediately deletes _ga and _ga_* cookies.
+- Telemetry Expansion Completed:
+  - Integrated Campus Jam lifecycle telemetry in mobile/src/services/analyticsService.ts and mobile/src/components/CampusJamModal.tsx:
+    - jamModalOpened(channelId): Tracks modal discovery.
+    - jamRoomCreated(channelId, channelName): Tracks room creation.
+    - jamRoomJoined(channelId): Tracks room joins.
+    - jamReactionSent(emoji): Tracks reaction frequency.
+    - jamRoomLeft(isHost): Tracks session duration/exit.
+  - All calls are wrapped in non-blocking try/catch guards; analytics network failure can never interrupt live radio playback.
+- Tests and verification counts:
+  - Mobile Jest: 117/117 suites passed (539/539 tests passed, 100% success).
+  - Analytics Service Unit Tests: 18/18 passed in analyticsService.test.ts.
+  - Android publish audit: 36/36 passed (node scripts/android-publish-audit.js).
+  - Production APK repackaged, 16KB aligned, signed, and uploaded to GitHub release v1.3.10 (RadioTEDU-Mobile-v1.3.10.apk, SHA-256: 36de5156ce5c624233616a687845d4e456a53eed1b7dc47806d033ce2cbadf5c).
+- Safety rules preserved:
+  - Zero database/ERP writes.
+  - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps), zero occurrences of RADİOTEDU.
+  - No email or push notifications sent.
+  - Host native Android compilation avoided.

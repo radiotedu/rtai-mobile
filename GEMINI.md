@@ -1197,3 +1197,26 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Host native Android compilation avoided.
   - Clean working tree on `origin/main`.
 
+## 2026-09-17 WordPress REST API Campus Jam (Spotify Jam) backend integration handoff snapshot
+
+- User directive: "RadioTEDU mobil uygulamasında (Android / iOS) Campus Jam (Spotify Jam) birlikte dinleme özelliği geliştirilmiştir... canlı radyo senkronizasyonu ve oda yönetimini koordine edecek WordPress REST API uç noktalarının radiotedu.com sunucusunda uygulanması gerekmektedir."
+- Implementation details:
+  - Created `RadioTEDU_Jam` class in `website/wordpress-overlay/wp-content/plugins/radiotedu-core/includes/class-radiotedu-jam.php` and loaded in `radiotedu-core.php`.
+  - Deployed live to `C:\inetpub\wwwroot\wp-content\plugins\radiotedu-core\includes\class-radiotedu-jam.php` with timestamped backup `radiotedu-core.php.bak_20260917_jam`.
+  - Registered 6 REST API endpoints under `/wp-json/radiotedu/v1/jam`:
+    1. `POST /wp-json/radiotedu/v1/jam/create`: Generates unique 6-digit PIN, creates ephemeral room with 2-hour TTL.
+    2. `GET /wp-json/radiotedu/v1/jam/rooms/{code}`: Returns room status, channel, host, and participant list.
+    3. `POST /wp-json/radiotedu/v1/jam/rooms/{code}/join`: Adds listener to room, increments listener count.
+    4. `POST /wp-json/radiotedu/v1/jam/rooms/{code}/react`: Broadcasts live emoji reactions in sliding transient queue (60s window, max 20).
+    5. `GET /wp-json/radiotedu/v1/jam/rooms/{code}/state`: Lightweight state polling for listeners and reactions.
+    6. `POST /wp-json/radiotedu/v1/jam/rooms/{code}/leave`: Removes listener; automatically deletes room when host leaves or room is empty.
+  - Ephemeral data storage: 100% WordPress Transient API (`get_transient`, `set_transient`, `delete_transient`). Zero persistent MySQL tables or schema changes.
+  - CORS & Pre-flight: Full `Access-Control-Allow-Origin: *` headers and automatic OPTIONS preflight interception.
+  - Brand compliance: Strict `RadioTEDU` (title case) / `RADIOTEDU` (all caps), zero `RADİOTEDU`.
+- Verification results:
+  - 46/46 automated REST API assertions passed in `test_campus_jam_e2e.js`.
+  - Live HTTPS verified: create (201), get (200), join (200), react (200), state (200), leave (200), closed room (404), OPTIONS preflight (200).
+  - Mobile Jest unit test `src/__tests__/campusJam.test.ts` passed.
+  - Zero regression on existing site: `/`, `/kesfet/`, `/discover`, `/technology/`, `/apply/`, `/bilet/`, and `/wp-json/radiotedu/v1/stations` all returning HTTP 200.
+
+

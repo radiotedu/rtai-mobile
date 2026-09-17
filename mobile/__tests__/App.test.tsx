@@ -72,6 +72,7 @@ jest.mock('../src/navigation/RootNavigator', () => ({
   RootNavigator: () => null,
 }));
 jest.mock('../src/components/MiniPlayer', () => () => null);
+jest.mock('../src/components/ExitConfirmationModal', () => () => null);
 jest.mock('../src/screens/SplashScreen', () => () => null);
 
 // Context providers → passthroughs.

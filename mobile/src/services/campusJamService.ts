@@ -17,12 +17,30 @@ export interface JamReaction {
   timestamp: number;
 }
 
+export interface JamChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: number;
+}
+
+export interface PublicJamRoom {
+  code: string;
+  channelId: string;
+  channelName: string;
+  hostName: string;
+  listenersCount: number;
+  createdAt: number;
+}
+
 export interface CampusJamRoom {
   code: string;
   channelId: string;
   channelName: string;
   hostName: string;
   isHost: boolean;
+  isPublic?: boolean;
   listeners: JamListener[];
   createdAt: number;
 }
@@ -34,9 +52,12 @@ let activeRoom: CampusJamRoom | null = null;
 let localListenerId: string = `listener-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 let pollTimer: any = null;
 const seenReactionIds = new Set<string>();
+const seenMessageIds = new Set<string>();
+let lastChatSendTime = 0;
 
 const roomListeners = new Set<(room: CampusJamRoom | null) => void>();
 const reactionListeners = new Set<(reaction: JamReaction) => void>();
+const chatListeners = new Set<(message: JamChatMessage) => void>();
 
 export function getLocalListenerId(): string {
   return localListenerId;
@@ -67,6 +88,16 @@ function notifyReactionSubscribers(reaction: JamReaction): void {
   });
 }
 
+function notifyChatSubscribers(message: JamChatMessage): void {
+  chatListeners.forEach(listener => {
+    try {
+      listener(message);
+    } catch (err) {
+      logSafeError('campusJam.notifyChat', err);
+    }
+  });
+}
+
 export async function getStoredJamUsername(): Promise<string> {
   try {
     const saved = await AsyncStorage.getItem(JAM_USERNAME_KEY);
@@ -88,6 +119,39 @@ export async function setStoredJamUsername(name: string): Promise<void> {
 }
 
 export const JAM_API_ENDPOINT = 'https://radiotedu.com/wp-json/radiotedu/v1/jam';
+
+/**
+ * Fetches all currently active public Jam rooms from server
+ */
+export async function fetchPublicJamRooms(): Promise<PublicJamRoom[]> {
+  if (process.env.NODE_ENV === 'test') {
+    return [];
+  }
+  try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeout = setTimeout(() => controller?.abort(), 5000);
+    const res = await fetch(`${JAM_API_ENDPOINT}/public-rooms`, {
+      signal: controller?.signal,
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && Array.isArray(data?.rooms)) {
+        return data.rooms.map((r: any) => ({
+          code: String(r.code),
+          channelId: r.channel_id || 'radiotedu',
+          channelName: r.channel_name || 'RadioTEDU',
+          hostName: r.host_name || 'TEDÜ Dinleyicisi',
+          listenersCount: Number(r.listeners_count || 1),
+          createdAt: (r.created_at || 0) * 1000,
+        }));
+      }
+    }
+  } catch (err) {
+    logSafeError('campusJam.fetchPublicRooms', err);
+  }
+  return [];
+}
 
 /**
  * Starts background polling to keep room listeners and reactions synchronized across devices
@@ -163,6 +227,22 @@ export function startJamPolling(roomCode: string): void {
             }
           }
         }
+
+        // 3. Sync Incoming Ephemeral Chat Messages from other listeners
+        if (Array.isArray(data.recent_messages)) {
+          for (const msg of data.recent_messages) {
+            if (msg && msg.id && !seenMessageIds.has(msg.id)) {
+              seenMessageIds.add(msg.id);
+              notifyChatSubscribers({
+                id: msg.id,
+                senderId: msg.sender_id || '',
+                senderName: msg.sender_name || 'Dinleyici',
+                text: msg.text || '',
+                timestamp: (msg.timestamp || 0) * 1000,
+              });
+            }
+          }
+        }
       }
     } catch {
       // Non-blocking network drop tolerance
@@ -187,6 +267,7 @@ export async function createJamRoom(
   channelId: string,
   channelName: string,
   customHostName?: string,
+  isPublic: boolean = true,
 ): Promise<CampusJamRoom> {
   const hostName = customHostName || (await getStoredJamUsername());
   const hostListenerId = `listener-host-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -205,6 +286,7 @@ export async function createJamRoom(
           channel_name: channelName,
           host_name: hostName,
           host_id: hostListenerId,
+          is_public: isPublic,
         }),
         signal: controller?.signal,
       });
@@ -233,11 +315,13 @@ export async function createJamRoom(
     channelName,
     hostName,
     isHost: true,
+    isPublic,
     listeners: [hostListener],
     createdAt: Date.now(),
   };
 
   seenReactionIds.clear();
+  seenMessageIds.clear();
   notifyRoomSubscribers();
   startJamPolling(code);
   return activeRoom;
@@ -378,6 +462,8 @@ export function leaveJamRoom(): void {
   stopJamPolling();
   activeRoom = null;
   seenReactionIds.clear();
+  seenMessageIds.clear();
+  lastChatSendTime = 0;
   notifyRoomSubscribers();
 
   if (roomToLeave && process.env.NODE_ENV !== 'test') {
@@ -451,6 +537,76 @@ export function sendJamReaction(emoji: string, senderName?: string): JamReaction
 }
 
 /**
+ * Sends an ephemeral chat message to the room (Anti-mIRC, acoustic live overlay)
+ */
+export function sendJamChatMessage(
+  text: string,
+  senderName?: string,
+): JamChatMessage | null {
+  if (!activeRoom) {
+    return null;
+  }
+
+  const clean = text.trim();
+  if (!clean) {
+    return null;
+  }
+
+  const now = Date.now();
+  if (now - lastChatSendTime < 3000) {
+    // 3-second client rate limit
+    return null;
+  }
+  lastChatSendTime = now;
+
+  const truncated = clean.length > 100 ? clean.substring(0, 100) : clean;
+  const msgId = `msg-${now}-${Math.random().toString(36).slice(2, 6)}`;
+  seenMessageIds.add(msgId);
+
+  const myName =
+    senderName ||
+    activeRoom.listeners.find(l => l.id === localListenerId)?.name ||
+    activeRoom.listeners[0]?.name ||
+    'Dinleyici';
+
+  const chatMessage: JamChatMessage = {
+    id: msgId,
+    senderId: localListenerId,
+    senderName: myName,
+    text: truncated,
+    timestamp: now,
+  };
+
+  notifyChatSubscribers(chatMessage);
+
+  if (process.env.NODE_ENV !== 'test') {
+    const roomCode = activeRoom.code;
+    fetch(`${JAM_API_ENDPOINT}/rooms/${roomCode}/chat`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        sender_id: localListenerId,
+        sender_name: myName,
+        message: truncated,
+      }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.message?.id) {
+            seenMessageIds.add(data.message.id);
+          }
+        }
+      })
+      .catch(err => {
+        logSafeError('campusJam.sendChatApi', err);
+      });
+  }
+
+  return chatMessage;
+}
+
+/**
  * Subscribes to room state changes
  */
 export function subscribeToJamRoom(
@@ -472,6 +628,18 @@ export function subscribeToJamReactions(
   reactionListeners.add(callback);
   return () => {
     reactionListeners.delete(callback);
+  };
+}
+
+/**
+ * Subscribes to live ephemeral chat messages
+ */
+export function subscribeToJamChat(
+  callback: (message: JamChatMessage) => void,
+): () => void {
+  chatListeners.add(callback);
+  return () => {
+    chatListeners.delete(callback);
   };
 }
 

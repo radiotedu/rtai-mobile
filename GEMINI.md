@@ -1326,3 +1326,41 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps), zero occurrences of RADİOTEDU.
   - No email or push notifications sent.
   - Host native Android compilation avoided.
+
+## 2026-09-17 Phase 2 campus jam public rooms, ephemeral chat & exit confirmation handoff snapshot
+
+- Added Campus Jam Public Rooms & Discovery ("Canlı Kampüs Odaları"):
+  - Backend (website/wordpress-overlay/wp-content/plugins/radiotedu-core/includes/class-radiotedu-jam.php):
+    - Added is_public boolean flag on POST /jam/create.
+    - Added GET /wp-json/radiotedu/v1/jam/public-rooms endpoint returning active public rooms sorted by listener count.
+    - Pruning of expired rooms and zero-database storage using WordPress Transient API (rt_jam_active_index).
+  - Mobile Service (mobile/src/services/campusJamService.ts):
+    - Implemented fetchPublicJamRooms() returning PublicJamRoom[].
+    - Updated createJamRoom() to accept isPublic: boolean.
+  - Mobile UI (mobile/src/components/CampusJamModal.tsx):
+    - Added Room Visibility Selector pill: [Kampüse Açık] vs [Özel (Yalnızca Kod)].
+    - Added CANLI KAMPÜS ODALARI horizontal shelf with live green beacon, station color badge, listener count, host crown badge, and instant one-tap Katıl button (handleJoinDirect).
+- Added Campus Jam Ephemeral Music Chat ("Anlık Kampüs Sohbeti"):
+  - Anti-mIRC acoustic music-first design:
+    - Floating glassmorphic chat pills rising smoothly over the active stage and auto-fading after 4.5s.
+    - One-tap Quick Chat Chips (🎵 Harika parça!, 🔊 Sesi aç!, 📚 Kütüphanedeyim, ✨ Bu şarkı ne?, ❤️ Bayıldım, 🔥 Harika enerji).
+    - Minimalist single-line chat bar with 100-character cap, 3-second cooldown rate limiter, and real-time transient synchronization.
+  - Backend:
+    - Added POST /wp-json/radiotedu/v1/jam/rooms/{code}/chat with 120-second sliding window transient (rt_jam_chat_{code}).
+    - Updated GET /wp-json/radiotedu/v1/jam/rooms/{code}/state to return recent_messages.
+- Added Android Exit Confirmation Dialog ("RadioTEDU'dan Çıkış"):
+  - Created mobile/src/components/ExitConfirmationModal.tsx: RadioTEDU crimson-branded dialog ("Uygulamadan çıkmak istediğinize emin misiniz?") with active playback notification.
+  - Wired into mobile/App.tsx root BackHandler on Android Home tab when back stack is empty (!navigationRef.canGoBack()).
+  - "Vazgeç" dismisses modal; "Çıkış Yap" executes native BackHandler.exitApp().
+- Tests & Verification:
+  - Mobile Jest: 118/118 suites passed, 544/544 tests passed (including campusJam.test.ts, campusJamModal.test.tsx, exitConfirmationModal.test.tsx, and App.test.tsx).
+  - Android static publish audit: 36/36 passed (node scripts/android-publish-audit.js).
+  - Study/Social contracts & vitest: 46/46 files passed, 227/227 tests passed + 3/3 contract tests passed.
+  - Production APK repackaged with updated Metro bundle, 16KB-aligned, signed with official keystore, and clobber-uploaded to GitHub release v1.3.10:
+    - File: RadioTEDU-Mobile-v1.3.10.apk
+    - SHA-256: cf0df907e16ee74d4a7fd75cbf4cd578eaa98433a872bc9d994e264d1d907c94
+- Safety rules preserved:
+  - Zero MySQL database or ERP writes. Only WordPress Transient API used.
+  - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps), zero occurrences of RADİOTEDU.
+  - No email or push notifications sent.
+  - Audio Library untouched.

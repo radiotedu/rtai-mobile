@@ -23,6 +23,10 @@ final class RadioTEDU_Jam
     private const RX_TTL = 300;    // 5 minutes storage TTL
     private const RX_WINDOW = 60;  // 60 seconds display window
     private const MAX_REACTIONS = 20;
+    private const CHAT_TTL = 300;     // 5 minutes storage TTL
+    private const CHAT_WINDOW = 120;  // 120 seconds display window
+    private const MAX_CHAT_MESSAGES = 20;
+    private const CHAT_COOLDOWN = 3;  // 3 seconds rate limit
 
     public static function instance(): self
     {
@@ -50,35 +54,49 @@ final class RadioTEDU_Jam
             'permission_callback' => '__return_true',
         ]);
 
-        // 2. Oda Sorgulama: GET /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})
+        // 2. Herkese Açık Odaları Listeleme: GET /wp-json/radiotedu/v1/jam/public-rooms
+        register_rest_route(self::NAMESPACE, '/jam/public-rooms', [
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => [$this, 'get_public_rooms'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        // 3. Özel/Belirli Oda Sorgulama: GET /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})
         register_rest_route(self::NAMESPACE, '/jam/rooms/(?P<code>[0-9]{6})', [
             'methods' => WP_REST_Server::READABLE,
             'callback' => [$this, 'get_room'],
             'permission_callback' => '__return_true',
         ]);
 
-        // 3. Odaya Katılma: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/join
+        // 4. Odaya Katılma: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/join
         register_rest_route(self::NAMESPACE, '/jam/rooms/(?P<code>[0-9]{6})/join', [
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => [$this, 'join_room'],
             'permission_callback' => '__return_true',
         ]);
 
-        // 4. Canlı Reaksiyon Gönderme: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/react
+        // 5. Canlı Reaksiyon Gönderme: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/react
         register_rest_route(self::NAMESPACE, '/jam/rooms/(?P<code>[0-9]{6})/react', [
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => [$this, 'react_room'],
             'permission_callback' => '__return_true',
         ]);
 
-        // 5. Canlı Durum Polling: GET /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/state
+        // 6. Canlı Ephemeral Chat Mesajı: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/chat
+        register_rest_route(self::NAMESPACE, '/jam/rooms/(?P<code>[0-9]{6})/chat', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => [$this, 'send_chat_message'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        // 7. Canlı Durum Polling: GET /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/state
         register_rest_route(self::NAMESPACE, '/jam/rooms/(?P<code>[0-9]{6})/state', [
             'methods' => WP_REST_Server::READABLE,
             'callback' => [$this, 'state_room'],
             'permission_callback' => '__return_true',
         ]);
 
-        // 6. Odadan Ayrılma: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/leave
+        // 8. Odadan Ayrılma: POST /wp-json/radiotedu/v1/jam/rooms/(?P<code>[0-9]{6})/leave
         register_rest_route(self::NAMESPACE, '/jam/rooms/(?P<code>[0-9]{6})/leave', [
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => [$this, 'leave_room'],
@@ -186,6 +204,9 @@ final class RadioTEDU_Jam
         $rawHostName = (string) ($request->get_param('host_name') ?: 'TEDÜ Dinleyicisi');
         $hostName = $this->normalize_brand_text(sanitize_text_field($rawHostName));
 
+        $rawIsPublic = $request->get_param('is_public');
+        $isPublic = ($rawIsPublic === null || $rawIsPublic === '' || rest_sanitize_boolean($rawIsPublic));
+
         $now = time();
         $code = $this->generate_unique_code();
         $hostId = sanitize_text_field((string) ($request->get_param('host_id') ?: ('listener-host-' . $now)));
@@ -203,6 +224,7 @@ final class RadioTEDU_Jam
             'channel_name' => $channelName,
             'host_name' => $hostName,
             'host_id' => $hostId,
+            'is_public' => $isPublic,
             'created_at' => $now,
             'expires_at' => $now + self::ROOM_TTL,
             'listeners_count' => 1,
@@ -220,7 +242,61 @@ final class RadioTEDU_Jam
     }
 
     /**
-     * 2. GET ROOM DETAILS
+     * 2. LIST PUBLIC ACTIVE ROOMS
+     * GET /wp-json/radiotedu/v1/jam/public-rooms
+     */
+    public function get_public_rooms(WP_REST_Request $request): WP_REST_Response
+    {
+        $index = get_transient('rt_jam_active_index');
+        $publicRooms = [];
+        $validCodes = [];
+
+        if (is_array($index)) {
+            foreach ($index as $code) {
+                $codeStr = (string) $code;
+                $room = get_transient('rt_jam_room_' . $codeStr);
+                if (is_array($room)) {
+                    $validCodes[] = $codeStr;
+                    // Filter: public rooms only
+                    if (!isset($room['is_public']) || !empty($room['is_public'])) {
+                        $listeners = is_array($room['listeners'] ?? null) ? array_values($room['listeners']) : [];
+                        $publicRooms[] = [
+                            'code' => $codeStr,
+                            'channel_id' => (string) ($room['channel_id'] ?? 'radiotedu'),
+                            'channel_name' => (string) ($room['channel_name'] ?? 'RadioTEDU'),
+                            'host_name' => (string) ($room['host_name'] ?? 'TEDÜ Dinleyicisi'),
+                            'listeners_count' => count($listeners),
+                            'created_at' => (int) ($room['created_at'] ?? time()),
+                        ];
+                    }
+                }
+            }
+
+            // Prune expired rooms from active index
+            if (count($validCodes) !== count($index)) {
+                set_transient('rt_jam_active_index', $validCodes, self::ROOM_TTL);
+            }
+        }
+
+        // Sort by listener count DESC, then created_at DESC
+        usort($publicRooms, static function ($a, $b) {
+            if ($b['listeners_count'] !== $a['listeners_count']) {
+                return $b['listeners_count'] <=> $a['listeners_count'];
+            }
+            return $b['created_at'] <=> $a['created_at'];
+        });
+
+        $payload = [
+            'success' => true,
+            'rooms_count' => count($publicRooms),
+            'rooms' => $publicRooms,
+        ];
+
+        return $this->respond_with_cors(new WP_REST_Response($payload, 200));
+    }
+
+    /**
+     * 3. GET ROOM DETAILS
      * GET /wp-json/radiotedu/v1/jam/rooms/{code}
      */
     public function get_room(WP_REST_Request $request): WP_REST_Response
@@ -245,6 +321,7 @@ final class RadioTEDU_Jam
             'channel_id' => (string) ($room['channel_id'] ?? 'radiotedu'),
             'channel_name' => (string) ($room['channel_name'] ?? 'RadioTEDU'),
             'host_name' => (string) ($room['host_name'] ?? 'TEDÜ Dinleyicisi'),
+            'is_public' => !empty($room['is_public']),
             'created_at' => (int) ($room['created_at'] ?? time()),
             'listeners_count' => count($listeners),
             'listeners' => $listeners,
@@ -379,7 +456,97 @@ final class RadioTEDU_Jam
     }
 
     /**
-     * 5. LIGHTWEIGHT STATE POLLING
+     * 6. LIVE EPHEMERAL CHAT MESSAGE (Anti-mIRC, acoustic live overlay)
+     * POST /wp-json/radiotedu/v1/jam/rooms/{code}/chat
+     */
+    public function send_chat_message(WP_REST_Request $request): WP_REST_Response
+    {
+        $code = (string) $request['code'];
+        $room = get_transient('rt_jam_room_' . $code);
+
+        if (!is_array($room)) {
+            $response = new WP_REST_Response([
+                'code' => 'room_not_found',
+                'message' => 'Oda bulunamadı veya süresi doldu.',
+                'data' => ['status' => 404],
+            ], 404);
+            return $this->respond_with_cors($response);
+        }
+
+        $now = time();
+        $senderId = sanitize_text_field((string) ($request->get_param('sender_id') ?: ('listener-' . $now)));
+
+        // Cooldown rate limit (3 seconds per sender)
+        $rateKey = 'rt_jam_rate_' . $code . '_' . md5($senderId);
+        if (get_transient($rateKey) !== false) {
+            $response = new WP_REST_Response([
+                'code' => 'rate_limited',
+                'message' => 'Lütfen yeni mesaj göndermek için birkaç saniye bekleyin.',
+                'data' => ['status' => 429],
+            ], 429);
+            return $this->respond_with_cors($response);
+        }
+
+        $rawText = (string) $request->get_param('message');
+        $cleanText = trim(strip_tags($rawText));
+        // Remove excessive spaces/newlines and strip URLs
+        $cleanText = preg_replace('/\s+/', ' ', $cleanText);
+        $cleanText = preg_replace('/https?:\/\/\S+/i', '[link kaldırıldı]', $cleanText);
+        $cleanText = mb_substr($cleanText, 0, 100);
+
+        if ($cleanText === '') {
+            $response = new WP_REST_Response([
+                'code' => 'empty_message',
+                'message' => 'Boş mesaj gönderilemez.',
+                'data' => ['status' => 400],
+            ], 400);
+            return $this->respond_with_cors($response);
+        }
+
+        $cleanText = $this->normalize_brand_text($cleanText);
+        $rawSender = (string) ($request->get_param('sender_name') ?: 'TEDÜ Dinleyicisi');
+        $senderName = $this->normalize_brand_text(sanitize_text_field($rawSender));
+
+        $msgId = 'msg-' . $now . '-' . substr(bin2hex(random_bytes(2)), 0, 4);
+        $message = [
+            'id' => $msgId,
+            'sender_id' => $senderId,
+            'sender_name' => $senderName,
+            'text' => $cleanText,
+            'timestamp' => $now,
+        ];
+
+        $chatKey = 'rt_jam_chat_' . $code;
+        $existing = get_transient($chatKey);
+        if (!is_array($existing)) {
+            $existing = [];
+        }
+
+        $validChat = [];
+        foreach ($existing as $item) {
+            if (isset($item['timestamp']) && ($now - (int) $item['timestamp'] <= self::CHAT_WINDOW)) {
+                $validChat[] = $item;
+            }
+        }
+        $validChat[] = $message;
+
+        if (count($validChat) > self::MAX_CHAT_MESSAGES) {
+            $validChat = array_slice($validChat, -self::MAX_CHAT_MESSAGES);
+        }
+
+        set_transient($chatKey, $validChat, self::CHAT_TTL);
+        set_transient($rateKey, 1, self::CHAT_COOLDOWN);
+
+        $payload = [
+            'success' => true,
+            'message' => $message,
+        ];
+
+        return $this->respond_with_cors(new WP_REST_Response($payload, 200));
+    }
+
+    /**
+     * 7. LIGHTWEIGHT STATE POLLING
      * GET /wp-json/radiotedu/v1/jam/rooms/{code}/state
      */
     public function state_room(WP_REST_Request $request): WP_REST_Response
@@ -398,12 +565,24 @@ final class RadioTEDU_Jam
 
         $now = time();
         $rxKey = 'rt_jam_rx_' . $code;
-        $existing = get_transient($rxKey);
+        $existingRx = get_transient($rxKey);
         $recentReactions = [];
-        if (is_array($existing)) {
-            foreach ($existing as $item) {
+        if (is_array($existingRx)) {
+            foreach ($existingRx as $item) {
                 if (isset($item['timestamp']) && ($now - (int) $item['timestamp'] <= self::RX_WINDOW)) {
                     $recentReactions[] = $item;
+                }
+            }
+        }
+
+        // Ephemeral chat messages in sliding window
+        $chatKey = 'rt_jam_chat_' . $code;
+        $existingChat = get_transient($chatKey);
+        $recentMessages = [];
+        if (is_array($existingChat)) {
+            foreach ($existingChat as $item) {
+                if (isset($item['timestamp']) && ($now - (int) $item['timestamp'] <= self::CHAT_WINDOW)) {
+                    $recentMessages[] = $item;
                 }
             }
         }
@@ -415,16 +594,18 @@ final class RadioTEDU_Jam
             'channel_id' => (string) ($room['channel_id'] ?? 'radiotedu'),
             'channel_name' => (string) ($room['channel_name'] ?? 'RadioTEDU'),
             'host_name' => (string) ($room['host_name'] ?? 'TEDÜ Dinleyicisi'),
+            'is_public' => !empty($room['is_public']),
             'listeners_count' => count($listeners),
             'listeners' => $listeners,
             'recent_reactions' => array_values($recentReactions),
+            'recent_messages' => array_values($recentMessages),
         ];
 
         return $this->respond_with_cors(new WP_REST_Response($payload, 200));
     }
 
     /**
-     * 6. LEAVE ROOM / AUTO-CLOSE CLEANUP
+     * 8. LEAVE ROOM / AUTO-CLOSE CLEANUP
      * POST /wp-json/radiotedu/v1/jam/rooms/{code}/leave
      */
     public function leave_room(WP_REST_Request $request): WP_REST_Response
@@ -462,6 +643,7 @@ final class RadioTEDU_Jam
         if ($isHostLeaving || empty($remainingListeners)) {
             delete_transient('rt_jam_room_' . $code);
             delete_transient('rt_jam_rx_' . $code);
+            delete_transient('rt_jam_chat_' . $code);
             $this->remove_from_active_index($code);
 
             $payload = [

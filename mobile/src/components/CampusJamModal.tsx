@@ -20,18 +20,41 @@ import {RADIO_CHANNELS} from '../data/radioChannels';
 import {
   CampusJamRoom,
   POPULAR_JAM_EMOJIS,
+  PublicJamRoom,
+  JamChatMessage,
   createJamRoom,
   getActiveJamRoom,
   joinJamRoom,
   leaveJamRoom,
   sendJamReaction,
+  sendJamChatMessage,
   subscribeToJamReactions,
+  subscribeToJamChat,
   subscribeToJamRoom,
+  fetchPublicJamRooms,
 } from '../services/campusJamService';
 import {logSafeError} from '../utils/safeLog';
 import {Analytics} from '../services/analyticsService';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
+
+export const QUICK_CHAT_CHIPS = [
+  '🎵 Harika parça!',
+  '🔊 Sesi aç!',
+  '📚 Kütüphanedeyim',
+  '✨ Bu şarkı ne?',
+  '❤️ Bayıldım',
+  '🔥 Harika enerji',
+];
+
+interface FloatingChatMessage {
+  id: string;
+  senderName: string;
+  text: string;
+  isHost: boolean;
+  animY: Animated.Value;
+  animOpacity: Animated.Value;
+}
 
 interface FloatingEmoji {
   id: string;
@@ -108,15 +131,26 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
 }) => {
   const {t} = useTranslation();
   const [activeRoom, setActiveRoom] = useState<CampusJamRoom | null>(getActiveJamRoom());
+  const [publicRooms, setPublicRooms] = useState<PublicJamRoom[]>([]);
+  const [loadingPublicRooms, setLoadingPublicRooms] = useState(false);
+  const [isPublicRoom, setIsPublicRoom] = useState(true);
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [copiedToast, setCopiedToast] = useState(false);
   const toastTimeoutRef = useRef<any>(null);
+  const cooldownIntervalRef = useRef<any>(null);
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
+  const [activeChatBubbles, setActiveChatBubbles] = useState<FloatingChatMessage[]>([]);
+  const [chatInputText, setChatInputText] = useState('');
+  const [chatCooldownSeconds, setChatCooldownSeconds] = useState(0);
 
   // Resolve station theme color (RadioTEDU red, Classical gold, Jazz purple, Lo-Fi cyan, Energize yellow, Rock orange)
   const stationColor =
     RADIO_CHANNELS.find(c => c.id === channelId)?.color || COLORS.primary;
+
+  const getChannelColor = (id: string) => {
+    return RADIO_CHANNELS.find(c => c.id === id)?.color || COLORS.primary;
+  };
 
   // Concentric Acoustic Ripple Waves (Clubhouse / X Spaces style speaking/listening halo)
   const ripple1Scale = useRef(new Animated.Value(1)).current;
@@ -134,6 +168,24 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
   const bar6 = useRef(new Animated.Value(0.5)).current;
   const bar7 = useRef(new Animated.Value(0.35)).current;
 
+  const loadPublicRooms = async () => {
+    setLoadingPublicRooms(true);
+    try {
+      const rooms = await fetchPublicJamRooms();
+      setPublicRooms(rooms);
+    } catch {
+      // non-blocking
+    } finally {
+      setLoadingPublicRooms(false);
+    }
+  };
+
+  useEffect(() => {
+    if (visible && !activeRoom) {
+      loadPublicRooms();
+    }
+  }, [visible, Boolean(activeRoom)]);
+
   useEffect(() => {
     const unsubRoom = subscribeToJamRoom(room => {
       setActiveRoom(room);
@@ -141,6 +193,10 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
 
     const unsubRx = subscribeToJamReactions(rx => {
       spawnFloatingEmoji(rx.emoji);
+    });
+
+    const unsubChat = subscribeToJamChat(msg => {
+      spawnFloatingChat(msg);
     });
 
     if (visible) {
@@ -151,8 +207,12 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
       return () => {
         unsubRoom();
         unsubRx();
+        unsubChat();
         if (toastTimeoutRef.current) {
           clearTimeout(toastTimeoutRef.current);
+        }
+        if (cooldownIntervalRef.current) {
+          clearInterval(cooldownIntervalRef.current);
         }
       };
     }
@@ -252,12 +312,16 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     return () => {
       unsubRoom();
       unsubRx();
+      unsubChat();
       ripple1Loop.stop();
       ripple2Loop.stop();
       ambientLoop.stop();
       eqLoop.stop();
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
+      }
+      if (cooldownIntervalRef.current) {
+        clearInterval(cooldownIntervalRef.current);
       }
     };
   }, [channelId]);
@@ -339,13 +403,114 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     });
   };
 
+  const spawnFloatingChat = (msg: JamChatMessage) => {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+    const id = `fc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const animY = new Animated.Value(25);
+    const animOpacity = new Animated.Value(0);
+    const isHost = Boolean(
+      (activeRoom?.hostName && activeRoom.hostName === msg.senderName) ||
+      msg.senderName.includes('Host'),
+    );
+
+    const newBubble: FloatingChatMessage = {
+      id,
+      senderName: msg.senderName,
+      text: msg.text,
+      isHost,
+      animY,
+      animOpacity,
+    };
+
+    setActiveChatBubbles(prev => [...prev.slice(-2), newBubble]);
+
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(animY, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.back(1.4)),
+          useNativeDriver: true,
+        }),
+        Animated.timing(animOpacity, {
+          toValue: 1,
+          duration: 280,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.delay(4500),
+      Animated.parallel([
+        Animated.timing(animY, {
+          toValue: -25,
+          duration: 650,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(animOpacity, {
+          toValue: 0,
+          duration: 650,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      setActiveChatBubbles(prev => prev.filter(b => b.id !== id));
+    });
+  };
+
+  const handleSendChatMessage = (textOverride?: string) => {
+    const text = (textOverride !== undefined ? textOverride : chatInputText).trim();
+    if (!text || chatCooldownSeconds > 0) {
+      return;
+    }
+
+    sendJamChatMessage(text);
+    if (!textOverride) {
+      setChatInputText('');
+    }
+
+    setChatCooldownSeconds(3);
+    if (process.env.NODE_ENV !== 'test') {
+      if (cooldownIntervalRef.current) {
+        clearInterval(cooldownIntervalRef.current);
+      }
+      cooldownIntervalRef.current = setInterval(() => {
+        setChatCooldownSeconds(prev => {
+          if (prev <= 1) {
+            if (cooldownIntervalRef.current) {
+              clearInterval(cooldownIntervalRef.current);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  };
+
   const handleCreateRoom = async () => {
     setJoinError(null);
     try {
-      await createJamRoom(channelId, channelName);
+      await createJamRoom(channelId, channelName, undefined, isPublicRoom);
       Analytics.jamRoomCreated(channelId, channelName);
     } catch (err) {
       logSafeError('campusJam.createRoom', err);
+    }
+  };
+
+  const handleJoinDirect = async (room: PublicJamRoom) => {
+    setJoinError(null);
+    try {
+      const joined = await joinJamRoom(room.code, room.channelId, room.channelName);
+      if (!joined) {
+        setJoinError('Oda bulunamadı veya süresi doldu.');
+      } else {
+        Analytics.jamRoomJoined(room.channelId);
+      }
+    } catch (err) {
+      logSafeError('campusJam.joinDirect', err);
+      setJoinError('Odaya bağlanırken hata oluştu.');
     }
   };
 
@@ -535,6 +700,53 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                   </View>
                 </View>
 
+                {/* 1. ROOM VISIBILITY SELECTOR PILL */}
+                <View style={styles.visibilitySelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.visibilityPill,
+                      isPublicRoom && [styles.visibilityPillActive, {borderColor: stationColor}],
+                    ]}
+                    onPress={() => setIsPublicRoom(true)}
+                    activeOpacity={0.75}
+                    testID="jam-visibility-public-btn">
+                    <Icon
+                      name="earth"
+                      size={14}
+                      color={isPublicRoom ? stationColor : '#94a3b8'}
+                    />
+                    <Text
+                      style={[
+                        styles.visibilityPillText,
+                        isPublicRoom && {color: '#ffffff', fontWeight: '800'},
+                      ]}>
+                      Kampüse Açık
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.visibilityPill,
+                      !isPublicRoom && [styles.visibilityPillActive, {borderColor: stationColor}],
+                    ]}
+                    onPress={() => setIsPublicRoom(false)}
+                    activeOpacity={0.75}
+                    testID="jam-visibility-private-btn">
+                    <Icon
+                      name="lock"
+                      size={13}
+                      color={!isPublicRoom ? stationColor : '#94a3b8'}
+                    />
+                    <Text
+                      style={[
+                        styles.visibilityPillText,
+                        !isPublicRoom && {color: '#ffffff', fontWeight: '800'},
+                      ]}>
+                      Özel (Yalnızca Kod)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
                 {/* Primary Action: Create Jam Room */}
                 <TouchableOpacity
                   style={[styles.spotifyCreateBtn, {backgroundColor: stationColor}]}
@@ -548,6 +760,90 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                     Yeni Jam Başlat ({channelName})
                   </Text>
                 </TouchableOpacity>
+
+                {/* 2. CANLI KAMPÜS ODALARI SHELF */}
+                <View style={styles.publicRoomsSection}>
+                  <View style={styles.publicRoomsHeader}>
+                    <View style={styles.publicHeaderBadge}>
+                      <View style={styles.liveGreenBeacon} />
+                      <Text style={styles.publicRoomsTitle}>CANLI KAMPÜS ODALARI</Text>
+                      {publicRooms.length > 0 && (
+                        <View
+                          style={[
+                            styles.publicCountBadge,
+                            {backgroundColor: `${stationColor}30`},
+                          ]}>
+                          <Text style={[styles.publicCountText, {color: stationColor}]}>
+                            {publicRooms.length}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      onPress={loadPublicRooms}
+                      style={styles.refreshPublicBtn}
+                      activeOpacity={0.7}
+                      testID="campus-jam-refresh-public-btn">
+                      <Icon name="refresh" size={15} color="#94a3b8" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {publicRooms.length > 0 ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.publicRoomsScroll}>
+                      {publicRooms.map(room => (
+                        <View key={room.code} style={styles.publicRoomCard}>
+                          <View style={styles.publicCardTop}>
+                            <View style={styles.publicStationDotWrap}>
+                              <View
+                                style={[
+                                  styles.publicStationDot,
+                                  {backgroundColor: getChannelColor(room.channelId)},
+                                ]}
+                              />
+                              <Text style={styles.publicStationName} numberOfLines={1}>
+                                {room.channelName}
+                              </Text>
+                            </View>
+                            <View style={styles.publicListenersBadge}>
+                              <Icon name="account-multiple" size={12} color="#10b981" />
+                              <Text style={styles.publicListenersCount}>
+                                {room.listenersCount}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <Text style={styles.publicHostName} numberOfLines={1}>
+                            👑 {room.hostName}
+                          </Text>
+
+                          <TouchableOpacity
+                            style={[
+                              styles.publicJoinBtn,
+                              {backgroundColor: getChannelColor(room.channelId)},
+                            ]}
+                            onPress={() => handleJoinDirect(room)}
+                            activeOpacity={0.8}
+                            testID={`campus-jam-join-public-${room.code}`}>
+                            <Icon name="play" size={13} color="#fff" />
+                            <Text style={styles.publicJoinBtnText}>Katıl</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <View style={styles.emptyPublicCard}>
+                      <Icon name="radio-tower" size={18} color="#475569" />
+                      <Text style={styles.emptyPublicText}>
+                        {loadingPublicRooms
+                          ? 'Açık odalar aranıyor...'
+                          : 'Şu an açık oda yok. Yukarıdan ilk kampüs odasını başlat!'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
                 {/* Divider */}
                 <View style={styles.dividerRow}>
@@ -770,7 +1066,113 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                   </View>
                 </View>
 
-                {/* 4. SHARE INVITE FULL PILL BUTTON */}
+                {/* 4. EPHEMERAL CHAT STREAM & FLOATING PILLS */}
+                <View style={styles.chatSection}>
+                  <View style={styles.chatSectionHeader}>
+                    <View style={styles.chatHeaderLeft}>
+                      <Icon name="message-text-outline" size={13} color="#94a3b8" />
+                      <Text style={styles.chatSectionTitle}>ANLIK KAMPÜS SOHBETİ</Text>
+                    </View>
+                    <Text style={styles.chatEphemeralHint}>Mesajlar anlıktır (2 dk)</Text>
+                  </View>
+
+                  {/* Floating Chat Bubbles Display Area */}
+                  <View style={styles.chatBubblesContainer}>
+                    {activeChatBubbles.length > 0 ? (
+                      activeChatBubbles.map(b => (
+                        <Animated.View
+                          key={b.id}
+                          style={[
+                            styles.chatBubblePill,
+                            b.isHost && styles.chatBubbleHostPill,
+                            {
+                              opacity: b.animOpacity,
+                              transform: [{translateY: b.animY}],
+                            },
+                          ]}>
+                          <View style={styles.chatBubbleHeader}>
+                            {b.isHost && (
+                              <Icon name="crown" size={11} color="#f59e0b" style={{marginRight: 3}} />
+                            )}
+                            <Text
+                              style={[styles.chatBubbleSender, b.isHost && {color: '#f59e0b'}]}
+                              numberOfLines={1}>
+                              {b.senderName}
+                            </Text>
+                          </View>
+                          <Text style={styles.chatBubbleText}>{b.text}</Text>
+                        </Animated.View>
+                      ))
+                    ) : (
+                      <View style={styles.chatEmptyPill}>
+                        <Text style={styles.chatEmptyText}>
+                          Müziğe eşlik et, aşağıdan hızlı bir çip veya anlık mesaj gönder!
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Quick Acoustic Chat Chips */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.quickChipsScroll}>
+                    {QUICK_CHAT_CHIPS.map((chip, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        style={[
+                          styles.quickChipBtn,
+                          chatCooldownSeconds > 0 && styles.quickChipBtnDisabled,
+                        ]}
+                        onPress={() => handleSendChatMessage(chip)}
+                        disabled={chatCooldownSeconds > 0}
+                        activeOpacity={0.75}
+                        testID={`jam-quick-chip-${idx}`}>
+                        <Text style={styles.quickChipText}>{chip}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  {/* Minimalist Single-Line Chat Input Bar */}
+                  <View style={styles.chatBarWrapper}>
+                    <TextInput
+                      style={styles.chatTextInput}
+                      placeholder={
+                        chatCooldownSeconds > 0
+                          ? `Lütfen ${chatCooldownSeconds}s bekleyin...`
+                          : 'Bir mesaj yaz... (anlık)'
+                      }
+                      placeholderTextColor="#64748b"
+                      value={chatInputText}
+                      onChangeText={setChatInputText}
+                      maxLength={100}
+                      returnKeyType="send"
+                      onSubmitEditing={() => handleSendChatMessage()}
+                      editable={chatCooldownSeconds === 0}
+                      testID="campus-jam-chat-input"
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.chatSendBtn,
+                        (!chatInputText.trim() || chatCooldownSeconds > 0) &&
+                          styles.chatSendBtnDisabled,
+                        chatInputText.trim() &&
+                          chatCooldownSeconds === 0 && {backgroundColor: stationColor},
+                      ]}
+                      onPress={() => handleSendChatMessage()}
+                      disabled={!chatInputText.trim() || chatCooldownSeconds > 0}
+                      activeOpacity={0.8}
+                      testID="campus-jam-chat-send-btn">
+                      {chatCooldownSeconds > 0 ? (
+                        <Text style={styles.chatCooldownText}>{chatCooldownSeconds}s</Text>
+                      ) : (
+                        <Icon name="send" size={14} color="#ffffff" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* 5. SHARE INVITE FULL PILL BUTTON */}
                 <TouchableOpacity
                   style={[styles.spotifySharePill, {backgroundColor: stationColor}]}
                   onPress={handleShareInvite}
@@ -782,7 +1184,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                   <Text style={styles.spotifySharePillText}>Arkadaşlarını Jam'e Davet Et</Text>
                 </TouchableOpacity>
 
-                {/* 5. INTERACTIVE FLOATING EMOJI REACTION DECK */}
+                {/* 6. INTERACTIVE FLOATING EMOJI REACTION DECK */}
                 <View style={styles.reactionDeck}>
                   <View style={styles.reactionDeckHeader}>
                     <Icon name="lightning-bolt" size={14} color="#f59e0b" />
@@ -1453,5 +1855,284 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 13,
     fontWeight: '700',
+  },
+
+  /* VISIBILITY SELECTOR */
+  visibilitySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  visibilityPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  visibilityPillActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.09)',
+    borderWidth: 1.5,
+  },
+  visibilityPillText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  /* PUBLIC ROOMS SHELF */
+  publicRoomsSection: {
+    marginTop: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  publicRoomsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  publicHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  publicRoomsTitle: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  publicCountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 8,
+  },
+  publicCountText: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  refreshPublicBtn: {
+    padding: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  publicRoomsScroll: {
+    gap: 10,
+    paddingVertical: 2,
+  },
+  publicRoomCard: {
+    width: 140,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 14,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'space-between',
+  },
+  publicCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  publicStationDotWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
+    marginRight: 4,
+  },
+  publicStationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  publicStationName: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+    flex: 1,
+  },
+  publicListenersBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  publicListenersCount: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  publicHostName: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  publicJoinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  publicJoinBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  emptyPublicCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+  },
+  emptyPublicText: {
+    color: '#64748b',
+    fontSize: 11,
+    textAlign: 'center',
+    flex: 1,
+  },
+
+  /* EPHEMERAL CHAT SECTION */
+  chatSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 8,
+  },
+  chatSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  chatHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  chatSectionTitle: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  chatEphemeralHint: {
+    color: '#64748b',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  chatBubblesContainer: {
+    minHeight: 52,
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  chatBubblePill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  chatBubbleHostPill: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
+  },
+  chatBubbleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  chatBubbleSender: {
+    color: '#38bdf8',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  chatBubbleText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  chatEmptyPill: {
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatEmptyText: {
+    color: '#64748b',
+    fontSize: 11,
+    textAlign: 'center',
+  },
+  quickChipsScroll: {
+    gap: 6,
+    paddingVertical: 2,
+  },
+  quickChipBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  quickChipBtnDisabled: {
+    opacity: 0.4,
+  },
+  quickChipText: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  chatBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
+  },
+  chatTextInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 12,
+    paddingVertical: 6,
+  },
+  chatSendBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatSendBtnDisabled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  chatCooldownText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '800',
   },
 });

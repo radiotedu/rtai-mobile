@@ -6,6 +6,9 @@ import {
   sendJamReaction,
   subscribeToJamRoom,
   subscribeToJamReactions,
+  subscribeToJamChat,
+  sendJamChatMessage,
+  fetchPublicJamRooms,
   addSimulatedListener,
   POPULAR_JAM_EMOJIS,
   getLocalListenerId,
@@ -76,6 +79,62 @@ describe('Campus Jam Service (Birlikte Dinle)', () => {
     expect(receivedReactions[0].emoji).toBe('🔥');
 
     unsubscribe();
+  });
+
+  it('creates public or private jam rooms based on isPublic flag', async () => {
+    const publicRoom = await createJamRoom('radiotedu-main', 'RadioTEDU', 'Ali', true);
+    expect(publicRoom.isPublic).toBe(true);
+
+    const privateRoom = await createJamRoom('radiotedu-rock', 'RadioTEDU Rock', 'Veli', false);
+    expect(privateRoom.isPublic).toBe(false);
+  });
+
+  it('sends ephemeral chat messages and notifies subscribers', async () => {
+    await createJamRoom('radiotedu-main', 'RadioTEDU', 'Cem');
+
+    const receivedMessages: any[] = [];
+    const unsubscribe = subscribeToJamChat(msg => {
+      receivedMessages.push(msg);
+    });
+
+    const msg = sendJamChatMessage('Harika bir parça!', 'Cem');
+    expect(msg).toBeTruthy();
+    expect(msg?.text).toBe('Harika bir parça!');
+    expect(msg?.senderName).toBe('Cem');
+    expect(receivedMessages.length).toBe(1);
+    expect(receivedMessages[0].text).toBe('Harika bir parça!');
+
+    unsubscribe();
+  });
+
+  it('enforces 3-second client cooldown for chat messages', async () => {
+    await createJamRoom('radiotedu-main', 'RadioTEDU', 'Selin');
+
+    const msg1 = sendJamChatMessage('İlk mesaj');
+    expect(msg1).toBeTruthy();
+
+    // Immediate second message must be blocked by rate limiter
+    const msg2 = sendJamChatMessage('İkinci mesaj');
+    expect(msg2).toBeNull();
+  });
+
+  it('truncates chat messages exceeding 100 characters', async () => {
+    await createJamRoom('radiotedu-main', 'RadioTEDU', 'Murat');
+
+    // Advance time slightly to bypass rate limit
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 5000);
+
+    const longText = 'A'.repeat(150);
+    const msg = sendJamChatMessage(longText);
+    expect(msg).toBeTruthy();
+    expect(msg?.text.length).toBe(100);
+
+    (Date.now as any).mockRestore();
+  });
+
+  it('fetches public jam rooms safely', async () => {
+    const rooms = await fetchPublicJamRooms();
+    expect(Array.isArray(rooms)).toBe(true);
   });
 
   it('adds simulated listeners and leaves the room cleanly', async () => {

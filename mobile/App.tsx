@@ -21,6 +21,7 @@ import { AuthProvider } from './src/context/AuthContext';
 
 import MiniPlayer from './src/components/MiniPlayer';
 import SplashScreen from './src/screens/SplashScreen';
+import ExitConfirmationModal from './src/components/ExitConfirmationModal';
 import {
   ensureBrowsableQueue,
   setCachedPodcasts,
@@ -238,6 +239,7 @@ function ConsentGate({
   const { consent, ready } = useConsent();
   const routeNameRef = React.useRef<string | undefined>();
   const [playerRoute, setPlayerRoute] = React.useState<string | undefined>('Home');
+  const [showExitModal, setShowExitModal] = React.useState(false);
 
   useEffect(() => {
     if (!consent.decided) {
@@ -256,9 +258,11 @@ function ConsentGate({
         const activeTab = tabState?.routes?.[tabState.index ?? 0]?.name;
         if (rootRoute?.name === 'MainTabs' && activeTab !== 'Home') {
           navigationRef.navigate('MainTabs', {screen: 'Home'});
+          return true;
         }
       }
       // Keep RadioTEDU open at its root instead of unexpectedly terminating.
+      setShowExitModal(true);
       return true;
     });
     return () => subscription.remove();
@@ -335,6 +339,14 @@ function ConsentGate({
           onFinish={onSplashFinish}
         />
       )}
+      <ExitConfirmationModal
+        visible={showExitModal}
+        onDismiss={() => setShowExitModal(false)}
+        onConfirm={() => {
+          setShowExitModal(false);
+          BackHandler.exitApp();
+        }}
+      />
     </>
   );
 }

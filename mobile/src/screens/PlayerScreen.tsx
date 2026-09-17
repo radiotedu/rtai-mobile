@@ -51,7 +51,6 @@ import {fetchScrollableLyrics} from '../services/lyricsService';
 import {useSleepTimer} from '../services/sleepTimer';
 import ImageShareSheet, {ShareCardData} from '../components/ImageShareSheet';
 import LyricsShareModal from '../components/LyricsShareModal';
-import StandByTunerModal from '../components/StandByTunerModal';
 import {CampusJamModal} from '../components/CampusJamModal';
 import {MediaRouteButton} from '../components/MediaRouteButton';
 import NetInfo from '@react-native-community/netinfo';
@@ -107,7 +106,6 @@ const PlayerScreen = ({route}: any) => {
   const [lyricsShareVisible, setLyricsShareVisible] = useState(false);
   const [songShareData, setSongShareData] = useState<ShareCardData | null>(null);
   const [lyricsShareIndex, setLyricsShareIndex] = useState(0);
-  const [standbyTunerVisible, setStandbyTunerVisible] = useState(false);
   const [campusJamVisible, setCampusJamVisible] = useState(false);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
@@ -627,15 +625,6 @@ const PlayerScreen = ({route}: any) => {
               <Text style={styles.jamButtonText}>JAM</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              testID="standby-tuner-button"
-              onPress={() => setStandbyTunerVisible(true)}
-              style={styles.standbyButton}
-              accessibilityRole="button"
-              accessibilityLabel="STANDBY">
-              <Icon name="radio" size={16} color={COLORS.text} />
-              <Text style={styles.standbyButtonText}>STANDBY</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               onPress={() => setSleepMenuVisible(true)}
               style={styles.topButton}
               accessibilityLabel="Sleep Timer">
@@ -826,16 +815,6 @@ const PlayerScreen = ({route}: any) => {
         stationColor={currentChannel?.color || COLORS.primary}
         stationName={currentChannel?.name || 'RadioTEDU'}
       />
-      <StandByTunerModal
-        visible={standbyTunerVisible}
-        onClose={() => setStandbyTunerVisible(false)}
-        currentChannel={currentChannel}
-        activeTrack={activeTrack}
-        isPlaying={isPlaying}
-        metadata={metadata}
-        onSelectChannel={channelId => playChannelById(channelId)}
-        onTogglePlay={togglePlayback}
-      />
       <CampusJamModal
         visible={campusJamVisible}
         onClose={() => setCampusJamVisible(false)}
@@ -900,24 +879,6 @@ const styles = StyleSheet.create({
   },
   jamButtonText: {
     color: '#fff',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  standbyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 12,
-    marginRight: 6,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  standbyButtonText: {
-    color: COLORS.text,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,

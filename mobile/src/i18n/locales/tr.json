@@ -161,25 +161,6 @@
     "categoryExamKey": "Sınav / Proje Odağı",
     "categoryDiscussion": "Akademik Tartışma"
   },
-  "tuner": {
-    "title": "StandBy Tuner",
-    "brandTitle": "RADIOTEDU STANDBY TUNER",
-    "nightMode": "Gece Modu",
-    "redNight": "KIRMIZI GECE",
-    "amberRetro": "AMBER RETRO",
-    "toggleNightMode": "Gece Modunu Değiştir",
-    "frequency": "Frekans",
-    "tuningScale": "FM FREKANS SKALASI · MHz",
-    "frequencyUnit": "MHz",
-    "exit": "Çıkış",
-    "close": "StandBy Modunu Kapat",
-    "spectrumAnalyzer": "UV / SPEKTRUM ANALİZÖRÜ",
-    "broadcasting": "CANLI YAYINDA",
-    "paused": "DURAKLATILDI",
-    "stereoFm": "STEREO FM",
-    "hiResFlac": "HI-RES FLAC",
-    "highQuality": "192 KBPS HQ"
-  },
   "dsp": {
     "title": "Ses Seviyesi Dengeleme",
     "subtitle": "EBU R128 ses seviyesi dengeleme ve gerçek tepe kontrolü",

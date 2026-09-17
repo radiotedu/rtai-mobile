@@ -1174,3 +1174,26 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - No email or push notifications sent.
   - Host native Android compilation avoided.
   - Clean working tree on `origin/main`.
+
+## 2026-09-17 removal of FM Tuning Scale & StandBy Tuner handoff snapshot
+
+- User directive: "FM Tuning Scale işini sil! bizim radyomuz internet radyosu."
+- User-visible outcome:
+  - Completely removed the ungrounded FM Tuning Scale and StandBy Tuner from the mobile application.
+  - RadioTEDU is purely a digital internet radio streaming online via Icecast (`stream.radiotedu.com`); all simulated FM radio frequencies (88.0–108.0 MHz), MHz tuning dials, analog needle animations, and "FM TUNING SCALE · MHz" labels were eliminated.
+  - `PlayerScreen.tsx`: Removed the `STANDBY` button, state, and modal wrapper, cleaning up the player header and keeping focus on pure streaming controls (`MediaRouteButton`, `JAM`, `Sleep Timer`, `Quality Menu`, `Close`).
+  - Removed `StandByTunerModal.tsx` and unit test `standByTuner.test.ts`.
+  - Cleaned all 6 language bundles (`tr.json`, `en.json`, `de.json`, `fr.json`, `ru.json`, `ar.json`) by deleting the unused `"tuner"` translations block (`tuningScale`, `stereoFm`, `frequency`, etc.).
+  - Repackaged and signed production APK `RadioTEDU-Mobile-v1.3.10.apk` (SHA-256: `203bd86dda77896b03614bfe86f653427e2fc008f0552f45ae64dea06f06d7c5`) and updated GitHub release `v1.3.10` asset via `--clobber`.
+- Tests and verification counts:
+  - Mobile Jest: 117/117 suites passed (538/538 tests passed, 100% success).
+  - Study-Game: 46/46 files, 227/227 tests passed + 3/3 generation contracts.
+  - Android publish audit: 36/36 passed (`node scripts/android-publish-audit.js`).
+  - TypeScript: `npx tsc --noEmit` passed with 0 errors.
+- Safety rules preserved:
+  - Production DB, ERP, and Audio Library untouched.
+  - Strictly `RadioTEDU` (title case) and `RADIOTEDU` (all caps), zero occurrences of `RADİOTEDU`.
+  - No email or push notifications sent.
+  - Host native Android compilation avoided.
+  - Clean working tree on `origin/main`.
+

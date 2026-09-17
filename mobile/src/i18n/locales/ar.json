@@ -161,25 +161,6 @@
     "categoryExamKey": "Exam Key",
     "categoryDiscussion": "Discussion"
   },
-  "tuner": {
-    "title": "StandBy Tuner",
-    "brandTitle": "RADIOTEDU STANDBY TUNER",
-    "nightMode": "Night Mode",
-    "redNight": "RED NIGHT",
-    "amberRetro": "AMBER RETRO",
-    "toggleNightMode": "Toggle Night Mode",
-    "frequency": "Frequency",
-    "tuningScale": "FM TUNING SCALE · MHz",
-    "frequencyUnit": "MHz",
-    "exit": "Exit",
-    "close": "Close Standby Mode",
-    "spectrumAnalyzer": "UV / SPECTRUM ANALYZER",
-    "broadcasting": "BROADCASTING",
-    "paused": "PAUSED",
-    "stereoFm": "STEREO FM",
-    "hiResFlac": "HI-RES FLAC",
-    "highQuality": "192 KBPS HQ"
-  },
   "dsp": {
     "title": "Audio Normalization",
     "subtitle": "EBU R128 loudness leveling & true peak control",

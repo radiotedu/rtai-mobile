@@ -1109,14 +1109,15 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
     - Verified status bar safe area clearance on Android modals.
     - Verified MiniPlayer suppression and seamless podcast routing.
   - Terminal tarball `RadioTEDU-Terminal-v1.3.10.tgz` (35,474 B), zip bundle, and npm package `radiotedu-1.3.10.tgz` generated in `artifacts/release-v1.3.10/`.
-  - All artifacts cataloged with SHA-256 hashes in `SHA256SUMS.txt`.
+  - All artifacts cataloged with SHA-256 hashes in `SHA256SUMS.txt` (APK SHA-256: `e2f789f7e7af38e3d16c1a2859be05d82e0ea7999407b4111026ac653f26f404`).
 - Tests and verification counts:
-  - Mobile Jest: 109/109 suites passed (516/516 tests passed).
+  - Mobile Jest: 110/110 suites passed (521/521 tests passed, including dedicated `podcastPlayerScreen.test.tsx`).
   - Android publish audit: 36/36 passed (`node scripts/android-publish-audit.js`).
   - Terminal: 25/25 tests passed + syntax check passed.
   - Root contract tests: 24/24 passed (`release-workflows`, `technology-rtai-story`, `production-account`).
   - TypeScript: `npx tsc --noEmit` passed with 0 errors.
   - Study-game tests: 46/46 files, 227/227 tests passed + 3/3 generation contracts (study-game remained completely untouched and isolated).
+  - Total automated tests across ecosystem: 836/836 tests passed (%100 success).
 - Safety rules preserved:
   - Production DB, ERP, and Audio Library untouched.
   - Strictly `RadioTEDU` (title case) and `RADIOTEDU` (all caps), zero occurrences of `RADİOTEDU`.

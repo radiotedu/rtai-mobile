@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Image,
   Modal,
+  Platform,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -627,10 +628,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
     marginLeft: 10,
-  },
-  modalSafeContainer: {
-    flex: 1,
-    backgroundColor: '#0f1115',
   },
   modalMiniTransport: {
     backgroundColor: '#15181e',

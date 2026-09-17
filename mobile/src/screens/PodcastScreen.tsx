@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,11 @@ import {
 import {resolveCurrentStreamPreferences} from '../services/streamPreferences';
 import GlobalHeader from '../components/GlobalHeader';
 import PageTransition from '../components/PageTransition';
+import PodcastDownloadButton from '../components/PodcastDownloadButton';
+import {
+  getAllDownloadedPodcasts,
+  subscribeToDownloads,
+} from '../services/podcastDownloadService';
 import {openPodcastPlayer} from '../navigation/navigationRef';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
@@ -46,10 +51,26 @@ const PodcastScreen = () => {
   const route = useRoute();
   const selectedId = (route.params as {podcastId?: string} | undefined)?.podcastId;
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
+  const [filterMode, setFilterMode] = useState<'all' | 'downloaded'>('all');
+  const [downloadedIds, setDownloadedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const refreshDownloads = () => {
+      setDownloadedIds(getAllDownloadedPodcasts().map(p => p.id));
+    };
+    refreshDownloads();
+    const unsub = subscribeToDownloads(refreshDownloads);
+    return () => unsub();
+  }, []);
+
   const displayedPodcasts = useMemo(() => {
-    const selected = podcasts.find(podcast => podcast.id === selectedId);
-    return selected ? [selected, ...podcasts.filter(podcast => podcast.id !== selectedId)] : podcasts;
-  }, [podcasts, selectedId]);
+    let list = podcasts;
+    if (filterMode === 'downloaded') {
+      list = podcasts.filter(podcast => downloadedIds.includes(podcast.id));
+    }
+    const selected = list.find(podcast => podcast.id === selectedId);
+    return selected ? [selected, ...list.filter(podcast => podcast.id !== selectedId)] : list;
+  }, [podcasts, selectedId, filterMode, downloadedIds]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -217,6 +238,7 @@ const PodcastScreen = () => {
         </Text>
       </View>
       <View style={styles.actionIcon}>
+        <PodcastDownloadButton podcast={item} size={22} />
         {playingId === item.id ? (
           <ActivityIndicator size="small" color={COLORS.primary} />
         ) : activeTrack?.id === `${PODCAST_ID_PREFIX}${item.id}` &&
@@ -233,6 +255,39 @@ const PodcastScreen = () => {
     <PageTransition>
       <SafeAreaView style={styles.container}>
         <GlobalHeader />
+        <View style={styles.filterBar}>
+          <TouchableOpacity
+            style={[styles.filterPill, filterMode === 'all' && styles.filterPillActive]}
+            onPress={() => setFilterMode('all')}
+            accessibilityRole="tab"
+            accessibilityLabel="Tüm Bölümler">
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === 'all' && styles.filterPillTextActive,
+              ]}>
+              Tüm Bölümler
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterPill, filterMode === 'downloaded' && styles.filterPillActive]}
+            onPress={() => setFilterMode('downloaded')}
+            accessibilityRole="tab"
+            accessibilityLabel="İndirilenler">
+            <Icon
+              name="download-circle"
+              size={15}
+              color={filterMode === 'downloaded' ? '#fff' : COLORS.textMuted}
+            />
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === 'downloaded' && styles.filterPillTextActive,
+              ]}>
+              İndirilenler ({downloadedIds.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
         {loading && page === 1 ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={COLORS.primary} />
@@ -320,9 +375,39 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 13,
   },
-  actionIcon: {
-    width: 32,
+  filterBar: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.background,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  filterPill: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    gap: 6,
+  },
+  filterPillActive: {
+    backgroundColor: COLORS.primary,
+  },
+  filterPillText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterPillTextActive: {
+    color: '#fff',
+  },
+  actionIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     justifyContent: 'center',
   },
   emptyContainer: { alignItems: 'center', marginTop: 100 },

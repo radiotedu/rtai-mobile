@@ -29,7 +29,16 @@ class WearMainActivity : Activity() {
             textSize = 20f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)))
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(38)))
+
+        list.addView(TextView(this).apply {
+            text = "● LIVE ON WRIST"
+            textSize = 10f
+            setTextColor(Color.rgb(34, 197, 94))
+            gravity = Gravity.CENTER
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(22)).apply {
+            bottomMargin = dp(8)
+        })
 
         RadioChannels.all.forEach { channel ->
             list.addView(Button(this).apply {
@@ -40,6 +49,16 @@ class WearMainActivity : Activity() {
                 bottomMargin = dp(6)
             })
         }
+
+        list.addView(TextView(this).apply {
+            text = "TED Üniversitesi · Ankara"
+            textSize = 11f
+            setTextColor(Color.rgb(156, 163, 175))
+            gravity = Gravity.CENTER
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)).apply {
+            topMargin = dp(8)
+        })
+
         setContentView(ScrollView(this).apply { addView(list) })
     }
 

@@ -52,6 +52,8 @@ import {useSleepTimer} from '../services/sleepTimer';
 import ImageShareSheet, {ShareCardData} from '../components/ImageShareSheet';
 import LyricsShareModal from '../components/LyricsShareModal';
 import StandByTunerModal from '../components/StandByTunerModal';
+import {CampusJamModal} from '../components/CampusJamModal';
+import {MediaRouteButton} from '../components/MediaRouteButton';
 import NetInfo from '@react-native-community/netinfo';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
@@ -106,6 +108,7 @@ const PlayerScreen = ({route}: any) => {
   const [songShareData, setSongShareData] = useState<ShareCardData | null>(null);
   const [lyricsShareIndex, setLyricsShareIndex] = useState(0);
   const [standbyTunerVisible, setStandbyTunerVisible] = useState(false);
+  const [campusJamVisible, setCampusJamVisible] = useState(false);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
 
@@ -613,6 +616,16 @@ const PlayerScreen = ({route}: any) => {
             ) : null}
           </View>
           <View style={styles.topRightActions}>
+            <MediaRouteButton size={22} color={COLORS.text} style={styles.routeHeaderBtn} />
+            <TouchableOpacity
+              testID="campus-jam-button"
+              onPress={() => setCampusJamVisible(true)}
+              style={styles.jamButton}
+              accessibilityRole="button"
+              accessibilityLabel="Birlikte Dinle">
+              <Icon name="account-group" size={15} color="#fff" />
+              <Text style={styles.jamButtonText}>JAM</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               testID="standby-tuner-button"
               onPress={() => setStandbyTunerVisible(true)}
@@ -823,6 +836,12 @@ const PlayerScreen = ({route}: any) => {
         onSelectChannel={channelId => playChannelById(channelId)}
         onTogglePlay={togglePlayback}
       />
+      <CampusJamModal
+        visible={campusJamVisible}
+        onClose={() => setCampusJamVisible(false)}
+        channelId={currentChannel?.id || 'radiotedu-main'}
+        channelName={currentChannel?.name || 'RadioTEDU'}
+      />
     </Animated.View>
   );
 };
@@ -864,6 +883,26 @@ const styles = StyleSheet.create({
   topRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  routeHeaderBtn: {
+    marginRight: 4,
+    padding: 4,
+  },
+  jamButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginRight: 6,
+    gap: 4,
+  },
+  jamButtonText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   standbyButton: {
     flexDirection: 'row',

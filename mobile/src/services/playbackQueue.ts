@@ -40,6 +40,7 @@ import {
   resolveCurrentStreamPreferences,
 } from './streamPreferences';
 import {audioDspService} from './audioDspService';
+import {getDownloadedPodcastPath} from './podcastDownloadService';
 
 export const PODCAST_ID_PREFIX = 'podcast:';
 
@@ -192,12 +193,16 @@ export function buildChannelTrack(
 }
 
 export function buildPodcastTrack(podcast: Podcast): Track | null {
-  if (!podcast.audioUrl) {
+  const localPath = getDownloadedPodcastPath(podcast.id);
+  const audioUrl = localPath
+    ? (localPath.startsWith('file://') ? localPath : `file://${localPath}`)
+    : podcast.audioUrl;
+  if (!audioUrl) {
     return null; // external-only episodes can't be played in the car
   }
   return {
     id: `${PODCAST_ID_PREFIX}${podcast.id}`,
-    url: podcast.audioUrl,
+    url: audioUrl,
     title: podcast.title,
     artist: podcast.feedTitle || PODCAST_ARTIST_FALLBACK,
     artwork: podcast.imageUrl || FALLBACK_ARTWORK,

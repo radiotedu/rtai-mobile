@@ -151,6 +151,21 @@
           <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
         </intent-filter>
       </receiver>
+
+      <receiver
+        android:name=".widget.RadioTeduWidgetProvider"
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+          <action android:name="com.radiotedumobile.ACTION_WIDGET_PLAY_PAUSE" />
+          <action android:name="com.radiotedumobile.ACTION_WIDGET_NEXT_STATION" />
+          <action android:name="com.radiotedumobile.ACTION_WIDGET_PREV_STATION" />
+          <action android:name="com.radiotedumobile.ACTION_WIDGET_UPDATE_DATA" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/radio_tedu_widget_info" />
+      </receiver>
       <provider android:name="androidx.core.content.FileProvider"
         android:authorities="${applicationId}.sharecards"
         android:exported="false" android:grantUriPermissions="true">

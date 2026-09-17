@@ -1,19 +1,22 @@
 import {DeviceEventEmitter, NativeModules, Platform} from 'react-native';
-import {pausePlaybackByUser} from './playbackQueue';
 
-const CastBridge = NativeModules.RadioTeduCastBridge as
-  | {
-      updateMedia(url: string, title: string, artist: string, artwork: string, live: boolean): void;
-      showRoutePicker(): void;
-    }
-  | undefined;
+function getCastBridge() {
+  return NativeModules.RadioTeduCastBridge as
+    | {
+        updateMedia(url: string, title: string, artist: string, artwork: string, live: boolean): void;
+        showRoutePicker(): void;
+      }
+    | undefined;
+}
 
-const ContinuityBridge = NativeModules.RadioTeduContinuityBridge as
-  | {
-      updateMedia(mediaId: string, title: string, artist: string, playbackURL: string, positionSeconds: number): void;
-      clear(): void;
-    }
-  | undefined;
+function getContinuityBridge() {
+  return NativeModules.RadioTeduContinuityBridge as
+    | {
+        updateMedia(mediaId: string, title: string, artist: string, playbackURL: string, positionSeconds: number): void;
+        clear(): void;
+      }
+    | undefined;
+}
 
 export type OutputMedia = {
   id: string;
@@ -30,9 +33,9 @@ export function updateOutputMedia(media: OutputMedia): void {
     return;
   }
   if (Platform.OS === 'android') {
-    CastBridge?.updateMedia(media.url, media.title, media.artist, media.artwork, media.live);
+    getCastBridge()?.updateMedia(media.url, media.title, media.artist, media.artwork, media.live);
   } else if (Platform.OS === 'ios') {
-    ContinuityBridge?.updateMedia(
+    getContinuityBridge()?.updateMedia(
       media.id,
       media.title,
       media.artist,
@@ -44,22 +47,57 @@ export function updateOutputMedia(media: OutputMedia): void {
 
 export function clearOutputMedia(): void {
   if (Platform.OS === 'ios') {
-    ContinuityBridge?.clear();
+    getContinuityBridge()?.clear();
   }
+}
+
+let isCasting = false;
+const routingListeners = new Set<(connected: boolean) => void>();
+
+export function isCastActive(): boolean {
+  return isCasting;
+}
+
+export function subscribeToCastState(callback: (connected: boolean) => void): () => void {
+  routingListeners.add(callback);
+  callback(isCasting);
+  return () => {
+    routingListeners.delete(callback);
+  };
+}
+
+export function setMockCastActive(active: boolean): void {
+  isCasting = active;
+  routingListeners.forEach(l => l(isCasting));
 }
 
 export function showCastRoutePicker(): void {
   if (Platform.OS === 'android') {
-    CastBridge?.showRoutePicker();
+    getCastBridge()?.showRoutePicker();
   }
 }
 
 export function initOutputRouting(): () => void {
-  if (Platform.OS !== 'android' || !CastBridge) {
+  const bridge = getCastBridge();
+  if (Platform.OS !== 'android' || !bridge) {
     return () => {};
   }
-  const subscription = DeviceEventEmitter.addListener('RadioTeduCastSessionStarted', () => {
-    pausePlaybackByUser().catch(() => {});
+  const startSub = DeviceEventEmitter.addListener('RadioTeduCastSessionStarted', () => {
+    isCasting = true;
+    routingListeners.forEach(l => l(true));
+    try {
+      const {pausePlaybackByUser} = require('./playbackQueue');
+      pausePlaybackByUser().catch(() => {});
+    } catch {
+      // ignore
+    }
   });
-  return () => subscription.remove();
+  const endSub = DeviceEventEmitter.addListener('RadioTeduCastSessionEnded', () => {
+    isCasting = false;
+    routingListeners.forEach(l => l(false));
+  });
+  return () => {
+    startSub.remove();
+    endSub.remove();
+  };
 }

@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import GlobalHeader from '../components/GlobalHeader';
 import HomeDiscovery from '../components/HomeDiscovery';
+import MoodFlowShelf from '../components/MoodFlowShelf';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
@@ -145,6 +146,7 @@ const HomeScreen = () => {
           }
           showsVerticalScrollIndicator={false}>
           <HomeDiscovery refreshKey={refreshKey} />
+          <MoodFlowShelf />
 
           <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
           {loading && !accountHome && displayEvents.length === 0 ? (

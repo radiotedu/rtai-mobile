@@ -31,6 +31,7 @@ import {
 } from '../services/playbackQueue';
 import {Podcast} from '../services/podcastService';
 import PodcastTranscriptViewer from '../components/PodcastTranscriptViewer';
+import PodcastDownloadButton from '../components/PodcastDownloadButton';
 import {formatTimestamp} from '../data/samplePodcastTranscripts';
 
 const FALLBACK_PODCAST_ARTWORK =
@@ -122,6 +123,20 @@ export const PodcastPlayerScreen: React.FC = () => {
     return '2026 Akademik Dönem';
   }, [routePodcast?.date]);
 
+  const currentPodcastItem: Podcast = useMemo(() => {
+    if (routePodcast) return routePodcast;
+    const cleanId = routePodcastId || (activeTrack?.id?.replace(PODCAST_ID_PREFIX, '') ?? 'podcast_episode');
+    return {
+      id: cleanId,
+      title: displayTitle,
+      audioUrl: activeTrack?.url || '',
+      feedTitle: displayHost,
+      imageUrl: displayArtwork,
+      date: displayDate,
+      description: '',
+    };
+  }, [routePodcast, routePodcastId, activeTrack?.id, activeTrack?.url, displayTitle, displayHost, displayArtwork, displayDate]);
+
   const togglePlayback = useCallback(async () => {
     try {
       const {state: current} = await TrackPlayer.getPlaybackState();
@@ -189,25 +204,28 @@ export const PodcastPlayerScreen: React.FC = () => {
           </Text>
         </View>
 
-        <TouchableOpacity
-          onPress={() => setShowTranscript(prev => !prev)}
-          style={[styles.transcriptToggleBtn, showTranscript && styles.transcriptToggleBtnActive]}
-          accessibilityRole="button"
-          accessibilityLabel="Transkripti aç ya da kapat"
-          testID="podcast-player-transcript-toggle">
-          <Icon
-            name="text-box-search-outline"
-            size={18}
-            color={showTranscript ? '#fff' : COLORS.primary}
-          />
-          <Text
-            style={[
-              styles.transcriptToggleText,
-              showTranscript && styles.transcriptToggleTextActive,
-            ]}>
-            Transkript
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.topBarRight}>
+          <PodcastDownloadButton podcast={currentPodcastItem} size={22} />
+          <TouchableOpacity
+            onPress={() => setShowTranscript(prev => !prev)}
+            style={[styles.transcriptToggleBtn, showTranscript && styles.transcriptToggleBtnActive]}
+            accessibilityRole="button"
+            accessibilityLabel="Transkripti aç ya da kapat"
+            testID="podcast-player-transcript-toggle">
+            <Icon
+              name="text-box-search-outline"
+              size={18}
+              color={showTranscript ? '#fff' : COLORS.primary}
+            />
+            <Text
+              style={[
+                styles.transcriptToggleText,
+                showTranscript && styles.transcriptToggleTextActive,
+              ]}>
+              Transkript
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main Player Screen Content */}
@@ -435,6 +453,11 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 13,
     fontWeight: '700',
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   transcriptToggleBtn: {
     flexDirection: 'row',

@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
 import { SPACING } from '../theme/theme';
+import {MediaRouteButton} from './MediaRouteButton';
 
 const GlobalHeader = () => {
   const navigation = useNavigation<any>();
@@ -24,7 +25,7 @@ const GlobalHeader = () => {
 
   return (
     <View style={[styles.header, compact && styles.compactHeader]}>
-      <View style={styles.sideSpacer} />
+      <MediaRouteButton size={24} color="#fff" />
       <Image
         source={require('../assets/images/logo-03byz.png')}
         style={[styles.logo, compact && styles.compactLogo]}

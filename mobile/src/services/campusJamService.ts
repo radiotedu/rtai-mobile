@@ -79,6 +79,8 @@ export async function setStoredJamUsername(name: string): Promise<void> {
   }
 }
 
+export const JAM_API_ENDPOINT = 'https://radiotedu.com/wp-json/radiotedu/v1/jam';
+
 /**
  * Creates a new synchronized Jam Room for a channel
  */
@@ -88,7 +90,33 @@ export async function createJamRoom(
   customHostName?: string,
 ): Promise<CampusJamRoom> {
   const hostName = customHostName || (await getStoredJamUsername());
-  const code = generateRoomCode();
+  let code = generateRoomCode();
+
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeout = setTimeout(() => controller?.abort(), 2000);
+      const res = await fetch(`${JAM_API_ENDPOINT}/create`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          channel_id: channelId,
+          channel_name: channelName,
+          host_name: hostName,
+        }),
+        signal: controller?.signal,
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.code) {
+          code = String(data.code);
+        }
+      }
+    } catch (e) {
+      // Gracefully fallback to local room code
+    }
+  }
 
   const hostListener: JamListener = {
     id: `listener-${Date.now()}`,
@@ -126,6 +154,31 @@ export async function joinJamRoom(
   }
 
   const listenerName = customName || (await getStoredJamUsername());
+  let targetChannelId = channelId;
+  let targetChannelName = channelName;
+  let remoteHostName = 'TEDÜ Campus Host';
+
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeout = setTimeout(() => controller?.abort(), 2000);
+      const res = await fetch(`${JAM_API_ENDPOINT}/rooms/${cleanCode}`, {
+        signal: controller?.signal,
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.channel_id) {
+          targetChannelId = data.channel_id;
+          targetChannelName = data.channel_name || channelName;
+          remoteHostName = data.host_name || remoteHostName;
+        }
+      }
+    } catch (e) {
+      // Fallback to local
+    }
+  }
+
   const myListener: JamListener = {
     id: `listener-${Date.now()}`,
     name: listenerName,
@@ -135,14 +188,14 @@ export async function joinJamRoom(
 
   activeRoom = {
     code: cleanCode,
-    channelId,
-    channelName,
-    hostName: 'TEDÜ Campus Host',
+    channelId: targetChannelId,
+    channelName: targetChannelName,
+    hostName: remoteHostName,
     isHost: false,
     listeners: [
       {
         id: 'host-1',
-        name: 'TEDÜ Campus Host',
+        name: remoteHostName,
         isHost: true,
         joinedAt: Date.now() - 60000,
       },
@@ -153,7 +206,7 @@ export async function joinJamRoom(
 
   // Sync playback immediately to the room's live channel
   try {
-    await playTrackById(channelId);
+    await playTrackById(targetChannelId);
   } catch (err) {
     logSafeError('campusJam.syncPlayback', err);
   }

@@ -112,4 +112,39 @@ describe('CampusJamModal Component', () => {
     // Reaction should have fired without error
     expect(campusJamService.getActiveJamRoom()?.isHost).toBe(true);
   });
+
+  it('triggers invite sharing and allows leaving room', async () => {
+    await act(async () => {
+      await campusJamService.createJamRoom('radiotedu-main', 'RadioTEDU', 'TestHost');
+    });
+
+    let tree: any;
+    await act(async () => {
+      tree = renderer.create(
+        <CampusJamModal
+          visible={true}
+          onClose={mockOnClose}
+          channelId="radiotedu-main"
+          channelName="RadioTEDU"
+        />,
+      );
+    });
+
+    const instance = tree.root;
+    const shareBtn = instance.findByProps({testID: 'campus-jam-share-btn'});
+    expect(shareBtn).toBeTruthy();
+
+    await act(async () => {
+      shareBtn.props.onPress();
+    });
+
+    const leaveBtn = instance.findByProps({testID: 'campus-jam-leave-btn'});
+    expect(leaveBtn).toBeTruthy();
+
+    await act(async () => {
+      leaveBtn.props.onPress();
+    });
+
+    expect(campusJamService.getActiveJamRoom()).toBeNull();
+  });
 });

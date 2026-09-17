@@ -129,29 +129,6 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       expect(onSeekMock).toHaveBeenCalledWith(65);
     });
 
-    it('toggles RTAI Copilot explanation card on cue press', () => {
-      let root: any;
-      act(() => {
-        root = renderer.create(
-          <PodcastTranscriptViewer
-            currentTimeSeconds={10}
-            onSeek={jest.fn()}
-          />,
-        );
-      });
-
-      const copilotBtn = root.root.findByProps({testID: 'copilot-btn-cue-1'});
-      expect(copilotBtn).toBeTruthy();
-
-      act(() => {
-        copilotBtn.props.onPress();
-      });
-
-      // Explanation card should now be rendered
-      const copilotCard = root.root.findByProps({testID: 'copilot-card-cue-1'});
-      expect(copilotCard).toBeTruthy();
-    });
-
     it('opens add capsule form, inputs note, submits and likes capsule', () => {
       let root: any;
       act(() => {

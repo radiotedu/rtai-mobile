@@ -1410,3 +1410,26 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Strict brand casing: `RadioTEDU` (title case) and `RADIOTEDU` (all caps), zero occurrences of `RADİOTEDU`.
   - No email or push notifications sent.
   - Audio Library untouched.
+
+## 2026-09-17 Removal of external AI API dependency & self-contained podcast timecapsules handoff snapshot
+
+- User directive: "sen o işi sil. api'a bağımlı olmayalım." and "akgularda gh hesabı ile gönder."
+- Cleanly decoupled and removed external AI / LLM dependencies:
+  - Deleted `mobile/src/services/rtaiPodcastCopilotService.ts`.
+  - Removed RTAI Copilot explanation trigger ("💡 RTAI Açıkla"), explanation card UI, and associated states from `mobile/src/components/PodcastTranscriptViewer.tsx`.
+  - Preserved self-contained student-generated Acoustic Timecapsules (`mobile/src/services/podcastTimecapsuleService.ts`) and full 3-tab podcast transcript viewer (Transkript, Bilgi Kartları, Kapsüller).
+  - Updated test suites in `mobile/src/__tests__/podcastTranscript.test.tsx` and `mobile/src/__tests__/podcastTimecapsule.test.ts`.
+- Tests & Verification:
+  - Mobile Jest: 122/122 suites passed, 562/562 tests passed (100% green).
+  - Android static publish audit: 36/36 passed (compileSdkVersion 36, targetSdkVersion 36, single APK, Android Auto RadioTeduCarService, Media3).
+- Packaging & Release Upload:
+  - Packaged official production APK, aligned with zipalign (-f -P 16 4), signed with official keystore (CN=RadioTEDU).
+  - Uploaded to GitHub Release `v1.3.10` with verified active account `akgularda`:
+    - File: `RadioTEDU-Mobile-v1.3.10.apk`
+    - SHA-256: `5dde4ddfa1d3ef2a15aebbced58923ba3711ec3210f3112772c994267977bdc2`
+    - Uploaded `SHA256SUMS.txt` and updated release notes on GitHub.
+- Safety rules preserved:
+  - Zero database/ERP writes.
+  - Zero external AI API calls. Zero network tracking.
+  - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps).
+  - Production database and Audio Library untouched. No email or push notifications sent.

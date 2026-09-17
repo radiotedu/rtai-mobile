@@ -2,9 +2,8 @@ import {
   podcastTimecapsuleService,
   INITIAL_TEDU_TIMECAPSULES,
 } from '../services/podcastTimecapsuleService';
-import {rtaiPodcastCopilotService} from '../services/rtaiPodcastCopilotService';
 
-describe('Podcast Timecapsules & RTAI Copilot Service', () => {
+describe('Podcast Acoustic Timecapsules Service', () => {
   beforeEach(() => {
     podcastTimecapsuleService.resetTimecapsules();
   });
@@ -50,42 +49,6 @@ describe('Podcast Timecapsules & RTAI Copilot Service', () => {
       const initialLikes = INITIAL_TEDU_TIMECAPSULES[0].likes;
       const newLikes = podcastTimecapsuleService.likeTimecapsule('tc-1');
       expect(newLikes).toBe(initialLikes + 1);
-    });
-  });
-
-  describe('rtaiPodcastCopilotService', () => {
-    it('generates specialized academic explanation for RAG and LLM terms', () => {
-      const explanation = rtaiPodcastCopilotService.explainPodcastMoment(
-        85,
-        'RAG mimarisi ve vektör veritabanları halüsinasyon riskini azaltır.',
-        'Dr. Kaya Demir',
-      );
-
-      expect(explanation.summary).toContain('RAG (Retrieval-Augmented Generation)');
-      expect(explanation.keyTerms).toContain('RAG Mimarisi');
-      expect(explanation.suggestedQuestion).toBeTruthy();
-      expect(explanation.academicConfidence).toBeGreaterThan(0.9);
-    });
-
-    it('generates specialized academic ethics explanation', () => {
-      const explanation = rtaiPodcastCopilotService.explainPodcastMoment(
-        175,
-        'Akademik dürüstlük ve senato etik ilkeleri rehberi.',
-        'Prof. Dr. Ziya Selçuk',
-      );
-
-      expect(explanation.summary).toContain('TEDÜ Senatosu Yapay Zeka Etik Rehberi');
-      expect(explanation.keyTerms).toContain('Akademik Dürüstlük');
-    });
-
-    it('produces crisp synthesis for general spoken content', () => {
-      const explanation = rtaiPodcastCopilotService.explainPodcastMoment(
-        30,
-        'Üniversitemizin yeni laboratuvar olanakları öğrencilere açık.',
-      );
-
-      expect(explanation.summary).toContain('Bu bölümde');
-      expect(explanation.keyTerms.length).toBeGreaterThan(0);
     });
   });
 });

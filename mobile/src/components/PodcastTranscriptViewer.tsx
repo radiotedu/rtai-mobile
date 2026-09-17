@@ -23,10 +23,6 @@ import {
   CATEGORY_CONFIG as TIMECAPSULE_CATEGORY_CONFIG,
   podcastTimecapsuleService,
 } from '../services/podcastTimecapsuleService';
-import {
-  RTAICopilotExplanation,
-  rtaiPodcastCopilotService,
-} from '../services/rtaiPodcastCopilotService';
 
 export interface PodcastTranscriptViewerProps {
   cues?: TranscriptCue[];
@@ -73,8 +69,6 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
   const [timecapsules, setTimecapsules] = useState<PodcastTimecapsule[]>(() =>
     podcastTimecapsuleService.getTimecapsules(),
   );
-  const [activeCopilotCueId, setActiveCopilotCueId] = useState<string | null>(null);
-  const [copilotExplanation, setCopilotExplanation] = useState<RTAICopilotExplanation | null>(null);
   const [showAddCapsule, setShowAddCapsule] = useState(false);
   const [newAuthor, setNewAuthor] = useState('');
   const [newNote, setNewNote] = useState('');
@@ -272,7 +266,6 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
               const cueTimecapsules = timecapsules.filter(
                 tc => tc.timestampSeconds >= cue.startSeconds && tc.timestampSeconds < cue.endSeconds,
               );
-              const isCopilotOpen = activeCopilotCueId === cue.id && copilotExplanation !== null;
 
               return (
                 <View
@@ -346,76 +339,6 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
                           </Text>
                         </TouchableOpacity>
                       ))}
-                    </View>
-                  ) : null}
-
-                  {/* Cue Footer Actions: RTAI Copilot Toggle */}
-                  <View style={styles.cueFooterActions}>
-                    <TouchableOpacity
-                      style={[styles.copilotExplainBtn, isCopilotOpen && styles.copilotExplainBtnActive]}
-                      onPress={() => {
-                        if (isCopilotOpen) {
-                          setActiveCopilotCueId(null);
-                          setCopilotExplanation(null);
-                        } else {
-                          setActiveCopilotCueId(cue.id);
-                          setCopilotExplanation(
-                            rtaiPodcastCopilotService.explainPodcastMoment(
-                              cue.startSeconds,
-                              cue.text,
-                              cue.speaker,
-                            ),
-                          );
-                        }
-                      }}
-                      accessibilityRole="button"
-                      testID={`copilot-btn-${cue.id}`}>
-                      <Icon
-                        name={isCopilotOpen ? 'creation' : 'auto-fix'}
-                        size={13}
-                        color={isCopilotOpen ? '#fff' : '#c084fc'}
-                      />
-                      <Text
-                        style={[
-                          styles.copilotExplainBtnText,
-                          isCopilotOpen && styles.copilotExplainBtnTextActive,
-                        ]}>
-                        {isCopilotOpen ? 'RTAI Kapat' : '💡 RTAI Açıkla'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* RTAI Academic Copilot Explanation Card */}
-                  {isCopilotOpen && copilotExplanation ? (
-                    <View style={styles.copilotCard} testID={`copilot-card-${cue.id}`}>
-                      <View style={styles.copilotHeader}>
-                        <View style={styles.copilotHeaderTitleWrap}>
-                          <Icon name="brain" size={15} color="#c084fc" />
-                          <Text style={styles.copilotCardTitle}>RTAI AKADEMİK ANALİZ</Text>
-                        </View>
-                        <Text style={styles.copilotAccuracyBadge}>
-                          %{Math.round(copilotExplanation.academicConfidence * 100)} Doğruluk
-                        </Text>
-                      </View>
-
-                      <Text style={styles.copilotSummaryText}>
-                        {copilotExplanation.summary}
-                      </Text>
-
-                      <View style={styles.copilotKeyTermsRow}>
-                        {copilotExplanation.keyTerms.map(term => (
-                          <View key={term} style={styles.copilotKeyTermTag}>
-                            <Text style={styles.copilotKeyTermText}>#{term}</Text>
-                          </View>
-                        ))}
-                      </View>
-
-                      <View style={styles.copilotStudyQuestionBox}>
-                        <Icon name="help-circle-outline" size={14} color="#fbbf24" style={{marginRight: 4}} />
-                        <Text style={styles.copilotStudyQuestionText}>
-                          {copilotExplanation.suggestedQuestion}
-                        </Text>
-                      </View>
                     </View>
                   ) : null}
                 </View>
@@ -1013,107 +936,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
   },
-  cueFooterActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-  },
-  copilotExplainBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(192, 132, 252, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(192, 132, 252, 0.3)',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    gap: 4,
-  },
-  copilotExplainBtnActive: {
-    backgroundColor: '#9333ea',
-    borderColor: '#a855f7',
-  },
-  copilotExplainBtnText: {
-    color: '#c084fc',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  copilotExplainBtnTextActive: {
-    color: '#ffffff',
-  },
-  copilotCard: {
-    marginTop: 10,
-    backgroundColor: 'rgba(147, 51, 234, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(192, 132, 252, 0.35)',
-    borderRadius: 12,
-    padding: SPACING.md,
-  },
-  copilotHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  copilotHeaderTitleWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  copilotCardTitle: {
-    color: '#c084fc',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  copilotAccuracyBadge: {
-    color: '#34d399',
-    fontSize: 10,
-    fontWeight: '800',
-    backgroundColor: 'rgba(52, 211, 153, 0.15)',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-  },
-  copilotSummaryText: {
-    color: '#f3f4f6',
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 8,
-  },
-  copilotKeyTermsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 5,
-    marginBottom: 8,
-  },
-  copilotKeyTermTag: {
-    backgroundColor: 'rgba(192, 132, 252, 0.18)',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  copilotKeyTermText: {
-    color: '#e9d5ff',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  copilotStudyQuestionBox: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    borderRadius: 6,
-    padding: 8,
-    gap: 4,
-  },
-  copilotStudyQuestionText: {
-    color: '#fef08a',
-    fontSize: 11,
-    fontWeight: '600',
-    flex: 1,
-    lineHeight: 16,
-  },
+
   addCapsuleToggle: {
     flexDirection: 'row',
     alignItems: 'center',

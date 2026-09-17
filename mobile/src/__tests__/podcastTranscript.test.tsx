@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import PodcastTranscriptViewer from '../components/PodcastTranscriptViewer';
 import {
@@ -94,6 +94,105 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
 
       act(() => {
         takeawaysTab.props.onPress();
+      });
+
+      expect(root.toJSON()).toBeTruthy();
+    });
+
+    it('supports switching to timecapsules tab and jumping to timestamp', () => {
+      const onSeekMock = jest.fn();
+      let root: any;
+      act(() => {
+        root = renderer.create(
+          <PodcastTranscriptViewer
+            currentTimeSeconds={30}
+            onSeek={onSeekMock}
+          />,
+        );
+      });
+
+      const timecapsulesTab = root.root.findByProps({testID: 'tab-timecapsules'});
+      expect(timecapsulesTab).toBeTruthy();
+
+      act(() => {
+        timecapsulesTab.props.onPress();
+      });
+
+      // Find first timecapsule jump button
+      const jumpBtn = root.root.findByProps({testID: 'timecapsule-jump-tc-1'});
+      expect(jumpBtn).toBeTruthy();
+
+      act(() => {
+        jumpBtn.props.onPress();
+      });
+
+      expect(onSeekMock).toHaveBeenCalledWith(65);
+    });
+
+    it('toggles RTAI Copilot explanation card on cue press', () => {
+      let root: any;
+      act(() => {
+        root = renderer.create(
+          <PodcastTranscriptViewer
+            currentTimeSeconds={10}
+            onSeek={jest.fn()}
+          />,
+        );
+      });
+
+      const copilotBtn = root.root.findByProps({testID: 'copilot-btn-cue-1'});
+      expect(copilotBtn).toBeTruthy();
+
+      act(() => {
+        copilotBtn.props.onPress();
+      });
+
+      // Explanation card should now be rendered
+      const copilotCard = root.root.findByProps({testID: 'copilot-card-cue-1'});
+      expect(copilotCard).toBeTruthy();
+    });
+
+    it('opens add capsule form, inputs note, submits and likes capsule', () => {
+      let root: any;
+      act(() => {
+        root = renderer.create(
+          <PodcastTranscriptViewer
+            currentTimeSeconds={120}
+            onSeek={jest.fn()}
+          />,
+        );
+      });
+
+      // Go to timecapsules tab
+      const timecapsulesTab = root.root.findByProps({testID: 'tab-timecapsules'});
+      act(() => {
+        timecapsulesTab.props.onPress();
+      });
+
+      // Toggle form
+      const toggleBtn = root.root.findByProps({testID: 'toggle-add-capsule'});
+      act(() => {
+        toggleBtn.props.onPress();
+      });
+
+      const authorInput = root.root.findByProps({testID: 'input-capsule-author'});
+      const noteInput = root.root.findByProps({testID: 'input-capsule-note'});
+
+      act(() => {
+        authorInput.props.onChangeText('TEDÜ Mühendislik Kulübü');
+        noteInput.props.onChangeText('Harika bir ders notu!');
+      });
+
+      const submitBtn = root.root.findByProps({testID: 'submit-capsule-btn'});
+      act(() => {
+        submitBtn.props.onPress();
+      });
+
+      // Like first timecapsule
+      const likeBtn = root.root.findByProps({testID: 'timecapsule-like-tc-1'});
+      expect(likeBtn).toBeTruthy();
+      act(() => {
+        likeBtn.props.onPress();
       });
 
       expect(root.toJSON()).toBeTruthy();

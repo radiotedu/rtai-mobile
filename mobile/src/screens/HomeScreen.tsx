@@ -17,6 +17,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import GlobalHeader from '../components/GlobalHeader';
 import HomeDiscovery from '../components/HomeDiscovery';
 import MoodFlowShelf from '../components/MoodFlowShelf';
+import SpatialCampusBanner from '../components/SpatialCampusBanner';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
@@ -145,6 +146,7 @@ const HomeScreen = () => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
           }
           showsVerticalScrollIndicator={false}>
+          <SpatialCampusBanner />
           <HomeDiscovery refreshKey={refreshKey} />
           <MoodFlowShelf />
 

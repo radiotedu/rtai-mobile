@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useState, useEffect} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -17,6 +17,16 @@ import {
   formatTimestamp,
   isCueActive,
 } from '../data/samplePodcastTranscripts';
+import {
+  PodcastTimecapsule,
+  TimecapsuleCategory,
+  CATEGORY_CONFIG as TIMECAPSULE_CATEGORY_CONFIG,
+  podcastTimecapsuleService,
+} from '../services/podcastTimecapsuleService';
+import {
+  RTAICopilotExplanation,
+  rtaiPodcastCopilotService,
+} from '../services/rtaiPodcastCopilotService';
 
 export interface PodcastTranscriptViewerProps {
   cues?: TranscriptCue[];
@@ -58,8 +68,23 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
   onClose,
   podcastTitle = 'TEDÜ Akademik Sohbetler',
 }) => {
-  const [activeTab, setActiveTab] = useState<'transcript' | 'takeaways'>('transcript');
+  const [activeTab, setActiveTab] = useState<'transcript' | 'takeaways' | 'timecapsules'>('transcript');
   const [searchQuery, setSearchQuery] = useState('');
+  const [timecapsules, setTimecapsules] = useState<PodcastTimecapsule[]>(() =>
+    podcastTimecapsuleService.getTimecapsules(),
+  );
+  const [activeCopilotCueId, setActiveCopilotCueId] = useState<string | null>(null);
+  const [copilotExplanation, setCopilotExplanation] = useState<RTAICopilotExplanation | null>(null);
+  const [showAddCapsule, setShowAddCapsule] = useState(false);
+  const [newAuthor, setNewAuthor] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [newCategory, setNewCategory] = useState<TimecapsuleCategory>('exam_tip');
+
+  useEffect(() => {
+    return podcastTimecapsuleService.subscribe(() => {
+      setTimecapsules(podcastTimecapsuleService.getTimecapsules());
+    });
+  }, []);
 
   // Search filtering for cues
   const filteredCues = useMemo(() => {
@@ -87,6 +112,19 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
         item.keyTerms?.some(term => term.toLowerCase().includes(trimmed)),
     );
   }, [takeaways, searchQuery]);
+
+  // Search filtering for timecapsules
+  const filteredTimecapsules = useMemo(() => {
+    const trimmed = searchQuery.trim().toLowerCase();
+    if (!trimmed) {
+      return timecapsules;
+    }
+    return timecapsules.filter(
+      tc =>
+        tc.text.toLowerCase().includes(trimmed) ||
+        tc.authorName.toLowerCase().includes(trimmed),
+    );
+  }, [timecapsules, searchQuery]);
 
   return (
     <View style={styles.container} testID="podcast-transcript-viewer">
@@ -146,6 +184,22 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
             Bilgi Kartları ({takeaways.length})
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'timecapsules' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('timecapsules')}
+          accessibilityRole="button"
+          testID="tab-timecapsules">
+          <Icon
+            name="diamond-stone"
+            size={17}
+            color={activeTab === 'timecapsules' ? COLORS.primary : COLORS.textMuted}
+          />
+          <Text
+            style={[styles.tabButtonText, activeTab === 'timecapsules' && styles.tabButtonTextActive]}>
+            Kapsüller ({timecapsules.length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search Filter Bar */}
@@ -156,7 +210,9 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
           placeholder={
             activeTab === 'transcript'
               ? 'Transkriptte anahtar kelime veya konuşmacı ara…'
-              : 'Akademik kavram veya terim ara…'
+              : activeTab === 'takeaways'
+              ? 'Akademik kavram veya terim ara…'
+              : 'Zaman kapsüllerinde ara…'
           }
           placeholderTextColor={COLORS.textMuted}
           value={searchQuery}
@@ -183,7 +239,9 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
           <Text style={styles.matchCountText}>
             {activeTab === 'transcript'
               ? `${filteredCues.length} transkript satırı eşleşti`
-              : `${filteredTakeaways.length} bilgi kartı eşleşti`}
+              : activeTab === 'takeaways'
+              ? `${filteredTakeaways.length} bilgi kartı eşleşti`
+              : `${filteredTimecapsules.length} zaman kapsülü eşleşti`}
           </Text>
         </View>
       ) : null}
@@ -211,64 +269,161 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
           ) : (
             filteredCues.map(cue => {
               const active = isCueActive(cue, currentTimeSeconds);
+              const cueTimecapsules = timecapsules.filter(
+                tc => tc.timestampSeconds >= cue.startSeconds && tc.timestampSeconds < cue.endSeconds,
+              );
+              const isCopilotOpen = activeCopilotCueId === cue.id && copilotExplanation !== null;
+
               return (
-                <TouchableOpacity
+                <View
                   key={cue.id}
                   style={[styles.cueCard, active && styles.cueCardActive]}
-                  onPress={() => onSeek(cue.startSeconds)}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${cue.speaker ? cue.speaker + ': ' : ''}${cue.text}`}
-                  testID={`cue-item-${cue.id}`}>
-                  <View style={styles.cueHeader}>
-                    <View style={[styles.timestampPill, active && styles.timestampPillActive]}>
+                  testID={`cue-card-${cue.id}`}>
+                  <TouchableOpacity
+                    onPress={() => onSeek(cue.startSeconds)}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${cue.speaker ? cue.speaker + ': ' : ''}${cue.text}`}
+                    testID={`cue-item-${cue.id}`}>
+                    <View style={styles.cueHeader}>
+                      <View style={[styles.timestampPill, active && styles.timestampPillActive]}>
+                        <Icon
+                          name={active ? 'volume-high' : 'play'}
+                          size={12}
+                          color={active ? '#fff' : COLORS.primary}
+                          style={{marginRight: 3}}
+                        />
+                        <Text
+                          style={[
+                            styles.timestampText,
+                            active && styles.timestampTextActive,
+                          ]}>
+                          {formatTimestamp(cue.startSeconds)}
+                        </Text>
+                      </View>
+
+                      {cue.speaker ? (
+                        <View style={styles.speakerWrap}>
+                          <Icon name="account-voice" size={14} color={COLORS.textMuted} />
+                          <Text
+                            style={[
+                              styles.speakerText,
+                              active && styles.speakerTextActive,
+                            ]}>
+                            {cue.speaker}
+                          </Text>
+                        </View>
+                      ) : null}
+
+                      {active ? (
+                        <View style={styles.nowPlayingBadge}>
+                          <View style={styles.pulseDot} />
+                          <Text style={styles.nowPlayingText}>ŞU AN</Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    <Text
+                      style={[styles.cueText, active && styles.cueTextActive]}
+                      selectable>
+                      {cue.text}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Acoustic Timecapsule Badges if present */}
+                  {cueTimecapsules.length > 0 ? (
+                    <View style={styles.cueTimecapsulesWrap}>
+                      {cueTimecapsules.map(tc => (
+                        <TouchableOpacity
+                          key={tc.id}
+                          style={styles.cueTimecapsuleBadge}
+                          onPress={() => onSeek(tc.timestampSeconds)}
+                          accessibilityRole="button"
+                          testID={`cue-timecapsule-${tc.id}`}>
+                          <Icon name="diamond-stone" size={12} color="#38bdf8" />
+                          <Text style={styles.cueTimecapsuleText} numberOfLines={1}>
+                            {formatTimestamp(tc.timestampSeconds)} · {tc.authorName}: {tc.text}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : null}
+
+                  {/* Cue Footer Actions: RTAI Copilot Toggle */}
+                  <View style={styles.cueFooterActions}>
+                    <TouchableOpacity
+                      style={[styles.copilotExplainBtn, isCopilotOpen && styles.copilotExplainBtnActive]}
+                      onPress={() => {
+                        if (isCopilotOpen) {
+                          setActiveCopilotCueId(null);
+                          setCopilotExplanation(null);
+                        } else {
+                          setActiveCopilotCueId(cue.id);
+                          setCopilotExplanation(
+                            rtaiPodcastCopilotService.explainPodcastMoment(
+                              cue.startSeconds,
+                              cue.text,
+                              cue.speaker,
+                            ),
+                          );
+                        }
+                      }}
+                      accessibilityRole="button"
+                      testID={`copilot-btn-${cue.id}`}>
                       <Icon
-                        name={active ? 'volume-high' : 'play'}
-                        size={12}
-                        color={active ? '#fff' : COLORS.primary}
-                        style={{marginRight: 3}}
+                        name={isCopilotOpen ? 'creation' : 'auto-fix'}
+                        size={13}
+                        color={isCopilotOpen ? '#fff' : '#c084fc'}
                       />
                       <Text
                         style={[
-                          styles.timestampText,
-                          active && styles.timestampTextActive,
+                          styles.copilotExplainBtnText,
+                          isCopilotOpen && styles.copilotExplainBtnTextActive,
                         ]}>
-                        {formatTimestamp(cue.startSeconds)}
+                        {isCopilotOpen ? 'RTAI Kapat' : '💡 RTAI Açıkla'}
                       </Text>
-                    </View>
-
-                    {cue.speaker ? (
-                      <View style={styles.speakerWrap}>
-                        <Icon name="account-voice" size={14} color={COLORS.textMuted} />
-                        <Text
-                          style={[
-                            styles.speakerText,
-                            active && styles.speakerTextActive,
-                          ]}>
-                          {cue.speaker}
-                        </Text>
-                      </View>
-                    ) : null}
-
-                    {active ? (
-                      <View style={styles.nowPlayingBadge}>
-                        <View style={styles.pulseDot} />
-                        <Text style={styles.nowPlayingText}>ŞU AN</Text>
-                      </View>
-                    ) : null}
+                    </TouchableOpacity>
                   </View>
 
-                  <Text
-                    style={[styles.cueText, active && styles.cueTextActive]}
-                    selectable>
-                    {cue.text}
-                  </Text>
-                </TouchableOpacity>
+                  {/* RTAI Academic Copilot Explanation Card */}
+                  {isCopilotOpen && copilotExplanation ? (
+                    <View style={styles.copilotCard} testID={`copilot-card-${cue.id}`}>
+                      <View style={styles.copilotHeader}>
+                        <View style={styles.copilotHeaderTitleWrap}>
+                          <Icon name="brain" size={15} color="#c084fc" />
+                          <Text style={styles.copilotCardTitle}>RTAI AKADEMİK ANALİZ</Text>
+                        </View>
+                        <Text style={styles.copilotAccuracyBadge}>
+                          %{Math.round(copilotExplanation.academicConfidence * 100)} Doğruluk
+                        </Text>
+                      </View>
+
+                      <Text style={styles.copilotSummaryText}>
+                        {copilotExplanation.summary}
+                      </Text>
+
+                      <View style={styles.copilotKeyTermsRow}>
+                        {copilotExplanation.keyTerms.map(term => (
+                          <View key={term} style={styles.copilotKeyTermTag}>
+                            <Text style={styles.copilotKeyTermText}>#{term}</Text>
+                          </View>
+                        ))}
+                      </View>
+
+                      <View style={styles.copilotStudyQuestionBox}>
+                        <Icon name="help-circle-outline" size={14} color="#fbbf24" style={{marginRight: 4}} />
+                        <Text style={styles.copilotStudyQuestionText}>
+                          {copilotExplanation.suggestedQuestion}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
               );
             })
           )}
         </ScrollView>
-      ) : (
+      ) : activeTab === 'takeaways' ? (
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -343,6 +498,170 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
                       Konuyu Dinle ({formatTimestamp(card.timestampSeconds)})
                     </Text>
                   </TouchableOpacity>
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
+      ) : (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator
+          testID="timecapsules-list">
+          {/* Add Timecapsule Toggle & Form */}
+          <TouchableOpacity
+            style={styles.addCapsuleToggle}
+            onPress={() => setShowAddCapsule(!showAddCapsule)}
+            accessibilityRole="button"
+            testID="toggle-add-capsule">
+            <Icon
+              name={showAddCapsule ? 'chevron-up' : 'plus-circle-outline'}
+              size={18}
+              color={COLORS.primary}
+            />
+            <Text style={styles.addCapsuleToggleText}>
+              {showAddCapsule
+                ? 'Kapsül Formunu Gizle'
+                : `+ Bu Saniyeye Kapsül Bırak (${formatTimestamp(currentTimeSeconds)})`}
+            </Text>
+          </TouchableOpacity>
+
+          {showAddCapsule ? (
+            <View style={styles.addCapsuleCard} testID="add-capsule-form">
+              <Text style={styles.addCapsuleTitle}>
+                💎 Zaman Kapsülü Bırak ({formatTimestamp(currentTimeSeconds)})
+              </Text>
+              <Text style={styles.addCapsuleSub}>
+                Bu saniyeye ilişkin sınav notu, kilit çıkarım veya tartışma notu sabitleyin.
+              </Text>
+
+              <TextInput
+                style={styles.formInput}
+                placeholder="Adınız veya Topluluk İsmi (Örn: TEDÜ AI Lab)"
+                placeholderTextColor={COLORS.textMuted}
+                value={newAuthor}
+                onChangeText={setNewAuthor}
+                testID="input-capsule-author"
+              />
+
+              <TextInput
+                style={[styles.formInput, styles.formTextArea]}
+                placeholder="Önemli notunuzu veya sınav uyarınızı yazın..."
+                placeholderTextColor={COLORS.textMuted}
+                value={newNote}
+                onChangeText={setNewNote}
+                multiline
+                numberOfLines={3}
+                testID="input-capsule-note"
+              />
+
+              {/* Category selector */}
+              <View style={styles.categoryPillRow}>
+                {(['exam_tip', 'key_takeaway', 'discussion'] as TimecapsuleCategory[]).map(cat => {
+                  const meta = TIMECAPSULE_CATEGORY_CONFIG[cat];
+                  const isSelected = newCategory === cat;
+                  return (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categorySelectPill,
+                        isSelected && {borderColor: meta.color, backgroundColor: meta.bg},
+                      ]}
+                      onPress={() => setNewCategory(cat)}
+                      testID={`category-select-${cat}`}>
+                      <Text
+                        style={[
+                          styles.categorySelectPillText,
+                          isSelected && {color: meta.color, fontWeight: '800'},
+                        ]}>
+                        {meta.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitCapsuleBtn, !newNote.trim() && styles.submitCapsuleBtnDisabled]}
+                disabled={!newNote.trim()}
+                onPress={() => {
+                  if (!newNote.trim()) return;
+                  podcastTimecapsuleService.addTimecapsule({
+                    podcastId: 'tedu-academic-1',
+                    timestampSeconds: Math.floor(currentTimeSeconds),
+                    authorName: newAuthor.trim() || 'TEDÜ Dinleyicisi',
+                    text: newNote.trim(),
+                    category: newCategory,
+                  });
+                  setNewNote('');
+                  setShowAddCapsule(false);
+                }}
+                testID="submit-capsule-btn">
+                <Icon name="check-bold" size={16} color="#fff" />
+                <Text style={styles.submitCapsuleBtnText}>Kapsülü Sabitle</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {filteredTimecapsules.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Icon name="diamond-stone" size={44} color={COLORS.textMuted} />
+              <Text style={styles.emptyTitle}>Kayıtlı Zaman Kapsülü Yok</Text>
+              <Text style={styles.emptySubtitle}>
+                Bu podcast için henüz bir zaman kapsülü bırakılmamış veya aramanızla eşleşmedi.
+              </Text>
+            </View>
+          ) : (
+            filteredTimecapsules.map(tc => {
+              const meta = TIMECAPSULE_CATEGORY_CONFIG[tc.category] || TIMECAPSULE_CATEGORY_CONFIG.key_takeaway;
+              return (
+                <View key={tc.id} style={styles.timecapsuleCard} testID={`timecapsule-item-${tc.id}`}>
+                  <View style={styles.timecapsuleTopRow}>
+                    <View style={[styles.timecapsuleCategoryBadge, {backgroundColor: meta.bg}]}>
+                      <Icon name={meta.icon} size={12} color={meta.color} />
+                      <Text style={[styles.timecapsuleCategoryText, {color: meta.color}]}>
+                        {meta.label}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.jumpPill}
+                      onPress={() => onSeek(tc.timestampSeconds)}
+                      accessibilityRole="button"
+                      testID={`timecapsule-jump-${tc.id}`}>
+                      <Icon name="clock-fast" size={13} color={COLORS.primary} />
+                      <Text style={styles.jumpPillText}>
+                        {formatTimestamp(tc.timestampSeconds)}
+                      </Text>
+                      <Icon name="chevron-right" size={14} color={COLORS.primary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.timecapsuleAuthor}>
+                    <Icon name="account-circle-outline" size={13} color={COLORS.textMuted} /> {tc.authorName}
+                  </Text>
+                  <Text style={styles.timecapsuleText}>{tc.text}</Text>
+
+                  <View style={styles.timecapsuleFooter}>
+                    <TouchableOpacity
+                      style={styles.timecapsuleLikeBtn}
+                      onPress={() => podcastTimecapsuleService.likeTimecapsule(tc.id)}
+                      testID={`timecapsule-like-${tc.id}`}>
+                      <Icon name="heart-outline" size={14} color="#e50914" />
+                      <Text style={styles.timecapsuleLikeCount}>{tc.likes}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.timecapsuleSeekBtn}
+                      onPress={() => onSeek(tc.timestampSeconds)}
+                      testID={`timecapsule-seek-${tc.id}`}>
+                      <Icon name="play" size={12} color="#fff" />
+                      <Text style={styles.timecapsuleSeekBtnText}>
+                        {formatTimestamp(tc.timestampSeconds)} Dinle
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               );
             })
@@ -672,6 +991,290 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
+  },
+  cueTimecapsulesWrap: {
+    marginTop: 8,
+    gap: 4,
+  },
+  cueTimecapsuleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    gap: 5,
+  },
+  cueTimecapsuleText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '700',
+    flex: 1,
+  },
+  cueFooterActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+  },
+  copilotExplainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(192, 132, 252, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 132, 252, 0.3)',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 4,
+  },
+  copilotExplainBtnActive: {
+    backgroundColor: '#9333ea',
+    borderColor: '#a855f7',
+  },
+  copilotExplainBtnText: {
+    color: '#c084fc',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  copilotExplainBtnTextActive: {
+    color: '#ffffff',
+  },
+  copilotCard: {
+    marginTop: 10,
+    backgroundColor: 'rgba(147, 51, 234, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 132, 252, 0.35)',
+    borderRadius: 12,
+    padding: SPACING.md,
+  },
+  copilotHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  copilotHeaderTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  copilotCardTitle: {
+    color: '#c084fc',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  copilotAccuracyBadge: {
+    color: '#34d399',
+    fontSize: 10,
+    fontWeight: '800',
+    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
+  copilotSummaryText: {
+    color: '#f3f4f6',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 8,
+  },
+  copilotKeyTermsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginBottom: 8,
+  },
+  copilotKeyTermTag: {
+    backgroundColor: 'rgba(192, 132, 252, 0.18)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  copilotKeyTermText: {
+    color: '#e9d5ff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  copilotStudyQuestionBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    borderRadius: 6,
+    padding: 8,
+    gap: 4,
+  },
+  copilotStudyQuestionText: {
+    color: '#fef08a',
+    fontSize: 11,
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 16,
+  },
+  addCapsuleToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(227, 30, 36, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(227, 30, 36, 0.35)',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+    marginBottom: 12,
+  },
+  addCapsuleToggleText: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  addCapsuleCard: {
+    backgroundColor: '#1c1f26',
+    borderRadius: 14,
+    padding: SPACING.md,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  addCapsuleTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  addCapsuleSub: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    marginBottom: 10,
+  },
+  formInput: {
+    backgroundColor: '#12141a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: '#fff',
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  formTextArea: {
+    height: 70,
+    textAlignVertical: 'top',
+  },
+  categoryPillRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 10,
+  },
+  categorySelectPill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  categorySelectPillText: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  submitCapsuleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  submitCapsuleBtnDisabled: {
+    opacity: 0.5,
+  },
+  submitCapsuleBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  timecapsuleCard: {
+    backgroundColor: '#181b22',
+    borderRadius: 14,
+    padding: SPACING.md,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  timecapsuleTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  timecapsuleCategoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  timecapsuleCategoryText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  timecapsuleAuthor: {
+    color: '#9ca3af',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  timecapsuleText: {
+    color: '#f3f4f6',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  timecapsuleFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    paddingTop: 8,
+  },
+  timecapsuleLikeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(229, 9, 20, 0.1)',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    gap: 4,
+  },
+  timecapsuleLikeCount: {
+    color: '#e50914',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  timecapsuleSeekBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    gap: 4,
+  },
+  timecapsuleSeekBtnText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
 

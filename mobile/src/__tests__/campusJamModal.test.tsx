@@ -143,4 +143,43 @@ describe('CampusJamModal Component', () => {
     });
     expect(campusJamService.getActiveJamRoom()).toBeNull();
   });
+
+  it('triggers Tap-to-Jam radar sub-modal and initiates proximity scan', async () => {
+    let tree: any;
+    await act(async () => {
+      tree = renderer.create(
+        <CampusJamModal
+          visible={true}
+          onClose={mockClose}
+          channelId="radiotedu-main"
+          channelName="RadioTEDU"
+        />,
+      );
+    });
+
+    const instance = tree.root;
+    const tapToJamBtn = instance.findByProps({testID: 'campus-jam-tap-btn'});
+    expect(tapToJamBtn).toBeTruthy();
+
+    // Open Tap-to-Jam modal
+    await act(async () => {
+      tapToJamBtn.props.onPress();
+    });
+
+    const scanBtn = instance.findByProps({testID: 'tap-to-jam-scan-btn'});
+    const closeBtn = instance.findByProps({testID: 'tap-to-jam-close-btn'});
+
+    expect(scanBtn).toBeTruthy();
+    expect(closeBtn).toBeTruthy();
+
+    // Trigger proximity scan
+    await act(async () => {
+      scanBtn.props.onPress();
+    });
+
+    // Dismiss modal
+    await act(async () => {
+      closeBtn.props.onPress();
+    });
+  });
 });

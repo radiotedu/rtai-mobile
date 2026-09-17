@@ -33,6 +33,14 @@ import {
   subscribeToJamRoom,
   fetchPublicJamRooms,
 } from '../services/campusJamService';
+import {
+  generateTapToJamUrl,
+  startNearbyJamBroadcast,
+  stopNearbyJamBroadcast,
+  detectNearbyPeerJam,
+  subscribeToNearbyBeacons,
+  NearbyJamBeacon,
+} from '../services/tapToJamService';
 import {logSafeError} from '../utils/safeLog';
 import {Analytics} from '../services/analyticsService';
 
@@ -143,6 +151,10 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
   const [activeChatBubbles, setActiveChatBubbles] = useState<FloatingChatMessage[]>([]);
   const [chatInputText, setChatInputText] = useState('');
   const [chatCooldownSeconds, setChatCooldownSeconds] = useState(0);
+  const [showTapModal, setShowTapModal] = useState(false);
+  const [detectedBeacon, setDetectedBeacon] = useState<NearbyJamBeacon | null>(null);
+  const [scanningNearby, setScanningNearby] = useState(false);
+  const radarPulseAnim = useRef(new Animated.Value(1)).current;
 
   // Resolve station theme color (RadioTEDU red, Classical gold, Jazz purple, Lo-Fi cyan, Energize yellow, Rock orange)
   const stationColor =
@@ -199,6 +211,13 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
       spawnFloatingChat(msg);
     });
 
+    const unsubBeacon = subscribeToNearbyBeacons(beacon => {
+      if (beacon) {
+        setDetectedBeacon(beacon);
+        setScanningNearby(false);
+      }
+    });
+
     if (visible) {
       Analytics.jamModalOpened(channelId);
     }
@@ -208,6 +227,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
         unsubRoom();
         unsubRx();
         unsubChat();
+        unsubBeacon();
         if (toastTimeoutRef.current) {
           clearTimeout(toastTimeoutRef.current);
         }
@@ -313,6 +333,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
       unsubRoom();
       unsubRx();
       unsubChat();
+      unsubBeacon();
       ripple1Loop.stop();
       ripple2Loop.stop();
       ambientLoop.stop();
@@ -535,6 +556,41 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     }
   };
 
+  const handleOpenTapToJam = () => {
+    setShowTapModal(true);
+    setDetectedBeacon(null);
+    if (activeRoom) {
+      startNearbyJamBroadcast(activeRoom.code);
+    } else {
+      setScanningNearby(true);
+      const beacon = detectNearbyPeerJam();
+      if (beacon) {
+        setDetectedBeacon(beacon);
+        setScanningNearby(false);
+      }
+    }
+  };
+
+  const handleCloseTapToJam = () => {
+    setShowTapModal(false);
+    setScanningNearby(false);
+    stopNearbyJamBroadcast();
+  };
+
+  const handleJoinBeacon = async () => {
+    if (!detectedBeacon) return;
+    const room: PublicJamRoom = {
+      code: detectedBeacon.roomCode,
+      channelId: detectedBeacon.channelId,
+      channelName: detectedBeacon.channelName,
+      hostName: detectedBeacon.hostName,
+      listenersCount: 1,
+      createdAt: detectedBeacon.timestamp,
+    };
+    handleCloseTapToJam();
+    await handleJoinDirect(room);
+  };
+
   const handleShareInvite = async () => {
     if (!activeRoom) return;
     setCopiedToast(true);
@@ -562,6 +618,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
 
   const handleLeaveRoom = () => {
     const isHost = Boolean(activeRoom?.isHost);
+    stopNearbyJamBroadcast();
     leaveJamRoom();
     Analytics.jamRoomLeft(isHost);
   };
@@ -758,6 +815,20 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                   <Icon name="play-circle" size={22} color="#fff" />
                   <Text style={styles.spotifyCreateBtnText}>
                     Yeni Jam Başlat ({channelName})
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Tap-to-Jam Proximity Sync Button */}
+                <TouchableOpacity
+                  style={styles.tapToJamPillBtn}
+                  onPress={handleOpenTapToJam}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dokunarak Eşleş Tap-to-Jam"
+                  testID="campus-jam-tap-btn">
+                  <Icon name="cellphone-wireless" size={17} color="#38bdf8" />
+                  <Text style={styles.tapToJamPillText}>
+                    Dokunarak Eşleş (Tap-to-Jam / NFC)
                   </Text>
                 </TouchableOpacity>
 
@@ -1007,6 +1078,20 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                       Koda dokunarak kopyala veya arkadaşlarınla paylaş
                     </Text>
                   )}
+
+                  {/* Tap-to-Jam Proximity Share Action */}
+                  <TouchableOpacity
+                    style={styles.tapToJamActiveShareBtn}
+                    onPress={handleOpenTapToJam}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Dokunarak Paylaş Tap-to-Jam"
+                    testID="campus-jam-active-tap-btn">
+                    <Icon name="cellphone-wireless" size={14} color="#38bdf8" />
+                    <Text style={styles.tapToJamActiveShareText}>
+                      📱 Dokunarak Paylaş (Tap-to-Jam / NFC)
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 {/* 3. CAMPUS LISTENERS AUDIENCE CLUSTER (Clubhouse Room Grid) */}
@@ -1219,6 +1304,99 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
             )}
           </ScrollView>
         </View>
+
+        {/* TAP-TO-JAM NFC / ACOUSTIC NEARBY SYNC SUB-MODAL */}
+        <Modal
+          visible={showTapModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={handleCloseTapToJam}>
+          <SafeAreaView style={styles.tapModalOverlay}>
+            <View style={styles.tapModalCard}>
+              <View style={styles.tapModalHeader}>
+                <View style={styles.tapModalHeaderLeft}>
+                  <Icon name="cellphone-wireless" size={20} color="#38bdf8" />
+                  <Text style={styles.tapModalTitle}>TAP-TO-JAM YAKIN EŞLEŞME</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleCloseTapToJam}
+                  style={styles.tapCloseBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Kapat"
+                  testID="tap-to-jam-close-btn">
+                  <Icon name="close" size={18} color="#cbd5e1" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Concentric Radar Pulsing Graphic */}
+              <View style={styles.tapRadarWrapper}>
+                <View style={[styles.tapRadarCircle, styles.tapRadarCircle3]} />
+                <View style={[styles.tapRadarCircle, styles.tapRadarCircle2]} />
+                <View style={[styles.tapRadarCircle, styles.tapRadarCircle1]} />
+                <View style={styles.tapCenterPhoneBubble}>
+                  <Icon name="nfc" size={36} color="#38bdf8" />
+                </View>
+              </View>
+
+              <Text style={styles.tapPromptTitle}>
+                {activeRoom
+                  ? 'Telefonları Birbirine Yaklaştırın'
+                  : 'Yakındaki Jam Odası Aranıyor...'}
+              </Text>
+              <Text style={styles.tapPromptSub}>
+                {activeRoom
+                  ? `Oda kodunuz (${activeRoom.code}) akustik ve NFC yakınlığıyla yayınlanıyor. Arkadaşınız telefonunu yaklaştırdığında odaya bağlanır.`
+                  : 'Arkadaşınızın telefonunu yan yana getirin. 6 haneli kod yazmadan anında aynı frekansta buluşun.'}
+              </Text>
+
+              {/* Detected Beacon Result */}
+              {detectedBeacon ? (
+                <View style={styles.tapFoundCard} testID="tap-to-jam-found-card">
+                  <View style={styles.tapFoundInfo}>
+                    <Text style={styles.tapFoundLabel}>BULUNAN ODA</Text>
+                    <Text style={styles.tapFoundTitle}>
+                      {detectedBeacon.channelName} · {detectedBeacon.hostName}
+                    </Text>
+                    <Text style={styles.tapFoundCode}>Kod: {detectedBeacon.roomCode}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.tapFoundJoinBtn}
+                    onPress={handleJoinBeacon}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Odaya Katıl"
+                    testID="tap-to-jam-join-btn">
+                    <Icon name="play" size={16} color="#ffffff" />
+                    <Text style={styles.tapFoundJoinText}>Katıl</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                !activeRoom && (
+                  <TouchableOpacity
+                    style={styles.tapSimulateScanBtn}
+                    onPress={() => {
+                      const b = detectNearbyPeerJam();
+                      if (b) setDetectedBeacon(b);
+                    }}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Yakındaki Odayı Tara"
+                    testID="tap-to-jam-scan-btn">
+                    <Icon name="radar" size={16} color="#38bdf8" />
+                    <Text style={styles.tapSimulateScanText}>Yakındaki Odayı Tara</Text>
+                  </TouchableOpacity>
+                )
+              )}
+
+              <TouchableOpacity
+                style={styles.tapDismissPill}
+                onPress={handleCloseTapToJam}
+                activeOpacity={0.7}>
+                <Text style={styles.tapDismissText}>Vazgeç</Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </Modal>
       </SafeAreaView>
     </Modal>
   );
@@ -2134,5 +2312,208 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 10,
     fontWeight: '800',
+  },
+
+  /* TAP-TO-JAM STYLES */
+  tapToJamPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderRadius: 22,
+    paddingVertical: 12,
+    gap: 8,
+    marginTop: 10,
+  },
+  tapToJamPillText: {
+    color: '#38bdf8',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  tapToJamActiveShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
+  },
+  tapToJamActiveShareText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  tapModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  tapModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#0c0f17',
+    borderRadius: 28,
+    padding: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    alignItems: 'center',
+  },
+  tapModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 16,
+  },
+  tapModalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  tapModalTitle: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  tapCloseBtn: {
+    padding: 6,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  tapRadarWrapper: {
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  tapRadarCircle: {
+    position: 'absolute',
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+  },
+  tapRadarCircle1: {
+    width: 80,
+    height: 80,
+    opacity: 0.8,
+  },
+  tapRadarCircle2: {
+    width: 110,
+    height: 110,
+    opacity: 0.5,
+  },
+  tapRadarCircle3: {
+    width: 140,
+    height: 140,
+    opacity: 0.25,
+  },
+  tapCenterPhoneBubble: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderWidth: 2,
+    borderColor: '#38bdf8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tapPromptTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  tapPromptSub: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 6,
+    marginBottom: 16,
+  },
+  tapFoundCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: '#22c55e',
+    width: '100%',
+    marginBottom: 12,
+  },
+  tapFoundInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  tapFoundLabel: {
+    color: '#22c55e',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  tapFoundTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  tapFoundCode: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  tapFoundJoinBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  tapFoundJoinText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  tapSimulateScanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  tapSimulateScanText: {
+    color: '#38bdf8',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  tapDismissPill: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  tapDismissText: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

@@ -135,6 +135,7 @@ export function updateUserCoordinates(latitude: number, longitude: number): Camp
 
     if (distance <= zone.radiusMeters) {
       if (dismissedZoneId === zone.id) {
+        if (activeZone !== null) { activeZone = null; notifySubscribers(); }
         return null;
       }
       if (activeZone?.id !== zone.id) {

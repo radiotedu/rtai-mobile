@@ -61,6 +61,20 @@ describe('Campus Jam Service (Birlikte Dinle)', () => {
     expect(result2).toBeNull();
   });
 
+  it('does not claim successful membership when the server rejects joining', async () => {
+    const originalEnvironment = process.env.NODE_ENV;
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({ok: true, json: async () => ({channel_id: 'radiotedu-jazz', channel_name: 'Jazz'})})
+      .mockResolvedValueOnce({ok: false, status: 403});
+    process.env.NODE_ENV = 'production';
+    try {
+      expect(await joinJamRoom('123456', '', '', 'Test')).toBeNull();
+      expect(getActiveJamRoom()).toBeNull();
+      expect(playbackQueue.playTrackById).not.toHaveBeenCalled();
+    } finally { process.env.NODE_ENV = originalEnvironment; global.fetch = originalFetch; }
+  });
+
   it('broadcasts emoji reactions to subscribers', async () => {
     await createJamRoom('radiotedu-main', 'RadioTEDU', 'Zeynep');
 

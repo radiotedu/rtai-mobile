@@ -13,6 +13,14 @@ describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
     resetCampusZoneState();
   });
 
+  it('chooses the nearest overlapping zone and clears a previous zone on dismissed re-entry', () => {
+    expect(updateUserCoordinates(39.9272, 32.86415)?.id).toBe('tedu-grass');
+    dismissCurrentCampusZone();
+    expect(updateUserCoordinates(39.92745, 32.86465)?.id).toBe('tedu-library');
+    expect(updateUserCoordinates(39.9272, 32.86415)).toBeNull();
+    expect(getActiveCampusZone()).toBeNull();
+  });
+
   it('calculates Haversine distance accurately on device without network', () => {
     // Distance between library (39.92745, 32.86465) and grass (39.9272, 32.86415) is roughly 50-60m
     const dist = calculateHaversineDistance(39.92745, 32.86465, 39.9272, 32.86415);

@@ -17,12 +17,12 @@ describe('foreground campus location', () => {
     jest.spyOn(AppState, 'addEventListener').mockImplementation((_, callback) => { stateChanged = callback; return {remove}; });
     const stop = await startCampusLocation(jest.fn());
     const position = (Geolocation.watchPosition as jest.Mock).mock.calls[0][0];
-    position({coords: {latitude: 39.92745, longitude: 32.86465, accuracy: 10}, timestamp: Date.now()});
-    expect(getActiveCampusZone()?.id).toBe('tedu-library');
+    position({coords: {latitude: 39.92370734329771, longitude: 32.859381801554065, accuracy: 10}, timestamp: Date.now()});
+    expect(getActiveCampusZone()?.id).toBe('tedu-grass');
     AppState.currentState = 'background'; stateChanged('background');
     expect(Geolocation.clearWatch).toHaveBeenCalledWith(1);
     expect(getActiveCampusZone()).toBeNull();
-    position({coords: {latitude: 39.92745, longitude: 32.86465, accuracy: 10}, timestamp: Date.now()});
+    position({coords: {latitude: 39.92370734329771, longitude: 32.859381801554065, accuracy: 10}, timestamp: Date.now()});
     expect(getActiveCampusZone()).toBeNull();
     AppState.currentState = 'active'; stateChanged('active');
     expect(Geolocation.watchPosition).toHaveBeenCalledTimes(2);
@@ -36,9 +36,9 @@ describe('foreground campus location', () => {
   it('ignores inaccurate and stale fixes', async () => {
     const stop = await startCampusLocation(jest.fn());
     const position = (Geolocation.watchPosition as jest.Mock).mock.calls[0][0];
-    position({coords: {latitude: 39.92745, longitude: 32.86465, accuracy: 500}, timestamp: Date.now()});
+    position({coords: {latitude: 39.92370734329771, longitude: 32.859381801554065, accuracy: 500}, timestamp: Date.now()});
     expect(getActiveCampusZone()).toBeNull();
-    position({coords: {latitude: 39.92745, longitude: 32.86465, accuracy: 10}, timestamp: Date.now() - 120000});
+    position({coords: {latitude: 39.92370734329771, longitude: 32.859381801554065, accuracy: 10}, timestamp: Date.now() - 120000});
     expect(getActiveCampusZone()).toBeNull(); stop();
   });
 });

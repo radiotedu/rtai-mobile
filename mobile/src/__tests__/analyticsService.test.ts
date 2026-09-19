@@ -43,7 +43,6 @@ describe('analyticsService', () => {
       Analytics.screenView('HomeScreen');
       Analytics.wrappedViewed('2026-09');
       Analytics.wrappedShared('2026-09', 'instagram');
-      Analytics.transcriptSeek('ep_001', 45);
       Analytics.standByOpened();
       Analytics.dspNormalizationToggled(true);
       Analytics.goldEarned('listening', 10);
@@ -107,7 +106,6 @@ describe('analyticsService', () => {
         Analytics.appOpen();
         Analytics.wrappedViewed('2026-09');
         Analytics.wrappedShared('2026-09', 'whatsapp');
-        Analytics.transcriptSeek('ep_042', 120);
         Analytics.standByOpened();
         Analytics.dspNormalizationToggled(false);
         Analytics.playbackError('ERR_DECODE', true);
@@ -201,24 +199,6 @@ describe('analyticsService', () => {
       });
     });
 
-    test('transcriptSeek formats episode_id and rounds non-negative timestamp_seconds', () => {
-      Analytics.transcriptSeek('ep_999', 84.6);
-      expect(mockBridge.logEvent).toHaveBeenCalledWith('transcript_seek', {
-        episode_id: 'ep_999',
-        timestamp_seconds: 85,
-        app_language: 'en',
-        listening_context: 'driving',
-      });
-
-      // Negative seconds are clamped to 0
-      Analytics.transcriptSeek('ep_999', -10);
-      expect(mockBridge.logEvent).toHaveBeenCalledWith('transcript_seek', {
-        episode_id: 'ep_999',
-        timestamp_seconds: 0,
-        app_language: 'en',
-        listening_context: 'driving',
-      });
-    });
 
     test('standByOpened logs standby_opened event with language and context tags', () => {
       Analytics.standByOpened();

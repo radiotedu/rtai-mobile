@@ -1,4 +1,19 @@
 {
+  "campusNearby": {
+    "enable": "Enable campus suggestions",
+    "disable": "Disable campus suggestions",
+    "pending": "Waiting for permission…",
+    "description": "Detect campus proximity on this device while the app is open. Choose your listening context; GPS does not identify indoor rooms.",
+    "error": "Location unavailable. Check precise location permission and device settings.",
+    "library": "Focus",
+    "grass": "Social",
+    "amphi": "Academic",
+    "sports": "Sports",
+    "title": "NEAR CAMPUS",
+    "nearby": "Suggested for your selected context.",
+    "play": "Play",
+    "close": "Close"
+  },
   "tabs": {
     "home": "Home",
     "radio": "Radio",

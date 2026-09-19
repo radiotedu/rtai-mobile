@@ -1,5 +1,7 @@
 import {
   calculateHaversineDistance,
+  CAMPUS_AREA,
+  selectCampusContext,
   updateUserCoordinates,
   simulateCampusZone,
   dismissCurrentCampusZone,
@@ -13,16 +15,17 @@ describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
     resetCampusZoneState();
   });
 
-  it('chooses the nearest overlapping zone and clears a previous zone on dismissed re-entry', () => {
-    expect(updateUserCoordinates(39.9272, 32.86415)?.id).toBe('tedu-grass');
+  it('uses campus proximity plus an explicitly selected context and respects dismissal', () => {
+    expect(updateUserCoordinates(CAMPUS_AREA.latitude, CAMPUS_AREA.longitude)?.id).toBe('tedu-grass');
     dismissCurrentCampusZone();
-    expect(updateUserCoordinates(39.92745, 32.86465)?.id).toBe('tedu-library');
-    expect(updateUserCoordinates(39.9272, 32.86415)).toBeNull();
+    selectCampusContext('library');
+    expect(getActiveCampusZone()?.id).toBe('tedu-library');
+    selectCampusContext('grass');
     expect(getActiveCampusZone()).toBeNull();
   });
 
   it('calculates Haversine distance accurately on device without network', () => {
-    // Distance between library (39.92745, 32.86465) and grass (39.9272, 32.86415) is roughly 50-60m
+    // Synthetic coordinates approximately 50m apart.
     const dist = calculateHaversineDistance(39.92745, 32.86465, 39.9272, 32.86415);
     expect(dist).toBeGreaterThan(30);
     expect(dist).toBeLessThan(80);
@@ -31,9 +34,9 @@ describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
     expect(calculateHaversineDistance(39.92745, 32.86465, 39.92745, 32.86465)).toBe(0);
   });
 
-  it('detects library zone when user is at library coordinates', () => {
-    // Exactly at library coordinates
-    const zone = updateUserCoordinates(39.92745, 32.86465);
+  it('recommends focus only after explicit selection near campus', () => {
+    selectCampusContext('library');
+    const zone = updateUserCoordinates(CAMPUS_AREA.latitude, CAMPUS_AREA.longitude);
     expect(zone).toBeTruthy();
     expect(zone?.key).toBe('library');
     expect(zone?.recommendedChannelId).toBe('radiotedu-lofi');
@@ -75,7 +78,7 @@ describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
     expect(getActiveCampusZone()).toBeNull();
 
     // Re-entering same zone coordinates while dismissed should not re-trigger
-    const rechecked = updateUserCoordinates(39.92745, 32.86465);
+    const rechecked = updateUserCoordinates(CAMPUS_AREA.latitude, CAMPUS_AREA.longitude);
     expect(rechecked).toBeNull();
   });
 });

@@ -126,11 +126,6 @@ export const Analytics = {
     send('wrapped_viewed', {period: monthOrYear, month_or_year: monthOrYear}),
   wrappedShared: (monthOrYear: string, platform: string) =>
     send('wrapped_shared', {period: monthOrYear, month_or_year: monthOrYear, platform}),
-  transcriptSeek: (episodeId: string, timestampSeconds: number) =>
-    send('transcript_seek', {
-      episode_id: episodeId,
-      timestamp_seconds: Math.max(0, Math.round(timestampSeconds)),
-    }),
   standByOpened: () =>
     send('standby_opened', {}),
   dspNormalizationToggled: (enabled: boolean) =>

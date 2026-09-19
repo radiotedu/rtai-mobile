@@ -2,7 +2,6 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
-  Modal,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -29,9 +28,8 @@ import {
   resumePlaybackByUser,
 } from '../services/playbackQueue';
 import {Podcast} from '../services/podcastService';
-import PodcastTranscriptViewer from '../components/PodcastTranscriptViewer';
 import PodcastDownloadButton from '../components/PodcastDownloadButton';
-import {formatTimestamp} from '../data/samplePodcastTranscripts';
+import {formatTimestamp} from '../utils/playbackTime';
 
 const FALLBACK_PODCAST_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
@@ -48,7 +46,6 @@ export const PodcastPlayerScreen: React.FC = () => {
   const routePodcast: Podcast | undefined = route.params?.podcast;
   const routePodcastId: string | undefined = route.params?.podcastId;
 
-  const [showTranscript, setShowTranscript] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
   const state = playbackState?.state;
@@ -156,13 +153,6 @@ export const PodcastPlayerScreen: React.FC = () => {
     }
   }, []);
 
-  const handleSeekTo = useCallback(async (seconds: number) => {
-    try {
-      await TrackPlayer.seekTo(seconds);
-    } catch (err) {
-      logSafeError('podcastPlayer.seekTo', err);
-    }
-  }, []);
 
   const changeSpeed = useCallback(async (speed: number) => {
     try {
@@ -204,25 +194,6 @@ export const PodcastPlayerScreen: React.FC = () => {
 
         <View style={styles.topBarRight}>
           <PodcastDownloadButton podcast={currentPodcastItem} size={22} />
-          <TouchableOpacity
-            onPress={() => setShowTranscript(prev => !prev)}
-            style={[styles.transcriptToggleBtn, showTranscript && styles.transcriptToggleBtnActive]}
-            accessibilityRole="button"
-            accessibilityLabel="Transkripti aç ya da kapat"
-            testID="podcast-player-transcript-toggle">
-            <Icon
-              name="text-box-search-outline"
-              size={18}
-              color={showTranscript ? '#fff' : COLORS.primary}
-            />
-            <Text
-              style={[
-                styles.transcriptToggleText,
-                showTranscript && styles.transcriptToggleTextActive,
-              ]}>
-              Transkript
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -329,85 +300,8 @@ export const PodcastPlayerScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Primary Transcript Pill Button */}
-        <TouchableOpacity
-          style={styles.transcriptPillButton}
-          onPress={() => setShowTranscript(true)}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="İnteraktif Transkript ve AI Ders Notlarını Aç"
-          testID="podcast-open-transcript-pill">
-          <Icon name="text-box-search-outline" size={20} color={COLORS.primary} />
-          <Text style={styles.transcriptPillButtonText}>
-            İnteraktif Transkript & AI Bilgi Kartları
-          </Text>
-          <Icon name="chevron-up" size={18} color={COLORS.textMuted} />
-        </TouchableOpacity>
       </View>
 
-      {/* Full-featured Interactive Transcript Modal / Bottom Sheet */}
-      <Modal
-        visible={showTranscript}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setShowTranscript(false)}
-        testID="podcast-transcript-modal">
-        <SafeAreaView style={styles.modalSafeContainer}>
-          <PodcastTranscriptViewer
-            key={routePodcastId || String(activeTrack?.id || '').replace(PODCAST_ID_PREFIX, '')}
-            podcastId={routePodcastId || String(activeTrack?.id || '').replace(PODCAST_ID_PREFIX, '')}
-            currentTimeSeconds={progress.position}
-            onSeek={handleSeekTo}
-            onClose={() => setShowTranscript(false)}
-            podcastTitle={displayTitle}
-          />
-
-          {/* Mini Playback bar inside transcript viewer for seamless continuous listening */}
-          <View style={styles.modalMiniTransport}>
-            <View style={styles.miniProgressLine}>
-              <View style={[styles.miniProgressFill, {width: `${progressPercent}%`}]} />
-            </View>
-
-            <View style={styles.miniTransportRow}>
-              <TouchableOpacity
-                onPress={() => seekBy(-15)}
-                style={styles.miniSeekBtn}
-                accessibilityRole="button"
-                accessibilityLabel="15 saniye geri">
-                <Icon name="rewind-15" size={26} color={COLORS.text} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={togglePlayback}
-                style={styles.miniPlayBtn}
-                accessibilityRole="button"
-                accessibilityLabel={isPlaying ? 'Durdur' : 'Oynat'}
-                testID="modal-mini-play-toggle">
-                <Icon
-                  name={isPlaying ? 'pause' : 'play'}
-                  size={24}
-                  color="#fff"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => seekBy(30)}
-                style={styles.miniSeekBtn}
-                accessibilityRole="button"
-                accessibilityLabel="30 saniye ileri">
-                <Icon name="fast-forward-30" size={26} color={COLORS.text} />
-              </TouchableOpacity>
-
-              <View style={styles.miniTimeWrap}>
-                <Text style={styles.miniTimeText}>
-                  {formatTimestamp(progress.position)} /{' '}
-                  {progress.duration > 0 ? formatTimestamp(progress.duration) : '--:--'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -416,11 +310,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0a0c10',
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 4 : 0,
-  },
-  modalSafeContainer: {
-    flex: 1,
-    backgroundColor: '#0c0f14',
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 28) + 4 : 0,
   },
   topBar: {
@@ -458,28 +347,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  transcriptToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(227, 30, 36, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(227, 30, 36, 0.3)',
-  },
-  transcriptToggleBtnActive: {
-    backgroundColor: COLORS.primary,
-  },
-  transcriptToggleText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  transcriptToggleTextActive: {
-    color: '#fff',
   },
   content: {
     flex: 1,
@@ -631,69 +498,6 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.35,
     shadowRadius: 8,
-  },
-  transcriptPillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    marginTop: SPACING.md,
-  },
-  transcriptPillButtonText: {
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: '700',
-    flex: 1,
-    marginLeft: 10,
-  },
-  modalMiniTransport: {
-    backgroundColor: '#15181e',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-    paddingBottom: 6,
-  },
-  miniProgressLine: {
-    width: '100%',
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  miniProgressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-  },
-  miniTransportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    gap: 16,
-  },
-  miniSeekBtn: {
-    padding: 4,
-  },
-  miniPlayBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  miniTimeWrap: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  miniTimeText: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
   },
 });
 

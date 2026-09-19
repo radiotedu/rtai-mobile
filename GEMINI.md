@@ -1433,3 +1433,7 @@ Do not rewrite earlier evidence to make a later change appear older or more comp
   - Zero external AI API calls. Zero network tracking.
   - Strict brand casing: RadioTEDU (title case) and RADIOTEDU (all caps).
   - Production database and Audio Library untouched. No email or push notifications sent.
+
+## 2026-09-19 1.3.11 scope correction
+
+User explicitly requested complete removal of podcast transcripts, question/knowledge cards and related features. Removed transcript viewer, sample data, timecapsules and transcript analytics; retain ordinary podcast playback/downloads. Do not restore these features. Nearby Jam uses native Android Nearby Connections and validated invite links. Campus proximity is opt-in and uses the official TEDU map viewport as a broad nearby area; listening context is user-selected because previous micro-zone coordinates were unverified. Source tests: 121 suites, 556 tests; TypeScript, lint error checks and static Android audit pass. Build and exact-candidate emulator checks run in GitHub Actions; do not package an old APK by replacing only its JS bundle.

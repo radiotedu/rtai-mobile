@@ -76,7 +76,6 @@ jest.mock('../services/playbackQueue', () => ({
   playTrackById: (...args: any[]) => mockPlayTrackById(...args),
 }));
 
-jest.mock('../components/PodcastTranscriptViewer', () => 'PodcastTranscriptViewer');
 
 describe('PodcastPlayerScreen', () => {
   beforeEach(() => {
@@ -139,20 +138,12 @@ describe('PodcastPlayerScreen', () => {
     expect(mockSeekBy).toHaveBeenCalledWith(30);
   });
 
-  it('toggles interactive transcript modal when transcript pill is tapped', () => {
+  it('keeps podcast playback without transcript or learning-card entry points', () => {
     let tree: any;
-    act(() => {
-      tree = renderer.create(<PodcastPlayerScreen />);
-    });
-
-    const pillBtn = tree.root.findByProps({testID: 'podcast-open-transcript-pill'});
-    const modal = tree.root.findByProps({testID: 'podcast-transcript-modal'});
-    expect(modal.props.visible).toBe(false);
-
-    act(() => {
-      pillBtn.props.onPress();
-    });
-
-    expect(modal.props.visible).toBe(true);
+    act(() => { tree = renderer.create(<PodcastPlayerScreen />); });
+    expect(tree.root.findAllByProps({testID: 'podcast-open-transcript-pill'})).toHaveLength(0);
+    expect(tree.root.findAllByProps({testID: 'podcast-player-transcript-toggle'})).toHaveLength(0);
+    expect(tree.root.findAllByProps({testID: 'podcast-transcript-modal'})).toHaveLength(0);
+    expect(tree.root.findByProps({testID: 'podcast-play-toggle'})).toBeTruthy();
   });
 });

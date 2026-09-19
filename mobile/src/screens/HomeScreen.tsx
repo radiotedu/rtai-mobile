@@ -148,9 +148,9 @@ const HomeScreen = () => {
           }
           showsVerticalScrollIndicator={false}>
           <SpatialCampusBanner />
-          <CampusLocationControl />
           <HomeDiscovery refreshKey={refreshKey} />
           <MoodFlowShelf />
+          <CampusLocationControl />
 
           <SectionHeader title={copy('home.upcoming')} action={copy('home.all')} onPress={() => navigation.navigate('Events')} />
           {loading && !accountHome && displayEvents.length === 0 ? (

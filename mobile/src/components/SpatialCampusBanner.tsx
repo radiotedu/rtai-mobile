@@ -15,6 +15,7 @@ import {
 } from '../services/campusSpatialService';
 import {playTrackById} from '../services/playbackQueue';
 import {logSafeError} from '../utils/safeLog';
+import {useTranslation} from 'react-i18next';
 
 interface SpatialCampusBannerProps {
   onActivateZone?: (zone: CampusZone) => void;
@@ -25,6 +26,7 @@ export const SpatialCampusBanner: React.FC<SpatialCampusBannerProps> = ({
   onActivateZone,
   testID = 'spatial-campus-banner',
 }) => {
+  const {t} = useTranslation();
   const [activeZone, setActiveZone] = useState<CampusZone | null>(getActiveCampusZone());
   const slideAnim = useRef(new Animated.Value(-80)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -149,14 +151,14 @@ export const SpatialCampusBanner: React.FC<SpatialCampusBannerProps> = ({
               style={[styles.liveDot, {backgroundColor: activeZone.accentColor}]}
             />
             <Text style={[styles.zoneBadgeText, {color: activeZone.accentColor}]}>
-              KAMPÜS MEKANSAL SES
+              {t('campusNearby.title')}
             </Text>
           </View>
           <Text style={styles.zoneTitle} numberOfLines={1}>
-            {activeZone.promptTitle}
+            {t(`campusNearby.${activeZone.key}`)} · {activeZone.recommendedChannelName}
           </Text>
-          <Text style={styles.zoneSub} numberOfLines={1}>
-            {activeZone.promptDescription}
+          <Text style={styles.zoneSub} numberOfLines={2}>
+            {t('campusNearby.nearby')}
           </Text>
         </View>
 
@@ -166,10 +168,10 @@ export const SpatialCampusBanner: React.FC<SpatialCampusBannerProps> = ({
           onPress={handleActivate}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel={activeZone.promptTitle}
+          accessibilityLabel={t('campusNearby.play')}
           testID="spatial-banner-activate-btn">
           <Icon name="play" size={14} color="#ffffff" />
-          <Text style={styles.activateBtnText}>Başlat</Text>
+          <Text style={styles.activateBtnText}>{t('campusNearby.play')}</Text>
         </TouchableOpacity>
 
         {/* Dismiss Button */}
@@ -178,7 +180,7 @@ export const SpatialCampusBanner: React.FC<SpatialCampusBannerProps> = ({
           onPress={handleDismiss}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Kapat"
+          accessibilityLabel={t('campusNearby.close')}
           testID="spatial-banner-dismiss-btn">
           <Icon name="close" size={16} color="#94a3b8" />
         </TouchableOpacity>

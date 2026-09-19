@@ -53,7 +53,9 @@ jobs:
           arch: x86_64
           profile: ${{ matrix.profile }}
           disable-animations: true
-          script: python3 scripts/verify-signed-candidate-device.py "candidate/RadioTEDU-Mobile-${RELEASE_TAG}.apk" evidence
+          script: |
+            python3 scripts/verify-signed-candidate-device.py "candidate/RadioTEDU-Mobile-${RELEASE_TAG}.apk" evidence
+            python3 scripts/verify-mobile-1311-features.py "candidate/RadioTEDU-Mobile-${RELEASE_TAG}.apk" evidence
       - uses: actions/upload-artifact@v4
         if: always()
         with:

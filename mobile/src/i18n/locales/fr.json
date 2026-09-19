@@ -1,4 +1,19 @@
 {
+  "campusNearby": {
+    "enable": "Activer les suggestions du campus",
+    "disable": "Désactiver les suggestions du campus",
+    "pending": "Autorisation en attente…",
+    "description": "La proximité du campus est détectée sur cet appareil quand l’application est ouverte. Choisissez votre contexte ; le GPS ne distingue pas les salles.",
+    "error": "Position indisponible. Vérifiez l’autorisation de localisation précise et les réglages.",
+    "library": "Concentration",
+    "grass": "Social",
+    "amphi": "Études",
+    "sports": "Sport",
+    "title": "PRÈS DU CAMPUS",
+    "nearby": "Suggestion pour le contexte choisi.",
+    "play": "Écouter",
+    "close": "Fermer"
+  },
   "tabs": {
     "home": "Accueil",
     "radio": "Radio",

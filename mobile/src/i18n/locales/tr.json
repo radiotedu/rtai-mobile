@@ -1,4 +1,19 @@
 {
+  "campusNearby": {
+    "enable": "Kampüs önerilerini aç",
+    "disable": "Kampüs önerilerini kapat",
+    "pending": "İzin bekleniyor…",
+    "description": "Uygulama açıkken kampüs yakınlığı bu cihazda algılanır. Dinleme ortamını siz seçin; GPS kapalı alanları ayırt etmez.",
+    "error": "Konum alınamadı. Hassas konum iznini ve cihaz ayarlarını kontrol edin.",
+    "library": "Odak",
+    "grass": "Sosyal",
+    "amphi": "Akademik",
+    "sports": "Spor",
+    "title": "KAMPÜS YAKININDA",
+    "nearby": "Seçtiğiniz dinleme ortamı için öneriliyor.",
+    "play": "Başlat",
+    "close": "Kapat"
+  },
   "tabs": {
     "home": "Ana Sayfa",
     "radio": "Yayın",

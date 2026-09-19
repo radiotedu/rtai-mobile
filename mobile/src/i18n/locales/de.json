@@ -1,4 +1,19 @@
 {
+  "campusNearby": {
+    "enable": "Campus-Empfehlungen aktivieren",
+    "disable": "Campus-Empfehlungen deaktivieren",
+    "pending": "Warten auf Berechtigung…",
+    "description": "Die Campusnähe wird bei geöffneter App auf diesem Gerät erkannt. Wähle den Hörkontext; GPS erkennt keine Innenräume.",
+    "error": "Standort nicht verfügbar. Prüfe die Berechtigung für den genauen Standort und die Geräteeinstellungen.",
+    "library": "Fokus",
+    "grass": "Gemeinsam",
+    "amphi": "Studium",
+    "sports": "Sport",
+    "title": "IN CAMPUSNÄHE",
+    "nearby": "Empfehlung für deinen gewählten Hörkontext.",
+    "play": "Start",
+    "close": "Schließen"
+  },
   "tabs": {
     "home": "Start",
     "radio": "Radio",

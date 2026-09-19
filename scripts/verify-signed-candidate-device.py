@@ -191,7 +191,7 @@ def stop_recording(process, name):
 
 def save_share_png(shape):
     root = snapshot('share-preview-' + shape)
-    tap(find(root, 'Save PNG'))
+    tap(find(root, 'Save'))
     root = snapshot('share-file-picker-' + shape)
     name = next((n.get('text') for n in root.iter('node')
                  if n.get('class') == 'android.widget.EditText' and n.get('text', '').endswith('.png')), None)
@@ -326,9 +326,9 @@ try:
                            if n.get('content-desc') == 'Share' and usable(n)), None)
             tap(button)
             root = snapshot('image-share-open-' + str(attempt))
-            if find(root, 'Save PNG') is not None:
+            if find(root, 'Save') is not None:
                 break
-        assert find(root, 'Save PNG') is not None, 'PNG composer did not open after fresh-coordinate retries'
+        assert find(root, 'Save') is not None, 'PNG composer did not open after fresh-coordinate retries'
         save_share_png('story')
         root = snapshot('before-square-share')
         tap(find(root, 'Square'))

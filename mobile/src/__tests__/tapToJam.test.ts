@@ -1,61 +1,42 @@
-import {
-  generateTapToJamUrl,
-  parseTapToJamUrl,
-  startNearbyJamBroadcast,
-  stopNearbyJamBroadcast,
-  getActiveBroadcastCode,
-  detectNearbyPeerJam,
-  subscribeToNearbyBeacons,
-} from '../services/tapToJamService';
-
-describe('Tap-to-Jam Service (NFC & Acoustic Nearby Sync)', () => {
+import {NativeModules, PermissionsAndroid, Platform, DeviceEventEmitter} from 'react-native';
+jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter');
+NativeModules.NearbyJam = {startAdvertising: jest.fn().mockResolvedValue(null), startDiscovery: jest.fn().mockResolvedValue(null), stop: jest.fn(), addListener: jest.fn(), removeListeners: jest.fn()};
+Platform.OS = 'android';
+Object.defineProperty(Platform, 'Version', {value: 35, configurable: true});
+const {generateTapToJamUrl, parseTapToJamUrl, startNearbyJamBroadcast, detectNearbyPeerJam, stopNearbyJamBroadcast, subscribeToNearbyBeacons} = require('../services/tapToJamService');
+describe('real nearby adapter and invitations', () => {
   beforeEach(() => {
-    stopNearbyJamBroadcast();
+    jest.clearAllMocks();
+    jest.spyOn(PermissionsAndroid, 'requestMultiple').mockImplementation(async permissions => Object.fromEntries(permissions.map(p => [p, 'granted'])) as any);
   });
-
-  it('generates standard deep link URL from room code', () => {
-    const url = generateTapToJamUrl('123456');
-    expect(url).toBe('radiotedu://jam?code=123456');
+  afterEach(() => jest.restoreAllMocks());
+  it('roundtrips exact links and rejects lookalike routes and malformed codes', () => {
+    expect(parseTapToJamUrl(generateTapToJamUrl('123456'))).toBe('123456');
+    expect(parseTapToJamUrl('https://radiotedu.com/jam/654321')).toBe('654321');
+    for (const bad of ['radiotedu://jammer?code=123456', 'radiotedu://jam?code=1234567', 'https://radiotedu.com.evil/jam?code=123456', 'radiotedu://jam?code=123456&code=654321']) expect(parseTapToJamUrl(bad)).toBeNull();
+    expect(() => generateTapToJamUrl('12x3456')).toThrow();
   });
-
-  it('parses room code from various payload formats', () => {
-    // 1. Deep link query param
-    expect(parseTapToJamUrl('radiotedu://jam?code=654321')).toBe('654321');
-
-    // 2. Deep link path
-    expect(parseTapToJamUrl('radiotedu://jam/987654')).toBe('987654');
-
-    // 3. Web URL
-    expect(parseTapToJamUrl('https://radiotedu.com/jam?code=112233')).toBe('112233');
-
-    // 4. Raw 6-digit code
-    expect(parseTapToJamUrl('554433')).toBe('554433');
-
-    // 5. Invalid inputs
-    expect(parseTapToJamUrl('')).toBeNull();
-    expect(parseTapToJamUrl('invalid')).toBeNull();
-    expect(parseTapToJamUrl('123')).toBeNull();
+  it('advertises and scans using native methods, without self-detection', async () => {
+    const found = jest.fn(); const unsubscribe = subscribeToNearbyBeacons(found);
+    await startNearbyJamBroadcast('123456'); await detectNearbyPeerJam();
+    expect(NativeModules.NearbyJam.startAdvertising).toHaveBeenCalledWith('123456');
+    expect(NativeModules.NearbyJam.startDiscovery).toHaveBeenCalled();
+    expect(found).not.toHaveBeenCalled();
+    DeviceEventEmitter.emit('NearbyJamBeacon', {endpointId: 'peer', roomCode: '654321'});
+    expect(found).toHaveBeenCalledWith(expect.objectContaining({roomCode: '654321'}));
+    DeviceEventEmitter.emit('NearbyJamBeacon', {endpointId: 'peer', roomCode: null});
+    expect(found).toHaveBeenLastCalledWith(null);
+    unsubscribe(); stopNearbyJamBroadcast(); expect(NativeModules.NearbyJam.stop).toHaveBeenCalled();
   });
-
-  it('manages nearby beacon broadcast state and subscriber notification', () => {
-    expect(getActiveBroadcastCode()).toBeNull();
-
-    startNearbyJamBroadcast('456789');
-    expect(getActiveBroadcastCode()).toBe('456789');
-
-    const received: any[] = [];
-    const unsub = subscribeToNearbyBeacons(b => {
-      if (b) received.push(b);
-    });
-
-    const detected = detectNearbyPeerJam();
-    expect(detected).toBeTruthy();
-    expect(detected?.roomCode).toBe('456789');
-    expect(received.length).toBe(1);
-    expect(received[0].roomCode).toBe('456789');
-
-    unsub();
-    stopNearbyJamBroadcast();
-    expect(getActiveBroadcastCode()).toBeNull();
+  it('does not advertise when permission is denied', async () => {
+    (PermissionsAndroid.requestMultiple as jest.Mock).mockResolvedValue({});
+    await expect(startNearbyJamBroadcast('123456')).rejects.toThrow();
+    expect(NativeModules.NearbyJam.startAdvertising).not.toHaveBeenCalled();
+  });
+  it('cancels starts if the user closes during permission request', async () => {
+    let resolve: any;
+    (PermissionsAndroid.requestMultiple as jest.Mock).mockImplementation(permissions => new Promise(r => { resolve = () => r(Object.fromEntries(permissions.map((p: string) => [p, 'granted']))); }));
+    const pending = startNearbyJamBroadcast('123456'); stopNearbyJamBroadcast(); resolve(); await pending;
+    expect(NativeModules.NearbyJam.startAdvertising).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,8 @@
  * (Acoustic Timecapsules) pinned to podcast playback moments.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export type TimecapsuleCategory = 'exam_tip' | 'key_takeaway' | 'discussion';
 
 export interface PodcastTimecapsule {
@@ -85,9 +87,43 @@ export const INITIAL_TEDU_TIMECAPSULES: PodcastTimecapsule[] = [
   },
 ];
 
-class PodcastTimecapsuleService {
-  private timecapsules: PodcastTimecapsule[] = [...INITIAL_TEDU_TIMECAPSULES];
+export class PodcastTimecapsuleService {
+  private timecapsules: PodcastTimecapsule[] = [];
   private listeners: Array<() => void> = [];
+  private loaded = false;
+  private loading?: Promise<void>;
+  private writes: Promise<unknown> = Promise.resolve();
+
+  public initialize(): Promise<void> {
+    if (this.loaded) return Promise.resolve();
+    if (!this.loading) {
+      this.loading = (async () => {
+        const raw = await AsyncStorage.getItem('radiotedu.podcast.timecapsules.v1');
+        const entries: unknown = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(entries) || !entries.every(isValidCapsule)) {
+          throw new Error('Invalid saved timecapsules');
+        }
+        this.timecapsules = entries;
+        this.loaded = true;
+        this.notify();
+      })().finally(() => { this.loading = undefined; });
+    }
+    return this.loading;
+  }
+
+  private update<T>(change: (entries: PodcastTimecapsule[]) => T): Promise<T> {
+    const task = this.writes.then(async () => {
+      await this.initialize();
+      const next = this.timecapsules.map(entry => ({...entry}));
+      const result = change(next);
+      await AsyncStorage.setItem('radiotedu.podcast.timecapsules.v1', JSON.stringify(next));
+      this.timecapsules = next;
+      this.notify();
+      return result;
+    });
+    this.writes = task.catch(() => undefined);
+    return task;
+  }
 
   public getTimecapsules(podcastId?: string): PodcastTimecapsule[] {
     if (!podcastId) {
@@ -96,7 +132,7 @@ class PodcastTimecapsuleService {
       );
     }
     return this.timecapsules
-      .filter(tc => tc.podcastId === podcastId || tc.podcastId === 'tedu-academic-1')
+      .filter(tc => tc.podcastId === podcastId)
       .sort((a, b) => a.timestampSeconds - b.timestampSeconds);
   }
 
@@ -112,26 +148,24 @@ class PodcastTimecapsuleService {
 
   public addTimecapsule(
     entry: Omit<PodcastTimecapsule, 'id' | 'likes' | 'createdAt'>,
-  ): PodcastTimecapsule {
+  ): Promise<PodcastTimecapsule> {
     const newCapsule: PodcastTimecapsule = {
       ...entry,
       id: `tc-user-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       likes: 1,
       createdAt: Date.now(),
     };
-    this.timecapsules.push(newCapsule);
-    this.notify();
-    return newCapsule;
+    if (!isValidCapsule(newCapsule)) return Promise.reject(new Error('Invalid timecapsule'));
+    return this.update(entries => { entries.push(newCapsule); return newCapsule; });
   }
 
-  public likeTimecapsule(id: string): number {
-    const item = this.timecapsules.find(tc => tc.id === id);
-    if (item) {
+  public likeTimecapsule(id: string): Promise<number> {
+    return this.update(entries => {
+      const item = entries.find(tc => tc.id === id);
+      if (!item) return 0;
       item.likes += 1;
-      this.notify();
       return item.likes;
-    }
-    return 0;
+    });
   }
 
   public subscribe(callback: () => void): () => void {
@@ -141,9 +175,8 @@ class PodcastTimecapsuleService {
     };
   }
 
-  public resetTimecapsules(): void {
-    this.timecapsules = [...INITIAL_TEDU_TIMECAPSULES];
-    this.notify();
+  public resetTimecapsules(): Promise<void> {
+    return this.update(entries => { entries.length = 0; });
   }
 
   private notify(): void {
@@ -155,6 +188,17 @@ class PodcastTimecapsuleService {
       }
     }
   }
+}
+
+function isValidCapsule(value: unknown): value is PodcastTimecapsule {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as PodcastTimecapsule;
+  return ['id', 'podcastId', 'authorName', 'text'].every(key =>
+    typeof item[key as keyof PodcastTimecapsule] === 'string' &&
+    String(item[key as keyof PodcastTimecapsule]).trim().length > 0,
+  ) && Number.isFinite(item.timestampSeconds) && item.timestampSeconds >= 0 &&
+    Number.isFinite(item.likes) && item.likes >= 0 && Number.isFinite(item.createdAt) &&
+    ['exam_tip', 'key_takeaway', 'discussion'].includes(item.category);
 }
 
 export const podcastTimecapsuleService = new PodcastTimecapsuleService();

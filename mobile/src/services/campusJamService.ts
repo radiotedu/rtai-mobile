@@ -383,6 +383,8 @@ export async function joinJamRoom(
       });
       clearTimeout(joinTimeout);
 
+      if (!joinRes.ok) return null;
+
       if (joinRes.ok) {
         // Fetch current state to get full listener list
         try {

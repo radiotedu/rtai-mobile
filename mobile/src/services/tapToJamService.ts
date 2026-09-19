@@ -1,117 +1,64 @@
-import {Linking} from 'react-native';
-import {logSafeError} from '../utils/safeLog';
+import {NativeEventEmitter, NativeModules, PermissionsAndroid, Platform} from 'react-native';
 
 export interface NearbyJamBeacon {
   roomCode: string;
   channelId: string;
   channelName: string;
   hostName: string;
-  signalStrength: number; // 0 to 1
   timestamp: number;
 }
-
-const JAM_DEEP_LINK_SCHEME = 'radiotedu://jam';
-const JAM_WEB_LINK_PREFIX = 'https://radiotedu.com/jam';
-
-let activeBroadcastCode: string | null = null;
-const beaconListeners = new Set<(beacon: NearbyJamBeacon | null) => void>();
-
-/**
- * Generates official deep link and web URL for Tap-to-Jam NFC tag or QR/beam payload
- */
+const bridge = NativeModules.NearbyJam;
+export const nearbyJamSupported = Platform.OS === 'android' && !!bridge;
+let generation = 0;
 export function generateTapToJamUrl(roomCode: string): string {
-  const clean = roomCode.trim().replace(/[^0-9]/g, '').slice(0, 6);
-  return `${JAM_DEEP_LINK_SCHEME}?code=${clean}`;
+  if (!/^\d{6}$/.test(roomCode)) throw new Error('Invalid room code');
+  return `radiotedu://jam?code=${roomCode}`;
 }
-
-/**
- * Parses deep link, NFC payload or web URL to extract the 6-digit Jam Room code
- */
-export function parseTapToJamUrl(urlOrPayload: string): string | null {
-  if (!urlOrPayload || typeof urlOrPayload !== 'string') {
-    return null;
-  }
-
-  const trimmed = urlOrPayload.trim();
-
-  // 1. Check radiotedu://jam?code=123456 or radiotedu://jam/123456
-  if (trimmed.startsWith(JAM_DEEP_LINK_SCHEME)) {
-    const codeMatch = trimmed.match(/[?&]code=([0-9]{6})/i) || trimmed.match(/jam\/([0-9]{6})/i);
-    if (codeMatch && codeMatch[1]) {
-      return codeMatch[1];
-    }
-  }
-
-  // 2. Check https://radiotedu.com/jam?code=123456 or /jam/123456
-  if (trimmed.startsWith(JAM_WEB_LINK_PREFIX)) {
-    const webMatch = trimmed.match(/[?&]code=([0-9]{6})/i) || trimmed.match(/jam\/([0-9]{6})/i);
-    if (webMatch && webMatch[1]) {
-      return webMatch[1];
-    }
-  }
-
-  // 3. Raw 6-digit code
-  if (/^[0-9]{6}$/.test(trimmed)) {
-    return trimmed;
-  }
-
-  return null;
+export function parseTapToJamUrl(value: string): string | null {
+  if (typeof value !== 'string') return null;
+  const input = value.trim();
+  if (/^\d{6}$/.test(input)) return input;
+  const match = /^(?:radiotedu:\/\/jam|https:\/\/radiotedu\.com\/jam)(?:\?code=(\d{6})|\/(\d{6}))$/.exec(input);
+  return match ? match[1] || match[2] : null;
 }
-
-/**
- * Starts broadcasting simulated local acoustic / NFC beacon for peer devices
- */
-export function startNearbyJamBroadcast(roomCode: string): void {
-  activeBroadcastCode = roomCode;
+async function requestNearbyPermission(): Promise<void> {
+  if (!nearbyJamSupported) throw new Error('Nearby unavailable');
+  const p = PermissionsAndroid.PERMISSIONS;
+  const api = Number(Platform.Version);
+  const required = api >= 31 ? [p.BLUETOOTH_SCAN, p.BLUETOOTH_CONNECT, p.BLUETOOTH_ADVERTISE] : [];
+  if (api <= 31) required.push(p.ACCESS_FINE_LOCATION, p.ACCESS_COARSE_LOCATION);
+  if (api >= 33) required.push(p.NEARBY_WIFI_DEVICES);
+  const result = await PermissionsAndroid.requestMultiple(required);
+  if (required.some(permission => result[permission] !== PermissionsAndroid.RESULTS.GRANTED)) throw new Error('Nearby permission denied');
 }
-
-/**
- * Stops broadcasting local beacon
- */
+export async function startNearbyJamBroadcast(roomCode: string): Promise<void> {
+  generateTapToJamUrl(roomCode);
+  const request = ++generation;
+  await requestNearbyPermission();
+  if (request !== generation) return;
+  await bridge.startAdvertising(roomCode);
+}
+export async function detectNearbyPeerJam(): Promise<void> {
+  const request = ++generation;
+  await requestNearbyPermission();
+  if (request !== generation) return;
+  await bridge.startDiscovery();
+}
 export function stopNearbyJamBroadcast(): void {
-  activeBroadcastCode = null;
+  generation++;
+  bridge?.stop();
 }
-
-/**
- * Returns currently broadcasting room code if any
- */
-export function getActiveBroadcastCode(): string | null {
-  return activeBroadcastCode;
-}
-
-/**
- * Simulates finding a nearby peer device broadcasting a Jam session
- */
-export function detectNearbyPeerJam(simulatedBeacon?: NearbyJamBeacon): NearbyJamBeacon | null {
-  if (simulatedBeacon) {
-    beaconListeners.forEach(l => l(simulatedBeacon));
-    return simulatedBeacon;
-  }
-
-  if (activeBroadcastCode) {
-    const beacon: NearbyJamBeacon = {
-      roomCode: activeBroadcastCode,
-      channelId: 'radiotedu-main',
-      channelName: 'RadioTEDU',
-      hostName: 'TEDÜ Dinleyicisi',
-      signalStrength: 0.95,
-      timestamp: Date.now(),
-    };
-    beaconListeners.forEach(l => l(beacon));
-    return beacon;
-  }
-
-  return null;
-}
-
-/**
- * Subscribes to nearby detected Jam beacons
- */
-export function subscribeToNearbyBeacons(
-  callback: (beacon: NearbyJamBeacon | null) => void,
-): () => void {
-  beaconListeners.add(callback);
-  return () => {
-    beaconListeners.delete(callback);
-  };
+export function subscribeToNearbyBeacons(callback: (beacon: NearbyJamBeacon | null) => void): () => void {
+  if (!nearbyJamSupported) return () => {};
+  let currentEndpoint: string | null = null;
+  const subscription = new NativeEventEmitter(bridge).addListener('NearbyJamBeacon', event => {
+    if (!event.roomCode) {
+      if (currentEndpoint === event.endpointId) { currentEndpoint = null; callback(null); }
+      return;
+    }
+    if (!/^\d{6}$/.test(event.roomCode)) return;
+    currentEndpoint = event.endpointId;
+    callback({roomCode: event.roomCode, channelId: '', channelName: 'Jam', hostName: '', timestamp: Date.now()});
+  });
+  return () => subscription.remove();
 }

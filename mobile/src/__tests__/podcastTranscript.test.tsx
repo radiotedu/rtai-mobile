@@ -1,4 +1,5 @@
 import React from 'react';
+import {podcastTimecapsuleService} from '../services/podcastTimecapsuleService';
 import renderer, {act} from 'react-test-renderer';
 import PodcastTranscriptViewer from '../components/PodcastTranscriptViewer';
 import {
@@ -16,8 +17,10 @@ jest.mock('react-i18next', () => ({
 }));
 
 describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
+    await podcastTimecapsuleService.resetTimecapsules();
+    await podcastTimecapsuleService.addTimecapsule({podcastId: 'test-episode', timestampSeconds: 65, authorName: 'Test', text: 'Test note', category: 'exam_tip'});
   });
 
   describe('formatTimestamp helper', () => {
@@ -59,6 +62,9 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       act(() => {
         root = renderer.create(
           <PodcastTranscriptViewer
+            podcastId="test-episode"
+            cues={SAMPLE_TEDU_TRANSCRIPT_CUES}
+            takeaways={SAMPLE_TEDU_ACADEMIC_TAKEAWAYS}
             currentTimeSeconds={15}
             onSeek={onSeekMock}
           />,
@@ -83,6 +89,9 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       act(() => {
         root = renderer.create(
           <PodcastTranscriptViewer
+            podcastId="test-episode"
+            cues={SAMPLE_TEDU_TRANSCRIPT_CUES}
+            takeaways={SAMPLE_TEDU_ACADEMIC_TAKEAWAYS}
             currentTimeSeconds={0}
             onSeek={jest.fn()}
           />,
@@ -105,6 +114,9 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       act(() => {
         root = renderer.create(
           <PodcastTranscriptViewer
+            podcastId="test-episode"
+            cues={SAMPLE_TEDU_TRANSCRIPT_CUES}
+            takeaways={SAMPLE_TEDU_ACADEMIC_TAKEAWAYS}
             currentTimeSeconds={30}
             onSeek={onSeekMock}
           />,
@@ -119,7 +131,7 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       });
 
       // Find first timecapsule jump button
-      const jumpBtn = root.root.findByProps({testID: 'timecapsule-jump-tc-1'});
+      const jumpBtn = root.root.findByProps({testID: `timecapsule-jump-${podcastTimecapsuleService.getTimecapsules('test-episode')[0].id}`});
       expect(jumpBtn).toBeTruthy();
 
       act(() => {
@@ -129,11 +141,14 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       expect(onSeekMock).toHaveBeenCalledWith(65);
     });
 
-    it('opens add capsule form, inputs note, submits and likes capsule', () => {
+    it('opens add capsule form, inputs note, submits and likes capsule', async () => {
       let root: any;
       act(() => {
         root = renderer.create(
           <PodcastTranscriptViewer
+            podcastId="test-episode"
+            cues={SAMPLE_TEDU_TRANSCRIPT_CUES}
+            takeaways={SAMPLE_TEDU_ACADEMIC_TAKEAWAYS}
             currentTimeSeconds={120}
             onSeek={jest.fn()}
           />,
@@ -161,15 +176,15 @@ describe('Podcast AI Transcript Viewer & Click-to-Seek', () => {
       });
 
       const submitBtn = root.root.findByProps({testID: 'submit-capsule-btn'});
-      act(() => {
-        submitBtn.props.onPress();
+      await act(async () => {
+        await submitBtn.props.onPress();
       });
 
       // Like first timecapsule
-      const likeBtn = root.root.findByProps({testID: 'timecapsule-like-tc-1'});
+      const likeBtn = root.root.findByProps({testID: `timecapsule-like-${podcastTimecapsuleService.getTimecapsules('test-episode')[0].id}`});
       expect(likeBtn).toBeTruthy();
-      act(() => {
-        likeBtn.props.onPress();
+      await act(async () => {
+        await likeBtn.props.onPress();
       });
 
       expect(root.toJSON()).toBeTruthy();

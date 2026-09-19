@@ -25,7 +25,7 @@ export const TEDU_CAMPUS_ZONES: CampusZone[] = [
     latitude: 39.92745,
     longitude: 32.86465,
     radiusMeters: 55,
-    recommendedChannelId: 'lofi',
+    recommendedChannelId: 'radiotedu-lofi',
     recommendedChannelName: 'RadioTEDU Lo-Fi Focus',
     promptTitle: 'Kütüphane Odak Modu',
     promptDescription: 'Kütüphane bölgesindesiniz. Derin odaklanma için Lo-Fi akışına geçmek ister misiniz?',
@@ -40,7 +40,7 @@ export const TEDU_CAMPUS_ZONES: CampusZone[] = [
     latitude: 39.9272,
     longitude: 32.86415,
     radiusMeters: 65,
-    recommendedChannelId: 'radiotedu',
+    recommendedChannelId: 'radiotedu-main',
     recommendedChannelName: 'RadioTEDU Flagship',
     promptTitle: 'Açık Hava & Çim Alan Modu',
     promptDescription: 'Çim alandasınız! Kampüsün enerjisine ana yayınla katılın.',
@@ -55,7 +55,7 @@ export const TEDU_CAMPUS_ZONES: CampusZone[] = [
     latitude: 39.92695,
     longitude: 32.8648,
     radiusMeters: 50,
-    recommendedChannelId: 'classical',
+    recommendedChannelId: 'radiotedu-classic',
     recommendedChannelName: 'RadioTEDU Klasik',
     promptTitle: 'Akademik Dinginlik Modu',
     promptDescription: 'Amfi bölgesindesiniz. Zihninizi tazelemek için Klasik istasyon öneriliyor.',
@@ -70,7 +70,7 @@ export const TEDU_CAMPUS_ZONES: CampusZone[] = [
     latitude: 39.92675,
     longitude: 32.86375,
     radiusMeters: 50,
-    recommendedChannelId: 'energize',
+    recommendedChannelId: 'radiotedu-energize',
     recommendedChannelName: 'RadioTEDU Energize',
     promptTitle: 'Yüksek Enerji Modu',
     promptDescription: 'Spor merkezindesiniz! Egzersiz ritmini yakalamak için Energize hazır.',
@@ -121,7 +121,11 @@ function notifySubscribers(): void {
  * Updates user coordinates and detects if user has entered a campus micro-zone
  */
 export function updateUserCoordinates(latitude: number, longitude: number): CampusZone | null {
-  for (const zone of TEDU_CAMPUS_ZONES) {
+  // Overlapping micro-zones choose the nearest centre, not declaration order.
+  const nearestZones = [...TEDU_CAMPUS_ZONES].sort((a, b) =>
+    calculateHaversineDistance(latitude, longitude, a.latitude, a.longitude) -
+    calculateHaversineDistance(latitude, longitude, b.latitude, b.longitude));
+  for (const zone of nearestZones) {
     const distance = calculateHaversineDistance(
       latitude,
       longitude,

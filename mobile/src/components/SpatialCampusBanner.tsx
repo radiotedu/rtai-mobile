@@ -15,7 +15,6 @@ import {
 } from '../services/campusSpatialService';
 import {playTrackById} from '../services/playbackQueue';
 import {logSafeError} from '../utils/safeLog';
-import {Analytics} from '../services/analyticsService';
 
 interface SpatialCampusBannerProps {
   onActivateZone?: (zone: CampusZone) => void;
@@ -88,7 +87,7 @@ export const SpatialCampusBanner: React.FC<SpatialCampusBannerProps> = ({
         }),
       ]).start();
     }
-  }, [activeZone]);
+  }, [activeZone, opacityAnim, pulseAnim, slideAnim]);
 
   if (!activeZone) {
     return null;
@@ -99,8 +98,8 @@ export const SpatialCampusBanner: React.FC<SpatialCampusBannerProps> = ({
       if (onActivateZone) {
         onActivateZone(activeZone);
       }
-      await playTrackById(activeZone.recommendedChannelId);
-      dismissCurrentCampusZone();
+      const played = await playTrackById(activeZone.recommendedChannelId);
+      if (played) dismissCurrentCampusZone();
     } catch (err) {
       logSafeError('spatialBanner.activate', err);
     }

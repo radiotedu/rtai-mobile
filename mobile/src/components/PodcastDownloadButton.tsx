@@ -37,7 +37,7 @@ export const PodcastDownloadButton: React.FC<PodcastDownloadButtonProps> = ({
     return options?.defaultValue || key;
   };
   const [status, setStatus] = useState(getDownloadStatus(podcast.id));
-  const [progress, setProgress] = useState(getDownloadProgress(podcast.id));
+  const [_progress, setProgress] = useState(getDownloadProgress(podcast.id));
 
   useEffect(() => {
     setStatus(getDownloadStatus(podcast.id));

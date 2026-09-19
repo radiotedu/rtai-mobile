@@ -11,8 +11,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {COLORS, SPACING} from '../theme/theme';
 import {
   AcademicTakeaway,
-  SAMPLE_TEDU_ACADEMIC_TAKEAWAYS,
-  SAMPLE_TEDU_TRANSCRIPT_CUES,
   TranscriptCue,
   formatTimestamp,
   isCueActive,
@@ -25,6 +23,7 @@ import {
 } from '../services/podcastTimecapsuleService';
 
 export interface PodcastTranscriptViewerProps {
+  podcastId: string;
   cues?: TranscriptCue[];
   takeaways?: AcademicTakeaway[];
   currentTimeSeconds: number;
@@ -57,8 +56,9 @@ const CATEGORY_LABELS: Record<string, {label: string; color: string; bg: string}
 };
 
 export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = ({
-  cues = SAMPLE_TEDU_TRANSCRIPT_CUES,
-  takeaways = SAMPLE_TEDU_ACADEMIC_TAKEAWAYS,
+  podcastId,
+  cues = [],
+  takeaways = [],
   currentTimeSeconds,
   onSeek,
   onClose,
@@ -67,18 +67,23 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
   const [activeTab, setActiveTab] = useState<'transcript' | 'takeaways' | 'timecapsules'>('transcript');
   const [searchQuery, setSearchQuery] = useState('');
   const [timecapsules, setTimecapsules] = useState<PodcastTimecapsule[]>(() =>
-    podcastTimecapsuleService.getTimecapsules(),
+    podcastTimecapsuleService.getTimecapsules(podcastId),
   );
   const [showAddCapsule, setShowAddCapsule] = useState(false);
   const [newAuthor, setNewAuthor] = useState('');
   const [newNote, setNewNote] = useState('');
   const [newCategory, setNewCategory] = useState<TimecapsuleCategory>('exam_tip');
+  const [storageError, setStorageError] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    return podcastTimecapsuleService.subscribe(() => {
-      setTimecapsules(podcastTimecapsuleService.getTimecapsules());
-    });
-  }, []);
+    let mounted = true;
+    const refresh = () => setTimecapsules(podcastTimecapsuleService.getTimecapsules(podcastId));
+    refresh();
+    const unsubscribe = podcastTimecapsuleService.subscribe(refresh);
+    podcastTimecapsuleService.initialize().catch(() => { if (mounted) setStorageError(true); });
+    return () => { mounted = false; unsubscribe(); };
+  }, [podcastId]);
 
   // Search filtering for cues
   const filteredCues = useMemo(() => {
@@ -122,12 +127,13 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
 
   return (
     <View style={styles.container} testID="podcast-transcript-viewer">
+      {storageError ? <Text accessibilityRole="alert">Notlar okunamadı veya kaydedilemedi. Lütfen tekrar deneyin.</Text> : null}
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Icon name="school" size={20} color={COLORS.primary} />
           <View style={styles.headerTitleWrap}>
-            <Text style={styles.headerSuperTitle}>TEDÜ AKADEMİK AI TRANSKRİPT</Text>
+            <Text style={styles.headerSuperTitle}>PODCAST · BU CİHAZDAKİ NOTLAR</Text>
             <Text style={styles.headerTitle} numberOfLines={1}>
               {podcastTitle}
             </Text>
@@ -507,11 +513,14 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
 
               <TouchableOpacity
                 style={[styles.submitCapsuleBtn, !newNote.trim() && styles.submitCapsuleBtnDisabled]}
-                disabled={!newNote.trim()}
-                onPress={() => {
+                disabled={!newNote.trim() || saving || !podcastId}
+                onPress={async () => {
                   if (!newNote.trim()) return;
-                  podcastTimecapsuleService.addTimecapsule({
-                    podcastId: 'tedu-academic-1',
+                  setSaving(true);
+                  setStorageError(false);
+                  try {
+                  await podcastTimecapsuleService.addTimecapsule({
+                    podcastId,
                     timestampSeconds: Math.floor(currentTimeSeconds),
                     authorName: newAuthor.trim() || 'TEDÜ Dinleyicisi',
                     text: newNote.trim(),
@@ -519,6 +528,8 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
                   });
                   setNewNote('');
                   setShowAddCapsule(false);
+                  } catch { setStorageError(true); }
+                  finally { setSaving(false); }
                 }}
                 testID="submit-capsule-btn">
                 <Icon name="check-bold" size={16} color="#fff" />
@@ -569,7 +580,7 @@ export const PodcastTranscriptViewer: React.FC<PodcastTranscriptViewerProps> = (
                   <View style={styles.timecapsuleFooter}>
                     <TouchableOpacity
                       style={styles.timecapsuleLikeBtn}
-                      onPress={() => podcastTimecapsuleService.likeTimecapsule(tc.id)}
+                      onPress={() => podcastTimecapsuleService.likeTimecapsule(tc.id).catch(() => setStorageError(true))}
                       testID={`timecapsule-like-${tc.id}`}>
                       <Icon name="heart-outline" size={14} color="#e50914" />
                       <Text style={styles.timecapsuleLikeCount}>{tc.likes}</Text>

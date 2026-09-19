@@ -6,7 +6,6 @@ import {
   resetCampusZoneState,
   getActiveCampusZone,
   subscribeToCampusZone,
-  TEDU_CAMPUS_ZONES,
 } from '../services/campusSpatialService';
 
 describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
@@ -29,7 +28,7 @@ describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
     const zone = updateUserCoordinates(39.92745, 32.86465);
     expect(zone).toBeTruthy();
     expect(zone?.key).toBe('library');
-    expect(zone?.recommendedChannelId).toBe('lofi');
+    expect(zone?.recommendedChannelId).toBe('radiotedu-lofi');
     expect(getActiveCampusZone()?.key).toBe('library');
   });
 
@@ -48,11 +47,11 @@ describe('Campus Spatial Service (Haritasız Konum & Mekansal Ses)', () => {
 
     simulateCampusZone('grass');
     expect(getActiveCampusZone()?.key).toBe('grass');
-    expect(getActiveCampusZone()?.recommendedChannelId).toBe('radiotedu');
+    expect(getActiveCampusZone()?.recommendedChannelId).toBe('radiotedu-main');
 
     simulateCampusZone('sports');
     expect(getActiveCampusZone()?.key).toBe('sports');
-    expect(getActiveCampusZone()?.recommendedChannelId).toBe('energize');
+    expect(getActiveCampusZone()?.recommendedChannelId).toBe('radiotedu-energize');
 
     simulateCampusZone('outside');
     expect(getActiveCampusZone()).toBeNull();

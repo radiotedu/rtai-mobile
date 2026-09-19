@@ -24,7 +24,6 @@ import {logSafeError} from '../utils/safeLog';
 import {
   PODCAST_ID_PREFIX,
   buildPodcastTrack,
-  isPodcastId,
   pausePlaybackByUser,
   playTrackById,
   resumePlaybackByUser,
@@ -52,7 +51,6 @@ export const PodcastPlayerScreen: React.FC = () => {
   const [showTranscript, setShowTranscript] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
-  const isPodcast = isPodcastId(activeTrack?.id) || !!routePodcast || !!routePodcastId;
   const state = playbackState?.state;
   const isPlaying = state === State.Playing;
   const isBuffering = state === State.Buffering || state === State.Loading;
@@ -356,6 +354,8 @@ export const PodcastPlayerScreen: React.FC = () => {
         testID="podcast-transcript-modal">
         <SafeAreaView style={styles.modalSafeContainer}>
           <PodcastTranscriptViewer
+            key={routePodcastId || String(activeTrack?.id || '').replace(PODCAST_ID_PREFIX, '')}
+            podcastId={routePodcastId || String(activeTrack?.id || '').replace(PODCAST_ID_PREFIX, '')}
             currentTimeSeconds={progress.position}
             onSeek={handleSeekTo}
             onClose={() => setShowTranscript(false)}

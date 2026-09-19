@@ -107,6 +107,7 @@ const PlayerScreen = ({route}: any) => {
   const [songShareData, setSongShareData] = useState<ShareCardData | null>(null);
   const [lyricsShareIndex, setLyricsShareIndex] = useState(0);
   const [campusJamVisible, setCampusJamVisible] = useState(false);
+  useEffect(() => { if (route.params?.jamCode) setCampusJamVisible(true); }, [route.params?.jamCode]);
   const dismissY = useRef(new Animated.Value(0)).current;
   const scrollOffsetY = useRef(0);
 
@@ -816,6 +817,7 @@ const PlayerScreen = ({route}: any) => {
         stationName={currentChannel?.name || 'RadioTEDU'}
       />
       <CampusJamModal
+        initialCode={route.params?.jamCode}
         visible={campusJamVisible}
         onClose={() => setCampusJamVisible(false)}
         channelId={currentChannel?.id || 'radiotedu-main'}

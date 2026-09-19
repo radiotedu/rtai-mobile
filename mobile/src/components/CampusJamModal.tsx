@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
+  AppState,
   Dimensions,
   Easing,
   Modal,
@@ -14,7 +15,6 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {useTranslation} from 'react-i18next';
 import {COLORS, SPACING} from '../theme/theme';
 import {RADIO_CHANNELS} from '../data/radioChannels';
 import {
@@ -40,6 +40,7 @@ import {
   detectNearbyPeerJam,
   subscribeToNearbyBeacons,
   NearbyJamBeacon,
+  nearbyJamSupported,
 } from '../services/tapToJamService';
 import {logSafeError} from '../utils/safeLog';
 import {Analytics} from '../services/analyticsService';
@@ -76,6 +77,7 @@ interface FloatingEmoji {
 }
 
 interface CampusJamModalProps {
+  initialCode?: string;
   visible: boolean;
   onClose: () => void;
   channelId: string;
@@ -136,13 +138,13 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
   onClose,
   channelId,
   channelName,
+  initialCode,
 }) => {
-  const {t} = useTranslation();
   const [activeRoom, setActiveRoom] = useState<CampusJamRoom | null>(getActiveJamRoom());
   const [publicRooms, setPublicRooms] = useState<PublicJamRoom[]>([]);
   const [loadingPublicRooms, setLoadingPublicRooms] = useState(false);
   const [isPublicRoom, setIsPublicRoom] = useState(true);
-  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [joinCodeInput, setJoinCodeInput] = useState(initialCode || '');
   const [joinError, setJoinError] = useState<string | null>(null);
   const [copiedToast, setCopiedToast] = useState(false);
   const toastTimeoutRef = useRef<any>(null);
@@ -154,7 +156,15 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
   const [showTapModal, setShowTapModal] = useState(false);
   const [detectedBeacon, setDetectedBeacon] = useState<NearbyJamBeacon | null>(null);
   const [scanningNearby, setScanningNearby] = useState(false);
-  const radarPulseAnim = useRef(new Animated.Value(1)).current;
+  const [nearbyError, setNearbyError] = useState(false);
+  useEffect(() => { if (initialCode) setJoinCodeInput(initialCode); }, [initialCode]);
+  useEffect(() => {
+    if (!visible) { stopNearbyJamBroadcast(); setShowTapModal(false); }
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'active') { stopNearbyJamBroadcast(); setShowTapModal(false); }
+    });
+    return () => { subscription.remove(); stopNearbyJamBroadcast(); };
+  }, [visible]);
 
   // Resolve station theme color (RadioTEDU red, Classical gold, Jazz purple, Lo-Fi cyan, Energize yellow, Rock orange)
   const stationColor =
@@ -196,7 +206,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     if (visible && !activeRoom) {
       loadPublicRooms();
     }
-  }, [visible, Boolean(activeRoom)]);
+  }, [visible, activeRoom]);
 
   useEffect(() => {
     const unsubRoom = subscribeToJamRoom(room => {
@@ -208,14 +218,12 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     });
 
     const unsubChat = subscribeToJamChat(msg => {
-      spawnFloatingChat(msg);
+      spawnFloatingChat(msg, getActiveJamRoom()?.hostName);
     });
 
     const unsubBeacon = subscribeToNearbyBeacons(beacon => {
-      if (beacon) {
-        setDetectedBeacon(beacon);
-        setScanningNearby(false);
-      }
+      setDetectedBeacon(beacon);
+      setScanningNearby(!beacon);
     });
 
     if (visible) {
@@ -345,7 +353,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
         clearInterval(cooldownIntervalRef.current);
       }
     };
-  }, [channelId]);
+  }, [channelId, visible, ambientPulse, bar1, bar2, bar3, bar4, bar5, bar6, bar7, ripple1Opacity, ripple1Scale, ripple2Opacity, ripple2Scale]);
 
   const spawnFloatingEmoji = (emoji: string) => {
     if (process.env.NODE_ENV === 'test') {
@@ -424,7 +432,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     });
   };
 
-  const spawnFloatingChat = (msg: JamChatMessage) => {
+  const spawnFloatingChat = (msg: JamChatMessage, hostName?: string) => {
     if (process.env.NODE_ENV === 'test') {
       return;
     }
@@ -432,7 +440,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     const animY = new Animated.Value(25);
     const animOpacity = new Animated.Value(0);
     const isHost = Boolean(
-      (activeRoom?.hostName && activeRoom.hostName === msg.senderName) ||
+      (hostName && hostName === msg.senderName) ||
       msg.senderName.includes('Host'),
     );
 
@@ -556,19 +564,17 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
     }
   };
 
-  const handleOpenTapToJam = () => {
+  const handleOpenTapToJam = async () => {
     setShowTapModal(true);
     setDetectedBeacon(null);
-    if (activeRoom) {
-      startNearbyJamBroadcast(activeRoom.code);
-    } else {
-      setScanningNearby(true);
-      const beacon = detectNearbyPeerJam();
-      if (beacon) {
-        setDetectedBeacon(beacon);
-        setScanningNearby(false);
-      }
-    }
+    setNearbyError(false);
+    if (!nearbyJamSupported) return;
+    stopNearbyJamBroadcast();
+    setScanningNearby(true);
+    try {
+      if (activeRoom) await startNearbyJamBroadcast(activeRoom.code);
+      else await detectNearbyPeerJam();
+    } catch { setNearbyError(true); setScanningNearby(false); }
   };
 
   const handleCloseTapToJam = () => {
@@ -603,7 +609,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
 
     try {
       await Share.share({
-        message: `RadioTEDU Campus Jam: Gel birlikte ${activeRoom.channelName} dinleyelim! Oda Kodumuz: ${activeRoom.code} 🎧 https://radiotedu.com/jam`,
+        message: `RadioTEDU Campus Jam: ${activeRoom.channelName} · ${generateTapToJamUrl(activeRoom.code)}`,
       });
     } catch (err) {
       logSafeError('campusJam.share', err);
@@ -828,7 +834,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                   testID="campus-jam-tap-btn">
                   <Icon name="cellphone-wireless" size={17} color="#38bdf8" />
                   <Text style={styles.tapToJamPillText}>
-                    Dokunarak Eşleş (Tap-to-Jam / NFC)
+                    Yakındaki Jam Odaları
                   </Text>
                 </TouchableOpacity>
 
@@ -1089,7 +1095,7 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                     testID="campus-jam-active-tap-btn">
                     <Icon name="cellphone-wireless" size={14} color="#38bdf8" />
                     <Text style={styles.tapToJamActiveShareText}>
-                      📱 Dokunarak Paylaş (Tap-to-Jam / NFC)
+                      📱 Yakındakilerle Paylaş
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1334,20 +1340,22 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                 <View style={[styles.tapRadarCircle, styles.tapRadarCircle2]} />
                 <View style={[styles.tapRadarCircle, styles.tapRadarCircle1]} />
                 <View style={styles.tapCenterPhoneBubble}>
-                  <Icon name="nfc" size={36} color="#38bdf8" />
+                  <Icon name="bluetooth" size={36} color="#38bdf8" />
                 </View>
               </View>
 
               <Text style={styles.tapPromptTitle}>
                 {activeRoom
-                  ? 'Telefonları Birbirine Yaklaştırın'
-                  : 'Yakındaki Jam Odası Aranıyor...'}
+                  ? 'Odanızı Yakındakilere Açın'
+                  : scanningNearby ? 'Yakındaki Jam Odası Aranıyor...' : 'Yakındaki Jam Odaları'}
               </Text>
               <Text style={styles.tapPromptSub}>
                 {activeRoom
-                  ? `Oda kodunuz (${activeRoom.code}) akustik ve NFC yakınlığıyla yayınlanıyor. Arkadaşınız telefonunu yaklaştırdığında odaya bağlanır.`
-                  : 'Arkadaşınızın telefonunu yan yana getirin. 6 haneli kod yazmadan anında aynı frekansta buluşun.'}
+                  ? `Bu ekran açıkken oda kodunuz (${activeRoom.code}) Bluetooth/Wi-Fi üzerinden yakındaki Android cihazlara görünür. Katılımı arkadaşınız seçer.`
+                  : 'Arkadaşınız Yakındakilerle Paylaş ekranını açsın. Bluetooth/Wi-Fi ile bulunan odaya katılabilirsiniz.'}
               </Text>
+              {!nearbyJamSupported || nearbyError ? <Text accessibilityRole="alert" style={styles.tapPromptSub}>Yakın cihaz erişimi kullanılamıyor. İzinleri, Bluetooth ve Wi-Fi ayarlarını kontrol edin veya oda kodu/paylaşım bağlantısı kullanın.</Text> : null}
+              {activeRoom ? <TouchableOpacity accessibilityRole="button" onPress={handleShareInvite} testID="tap-to-jam-share-link"><Text style={styles.tapSimulateScanText}>Davet Bağlantısını Paylaş</Text></TouchableOpacity> : null}
 
               {/* Detected Beacon Result */}
               {detectedBeacon ? (
@@ -1374,10 +1382,8 @@ export const CampusJamModal: React.FC<CampusJamModalProps> = ({
                 !activeRoom && (
                   <TouchableOpacity
                     style={styles.tapSimulateScanBtn}
-                    onPress={() => {
-                      const b = detectNearbyPeerJam();
-                      if (b) setDetectedBeacon(b);
-                    }}
+                    onPress={handleOpenTapToJam}
+                    disabled={!nearbyJamSupported}
                     activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel="Yakındaki Odayı Tara"

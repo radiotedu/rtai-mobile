@@ -2,7 +2,6 @@ import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import MoodFlowShelf from '../components/MoodFlowShelf';
 import {
-  activateMood,
   clearActiveMood,
   getActiveMood,
 } from '../services/moodEngineService';

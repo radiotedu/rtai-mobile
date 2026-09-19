@@ -49,7 +49,7 @@ describe('SpatialCampusBanner Component (Haritasız Akıllı Konum Bildirimi)', 
     });
 
     expect(onActivateMock).toHaveBeenCalledTimes(1);
-    expect(playbackQueue.playTrackById).toHaveBeenCalledWith('lofi');
+    expect(playbackQueue.playTrackById).toHaveBeenCalledWith('radiotedu-lofi');
     expect(campusSpatialService.getActiveCampusZone()).toBeNull();
   });
 

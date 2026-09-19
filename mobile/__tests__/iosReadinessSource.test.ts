@@ -45,8 +45,8 @@ describe('iOS release readiness', () => {
 
   it('uses the current cross-platform release version', () => {
     const project = read('ios/RadioTEDUMobile.xcodeproj/project.pbxproj');
-    expect(project).toContain('MARKETING_VERSION = 1.3.10;');
-    expect(project).toContain('CURRENT_PROJECT_VERSION = 13100;');
+    expect(project).toContain('MARKETING_VERSION = 1.3.11;');
+    expect(project).toContain('CURRENT_PROJECT_VERSION = 13110;');
   });
 
   it('forwards ERP login deep links to React Native on iPhone and iPad', () => {
@@ -75,7 +75,8 @@ describe('iOS release readiness', () => {
     expect(plist).toContain('<key>UIBackgroundModes</key>');
     expect(plist).toContain('<string>audio</string>');
     expect(plist).toContain('<string>radiotedu</string>');
-    expect(plist).not.toContain('NSLocationWhenInUseUsageDescription');
+    expect(plist).toContain('NSLocationWhenInUseUsageDescription');
+    expect(plist).not.toContain('NSLocationAlways');
     expect(plist).not.toContain('<string>armv7</string>');
   });
 

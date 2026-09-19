@@ -18,6 +18,7 @@ import GlobalHeader from '../components/GlobalHeader';
 import HomeDiscovery from '../components/HomeDiscovery';
 import MoodFlowShelf from '../components/MoodFlowShelf';
 import SpatialCampusBanner from '../components/SpatialCampusBanner';
+import CampusLocationControl from '../components/CampusLocationControl';
 import PageTransition from '../components/PageTransition';
 import {COLORS, SPACING} from '../theme/theme';
 import {screenCopy} from '../i18n/screenCopy';
@@ -147,6 +148,7 @@ const HomeScreen = () => {
           }
           showsVerticalScrollIndicator={false}>
           <SpatialCampusBanner />
+          <CampusLocationControl />
           <HomeDiscovery refreshKey={refreshKey} />
           <MoodFlowShelf />
 

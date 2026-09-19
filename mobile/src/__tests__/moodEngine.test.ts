@@ -1,5 +1,4 @@
 import {
-  MOOD_PROFILES,
   activateMood,
   clearActiveMood,
   getActiveMood,

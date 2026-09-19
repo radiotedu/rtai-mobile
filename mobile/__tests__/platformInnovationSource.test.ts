@@ -25,7 +25,8 @@ describe('innovative media surfaces', () => {
     expect(manifest).toContain('android:appCategory="audio"');
     expect(service).toContain('MediaLibraryService');
     expect(manifest).not.toContain('com.google.android.geo.API_KEY');
-    expect(manifest).not.toContain('ACCESS_FINE_LOCATION');
+    expect(manifest).toContain('ACCESS_FINE_LOCATION');
+    expect(manifest).not.toContain('ACCESS_BACKGROUND_LOCATION');
   });
 
   it('ships Siri intents, AirPlay and Handoff without location access', () => {

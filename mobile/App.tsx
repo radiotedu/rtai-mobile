@@ -39,11 +39,15 @@ import {normalizeJukeLocalAppPath} from './src/services/jukeLocalWebViewService'
 import {startStreamQualityController} from './src/services/streamQualityController';
 import {resolveCurrentStreamPreferences} from './src/services/streamPreferences';
 import {initOutputRouting} from './src/services/outputRouting';
+import {parseTapToJamUrl} from './src/services/tapToJamService';
 
 const linking: any = {
   prefixes: ['radiotedu://', 'https://radiotedu.com', 'https://radiotedu.com/jukebox'],
-  getStateFromPath: (path: string, options: any) =>
-    getStateFromPath(normalizeJukeLocalAppPath(path), options),
+  getStateFromPath: (path: string, options: any) => {
+    const jamCode = parseTapToJamUrl(`radiotedu://${path.replace(/^\//, '')}`);
+    if (jamCode) return {routes: [{name: 'Player', params: {jamCode}}]};
+    return getStateFromPath(normalizeJukeLocalAppPath(path), options);
+  },
   config: {
     screens: {
       MainTabs: {

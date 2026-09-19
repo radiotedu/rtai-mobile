@@ -8,6 +8,10 @@
  */
 
 // Official AsyncStorage mock shipped with the package.
+jest.mock('@react-native-community/geolocation', () => ({
+  setRNConfiguration: jest.fn(), requestAuthorization: jest.fn(success => success()),
+  watchPosition: jest.fn(() => 1), clearWatch: jest.fn(),
+}));
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );

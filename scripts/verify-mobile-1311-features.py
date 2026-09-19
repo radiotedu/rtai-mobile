@@ -7,19 +7,21 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 import zipfile
+import uiautomator2 as u2
 
 apk, directory = sys.argv[1:3]
 output = Path(directory)
 package = 'com.radiotedumobile'
+device = u2.connect()
+device.jsonrpc.setConfigurator({'waitForIdleTimeout': 0, 'waitForSelectorTimeout': 0})
 
 def adb(*args, binary=False):
     return subprocess.check_output(['adb', *args], text=not binary, timeout=40)
 
 def snapshot(name):
-    adb('shell', 'uiautomator', 'dump', '/sdcard/feature-check.xml')
-    xml = adb('shell', 'cat', '/sdcard/feature-check.xml')
-    (output / (name + '.xml')).write_text(xml, encoding='utf-8')
     (output / (name + '.png')).write_bytes(adb('exec-out', 'screencap', '-p', binary=True))
+    xml = device.dump_hierarchy(compressed=False, max_depth=80)
+    (output / (name + '.xml')).write_text(xml, encoding='utf-8')
     return ET.fromstring(xml)
 
 with zipfile.ZipFile(apk) as archive:

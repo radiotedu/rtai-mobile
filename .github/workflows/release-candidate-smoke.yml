@@ -23,6 +23,8 @@ jobs:
         profile: [pixel_7, pixel_c]
     env:
       RELEASE_TAG: ${{ inputs.tag }}
+      BUILD_RUN_ID: ${{ inputs.run_id }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -36,11 +38,16 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+          source_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" --jq 'select(.name == "Android Release" and .conclusion == "success" and .head_branch == "main") | .head_sha')"
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
           (cd candidate && sha256sum --check SHA256SUMS.txt)
           mkdir -p evidence
           version="${RELEASE_TAG#v}"
           code="$(node -e 'const v=process.argv[1].split(".").map(Number); console.log(v[0]*10000+v[1]*1000+v[2]*10)' "$version")"
-          python3 scripts/verify-android-identity.py "candidate/RadioTEDU-Mobile-${RELEASE_TAG}.apk" --tools "$ANDROID_HOME/build-tools/35.0.0" --sha "$GITHUB_SHA" --version "$version" --version-code "$code" > evidence/identity.json
+          python3 scripts/verify-android-identity.py "candidate/RadioTEDU-Mobile-${RELEASE_TAG}.apk" --tools "$ANDROID_HOME/build-tools/35.0.0" --sha "$source_sha" --version "$version" --version-code "$code" > evidence/identity.json
+      - name: Install animation-tolerant UI hierarchy reader
+        run: python3 -m pip install uiautomator2==3.7.0
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

@@ -156,26 +156,6 @@
     "shareTitle": "RadioTEDU Listening Recap",
     "shareText": "📻 I listened to {{time}} of radio on RadioTEDU this week!\n🎷 Top station: {{station}}\n🌙 Peak listening: {{peak}}\n\nListen along: https://radiotedu.com"
   },
-  "transcripts": {
-    "title": "Transcript",
-    "tabTranscript": "Transcript",
-    "tabTakeaways": "Key Takeaways",
-    "searchPlaceholder": "Search transcript and takeaways…",
-    "search": "Search",
-    "searchResults": "{{count}} matches found",
-    "noResults": "No results found for “{{query}}”.",
-    "noTranscript": "No transcript available for this episode yet.",
-    "keyTakeaways": "Key Takeaways",
-    "takeawaysCount": "{{count}} cards",
-    "jumpToTimestamp": "Jump to timestamp",
-    "copyCue": "Copy text",
-    "copied": "Copied to clipboard",
-    "cueSpeaker": "Speaker",
-    "categoryCoreConcept": "Core Concept",
-    "categoryResearchInsight": "Research Insight",
-    "categoryExamKey": "Exam Key",
-    "categoryDiscussion": "Discussion"
-  },
   "dsp": {
     "title": "Audio Normalization",
     "subtitle": "EBU R128 loudness leveling & true peak control",

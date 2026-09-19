@@ -156,26 +156,6 @@
     "shareTitle": "RadioTEDU Dinleme Karnesi",
     "shareText": "📻 Bu hafta RadioTEDU'da {{time}} dinledim! Favori istasyonum: {{station}}. Sen de dinle: https://radiotedu.com"
   },
-  "transcripts": {
-    "title": "Transkript",
-    "tabTranscript": "Transkript",
-    "tabTakeaways": "Bilgi Kartları",
-    "searchPlaceholder": "Transkript ve bilgi kartlarında ara…",
-    "search": "Arama",
-    "searchResults": "{{count}} eşleşme bulundu",
-    "noResults": "“{{query}}” için sonuç bulunamadı.",
-    "noTranscript": "Bu bölüm için henüz transkript bulunmuyor.",
-    "keyTakeaways": "Bilgi Kartları",
-    "takeawaysCount": "{{count}} kart",
-    "jumpToTimestamp": "Zamana git",
-    "copyCue": "Metni kopyala",
-    "copied": "Panoya kopyalandı",
-    "cueSpeaker": "Konuşmacı",
-    "categoryCoreConcept": "Temel Kavram",
-    "categoryResearchInsight": "Araştırma Analizi",
-    "categoryExamKey": "Sınav / Proje Odağı",
-    "categoryDiscussion": "Akademik Tartışma"
-  },
   "dsp": {
     "title": "Ses Seviyesi Dengeleme",
     "subtitle": "EBU R128 ses seviyesi dengeleme ve gerçek tepe kontrolü",

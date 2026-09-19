@@ -26,7 +26,7 @@ def snapshot(name):
 
 with zipfile.ZipFile(apk) as archive:
     bundle = archive.read('assets/index.android.bundle')
-    for removed in (b'podcast-open-transcript-pill', b'podcast-player-transcript-toggle', b'podcast-transcript-modal', b'transcript_seek'):
+    for removed in (b'podcast-open-transcript-pill', b'podcast-player-transcript-toggle', b'podcast-transcript-modal', b'transcript_seek', b'noTranscript', b'tabTakeaways'):
         assert removed not in bundle, 'Removed podcast feature remains in shipped bundle'
 
 adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')

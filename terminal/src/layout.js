@@ -1,7 +1,7 @@
 const {version} = require('../package.json');
 
 const RESET = '\x1b[0m';
-const palette = {brand: '\x1b[1;38;2;238;143;157m', text: '\x1b[38;2;237;233;225m', muted: '\x1b[38;2;143;148;158m', selected: '\x1b[48;2;52;34;42m\x1b[1;38;2;255;237;227m'};
+const palette = {brand: '\x1b[1;38;2;244;128;140m', text: '\x1b[38;2;237;233;225m', muted: '\x1b[38;2;143;148;158m', rule: '\x1b[38;2;65;69;79m', selected: '\x1b[48;2;52;34;42m\x1b[1;38;2;255;237;227m'};
 const segments = new Intl.Segmenter('en', {granularity: 'grapheme'});
 
 // Network metadata and account labels must never inject terminal control sequences.
@@ -32,14 +32,18 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
   const lines = []; const hits = [];
   const add = (text = '', tone = 'text', action) => {
     if (lines.length >= height) return;
-    lines.push('\x1b[48;2;18;20;26m' + (palette[tone] || palette.text) + fit(text, cols) + RESET);
+    lines.push('\x1b[48;2;17;19;24m' + (palette[tone] || palette.text) + fit(text, cols) + RESET);
     if (action) hits.push({x: 1, endX: Math.min(cols, width(text)), y: lines.length, ...action});
   };
-  const buttons = items => {
+  const buttons = (items, activeKey) => {
     let line = ''; let actions = [];
     const flush = () => {
       const y = lines.length + 1;
       add(line, 'muted');
+      const active = items.find(([, key]) => key === activeKey);
+      if (active && y <= height && line.includes(active[0])) {
+        lines[y - 1] = lines[y - 1].replace(active[0], palette.brand + active[0] + palette.muted);
+      }
       if (y <= height) hits.push(...actions.map(item => ({...item, y})));
       line = ''; actions = [];
     };
@@ -52,8 +56,8 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     if (line) flush();
   };
   add(cols >= 74 ? fit(' RadioTEDU', cols - 24) + fit(`TERMINAL  ${version}`, 24) : ` RadioTEDU  ${version}`, 'brand');
-  buttons([['1 Stations', '1'], ['2 Audio', '2'], ['3 Focus', '3'], ['4 Account', '4']]);
-  add('─'.repeat(cols), 'muted');
+  buttons([['1 Stations', '1'], ['2 Audio', '2'], ['3 Focus', '3'], ['4 Account', '4']], String(state.activeTab || 1));
+  add('─'.repeat(cols), 'rule');
   const modal = state.modal;
   if (modal) {
     if (modal.type === 'wrapped') {
@@ -107,26 +111,24 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     const playing = state.active && !state.paused;
     const name = state.active?.name || 'Choose a station';
     const detail = [playing ? 'Player active' : state.paused ? 'Paused' : 'Ready', state.active ? state.codec : '', state.active ? state.quality : ''].filter(Boolean).join(' / ');
+    const footerButtons = cols >= 80
+      ? [['[Space] Play/pause', 'space'], ['[F] Quality', 'f'], ['[+] Louder', '+'], ['[-] Quieter', '-'], ['[Q] Quit', 'q']]
+      : [['[Space] Play', 'space'], ['[F] Quality', 'f'], ['[Q] Quit', 'q']];
+    let buttonRows = 1; let buttonWidth = 0;
+    for (const [label] of footerButtons) {
+      if (buttonWidth && buttonWidth + width(label) > cols) { buttonRows++; buttonWidth = 0; }
+      buttonWidth += width(label) + 2;
+    }
+    const footerRows = 5 + buttonRows;
     if (tab === 1) {
       add(` STATIONS / ${state.stations.length} channels`, 'brand');
-      const panel = [
-        'NOW PLAYING', state.active?.name || 'Select a station',
-        state.active ? (state.paused ? 'Paused' : 'Player active') : 'Ready to listen',
-        state.active ? state.codec : '', state.active ? `Quality  ${state.quality}` : '',
-        `Volume   ${state.volume ?? 80}%`,
-        state.account?.label || 'Guest',
-        Number.isInteger(state.account?.gold) ? `${state.account.gold} Gold / last refresh` : '',
-      ];
-      const capacity = Math.max(1, height - lines.length - 7);
+      const capacity = Math.max(1, height - lines.length - footerRows);
       const first = Math.max(0, Math.min(state.selected - capacity + 1, state.stations.length - capacity));
       for (let i = first; i < Math.min(state.stations.length, first + capacity); i++) {
         const station = state.stations[i];
         const selected = i === state.selected;
         const label = ` ${selected ? '›' : ' '} ${station.name}${state.active?.id === station.id ? '  / active' : ''}`;
-        const listing = cols >= 82 ? fit(label, 28) + clean(station.description) : label;
-        const divider = Math.floor(cols * 0.64);
-        add(cols >= 110 ? fit(listing, divider) + ' │ ' + (panel[i - first] || '') : listing,
-          selected ? 'selected' : 'text', {station: i, ...(cols >= 110 ? {endX: divider} : {})});
+        add(label, selected ? 'selected' : 'text', {station: i});
       }
     } else if (tab === 2) {
       add(' AUDIO / OUTPUT', 'brand');
@@ -136,7 +138,7 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
       add(` DSP Norm  ${state.dspEnabled ? 'ON (EBU R128 · -16 LUFS)' : 'OFF (Bypass)'}`);
       add(` Station   ${state.active?.name || '—'}`);
       add(` State     ${state.active ? state.paused ? 'Paused' : 'Player active' : 'Stopped'}`);
-      buttons([['[F] Change quality', 'f'], ['[D] DSP Loudnorm', 'd'], ['[M] Mute / restore', 'm']]);
+      buttons([['[F] Change quality', 'f'], ['[M] Mute / restore', 'm']]);
     } else if (tab === 3) {
       const pomo = state.pomodoro || {};
       const seconds = pomo.secondsLeft || 0;
@@ -150,15 +152,11 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
       add(Number.isInteger(state.account?.gold) ? ` ${state.account.gold} Gold / last account refresh` : ' Sign in to view your account and Gold.');
       buttons(state.account?.label && state.account.label !== 'Guest' ? [['[A] Refresh', 'a'], ['[X] Sign out', 'x']] : [['[L] Sign in', 'l']]);
     }
-    const footerRows = cols >= 80 ? 6 : (cols >= 50 ? 7 : 8);
     while (lines.length < height - footerRows) add();
-    add('─'.repeat(cols), 'muted');
+    add('─'.repeat(cols), 'rule');
     add(` ${name}`, 'brand');
     add(` ${state.metadata || detail}`);
     add(` ${state.status || `${detail} / Volume ${state.volume ?? 80}%`}`, 'muted');
-    const footerButtons = cols >= 80
-      ? [['[Space] Play/pause', 'space'], ['[W] Wrapped', 'w'], ['[D] DSP', 'd'], ['[S] Diag', 's'], ['[F] Quality', 'f'], ['[+] Louder', '+'], ['[-] Quieter', '-'], ['[Q] Quit', 'q']]
-      : [['[Space] Play', 'space'], ['[W] Wrap', 'w'], ['[D] DSP', 'd'], ['[S] Diag', 's'], ['[F] Quality', 'f'], ['[Q] Quit', 'q']];
     buttons(footerButtons);
   }
   while (lines.length < height) add();

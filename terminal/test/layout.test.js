@@ -23,7 +23,7 @@ test('scrolled station click selects the visible station, not an absolute row', 
   assert.equal(mouseAction(frame, {button: 0, release: true, x: 3, y: hit.y}).station, 8);
   assert.equal(mouseAction(frame, {button: 0, release: false, x: 3, y: hit.y}), null);
 });
-test('wide playback details are not station selection targets', () => {
+test('empty space beside the minimal station list is not a selection target', () => {
   const frame = buildFrame(state, {columns: 140, rows: 30});
   const hit = frame.hits.find(item => item.station === 0);
   assert.ok(hit);

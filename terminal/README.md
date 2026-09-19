@@ -1,10 +1,10 @@
 # RadioTEDU Terminal
 
-A responsive radio player with keyboard and mouse controls, a focus timer and server-backed account balances. Version **1.3.10**.
+A responsive radio player with keyboard and mouse controls, a focus timer and server-backed account balances. Version **1.3.11**.
 
 ## Interface
 
-RadioTEDU burgundy, warm white and slate keep stations, playback and controls readable. The layout follows the terminal dimensions, scrolls the station selection into view and restores your shell when you quit. Use **Cascadia Mono** or **JetBrains Mono** in your terminal settings; the application respects the host font.
+An understated charcoal background, warm white text and a restrained coral accent keep the interface clear. Stations use a single column at every width, with a soft highlight on the selection. The active tab is accented; thin rules separate navigation and the fixed playback footer. Secondary controls stay in their relevant views. The layout follows the terminal dimensions, scrolls the station selection into view and restores your shell when you quit. Use **Cascadia Mono** or **JetBrains Mono** in your terminal settings; the application respects the host font.
 
 Four views: Stations, Audio, Focus and Account. Audio reports the selected stream format and player status. It does not claim to measure signal strength, bit depth or a live spectrum. Gold comes from the server; completing a local focus timer does not manufacture a reward.
 

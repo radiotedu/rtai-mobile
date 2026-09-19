@@ -1,6 +1,7 @@
 const ESC = '\x1b[';
 
 const {buildFrame, mouseAction} = require('./layout');
+const {visibleStations, moveSelection, initialFavorites, toggleFavorite, cycleSleep, consumeSleep} = require('./listening');
 
 function draw(state) {
   state.layout = buildFrame(state, {columns: process.stdout.columns, rows: process.stdout.rows});
@@ -60,6 +61,11 @@ async function runTui({
     const state = {
       stations,
       selected: 0,
+      favorites: initialFavorites(stations),
+      favoritesOnly: false,
+      search: '',
+      searching: false,
+      sleepDeadline: null,
       active: null,
       metadata: null,
       quality: initialQuality,
@@ -128,6 +134,19 @@ async function runTui({
     // Keep existing timer cadence for focus countdown and playback polling.
     const timer = setInterval(() => {
       let changed = false;
+      if (state.sleepDeadline) {
+        changed = true;
+        if (consumeSleep(state)) {
+          Promise.resolve().then(() => onPause(state)).then(paused => {
+            state.paused = paused;
+            if (!paused) throw new Error('Playback did not pause');
+            state.streamElapsedBeforePause += Date.now() - (state.streamStartedAt || Date.now());
+            state.streamStartedAt = null;
+            state.status = 'Sleep timer complete · playback paused';
+            render();
+          }).catch(() => { state.status = 'Could not pause playback'; render(); });
+        }
+      }
       if (state.pomodoro && state.pomodoro.running) {
         pomoSubTick = (pomoSubTick || 0) + 1;
         if (pomoSubTick >= 5) {
@@ -182,6 +201,7 @@ async function runTui({
 
     const togglePlayPause = async () => {
       if (!state.active) {
+        if (!visibleStations(state).some(item => item.index === state.selected)) return;
         state.streamStartedAt = Date.now();
         state.streamElapsedBeforePause = 0;
         await onPlay(stations[state.selected], state);
@@ -202,7 +222,7 @@ async function runTui({
       if (!event) return;
       if (event.type === 'mouse') {
         if (!state.modal && (event.button === 64 || event.button === 65)) {
-          if (stations.length) state.selected = (state.selected + (event.button === 64 ? -1 : 1) + stations.length) % stations.length;
+          moveSelection(state, event.button === 64 ? -1 : 1);
           render();
           return;
         }
@@ -218,6 +238,21 @@ async function runTui({
       }
 
       // MODAL DIALOG INTERACTION
+      if (state.modal?.type === 'help') {
+        if (event.type === 'key' && ['escape', '?', 'q'].includes(event.key)) { state.modal = null; render(); }
+        return;
+      }
+      if (!state.modal && state.searching && event.type === 'key') {
+        if (event.key === 'escape') { state.search = ''; state.searching = false; }
+        else if (event.key === 'enter') state.searching = false;
+        else if (event.key === 'backspace') state.search = [...state.search].slice(0, -1).join('');
+        else if (event.key === 'space' && state.search.length < 48) state.search += ' ';
+        else if (event.raw && !/[\x00-\x1f\x7f]/.test(event.raw) && state.search.length < 48) state.search += event.raw;
+        else if (event.key === 'q' && !event.raw) { cleanup(); onQuit(); resolve(); return; }
+        moveSelection(state);
+        render();
+        return;
+      }
       if (state.modal) {
         if (event.type === 'key') {
           if (state.modal.type === 'audio_engine_missing') {
@@ -538,6 +573,15 @@ async function runTui({
       // KEYBOARD SUPPORT
       if (event.type === 'key') {
         switch (event.key) {
+          case '/': state.activeTab = 1; state.searching = true; render(); break;
+          case 'escape': state.search = ''; state.searching = false; state.favoritesOnly = false; render(); break;
+          case '*':
+            try { toggleFavorite(state); state.status = 'Favorites saved on this device'; }
+            catch { state.status = 'Could not save favorites on this device'; }
+            render(); break;
+          case 'g': state.activeTab = 1; state.favoritesOnly = !state.favoritesOnly; moveSelection(state); render(); break;
+          case 'z': cycleSleep(state); state.status = state.sleepDeadline ? `Sleep timer · ${state.sleepMinutes} minutes` : 'Sleep timer off'; render(); break;
+          case '?': state.modal = {type: 'help'}; render(); break;
           case '1': state.activeTab = 1; render(); break;
           case '2': state.activeTab = 2; render(); break;
           case '3': state.activeTab = 3; render(); break;
@@ -547,15 +591,15 @@ async function runTui({
             render();
             break;
           case 'up':
-            state.selected = (state.selected - 1 + stations.length) % stations.length;
+            moveSelection(state, -1);
             render();
             break;
           case 'down':
-            state.selected = (state.selected + 1) % stations.length;
+            moveSelection(state, 1);
             render();
             break;
           case 'enter':
-            await triggerPlay(stations[state.selected]);
+            if (visibleStations(state).some(item => item.index === state.selected)) await triggerPlay(stations[state.selected]);
             render();
             break;
           case 'space':
@@ -638,6 +682,7 @@ async function runTui({
             state.account = await onLogout();
             render();
             break;
+          case 't':
           case 's':
             if (state.activeTab === 3) {
               state.pomodoro.running = !state.pomodoro.running;

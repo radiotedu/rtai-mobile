@@ -38,4 +38,7 @@ function clearStudy() {
   try { fs.unlinkSync(filePath('study.json')); } catch {}
 }
 
-module.exports = {dataDir, loadAuth, saveAuth, clearAuth, loadStudy, saveStudy, clearStudy};
+function loadPreferences() { return readJson('listening-preferences.json', {}); }
+function savePreferences(value) { writeJson('listening-preferences.json', value); }
+
+module.exports = {dataDir, loadAuth, saveAuth, clearAuth, loadStudy, saveStudy, clearStudy, loadPreferences, savePreferences};

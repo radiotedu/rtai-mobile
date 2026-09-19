@@ -10,6 +10,15 @@ Four views: Stations, Audio, Focus and Account. Audio reports the selected strea
 
 All existing stations remain available, including Lo-Fi, Classical and Jazz FLAC. Stream availability depends on the broadcast service. There are no external npm runtime dependencies.
 
+### Listening tools
+
+- `/` searches station names and descriptions; Enter finishes editing and Esc clears the filter.
+- `*` saves or removes the selected station as a favorite; `G` switches between favorites and all stations. Favorites live only in `listening-preferences.json`, separately from credentials.
+- `Z` cycles a session-only sleep timer through 15, 30, 60, 90 minutes and off. Expiry pauses active playback; it never resumes a paused stream. Audio shows the remaining time.
+- `?` opens the keyboard guide. `T` starts or pauses the Focus timer.
+
+Browser login, email/password login, ERP pairing and server-backed Gold are unchanged. The terminal refresh is distributed in the existing 1.3.11 release; Android packages are unchanged.
+
 ## 🚀 Installation & Quick Start
 
 ### Prerequisites

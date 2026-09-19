@@ -1,4 +1,5 @@
 const {version} = require('../package.json');
+const {visibleStations} = require('./listening');
 
 const RESET = '\x1b[0m';
 const palette = {brand: '\x1b[1;38;2;244;128;140m', text: '\x1b[38;2;237;233;225m', muted: '\x1b[38;2;143;148;158m', rule: '\x1b[38;2;65;69;79m', selected: '\x1b[48;2;52;34;42m\x1b[1;38;2;255;237;227m'};
@@ -60,7 +61,12 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
   add('─'.repeat(cols), 'rule');
   const modal = state.modal;
   if (modal) {
-    if (modal.type === 'wrapped') {
+    if (modal.type === 'help') {
+      add(' LISTENING / KEYBOARD GUIDE', 'brand');
+      add();
+      for (const text of ['↑ / ↓     Select station', 'Enter     Play selected station', '/         Search stations · Enter to finish · Esc to clear', '*         Save / remove selected favorite', 'G         Favorites / all stations', 'Space     Play / pause', 'F         Change stream quality', '+ / −     Adjust volume · M to mute', 'Z         Sleep: 15 / 30 / 60 / 90 minutes / off', '1–4       Stations / Audio / Focus / Account', 'T         Start / pause focus timer', 'Q         Quit']) add(` ${text}`);
+      buttons([['[Esc] Close', 'escape']]);
+    } else if (modal.type === 'wrapped') {
       const w = modal.data || {};
       add(' RADIOTEDU WRAPPED 2026', 'brand');
       add(` Listener:     ${w.account || 'RadioTEDU Member'}`);
@@ -112,8 +118,8 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     const name = state.active?.name || 'Choose a station';
     const detail = [playing ? 'Player active' : state.paused ? 'Paused' : 'Ready', state.active ? state.codec : '', state.active ? state.quality : ''].filter(Boolean).join(' / ');
     const footerButtons = cols >= 80
-      ? [['[Space] Play/pause', 'space'], ['[F] Quality', 'f'], ['[+] Louder', '+'], ['[-] Quieter', '-'], ['[Q] Quit', 'q']]
-      : [['[Space] Play', 'space'], ['[F] Quality', 'f'], ['[Q] Quit', 'q']];
+      ? [['[Space] Play/pause', 'space'], ['[F] Quality', 'f'], ['[+] Louder', '+'], ['[-] Quieter', '-'], ['[?] Help', '?'], ['[Q] Quit', 'q']]
+      : [['[Space] Play', 'space'], ['[?] Help', '?'], ['[Q] Quit', 'q']];
     let buttonRows = 1; let buttonWidth = 0;
     for (const [label] of footerButtons) {
       if (buttonWidth && buttonWidth + width(label) > cols) { buttonRows++; buttonWidth = 0; }
@@ -121,24 +127,29 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     }
     const footerRows = 5 + buttonRows;
     if (tab === 1) {
-      add(` STATIONS / ${state.stations.length} channels`, 'brand');
+      const visible = visibleStations(state);
+      add(` ${state.favoritesOnly ? 'FAVORITES' : 'STATIONS'} / ${visible.length} channels`, 'brand');
+      buttons([['[/] Search', '/'], ['[*] Favorite', '*'], [state.favoritesOnly ? '[G] All stations' : '[G] Favorites', 'g']]);
+      if (state.searching || state.search) add(` Search  ${state.search || ''}${state.searching ? '▏' : ''}`, 'muted');
       const capacity = Math.max(1, height - lines.length - footerRows);
-      const first = Math.max(0, Math.min(state.selected - capacity + 1, state.stations.length - capacity));
-      for (let i = first; i < Math.min(state.stations.length, first + capacity); i++) {
-        const station = state.stations[i];
-        const selected = i === state.selected;
-        const label = ` ${selected ? '›' : ' '} ${station.name}${state.active?.id === station.id ? '  / active' : ''}`;
-        add(label, selected ? 'selected' : 'text', {station: i});
+      const selectedPosition = visible.findIndex(item => item.index === state.selected);
+      const first = Math.max(0, Math.min(selectedPosition - capacity + 1, visible.length - capacity));
+      if (!visible.length) add(state.favoritesOnly ? ' No favorites here · G for all stations' : ' No matches · Esc to clear', 'muted');
+      for (let i = first; i < Math.min(visible.length, first + capacity); i++) {
+        const {station, index} = visible[i];
+        const selected = index === state.selected;
+        const label = ` ${selected ? '›' : ' '} ${station.name}${state.favorites?.includes(station.id) ? '  *' : ''}${state.active?.id === station.id ? '  / active' : ''}`;
+        add(label, selected ? 'selected' : 'text', {station: index});
       }
     } else if (tab === 2) {
       add(' AUDIO / OUTPUT', 'brand');
       add(` Engine    ${state.playerName || 'Not installed'}`);
       add(` Format    ${state.active ? `${state.codec} / ${state.quality}` : 'No active stream'}`);
       add(` Volume    ${state.volume ?? 80}%`);
-      add(` DSP Norm  ${state.dspEnabled ? 'ON (EBU R128 · -16 LUFS)' : 'OFF (Bypass)'}`);
+      add(` Sleep     ${state.sleepDeadline ? `${Math.max(0, Math.ceil((state.sleepDeadline - Date.now()) / 60000))} min remaining` : 'Off'}`);
       add(` Station   ${state.active?.name || '—'}`);
       add(` State     ${state.active ? state.paused ? 'Paused' : 'Player active' : 'Stopped'}`);
-      buttons([['[F] Change quality', 'f'], ['[M] Mute / restore', 'm']]);
+      buttons([['[F] Change quality', 'f'], ['[M] Mute / restore', 'm'], ['[Z] Sleep timer', 'z']]);
     } else if (tab === 3) {
       const pomo = state.pomodoro || {};
       const seconds = pomo.secondsLeft || 0;
@@ -156,7 +167,7 @@ function buildFrame(state, {columns = 100, rows = 30} = {}) {
     add('─'.repeat(cols), 'rule');
     add(` ${name}`, 'brand');
     add(` ${state.metadata || detail}`);
-    add(` ${state.status || `${detail} / Volume ${state.volume ?? 80}%`}`, 'muted');
+    add(` ${state.sleepDeadline ? `Sleep ${Math.max(0, Math.ceil((state.sleepDeadline - Date.now()) / 60000))}m · ` : ''}${state.status || `${detail} / Volume ${state.volume ?? 80}%`}`, 'muted');
     buttons(footerButtons);
   }
   while (lines.length < height) add();

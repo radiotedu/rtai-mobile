@@ -15,18 +15,17 @@ describe('Social WebView surface', () => {
     expect(configSource).toContain('PROD_FOCUS_WEB_URL = `https://${SERVER_DOMAIN}/focus/`');
   });
 
-  it('injects the native account bridge without persistent browser credentials', () => {
+  it('uses Social web authentication without sending the Jukebox bearer token', () => {
     const screenSource = fs.readFileSync(path.join(__dirname, '../src/screens/social/SocialWebViewScreen.tsx'), 'utf8');
 
-    expect(screenSource).toContain('injectedJavaScriptBeforeContentLoaded');
-    expect(screenSource).toContain('buildSocialAuthInjection');
-    expect(screenSource).toContain('getAccessToken');
-    expect(screenSource).toContain('refreshSession');
     expect(screenSource).toContain('onShouldStartLoadWithRequest');
     expect(screenSource).toContain('isAllowedSocialNavigation');
-    expect(screenSource).toContain('parseSocialMessage');
+    expect(screenSource).toContain('sharedCookiesEnabled={false}');
     expect(screenSource).toContain('cacheEnabled={false}');
     expect(screenSource).toContain('cacheMode="LOAD_NO_CACHE"');
+    expect(screenSource).not.toContain('injectedJavaScript');
+    expect(screenSource).not.toContain('getAccessToken');
+    expect(screenSource).not.toContain('buildSocialAuthInjection');
     expect(screenSource).not.toContain('AsyncStorage');
     expect(screenSource).not.toContain('refresh_token');
     expect(screenSource).not.toContain('localStorage.setItem');
@@ -35,14 +34,12 @@ describe('Social WebView surface', () => {
     expect(screenSource).not.toContain('console.log');
   });
 
-  it('blocks anonymous and guest users from opening Social', () => {
+  it('lets Social handle its own account sign-in', () => {
     const screenSource = fs.readFileSync(path.join(__dirname, '../src/screens/social/SocialWebViewScreen.tsx'), 'utf8');
 
-    expect(screenSource).toContain('AuthGuard');
-    expect(screenSource).toContain('const isRegisteredUser = Boolean(user && !user.is_guest)');
-    expect(screenSource).toContain('if (!isRegisteredUser)');
-    expect(screenSource).toContain("copy('social.registerTitle')");
-    expect(screenSource).toContain("copy('social.registerText')");
+    expect(screenSource).toContain('source={{uri: RESOLVED_SOCIAL_WEB_URL}}');
+    expect(screenSource).not.toContain('AuthGuard');
+    expect(screenSource).not.toContain('useAuth');
   });
 
   it('refreshes the shared account after profile avatar changes', () => {

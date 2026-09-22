@@ -1,19 +1,11 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useState} from 'react';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {WebView as NativeWebView, WebViewMessageEvent} from 'react-native-webview';
+import {WebView as NativeWebView} from 'react-native-webview';
 import {useNavigation} from '@react-navigation/native';
 
-import AuthGuard from '../../components/AuthGuard';
-import {useAuth} from '../../context/AuthContext';
-import {subscribeAuthSessionChanges} from '../../services/authSessionEvents';
-import {getAccessToken} from '../../services/authTokenStorage';
 import {RESOLVED_SOCIAL_WEB_URL} from '../../services/config';
-import {
-  buildSocialAuthInjection,
-  isAllowedSocialNavigation,
-  parseSocialMessage,
-} from '../../services/socialSessionService';
+import {isAllowedSocialNavigation} from '../../services/socialSessionService';
 import {COLORS, SPACING} from '../../theme/theme';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../../i18n/appCopy';
@@ -23,16 +15,8 @@ const WebView = NativeWebView as any;
 
 const SocialWebViewScreen = () => {
   const navigation = useNavigation<any>();
-  const webViewRef = useRef<any>(null);
-  const {user, isLoading: isAuthLoading, refreshSession} = useAuth();
   const {i18n} = useTranslation();
   const copy = (key: string) => appCopy(i18n.language, key);
-  const isRegisteredUser = Boolean(user && !user.is_guest);
-  const [isPreparingSession, setIsPreparingSession] = useState(true);
-  const [authResolved, setAuthResolved] = useState(false);
-  const [authInjection, setAuthInjection] = useState(
-    buildSocialAuthInjection({accessToken: null, user: null}, null),
-  );
   const [webViewNonce, setWebViewNonce] = useState(0);
   const [hasLoadError, setHasLoadError] = useState(false);
   const leaveSocial = useCallback(() => {
@@ -44,84 +28,11 @@ const SocialWebViewScreen = () => {
     }
   }, [navigation]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function prepareSession() {
-      try {
-        await refreshSession();
-      } catch {
-        // AuthGuard handles a session that becomes invalid after refresh.
-      } finally {
-        if (isMounted) {
-          setIsPreparingSession(false);
-          setWebViewNonce((value) => value + 1);
-        }
-      }
-    }
-
-    prepareSession().catch(() => undefined);
-
-    return () => {
-      isMounted = false;
-    };
-  }, [refreshSession, user?.id]);
-
-  const refreshAuthBridge = useCallback(async () => {
-    if (isAuthLoading) {
-      setAuthResolved(false);
-      return;
-    }
-    let accessToken: string | null = null;
-    try {
-      accessToken = await getAccessToken();
-    } catch {
-      accessToken = null;
-    }
-    const eligibleUser = accessToken && user && !user.is_guest ? user : null;
-    const script = buildSocialAuthInjection(
-      {accessToken: eligibleUser ? accessToken : null, user: eligibleUser},
-      eligibleUser,
-    );
-    setAuthInjection(script);
-    setAuthResolved(true);
-    webViewRef.current?.injectJavaScript(script);
-  }, [isAuthLoading, user]);
-
-  useEffect(() => {
-    refreshAuthBridge().catch(() => undefined);
-    return subscribeAuthSessionChanges(refreshAuthBridge);
-  }, [refreshAuthBridge]);
-
-  const injectAccount = useCallback(() => {
-    webViewRef.current?.injectJavaScript(authInjection);
-  }, [authInjection]);
-
-  const handleSocialMessage = useCallback(
-    (event: WebViewMessageEvent) => {
-      const message = parseSocialMessage(event.nativeEvent.data);
-      if (message) {
-        injectAccount();
-      }
-    },
-    [injectAccount],
-  );
-
   const allowSocialNavigation = useCallback(
     (request: {url: string}) =>
       isAllowedSocialNavigation(request.url, [RESOLVED_SOCIAL_WEB_URL]),
     [],
   );
-
-  if (!isRegisteredUser) {
-    return (
-      <AuthGuard
-        title={copy('social.registerTitle')}
-        message={copy('social.registerText')}
-        icon="account-group-outline"
-      />
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -149,10 +60,9 @@ const SocialWebViewScreen = () => {
       </View>
 
       <View style={styles.webContainer}>
-        {!isPreparingSession && authResolved && !hasLoadError ? (
+        {!hasLoadError ? (
           <WebView
-            key={`${user?.id || 'anonymous'}-account-${webViewNonce}`}
-            ref={webViewRef}
+            key={webViewNonce}
             source={{uri: RESOLVED_SOCIAL_WEB_URL}}
             style={styles.webView}
             androidLayerType="software"
@@ -171,31 +81,21 @@ const SocialWebViewScreen = () => {
             javaScriptCanOpenWindowsAutomatically={false}
             webviewDebuggingEnabled={false}
             allowsLinkPreview={false}
-            injectedJavaScriptBeforeContentLoaded={authInjection}
-            injectedJavaScript={authInjection}
             onLoadEnd={() => {
-              injectAccount();
               Analytics.webView('social', 'load', 'success');
             }}
-            onMessage={handleSocialMessage}
             onShouldStartLoadWithRequest={allowSocialNavigation}
             onError={() => {
               Analytics.webView('social', 'load', 'error');
               setHasLoadError(true);
             }}
-            onHttpError={(event: {nativeEvent: {statusCode: number}}) => {
-              if (event.nativeEvent.statusCode >= 400) {
+            onHttpError={(event: {nativeEvent: {statusCode: number; url: string}}) => {
+              if (event.nativeEvent.url === RESOLVED_SOCIAL_WEB_URL && event.nativeEvent.statusCode >= 400) {
                 Analytics.webView('social', 'load', `http_${event.nativeEvent.statusCode}`);
                 setHasLoadError(true);
               }
             }}
           />
-        ) : null}
-
-        {isPreparingSession ? (
-          <View style={styles.overlay}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
         ) : null}
 
         {hasLoadError ? (
@@ -256,12 +156,6 @@ const styles = StyleSheet.create({
   },
   webContainer: {flex: 1, backgroundColor: '#000'},
   webView: {flex: 1, backgroundColor: '#000'},
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.background,
-  },
   errorPanel: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',

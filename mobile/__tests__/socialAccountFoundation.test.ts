@@ -54,8 +54,10 @@ describe('mobile Social account foundation', () => {
     );
 
     expect(injection).toContain('window.RadioTEDUStudyBridge');
-    expect(injection).toContain('/jukebox/api/v1/gamification');
-    expect(injection).toContain('/jukebox/api/v1/study');
+    expect(injection).toContain('/social/api/v1/gamification');
+    expect(injection).toContain('/social/api/v1/study');
+    expect(injection).toContain('/social/api/v1/economy');
+    expect(injection).not.toContain('/jukebox/api/v1/');
     expect(injection).toContain('globalPoints');
     expect(injection).not.toContain('private@example.com');
     expect(injection).not.toContain('localStorage.setItem');

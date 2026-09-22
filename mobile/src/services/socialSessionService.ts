@@ -14,9 +14,9 @@ export type SocialAccountSource = {
 };
 
 const SOCIAL_API_PREFIXES = [
-  '/jukebox/api/v1/study',
-  '/jukebox/api/v1/economy',
-  '/jukebox/api/v1/gamification',
+  '/social/api/v1/study',
+  '/social/api/v1/economy',
+  '/social/api/v1/gamification',
 ] as const;
 
 function serializeForInjection(value: unknown) {
@@ -53,7 +53,7 @@ export function buildSocialAuthInjection(
       window.RadioTEDUAccount = state.bootstrap;
       window.RadioTEDUStudyBridge = state.authenticated && state.account
         ? Object.freeze({
-            apiBase: '/jukebox/api/v1/study',
+            apiBase: '/social/api/v1/study',
             request: function (resource, options) { return window.fetch(resource, options); },
             account: Object.freeze(state.account),
             globalPoints: state.globalPoints

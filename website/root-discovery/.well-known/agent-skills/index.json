@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "radiotedu-discovery",
+      "type": "skill-md",
+      "description": "Find RadioTEDU's public radios, schedules, podcasts, and research; inspect MCP tools and handle studio bookings safely.",
+      "url": "https://radiotedu.com/.well-known/agent-skills/radiotedu-discovery/SKILL.md",
+      "digest": "sha256:c113ee82ba81f5bad7a0efb8078147ba026ad85a9209208b987b9253823e5c9f"
+    }
+  ]
+}

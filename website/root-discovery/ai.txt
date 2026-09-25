@@ -134,3 +134,16 @@ Its public stream mounts are https://stream.radiotedu.com/en and https://stream.
 
 - Contact page: https://radiotedu.com/iletisim/
 - Join RadioTEDU: https://radiotedu.com/bize-katil/
+
+## Public agent access
+
+- Agent guide: https://radiotedu.com/agents.html
+- Public MCP Streamable HTTP endpoint: https://radiotedu.com/mcp
+- MCP server card and current tool list: https://radiotedu.com/.well-known/mcp/server-card.json
+- AI resource catalog: https://radiotedu.com/.well-known/ai-catalog.json
+- Agent skill: https://radiotedu.com/.well-known/agent-skills/radiotedu-discovery/SKILL.md
+- The current MCP tool surface provides `get_station_status`, `get_stations`, `get_now_playing`, `get_broadcast_schedule`, `get_podcasts`, `search_content`, `get_focus_presets`, `check_studio_availability`, and `book_studio_slot`.
+- Station, schedule, podcast, search, and focus tools are read-only. `check_studio_availability` reads studio availability from Hub ERP. `book_studio_slot` creates an ERP reservation and requires a `@tedu.edu.tr` email in its input; use it only after the user explicitly requests a booking and confirms the proposed details.
+- The endpoint supports `initialize` and `tools/list`; `resources/list` and `prompts/list` are not implemented.
+- These agent-discovery additions do not add or change RadioTEDU REST API routes. See https://radiotedu.com/openapi.json for the published API description.
+- Check https://radiotedu.com/robots.txt and canonical RadioTEDU pages before relying on time-sensitive information.

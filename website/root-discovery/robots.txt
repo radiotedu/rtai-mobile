@@ -2,31 +2,37 @@
 # Public pages are available for search and AI-assisted discovery.
 
 User-agent: OAI-SearchBot
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Allow: /
 Disallow: /wp-admin/
 Allow: /wp-admin/admin-ajax.php
 
 User-agent: ChatGPT-User
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Allow: /
 Disallow: /wp-admin/
 Allow: /wp-admin/admin-ajax.php
 
 User-agent: GPTBot
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Allow: /
 Disallow: /wp-admin/
 Allow: /wp-admin/admin-ajax.php
 
 User-agent: Googlebot
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Allow: /
 Disallow: /wp-admin/
 Allow: /wp-admin/admin-ajax.php
 
 User-agent: Google-Extended
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Allow: /
 Disallow: /wp-admin/
 Allow: /wp-admin/admin-ajax.php
 
 User-agent: *
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 Disallow: /wp-admin/
 Allow: /wp-admin/admin-ajax.php
 Allow: /ai.txt
@@ -35,6 +41,11 @@ Allow: /llms-ai.txt
 Allow: /rtai/
 Allow: /technology/
 Allow: /teknoloji/
+Allow: /agents.html
+Allow: /.well-known/ai-catalog.json
+Allow: /.well-known/mcp/
+Allow: /.well-known/agent-skills/
 
 Sitemap: https://radiotedu.com/wp-sitemap.xml
 Sitemap: https://radiotedu.com/sitemap-radiotedu-products.xml
+Sitemap: https://radiotedu.com/sitemap-radiotedu-agents.xml

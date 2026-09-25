@@ -1,0 +1,50 @@
+{
+  "serverInfo": {
+    "name": "radiotedu-public-radio",
+    "version": "1.2.0"
+  },
+  "transport": {
+    "type": "streamable-http",
+    "endpoint": "https://radiotedu.com/mcp"
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "get_station_status",
+        "description": "Read-only public status of the English or French RadioTEDU AI station."
+      },
+      {
+        "name": "get_stations",
+        "description": "List all active RadioTEDU radio stations (Main Turkish radio, AI stations, Lo-Fi, Jazz, Classic, Rock, Energize, Main Character) with streams and metadata."
+      },
+      {
+        "name": "get_now_playing",
+        "description": "Get current live now-playing track, artist, artwork, and playback metadata for any RadioTEDU station."
+      },
+      {
+        "name": "get_broadcast_schedule",
+        "description": "Get the live broadcast program schedule and student DJ shows for RadioTEDU."
+      },
+      {
+        "name": "get_podcasts",
+        "description": "List public podcast series produced by RadioTEDU and TED University."
+      },
+      {
+        "name": "search_content",
+        "description": "Search RadioTEDU programs, stations, and podcast episodes by keyword."
+      },
+      {
+        "name": "get_focus_presets",
+        "description": "Get RadioTEDU Focus channels, ambient nature sound layers, and Pomodoro study presets with deep-launch links."
+      },
+      {
+        "name": "check_studio_availability",
+        "description": "Check RadioTEDU broadcast and podcast recording studios availability, current occupants, and booking rules from Hub ERP."
+      },
+      {
+        "name": "book_studio_slot",
+        "description": "Authorized Action: Book a studio recording or podcast slot at RadioTEDU Hub ERP for a TED University member. Requires valid @tedu.edu.tr email."
+      }
+    ]
+  }
+}

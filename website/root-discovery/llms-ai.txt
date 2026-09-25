@@ -150,3 +150,31 @@ Public informational pages may be fetched where [robots.txt](https://radiotedu.c
 - [Privacy policy](https://radiotedu.com/gizlilik-politikasi/)
 - [Cookie policy](https://radiotedu.com/cerez-politikasi/)
 - [Terms of use](https://radiotedu.com/kullanim-kosullari/)
+
+## Live Station Portfolio & Agent Interfaces
+
+- Complete Live Station Channels:
+  - RadioTEDU Ana Yayın (Primary Hits & Student Programs): https://stream.radiotedu.com/radio
+  - RadioTEDU AI English (Continuous AI Host): https://stream.radiotedu.com/en
+  - RadioTEDU AI Français (Continuous AI Host): https://stream.radiotedu.com/fr
+  - RadioTEDU Focus (Lo-Fi / Pomodoro): https://stream.radiotedu.com/lofi
+  - RadioTEDU Jazz: https://stream.radiotedu.com/cazz
+  - RadioTEDU Classic: https://stream.radiotedu.com/classic
+  - RadioTEDU Rock: https://stream.radiotedu.com/rock
+  - RadioTEDU Energize: https://stream.radiotedu.com/energize
+  - RadioTEDU Main Character: https://stream.radiotedu.com/maincharacter
+- Agent Interactivity & Machine-Readable Interfaces:
+  - Model Context Protocol (MCP) Streamable HTTP: https://radiotedu.com/mcp
+  - MCP Server Card: https://radiotedu.com/.well-known/mcp/server-card.json
+  - Agent Skills: https://radiotedu.com/.well-known/agent-skills/radiotedu-discovery/SKILL.md
+  - Public REST API: https://radiotedu.com/wp-json/radiotedu/v1/
+  - OpenAPI Specification: https://radiotedu.com/openapi.json
+  - Current consolidated AI guide: https://radiotedu.com/llms-ai.txt
+  - Agent connection guide: https://radiotedu.com/agents.html
+  - AI resource catalog: https://radiotedu.com/.well-known/ai-catalog.json
+- MCP protocol version: 2025-06-18. Connect to `/mcp`, call `initialize`, then `tools/list`; resources and prompts are not implemented.
+- MCP tools: `get_station_status`, `get_stations`, `get_now_playing`, `get_broadcast_schedule`, `get_podcasts`, `search_content`, `get_focus_presets`, `check_studio_availability`, and `book_studio_slot`.
+- Public station, schedule, podcast, search, and focus tools are read-only. `check_studio_availability` reads current studio availability and occupant information from Hub ERP.
+- `book_studio_slot` creates a Hub ERP reservation and accepts a TED University email in its input. Use it only after the user explicitly requests a booking and confirms the proposed details.
+- Schedule times use Europe/Istanbul local time. Check timestamps for live data and cite canonical RadioTEDU URLs returned by the tools.
+- These agent-discovery additions do not add or change RadioTEDU REST API routes.

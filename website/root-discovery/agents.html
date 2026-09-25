@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="Official RadioTEDU MCP connection details, public tools, data guidance, and machine-readable discovery links for AI agents.">
+  <title>RadioTEDU for AI agents</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172637;
+      --muted: #536579;
+      --line: #d8e1e9;
+      --paper: #ffffff;
+      --wash: #f2f6fa;
+      --blue: #145e9b;
+      --blue-wash: #e8f2fb;
+      --amber: #7c4a00;
+      --amber-wash: #fff4dc;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: linear-gradient(180deg, #eaf3fb 0, var(--wash) 24rem, var(--wash) 100%);
+      line-height: 1.65;
+    }
+    a { color: var(--blue); text-underline-offset: .18em; overflow-wrap: anywhere; }
+    main { width: min(100% - 2rem, 70rem); margin: 0 auto; padding: 3.5rem 0 4rem; }
+    .hero, section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 1.15rem;
+      box-shadow: 0 12px 34px rgb(23 38 55 / 5%);
+    }
+    .hero { padding: clamp(1.5rem, 5vw, 3.5rem); margin-bottom: 1.25rem; }
+    .eyebrow { color: var(--blue); font-size: .82rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    h1 { max-width: 17ch; margin: .45rem 0 .8rem; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.08; }
+    h2 { margin: 0 0 .75rem; font-size: clamp(1.25rem, 3vw, 1.7rem); line-height: 1.2; }
+    h3 { margin: 1.1rem 0 .35rem; font-size: 1.05rem; }
+    p { margin: .4rem 0 .85rem; }
+    .lede { max-width: 66ch; color: var(--muted); font-size: 1.08rem; }
+    .links { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.25rem; }
+    .links a { display: inline-flex; padding: .52rem .8rem; border: 1px solid var(--line); border-radius: .65rem; text-decoration: none; font-weight: 650; }
+    .links a:hover { background: var(--blue-wash); }
+    section { padding: clamp(1.2rem, 3.5vw, 2rem); margin-top: 1.15rem; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .panel { padding: 1rem; border: 1px solid var(--line); border-radius: .85rem; background: #fbfdff; min-width: 0; }
+    .endpoint { display: block; padding: .75rem; border-radius: .65rem; background: var(--blue-wash); color: #123c5e; overflow-wrap: anywhere; }
+    .action { border-color: #edd7aa; background: var(--amber-wash); }
+    .action strong { color: var(--amber); }
+    ul { margin: .55rem 0 0; padding-left: 1.25rem; }
+    li { margin: .32rem 0; }
+    code { font-family: ui-monospace, Consolas, monospace; font-size: .94em; overflow-wrap: anywhere; }
+    .muted { color: var(--muted); }
+    .language { border-top: 1px solid var(--line); margin-top: 2rem; padding-top: 1.5rem; }
+    footer { padding: 1.25rem .3rem 0; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 650px) {
+      main { width: min(100% - 1rem, 70rem); padding: .5rem 0 2rem; }
+      .hero, section { border-radius: .85rem; }
+      .grid { grid-template-columns: 1fr; }
+      .links { display: grid; grid-template-columns: 1fr; }
+      .links a { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <p class="eyebrow">RadioTEDU · Official agent guide</p>
+    <h1>RadioTEDU for AI agents</h1>
+    <p class="lede">Connect to current station and podcast information, discover trusted RadioTEDU sources, and understand which MCP actions only read data and which action creates a studio booking.</p>
+    <nav class="links" aria-label="Machine-readable sources">
+      <a href="/.well-known/mcp/server-card.json">MCP server card</a>
+      <a href="/.well-known/ai-catalog.json">AI catalog</a>
+      <a href="/.well-known/agent-skills/radiotedu-discovery/SKILL.md">Agent skill</a>
+      <a href="/llms-ai.txt">Current AI guide</a>
+      <a href="/llms.txt">llms.txt route</a>
+      <a href="/robots.txt">Crawler policy</a>
+    </nav>
+  </header>
+
+  <section id="connect">
+    <h2>Connect with MCP</h2>
+    <p>Use the Streamable HTTP endpoint. Public station and media information tools are available without an account or token.</p>
+    <code class="endpoint">https://radiotedu.com/mcp</code>
+    <p class="muted">The server uses MCP protocol version <code>2025-06-18</code>. Send <code>initialize</code>, then inspect <code>tools/list</code>. This server currently exposes tools; <code>resources/list</code> and <code>prompts/list</code> are not implemented.</p>
+    <p>Use the server card for the live server version, tool schemas, and annotations: <a href="/.well-known/mcp/server-card.json">/.well-known/mcp/server-card.json</a>.</p>
+  </section>
+
+  <section id="tools">
+    <h2>Available tools</h2>
+    <div class="grid">
+      <div class="panel">
+        <h3>Read-only tools</h3>
+        <ul>
+          <li><code>get_station_status</code> — status of the English or French AI station.</li>
+          <li><code>get_stations</code> — active stations and metadata.</li>
+          <li><code>get_now_playing</code> — current track and playback metadata.</li>
+          <li><code>get_broadcast_schedule</code> — broadcast schedule for a station.</li>
+          <li><code>get_podcasts</code> — public podcast series.</li>
+          <li><code>search_content</code> — search public RadioTEDU content.</li>
+          <li><code>get_focus_presets</code> — focus channels, ambient sounds, and study presets.</li>
+          <li><code>check_studio_availability</code> — reads availability and occupant information from Hub ERP; use only when relevant to the user's question.</li>
+        </ul>
+      </div>
+      <div class="panel action">
+        <h3>State-changing tool</h3>
+        <p><strong><code>book_studio_slot</code></strong> creates a reservation in RadioTEDU Hub ERP. Its input includes a TED University email address, time range, attendee count, and purpose.</p>
+        <p>Call this tool only after the user explicitly requests a booking and confirms the complete proposed details. Do not infer permission from a general question about studios or availability.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2>Sources and data handling</h2>
+    <ul>
+      <li>Use <a href="/llms-ai.txt">llms-ai.txt</a> for the current consolidated content and MCP guide, <a href="/llms.txt">llms.txt</a> for the canonical content map, and <a href="/ai.txt">ai.txt</a> for a concise AI access summary.</li>
+      <li>Use <a href="/openapi.json">openapi.json</a> and the <a href="/.well-known/api-catalog">API catalog</a> for documented REST API routes.</li>
+      <li>Schedules use Europe/Istanbul local time. Check timestamps for current station data and distinguish live playback from the published schedule.</li>
+      <li>Follow canonical RadioTEDU URLs returned by tools. Preserve Turkish names and do not infer missing dates, presenters, audience figures, or technical claims.</li>
+      <li>Studio availability can include occupant information. Only use and repeat details needed to answer the user's request.</li>
+    </ul>
+    <p>These agent-discovery documents do not add or change existing RadioTEDU REST API routes.</p>
+  </section>
+
+  <section class="language" lang="tr">
+    <p class="eyebrow">Türkçe</p>
+    <h2>Yapay zekâ ajanları için RadioTEDU</h2>
+    <p>Güncel radyo ve podcast bilgilerine erişmek, güvenilir RadioTEDU kaynaklarını bulmak ve MCP araçlarının etkilerini ayırt etmek için Streamable HTTP uç noktasını kullanın:</p>
+    <code class="endpoint">https://radiotedu.com/mcp</code>
+    <p>Bağlantıdan sonra <code>initialize</code>, ardından <code>tools/list</code> çağrılır. MCP protokol sürümü <code>2025-06-18</code>. Sunucu şu anda araçları destekler; <code>resources/list</code> ve <code>prompts/list</code> metotları uygulanmamıştır. Canlı şema ve açıklamalar için <a href="/.well-known/mcp/server-card.json">MCP sunucu kartını</a> kullanın.</p>
+    <h3>Salt okunur araçlar</h3>
+    <p><code>get_station_status</code>, <code>get_stations</code>, <code>get_now_playing</code>, <code>get_broadcast_schedule</code>, <code>get_podcasts</code>, <code>search_content</code>, <code>get_focus_presets</code> ve <code>check_studio_availability</code>. Son araç Hub ERP’den stüdyo uygunluğu ve kullanıcı bilgisi okur; yalnızca ilgili sorularda kullanın.</p>
+    <h3>Kayıt oluşturan araç</h3>
+    <p><code>book_studio_slot</code>, RadioTEDU Hub ERP’de rezervasyon oluşturur. Kullanıcı açıkça rezervasyon istemeden ve önerilen tarih, saat ve diğer ayrıntıları onaylamadan bu aracı çağırmayın. Genel bilgi veya uygunluk sorusu rezervasyon izni sayılmaz.</p>
+    <p>Yayın saatleri Europe/Istanbul yerel saatidir. Canlı veride zaman damgasını kontrol edin; kanonik RadioTEDU bağlantılarını kaynak gösterin. Bu keşif belgeleri mevcut REST API rotalarını eklemez veya değiştirmez.</p>
+    <p><a href="/llms-ai.txt">Güncel AI rehberi</a> · <a href="/llms.txt">llms.txt içerik haritası</a> · <a href="/ai.txt">AI erişim özeti</a> · <a href="/.well-known/agent-skills/radiotedu-discovery/SKILL.md">Ajan becerisi</a></p>
+  </section>
+  <footer>RadioTEDU · Public machine-readable access · <a href="/">radiotedu.com</a></footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://radiotedu.com/agents.html</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/llms.txt</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/llms-ai.txt</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/ai.txt</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/.well-known/ai-catalog.json</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/.well-known/mcp/server-card.json</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/.well-known/agent-skills/radiotedu-discovery/SKILL.md</loc>
+  </url>
+  <url>
+    <loc>https://radiotedu.com/openapi.json</loc>
+  </url>
+</urlset>

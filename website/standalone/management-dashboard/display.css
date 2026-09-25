@@ -1,0 +1,70 @@
+/* Entrance display: a read-only, low-motion view of the existing ERP dashboard. */
+body.display-mode {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+}
+.display-mode .skip-link,
+.display-mode .header-actions button,
+.display-mode .view-switch,
+.display-mode .viewer-toolbar,
+.display-mode .inside-card,
+.display-mode .schedule-filters,
+.display-mode .pagination,
+.display-mode #refresh-button {
+  display: none !important;
+}
+.display-mode .brand,
+.display-mode .booking-access a,
+.display-mode .room-card {
+  pointer-events: none;
+}
+.display-mode .topbar {
+  border-bottom: 3px solid var(--accent);
+}
+.display-mode .page-heading h1 {
+  font-size: clamp(24px, 3vw, 36px);
+}
+.display-mode .workspace {
+  grid-template-columns: minmax(0, 1.45fr) minmax(270px, 1fr);
+}
+.display-mode .operations-panel {
+  grid-template-rows: minmax(0, 1fr);
+}
+.display-mode .schedule {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.display-mode .room-card {
+  cursor: default;
+}
+.display-mode .scene-wrap img {
+  object-fit: cover;
+}
+@media (max-width: 900px) and (orientation: portrait) {
+  .display-mode .dashboard {
+    padding: 12px 18px;
+    gap: 9px;
+  }
+  .display-mode .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+  .display-mode .room-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .display-mode .schedule {
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+}
+@media (max-width: 900px) and (orientation: landscape) {
+  .display-mode .dashboard {
+    padding: 8px 12px;
+  }
+  .display-mode .workspace {
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  }
+  .display-mode .page-heading h1 {
+    font-size: 25px;
+  }
+}

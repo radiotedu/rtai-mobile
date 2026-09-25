@@ -1,6 +1,6 @@
 # RadioTEDU
 
-## Technology Lab and RTAI (updated 2026-09-01)
+## Technology Lab and RTAI (updated 2026-09-25)
 
 - [Technology Lab](https://radiotedu.com/technology/): RadioTEDU's English, end-to-end media laboratory story. It clusters Broadcast Core, Media Intelligence, Participation, Every Surface, and Research and Access.
 - [Teknoloji Laboratuvarı](https://radiotedu.com/teknoloji/): Turkish version of the technology laboratory story.
@@ -172,9 +172,10 @@ Public informational pages may be fetched where [robots.txt](https://radiotedu.c
   - Current consolidated AI guide: https://radiotedu.com/llms-ai.txt
   - Agent connection guide: https://radiotedu.com/agents.html
   - AI resource catalog: https://radiotedu.com/.well-known/ai-catalog.json
-- MCP protocol version: 2025-06-18. Connect to `/mcp`, call `initialize`, then `tools/list`; resources and prompts are not implemented.
+- MCP protocol version: 2025-06-18. Connect to `/mcp`, call `initialize`, then discover tools, resources, and prompts with `tools/list`, `resources/list`, and `prompts/list`.
 - MCP tools: `get_station_status`, `get_stations`, `get_now_playing`, `get_broadcast_schedule`, `get_podcasts`, `search_content`, `get_focus_presets`, `check_studio_availability`, and `book_studio_slot`.
-- Public station, schedule, podcast, search, and focus tools are read-only. `check_studio_availability` reads current studio availability and occupant information from Hub ERP.
-- `book_studio_slot` creates a Hub ERP reservation and accepts a TED University email in its input. Use it only after the user explicitly requests a booking and confirms the proposed details.
+- Resources include stations, now playing, schedules, podcasts, focus presets, and a privacy-filtered studio summary; resource templates provide station-specific status, now-playing, and schedule data. Prompts guide content discovery, on-air summaries, focus sessions, and privacy-preserving booking preparation.
+- Public station, schedule, podcast, search, focus, and studio tools are read-only. Studio availability includes room metadata and aggregate flags only; it never returns occupant identities, contact details, or individual reservation records.
+- `book_studio_slot` creates a Hub ERP reservation. It requires an authenticated ERP Bearer token, an explicit confirmation of the exact slot, and a reusable idempotency key; identity comes from the signed-in account and is not accepted in tool arguments or returned in the response. Do not include sensitive data in the booking purpose. The temporary idempotency record expires after 15 minutes and stale records are cleared before a later booking attempt.
 - Schedule times use Europe/Istanbul local time. Check timestamps for live data and cite canonical RadioTEDU URLs returned by the tools.
 - These agent-discovery additions do not add or change RadioTEDU REST API routes.

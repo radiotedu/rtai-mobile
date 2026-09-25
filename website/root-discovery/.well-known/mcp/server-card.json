@@ -1,50 +1,72 @@
 {
   "serverInfo": {
     "name": "radiotedu-public-radio",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
+  "protocolVersion": "2025-06-18",
   "transport": {
     "type": "streamable-http",
     "endpoint": "https://radiotedu.com/mcp"
   },
   "capabilities": {
     "tools": [
-      {
-        "name": "get_station_status",
-        "description": "Read-only public status of the English or French RadioTEDU AI station."
-      },
-      {
-        "name": "get_stations",
-        "description": "List all active RadioTEDU radio stations (Main Turkish radio, AI stations, Lo-Fi, Jazz, Classic, Rock, Energize, Main Character) with streams and metadata."
-      },
-      {
-        "name": "get_now_playing",
-        "description": "Get current live now-playing track, artist, artwork, and playback metadata for any RadioTEDU station."
-      },
-      {
-        "name": "get_broadcast_schedule",
-        "description": "Get the live broadcast program schedule and student DJ shows for RadioTEDU."
-      },
-      {
-        "name": "get_podcasts",
-        "description": "List public podcast series produced by RadioTEDU and TED University."
-      },
-      {
-        "name": "search_content",
-        "description": "Search RadioTEDU programs, stations, and podcast episodes by keyword."
-      },
-      {
-        "name": "get_focus_presets",
-        "description": "Get RadioTEDU Focus channels, ambient nature sound layers, and Pomodoro study presets with deep-launch links."
-      },
-      {
-        "name": "check_studio_availability",
-        "description": "Check RadioTEDU broadcast and podcast recording studios availability, current occupants, and booking rules from Hub ERP."
-      },
-      {
-        "name": "book_studio_slot",
-        "description": "Authorized Action: Book a studio recording or podcast slot at RadioTEDU Hub ERP for a TED University member. Requires valid @tedu.edu.tr email."
-      }
+      { "name": "get_station_status", "readOnly": true, "description": "Read public status of the English or French RadioTEDU AI station." },
+      { "name": "get_stations", "readOnly": true, "description": "List active RadioTEDU stations and public metadata." },
+      { "name": "get_now_playing", "readOnly": true, "description": "Get current public track and playback metadata for a station." },
+      { "name": "get_broadcast_schedule", "readOnly": true, "description": "Get a station's published broadcast schedule." },
+      { "name": "get_podcasts", "readOnly": true, "description": "List public RadioTEDU podcast series." },
+      { "name": "search_content", "readOnly": true, "description": "Search published RadioTEDU stations, programs, podcasts, posts, and pages with pagination and type filtering." },
+      { "name": "get_focus_presets", "readOnly": true, "description": "Get public focus channels, ambient sounds, and study presets." },
+      { "name": "check_studio_availability", "readOnly": true, "description": "Get room metadata and aggregate availability only. No occupant identities, contact details, or individual reservation records are returned." },
+      { "name": "book_studio_slot", "readOnly": false, "requiresAuthentication": true, "requiresUserConfirmation": true, "requiresIdempotencyKey": true, "description": "Create a studio reservation using the authenticated ERP profile. Names, email addresses, and phone numbers are not accepted as arguments or returned." }
+    ],
+    "resources": {
+      "list": [
+        "radiotedu://stations",
+        "radiotedu://now-playing/radiotedu-main",
+        "radiotedu://schedule/radiotedu-main",
+        "radiotedu://podcasts",
+        "radiotedu://focus-presets",
+        "radiotedu://studio-availability"
+      ],
+      "templates": [
+        "radiotedu://now-playing/{station_id}",
+        "radiotedu://schedule/{station_id}",
+        "radiotedu://station-status/{station}"
+      ]
+    },
+    "prompts": [
+      "discover_radio_content",
+      "what_is_on_air",
+      "build_focus_session",
+      "prepare_studio_booking"
     ]
+  },
+  "authentication": {
+    "publicReadTools": "No account required",
+    "booking": {
+      "scheme": "Bearer",
+      "issuer": "RadioTEDU Hub ERP",
+      "requiresActiveApplicationAccess": true,
+      "identityProvidedBy": "Authenticated ERP profile",
+      "identityArguments": false
+    }
+  },
+  "privacy": {
+    "dataMinimization": true,
+    "availabilityResponse": "Room metadata and aggregate flags only; no occupant identities, contact details, or individual reservation records.",
+    "bookingResponse": "No requester name, email, or phone number.",
+    "authenticationTokenPersisted": false,
+    "idempotencyRecordLifetimeSeconds": 900,
+    "idempotencyRecordCleanup": "Expired records are cleared before a later booking attempt.",
+    "note": "These technical controls support privacy by design; consult RadioTEDU's privacy notice for controller-level processing information and applicable rights."
+  },
+  "discovery": {
+    "agentGuide": "https://radiotedu.com/agents.html",
+    "llmsTxt": "https://radiotedu.com/llms.txt",
+    "llmsAiTxt": "https://radiotedu.com/llms-ai.txt",
+    "aiTxt": "https://radiotedu.com/ai.txt",
+    "robotsTxt": "https://radiotedu.com/robots.txt",
+    "privacyNotice": "https://radiotedu.com/gizlilik-politikasi/"
   }
 }

@@ -1,6 +1,6 @@
 # RadioTEDU AI access and source guide
 
-Last updated: 2026-09-01
+Last updated: 2026-09-25
 
 ## Applied AI and technology pages
 
@@ -142,8 +142,10 @@ Its public stream mounts are https://stream.radiotedu.com/en and https://stream.
 - MCP server card and current tool list: https://radiotedu.com/.well-known/mcp/server-card.json
 - AI resource catalog: https://radiotedu.com/.well-known/ai-catalog.json
 - Agent skill: https://radiotedu.com/.well-known/agent-skills/radiotedu-discovery/SKILL.md
-- The current MCP tool surface provides `get_station_status`, `get_stations`, `get_now_playing`, `get_broadcast_schedule`, `get_podcasts`, `search_content`, `get_focus_presets`, `check_studio_availability`, and `book_studio_slot`.
-- Station, schedule, podcast, search, and focus tools are read-only. `check_studio_availability` reads studio availability from Hub ERP. `book_studio_slot` creates an ERP reservation and requires a `@tedu.edu.tr` email in its input; use it only after the user explicitly requests a booking and confirms the proposed details.
-- The endpoint supports `initialize` and `tools/list`; `resources/list` and `prompts/list` are not implemented.
+- The MCP tool surface provides station status, station catalog, now-playing, schedules, podcasts, paginated content search, focus presets, privacy-filtered studio availability, and studio booking.
+- Discover tools, resources, and prompts with `tools/list`, `resources/list`, and `prompts/list`. Resources cover stations, now playing, schedules, podcasts, focus presets, and a studio summary; templates provide station-specific data.
+- Studio availability returns room metadata and aggregate status only. It never returns occupant identities, contact details, or individual reservation records.
+- Booking is a state-changing action. It requires a signed-in ERP Bearer token, explicit confirmation of the exact slot, and an idempotency key. Account identity is obtained from the authenticated ERP profile; names, email addresses, and phone numbers are not accepted as tool arguments or returned. Avoid sensitive information in the booking purpose.
+- MCP minimizes booking data, does not persist the authentication token, and keeps a temporary idempotency record for 15 minutes; expired records are cleared before a later booking attempt. See the privacy policy for RadioTEDU's controller notices and applicable rights.
 - These agent-discovery additions do not add or change RadioTEDU REST API routes. See https://radiotedu.com/openapi.json for the published API description.
 - Check https://radiotedu.com/robots.txt and canonical RadioTEDU pages before relying on time-sensitive information.

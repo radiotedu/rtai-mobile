@@ -86,8 +86,8 @@
     <h2>Connect with MCP</h2>
     <p>Use the Streamable HTTP endpoint. Public station and media information tools are available without an account or token.</p>
     <code class="endpoint">https://radiotedu.com/mcp</code>
-    <p class="muted">The server uses MCP protocol version <code>2025-06-18</code>. Send <code>initialize</code>, then inspect <code>tools/list</code>. This server currently exposes tools; <code>resources/list</code> and <code>prompts/list</code> are not implemented.</p>
-    <p>Use the server card for the live server version, tool schemas, and annotations: <a href="/.well-known/mcp/server-card.json">/.well-known/mcp/server-card.json</a>.</p>
+    <p class="muted">The server uses MCP protocol version <code>2025-06-18</code>. Send <code>initialize</code>, then discover tools, resources, and prompts with <code>tools/list</code>, <code>resources/list</code>, and <code>prompts/list</code>.</p>
+    <p>The server card summarizes the live server capabilities. Use <code>tools/list</code> for current input/output schemas and tool annotations: <a href="/.well-known/mcp/server-card.json">/.well-known/mcp/server-card.json</a>.</p>
   </section>
 
   <section id="tools">
@@ -103,13 +103,13 @@
           <li><code>get_podcasts</code> — public podcast series.</li>
           <li><code>search_content</code> — search public RadioTEDU content.</li>
           <li><code>get_focus_presets</code> — focus channels, ambient sounds, and study presets.</li>
-          <li><code>check_studio_availability</code> — reads availability and occupant information from Hub ERP; use only when relevant to the user's question.</li>
+          <li><code>check_studio_availability</code> — returns room metadata and aggregate availability flags only; it does not return occupant identities, contact details, or individual reservation records.</li>
         </ul>
       </div>
       <div class="panel action">
         <h3>State-changing tool</h3>
-        <p><strong><code>book_studio_slot</code></strong> creates a reservation in RadioTEDU Hub ERP. Its input includes a TED University email address, time range, attendee count, and purpose.</p>
-        <p>Call this tool only after the user explicitly requests a booking and confirms the complete proposed details. Do not infer permission from a general question about studios or availability.</p>
+        <p><strong><code>book_studio_slot</code></strong> creates a reservation in RadioTEDU Hub ERP. It requires an authenticated ERP Bearer token, exact date and time, attendee count, purpose, explicit confirmation, and a reusable idempotency key. Account identity is obtained from the signed-in ERP profile; do not put names, email addresses, or phone numbers in tool arguments.</p>
+        <p>Call this tool only after the user explicitly requests a booking and confirms the complete proposed details. Do not infer permission from a general question about studios or availability. The tool response omits requester identity and contact details; do not include sensitive information in the purpose.</p>
       </div>
     </div>
   </section>
@@ -121,7 +121,7 @@
       <li>Use <a href="/openapi.json">openapi.json</a> and the <a href="/.well-known/api-catalog">API catalog</a> for documented REST API routes.</li>
       <li>Schedules use Europe/Istanbul local time. Check timestamps for current station data and distinguish live playback from the published schedule.</li>
       <li>Follow canonical RadioTEDU URLs returned by tools. Preserve Turkish names and do not infer missing dates, presenters, audience figures, or technical claims.</li>
-      <li>Studio availability can include occupant information. Only use and repeat details needed to answer the user's request.</li>
+      <li>Studio availability contains room metadata and aggregate flags only. The MCP does not expose occupant identities, contact details, or individual reservation records.</li>
     </ul>
     <p>These agent-discovery documents do not add or change existing RadioTEDU REST API routes.</p>
   </section>
@@ -131,11 +131,11 @@
     <h2>Yapay zekâ ajanları için RadioTEDU</h2>
     <p>Güncel radyo ve podcast bilgilerine erişmek, güvenilir RadioTEDU kaynaklarını bulmak ve MCP araçlarının etkilerini ayırt etmek için Streamable HTTP uç noktasını kullanın:</p>
     <code class="endpoint">https://radiotedu.com/mcp</code>
-    <p>Bağlantıdan sonra <code>initialize</code>, ardından <code>tools/list</code> çağrılır. MCP protokol sürümü <code>2025-06-18</code>. Sunucu şu anda araçları destekler; <code>resources/list</code> ve <code>prompts/list</code> metotları uygulanmamıştır. Canlı şema ve açıklamalar için <a href="/.well-known/mcp/server-card.json">MCP sunucu kartını</a> kullanın.</p>
+    <p>Bağlantıdan sonra <code>initialize</code>; araç, kaynak ve istemleri keşfetmek için sırasıyla <code>tools/list</code>, <code>resources/list</code> ve <code>prompts/list</code> çağrılır. MCP protokol sürümü <code>2025-06-18</code>. Sunucu kartı yetenekleri özetler; güncel girdi/çıktı şemaları ve araç işaretleri için <code>tools/list</code> çağırın.</p>
     <h3>Salt okunur araçlar</h3>
-    <p><code>get_station_status</code>, <code>get_stations</code>, <code>get_now_playing</code>, <code>get_broadcast_schedule</code>, <code>get_podcasts</code>, <code>search_content</code>, <code>get_focus_presets</code> ve <code>check_studio_availability</code>. Son araç Hub ERP’den stüdyo uygunluğu ve kullanıcı bilgisi okur; yalnızca ilgili sorularda kullanın.</p>
+    <p><code>get_station_status</code>, <code>get_stations</code>, <code>get_now_playing</code>, <code>get_broadcast_schedule</code>, <code>get_podcasts</code>, <code>search_content</code>, <code>get_focus_presets</code> ve <code>check_studio_availability</code>. Son araç yalnızca oda bilgisi ve toplu uygunluk işaretlerini verir; kişi adı, iletişim bilgisi veya tekil rezervasyon döndürmez.</p>
     <h3>Kayıt oluşturan araç</h3>
-    <p><code>book_studio_slot</code>, RadioTEDU Hub ERP’de rezervasyon oluşturur. Kullanıcı açıkça rezervasyon istemeden ve önerilen tarih, saat ve diğer ayrıntıları onaylamadan bu aracı çağırmayın. Genel bilgi veya uygunluk sorusu rezervasyon izni sayılmaz.</p>
+    <p><code>book_studio_slot</code>, RadioTEDU Hub ERP'de rezervasyon oluşturur. Giriş yapmış ERP hesabı, açık kullanıcı onayı ve aynı işlem tekrarlarında kullanılacak idempotency anahtarı gerekir. Hesap kimliği giriş yapılmış profilden alınır; ad, e-posta veya telefon araç girdisi değildir ve yanıtında dönmez. Kullanıcı kesin tarih, saat ve katılımcı sayısını onaylamadan çağırmayın; amaç alanına hassas bilgi yazmayın.</p>
     <p>Yayın saatleri Europe/Istanbul yerel saatidir. Canlı veride zaman damgasını kontrol edin; kanonik RadioTEDU bağlantılarını kaynak gösterin. Bu keşif belgeleri mevcut REST API rotalarını eklemez veya değiştirmez.</p>
     <p><a href="/llms-ai.txt">Güncel AI rehberi</a> · <a href="/llms.txt">llms.txt içerik haritası</a> · <a href="/ai.txt">AI erişim özeti</a> · <a href="/.well-known/agent-skills/radiotedu-discovery/SKILL.md">Ajan becerisi</a></p>
   </section>

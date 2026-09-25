@@ -4,52 +4,89 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index,follow">
-  <meta name="description" content="RadioTEDU MCP sunucusuna bağlanın; podcast serilerini ve bölümlerini ajanınızla adım adım keşfedin.">
+  <meta name="description" content="RadioTEDU MCP sunucusuna Codex, Claude Code, Muse Code veya başka bir MCP ajanıyla bağlanın. Podcast serilerini ve bölümlerini adım adım keşfedin.">
+  <meta name="theme-color" content="#f7f7f4">
   <link rel="canonical" href="https://radiotedu.com/mcp">
+  <link rel="icon" href="https://radiotedu.com/wp-content/uploads/2025/11/cropped-logo-02-scaled-1-32x32.png" sizes="32x32">
+  <link rel="stylesheet" href="https://radiotedu.com/wp-content/themes/radiotedu/assets/css/fonts.css">
+  <link rel="stylesheet" href="https://radiotedu.com/wp-content/themes/radiotedu/assets/css/app.css">
+  <link rel="alternate" type="application/json" href="https://radiotedu.com/.well-known/mcp/server-card.json" title="RadioTEDU MCP server card">
+  <link rel="alternate" type="text/plain" href="https://radiotedu.com/llms-ai.txt" title="RadioTEDU AI guide">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="RadioTEDU MCP | Podcast keşfi ve ajan bağlantısı">
+  <meta property="og:description" content="Codex, Claude Code, Muse Code ve uyumlu MCP ajanlarını RadioTEDU podcast kataloğuna bağlayın.">
+  <meta property="og:url" content="https://radiotedu.com/mcp">
   <title>RadioTEDU MCP | Podcast keşfi ve ajan bağlantısı</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebAPI",
+      "name": "RadioTEDU MCP",
+      "description": "RadioTEDU public MCP service for station status, schedules, and podcast discovery.",
+      "url": "https://radiotedu.com/mcp",
+      "documentation": "https://radiotedu.com/mcp",
+      "provider": {
+        "@type": "Organization",
+        "name": "RadioTEDU",
+        "url": "https://radiotedu.com/"
+      }
+    }
+  </script>
   <style>
     :root {
       color-scheme: light;
-      --ink: #0b0b0c;
-      --paper: #f7f7f4;
-      --white: #fff;
-      --line: #c9c9c3;
-      --muted: #51514e;
-      --red: #ed1c24;
-      --red-dark: #b20e17;
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --ink: var(--rt-ink, #0b0b0c);
+      --paper: var(--rt-paper, #f7f7f4);
+      --white: var(--rt-white, #fff);
+      --line: var(--rt-gray-300, #c9c9c3);
+      --muted: var(--rt-gray-600, #686865);
+      --red: var(--rt-red, #ed1c24);
+      --red-dark: var(--rt-red-dark, #b20e17);
+      font-family: "Albert Sans", "Helvetica Neue", Arial, sans-serif;
       font-synthesis: none;
     }
     * { box-sizing: border-box; }
     html { background: var(--paper); }
-    body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.65; }
+    body { max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: "Albert Sans", "Helvetica Neue", Arial, sans-serif; line-height: 1.65; -webkit-font-smoothing: antialiased; }
     a { color: var(--red-dark); text-decoration-thickness: 1px; text-underline-offset: .2em; overflow-wrap: anywhere; }
     a:hover { text-decoration-thickness: 2px; }
     a:focus-visible, summary:focus-visible { outline: 3px solid var(--red-dark); outline-offset: 4px; }
-    code, pre { font-family: Consolas, "SFMono-Regular", Menlo, monospace; }
+    code, pre { font-family: "JetBrains Mono", Consolas, "SFMono-Regular", Menlo, monospace; }
     code { font-size: .94em; overflow-wrap: anywhere; }
     .skip-link { position: absolute; inset: .75rem auto auto .75rem; z-index: 2; padding: .5rem .75rem; transform: translateY(-180%); background: var(--white); color: var(--ink); }
     .skip-link:focus { transform: none; }
-    .shell { width: min(100% - 2.5rem, 75rem); margin-inline: auto; }
-    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding: 1.1rem 0; border-bottom: 1px solid var(--ink); }
-    .wordmark { color: var(--ink); font-size: .9rem; font-weight: 900; letter-spacing: .02em; text-decoration: none; }
+    .rt-top-ribbon { height: 3px; background: var(--red); }
+    .shell { width: min(calc(100% - 40px), 1440px); margin-inline: auto; }
+    .masthead { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: clamp(1rem, 3vw, 2.5rem); padding: .85rem 0; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 94%, transparent); backdrop-filter: blur(12px); }
+    .wordmark { display: block; width: 175px; line-height: 0; text-decoration: none; }
+    .wordmark img { display: block; width: 100%; height: auto; }
     .wordmark span { color: var(--red-dark); }
-    nav { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .92rem; }
-    nav a { color: var(--ink); }
-    .folio { margin: 0; color: var(--red-dark); font-size: .74rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
-    .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(16rem, .75fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; padding: clamp(3rem, 8vw, 6.5rem) 0; border-bottom: 3px solid var(--ink); }
-    h1 { max-width: 12ch; margin: .45rem 0 1rem; font-size: clamp(2.7rem, 7vw, 5.8rem); line-height: .98; letter-spacing: -.055em; }
-    h2 { margin: 0 0 1rem; font-size: clamp(1.65rem, 3vw, 2.55rem); line-height: 1.1; letter-spacing: -.035em; }
+    nav { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem clamp(1rem, 2.5vw, 2.2rem); font-size: .74rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a:hover, nav a[aria-current="page"] { color: var(--ink); }
+    .header-cta, .rt-btn { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 2.8rem; padding: .7rem 1rem; border: 1px solid var(--ink); font-size: .76rem; font-weight: 850; letter-spacing: .06em; text-align: center; text-decoration: none; text-transform: uppercase; }
+    .header-cta, .rt-btn--primary { border-color: var(--red-dark); background: var(--red-dark); color: #fff; box-shadow: 4px 4px 0 var(--ink); }
+    .header-cta:hover, .rt-btn--primary:hover { background: #970b13; color: #fff; }
+    .rt-btn--outline { background: transparent; color: var(--ink); }
+    .folio { margin: 0; color: var(--red-dark); font-family: "JetBrains Mono", Consolas, monospace; font-size: .74rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(19rem, .85fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; padding: clamp(3.5rem, 8vw, 7rem) 0; border-bottom: 3px solid var(--ink); }
+    h1, h2 { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; }
+    h1 { max-width: 13ch; margin: .6rem 0 1.25rem; font-size: clamp(2.8rem, 7vw, 6rem); line-height: .96; letter-spacing: -.04em; }
+    h2 { margin: 0 0 1rem; font-size: clamp(1.8rem, 3.3vw, 3rem); line-height: 1.05; letter-spacing: -.025em; }
     h3 { margin: 0 0 .4rem; font-size: 1.1rem; line-height: 1.25; }
     p { margin: .5rem 0 1rem; }
     .lede { max-width: 58ch; color: var(--muted); font-size: clamp(1.05rem, 1.7vw, 1.25rem); }
-    .endpoint { padding: 1.5rem; border: 1px solid var(--ink); background: var(--white); box-shadow: 7px 7px 0 var(--red); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .85rem 1rem; margin-top: 1.6rem; }
+    .hero-status { display: flex; align-items: center; gap: .55rem; margin-top: 1.6rem; color: var(--muted); font-family: "JetBrains Mono", Consolas, monospace; font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+    .live-dot { width: .55rem; height: .55rem; flex: 0 0 auto; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px rgb(237 28 36 / 12%); }
+    .endpoint { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--ink); border-top: 4px solid var(--red); background: var(--white); box-shadow: 5px 5px 0 var(--ink); }
     .endpoint-label { margin: 0 0 .4rem; color: var(--muted); font-size: .76rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
-    .endpoint code { display: block; padding: .7rem 0; font-size: clamp(.98rem, 2vw, 1.12rem); font-weight: 750; }
+    .endpoint code { display: block; padding: .7rem 0; color: var(--ink); font-size: clamp(.93rem, 2vw, 1.12rem); font-weight: 750; }
     .endpoint ul { margin: .6rem 0 0; padding: .7rem 0 0 1.1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .93rem; }
     .band { display: grid; grid-template-columns: minmax(12rem, .62fr) minmax(0, 1.38fr); gap: clamp(1.5rem, 6vw, 5rem); padding: clamp(2.8rem, 6vw, 5rem) 0; border-bottom: 1px solid var(--ink); }
     .band-heading { align-self: start; }
     .band-heading .folio { margin-bottom: .7rem; }
+    .connect-content { min-width: 0; }
     .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
     .steps li { position: relative; margin: 0; padding: 0 0 1.45rem 2.7rem; border-left: 1px solid var(--line); counter-increment: step; }
     .steps li:last-child { padding-bottom: 0; border-left-color: transparent; }
@@ -59,6 +96,17 @@
     .query-example { min-width: 0; padding-top: 1rem; border-top: 2px solid var(--ink); }
     .query-example p { color: var(--muted); }
     pre { max-width: 100%; margin: .8rem 0; padding: 1rem; overflow-x: auto; border-left: 3px solid var(--red); background: #eeeee9; color: var(--ink); font-size: .88rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .client-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .client-card { min-width: 0; padding: clamp(1.1rem, 2.2vw, 1.65rem); border: 1px solid var(--line); border-top: 3px solid var(--ink); background: var(--white); }
+    .client-card:nth-child(2) { border-top-color: var(--red); }
+    .client-card h3 { margin: .35rem 0 .6rem; font-size: clamp(1.2rem, 1.8vw, 1.5rem); }
+    .client-card p { color: var(--muted); }
+    .client-card ol { margin: .8rem 0 1rem; padding-left: 1.25rem; }
+    .client-card li { margin: .4rem 0; padding-left: .15rem; }
+    .client-card pre { margin-top: .7rem; padding: .85rem; font-size: .78rem; }
+    .client-tag { color: var(--red-dark); font-family: "JetBrains Mono", Consolas, monospace; font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .client-doc { display: inline-block; margin-top: .45rem; font-size: .88rem; font-weight: 750; }
+    .client-note { margin-top: .75rem; padding: .75rem; border-left: 3px solid var(--red); background: #eeeee9; font-size: .88rem; }
     .prompt { max-width: 68ch; margin: 1.2rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid var(--red); font-size: 1.08rem; font-weight: 650; }
     .result-note { color: var(--muted); font-size: .94rem; }
     .tool-list { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 2rem; }
@@ -77,16 +125,21 @@
     footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 2rem; padding: 1.5rem 0 2.5rem; color: var(--muted); font-size: .88rem; }
     footer p { margin: 0; }
     @media (max-width: 760px) {
-      .shell { width: min(100% - 1.4rem, 75rem); }
-      .masthead { align-items: flex-start; flex-direction: column; }
-      nav { gap: .4rem 1rem; }
+      .shell { width: min(100% - 1.4rem, 90rem); }
+      .masthead { grid-template-columns: 1fr auto; align-items: center; gap: .8rem 1rem; padding: .75rem 0; }
+      .wordmark { width: min(42vw, 160px); }
+      nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; gap: .45rem 1rem; width: 100%; padding-bottom: .2rem; }
+      .header-cta { grid-column: 2; grid-row: 1; }
       .hero, .band { grid-template-columns: 1fr; }
       .hero { gap: 1.75rem; padding: 3rem 0; }
       .band { gap: 1rem; padding: 2.5rem 0; }
+      .client-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 560px) {
-      .query-examples, .tool-list, .source-groups { grid-template-columns: 1fr; }
+      .query-examples, .tool-list, .source-groups, .client-grid { grid-template-columns: 1fr; }
       h1 { font-size: clamp(2.55rem, 14vw, 4.3rem); }
+      .header-cta { min-height: 2.45rem; padding: .55rem .65rem; font-size: .64rem; }
+      .hero-actions .rt-btn { flex: 1 1 10rem; }
       .endpoint { padding: 1.1rem; }
       pre { font-size: .8rem; }
     }
@@ -94,53 +147,114 @@
 </head>
 <body>
   <a class="skip-link" href="#main">Ana içeriğe geç</a>
+  <div class="rt-top-ribbon" aria-hidden="true"></div>
   <div class="shell">
     <header class="masthead">
-      <a class="wordmark" href="/" aria-label="RadioTEDU ana sayfa">Radio<span>TEDU</span></a>
+      <a class="wordmark" href="/" aria-label="RadioTEDU ana sayfa">
+        <img src="https://radiotedu.com/wp-content/themes/radiotedu/assets/images/radiotedu-logo.png" alt="RadioTEDU" width="2013" height="358">
+      </a>
       <nav aria-label="Site bağlantıları">
         <a href="/podcastler/">Podcast arşivi</a>
+        <a href="/tui">Terminal TUI</a>
         <a href="/agents.html">Ajan rehberi</a>
-        <a href="/gizlilik-politikasi/">Gizlilik politikası</a>
       </nav>
+      <a class="header-cta" href="#baglanti">MCP'ye bağlan</a>
     </header>
 
     <main id="main">
-      <header class="hero">
+      <section class="hero" aria-labelledby="page-title">
         <div>
-          <p class="folio">RadioTEDU · MCP rehberi</p>
-          <h1>Podcast'leri ajanınızla keşfedin.</h1>
-          <p class="lede">RadioTEDU'nun açık podcast kataloğunu ve yayımlanmış bölümlerini bir MCP istemcisinden arayın. İnsanlar için bağlantı adımları, ajanlar için araç ve kaynak adları burada.</p>
+          <p class="folio">RADIOTEDU / AGENT INTERFACE</p>
+          <h1 id="page-title">Podcast'leri ajanınızla keşfedin.</h1>
+          <p class="lede">RadioTEDU'nun canlı istasyonlarını, yayın akışını ve açık podcast kataloğunu Codex, Claude Code, Muse Code veya başka bir MCP istemcisinden keşfedin.</p>
+          <div class="hero-actions">
+            <a class="rt-btn rt-btn--primary" href="#baglanti">Ajanını bağla</a>
+            <a class="rt-btn rt-btn--outline" href="/podcastler/">Podcast arşivi</a>
+          </div>
+          <p class="hero-status"><span class="live-dot" aria-hidden="true"></span>LIVE FROM ANKARA · 24/7</p>
         </div>
         <aside class="endpoint" aria-label="MCP bağlantı bilgileri">
-          <p class="endpoint-label">Streamable HTTP uç noktası</p>
+          <p class="endpoint-label">Official MCP endpoint</p>
+          <h2>Tek adresle başlayın.</h2>
           <code>https://radiotedu.com/mcp</code>
           <ul>
-            <li>Herkese açık okuma araçları için hesap gerekmez.</li>
+            <li>Podcast keşfi ve herkese açık bilgi araçları için hesap gerekmez.</li>
+            <li>Aktarım: <code>Streamable HTTP</code></li>
             <li>MCP protokolü: <code>2025-06-18</code></li>
             <li>Podcast kataloğu: <code>radiotedu://podcasts</code></li>
           </ul>
         </aside>
-      </header>
+      </section>
 
       <section class="band" id="baglanti">
         <div class="band-heading">
           <p class="folio">01 / Bağlantı</p>
-          <h2>MCP istemcisine ekleyin</h2>
+          <h2>Ajan uygulamanıza ekleyin.</h2>
+          <p>İstemciye göre yapılandırma komutu değişir. Kullandığınız aracı seçin ve resmi bağlantı ayarını ekleyin.</p>
         </div>
-        <ol class="steps">
-          <li>
-            <h3>Ajan uygulamanızın MCP ayarlarını açın</h3>
-            <p>“Remote MCP server” veya benzer adlı sunucu ekleme seçeneğini bulun. Menü adı uygulamaya göre değişebilir.</p>
-          </li>
-          <li>
-            <h3>Streamable HTTP'yi seçin</h3>
-            <p>Sunucu adı olarak <code>RadioTEDU</code>, adres olarak <code>https://radiotedu.com/mcp</code> girin. Herkese açık bilgi araçları için kimlik doğrulama başlığı gerekmez.</p>
-          </li>
-          <li>
-            <h3>Bağlantıyı kaydedip podcast isteyin</h3>
-            <p>İstemci bağlantı sırasında MCP'yi başlatır ve araçları listeler. Aşağıdaki doğal dil örneğini ajana verebilir veya araç çağrısını kendiniz hazırlayabilirsiniz.</p>
-          </li>
-        </ol>
+        <div class="connect-content">
+          <ol class="steps">
+            <li>
+              <h3>İstemciyi ve MCP ayarlarını açın</h3>
+              <p>Codex CLI, Claude Code veya Muse Code kartındaki adımları izleyin. Diğer uyumlu istemcilerde yeni bir uzak MCP sunucusu ekleyin.</p>
+            </li>
+            <li>
+              <h3>Streamable HTTP'yi seçin</h3>
+              <p>Sunucu adresi <code>https://radiotedu.com/mcp</code>. Podcast keşfi ve kamuya açık bilgi araçları için API anahtarı ya da oturum açma gerekmez.</p>
+            </li>
+            <li>
+              <h3>Araçları listeleyin ve bir podcast isteyin</h3>
+              <p>İstemcide MCP bağlantısını doğrulayın, araç envanterini açın ve aşağıdaki örneklerden biriyle aramaya başlayın.</p>
+            </li>
+          </ol>
+
+          <div class="client-grid" aria-label="Ajan istemcisine göre kurulum adımları">
+            <article class="client-card" aria-labelledby="codex-title">
+              <p class="client-tag">OpenAI / CODEX CLI</p>
+              <h3 id="codex-title">Codex</h3>
+              <ol>
+                <li>Terminalde uzak sunucuyu ekleyin.</li>
+                <li><code>codex mcp list</code> ile kaydı doğrulayın.</li>
+                <li>Codex oturumunda RadioTEDU podcast'lerini isteyin.</li>
+              </ol>
+              <pre><code>codex mcp add radiotedu --url https://radiotedu.com/mcp
+codex mcp list</code></pre>
+              <a class="client-doc" href="https://developers.openai.com/codex/mcp/" target="_blank" rel="noopener noreferrer">Codex MCP belgeleri</a>
+            </article>
+
+            <article class="client-card" aria-labelledby="claude-title">
+              <p class="client-tag">ANTHROPIC / CLAUDE CODE</p>
+              <h3 id="claude-title">Claude Code</h3>
+              <ol>
+                <li>Claude Code terminalini açın.</li>
+                <li>Uzak HTTP sunucusunu komutla ekleyin.</li>
+                <li><code>/mcp</code> ile bağlanma durumunu ve araçları görün.</li>
+              </ol>
+              <pre><code>claude mcp add --transport http radiotedu https://radiotedu.com/mcp</code></pre>
+              <a class="client-doc" href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener noreferrer">Claude Code MCP belgeleri</a>
+            </article>
+
+            <article class="client-card" aria-labelledby="muse-title">
+              <p class="client-tag">META / MUSE CODE</p>
+              <h3 id="muse-title">Muse Code</h3>
+              <ol>
+                <li>Muse Code ayar dosyanızdaki <code>mcp_servers</code> alanını açın.</li>
+                <li>RadioTEDU'yu Streamable HTTP sunucusu olarak ekleyin.</li>
+                <li>Yeni oturum başlatın ve <code>/mcp</code> ile bağlantıyı doğrulayın.</li>
+              </ol>
+              <pre><code>"mcp_servers": {
+  "radiotedu": {
+    "transport": "streamable_http",
+    "url": "https://radiotedu.com/mcp",
+    "enabled": true,
+    "mode": "optional"
+  }
+}</code></pre>
+              <p class="client-note">Bu yönergeler MCP desteği belgelenmiş Muse Code içindir. Muse adını kullanan diğer uygulamalarda özel MCP bağlantısı desteğini varsaymayın.</p>
+              <a class="client-doc" href="https://dev.meta.ai/docs/muse-code/extending" target="_blank" rel="noopener noreferrer">Muse Code MCP belgeleri</a>
+            </article>
+          </div>
+        </div>
       </section>
 
       <section class="band" id="podcast-kesfet">
@@ -227,6 +341,9 @@
               <li><a href="/.well-known/mcp/server-card.json">MCP sunucu kartı</a></li>
               <li><a href="/.well-known/agent-skills/radiotedu-discovery/SKILL.md">Ajan keşif becerisi</a></li>
               <li><a href="/agents.html">Ajanlar için genel bağlantı rehberi</a></li>
+              <li><a href="https://developers.openai.com/codex/mcp/" target="_blank" rel="noopener noreferrer">OpenAI Codex MCP belgeleri</a></li>
+              <li><a href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener noreferrer">Anthropic Claude Code MCP belgeleri</a></li>
+              <li><a href="https://dev.meta.ai/docs/muse-code/extending" target="_blank" rel="noopener noreferrer">Meta Muse Code MCP belgeleri</a></li>
               <li><a href="https://github.com/radiotedu/rtai-mobile/blob/main/website/root-discovery/radiotedu-mcp.php">MCP sunucu uygulama dosyası</a> · açık kaynak deposu</li>
               <li><a href="https://github.com/radiotedu/rtai-mobile/blob/main/website/root-discovery/mcp-guide.html">Bu rehberin kaynak dosyası</a></li>
             </ul>
@@ -246,8 +363,25 @@
       <details lang="en">
         <summary>English guide</summary>
         <div class="english-copy">
-          <h2>Connect and discover RadioTEDU podcasts</h2>
-          <p>Add a remote MCP server in your MCP-capable client. Select Streamable HTTP and enter <code>https://radiotedu.com/mcp</code>. Public read-only tools do not require an account or authentication header.</p>
+          <h2>Connect Codex, Claude Code, or Muse Code</h2>
+          <p>RadioTEDU exposes a public MCP endpoint over Streamable HTTP: <code>https://radiotedu.com/mcp</code>. Podcast discovery and public read tools do not require an account, API key, or authentication header.</p>
+          <h3>Codex CLI</h3>
+          <pre><code>codex mcp add radiotedu --url https://radiotedu.com/mcp
+codex mcp list</code></pre>
+          <h3>Claude Code</h3>
+          <pre><code>claude mcp add --transport http radiotedu https://radiotedu.com/mcp</code></pre>
+          <p>Run <code>/mcp</code> in Claude Code to confirm the connection and see the available tools.</p>
+          <h3>Muse Code by Meta</h3>
+          <p>Add this entry under <code>mcp_servers</code> in Muse Code's settings file, start a new session, then use <code>/mcp</code> to check the connection:</p>
+          <pre><code>"mcp_servers": {
+  "radiotedu": {
+    "transport": "streamable_http",
+    "url": "https://radiotedu.com/mcp",
+    "enabled": true,
+    "mode": "optional"
+  }
+}</code></pre>
+          <p>These steps apply to Muse Code, whose developer docs describe remote MCP support. They do not assume that other apps named Muse accept custom MCP servers. See the <a href="https://developers.openai.com/codex/mcp/" target="_blank" rel="noopener noreferrer">Codex</a>, <a href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener noreferrer">Claude Code</a>, and <a href="https://dev.meta.ai/docs/muse-code/extending" target="_blank" rel="noopener noreferrer">Muse Code</a> documentation for client-specific details.</p>
           <p>Use <code>get_podcasts</code> or the <code>radiotedu://podcasts</code> resource to browse the series catalog. Use <code>search_content</code> with <code>type: "rt_podcast_show"</code> to find a series, or <code>type: "rt_podcast_episode"</code> to find published episodes. Search queries may be in Turkish, English, or French. Follow the canonical RadioTEDU URL in each result and request the next page when <code>has_more</code> is true.</p>
           <p>Studio booking changes ERP data and requires an authenticated account plus explicit confirmation of the complete booking details. Do not put sensitive data in a search query or booking purpose. Read the <a href="/gizlilik-politikasi/">privacy policy</a>.</p>
         </div>

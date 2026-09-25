@@ -28,6 +28,8 @@ try {
         $eventResult = RadioTEDU_Newsletter::sync_upcoming_events($events);
         echo 'ERP sync complete: ' . (int) ($result['seen'] ?? 0) . ' verified identities; '
             . (int) ($eventResult['seen'] ?? 0) . " upcoming events.\n";
+    } elseif ($command === 'sync-ticket-feed') {
+        echo wp_json_encode(RadioTEDU_Newsletter::sync_ticket_feed(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), "\n";
     } elseif ($command === 'run') {
         echo wp_json_encode(RadioTEDU_Newsletter::run_scheduled(), JSON_UNESCAPED_SLASHES), "\n";
     } elseif ($command === 'test') {

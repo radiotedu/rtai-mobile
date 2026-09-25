@@ -80,6 +80,13 @@ The theme source is `website/wordpress-overlay/wp-content/themes/radiotedu/`.
 - `radiotedu-newsletter`: consented subscribers, encrypted email storage, 30-day issue snapshots, preview/production delivery, unsubscribe and language management.
 - Other production plugins are out of scope unless a task identifies them. Do not disable plugins broadly while debugging.
 
+### Newsletter operation — 2026-09-25
+
+- The monthly issue includes podcast episodes from the preceding 30 days and upcoming ticketed events from the public `/bilet/feed.php` feed. The feed is read-only and syncs during each newsletter scheduler run.
+- Only active web subscribers with the current explicit consent version are eligible. ERP identity sync does not grant newsletter consent; the current version is `newsletter-2026-09-25-podcasts-tickets`.
+- `C:\RadioTEDU\state\newsletter-send-held.flag` is present. Keep production subscriber delivery held until the user says `tamam`.
+- Manual 30-day tests are restricted to `arda.akgul@tedu.edu.tr` and `tuna.ozsari@tedu.edu.tr`. The regular editorial preview remains addressed only to Tuna and has a top-of-email reject action with a confirmation step.
+
 ## Website behavior implemented in the 2026-09-01 work
 
 ### Language routing

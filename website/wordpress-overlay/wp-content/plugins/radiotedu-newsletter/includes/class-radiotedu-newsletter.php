@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 
 final class RadioTEDU_Newsletter
 {
-    private const CONSENT_VERSION = 'newsletter-2026-09-01';
+    private const CONSENT_VERSION = 'newsletter-2026-09-25-podcasts-tickets';
     private const MAX_BATCH = 5;
 
     private static array $config = [];
@@ -130,7 +130,7 @@ final class RadioTEDU_Newsletter
             <div class="rt-newsletter__copy">
                 <p class="rt-kicker"><?php echo esc_html($english ? 'RadioTEDU monthly' : 'RadioTEDU aylık'); ?></p>
                 <h2 id="rt-newsletter-title"><?php echo esc_html($english ? 'The month in podcasts.' : 'Podcastlerle geçen ay.'); ?></h2>
-                <p><?php echo esc_html($english ? 'Receive only the podcast episodes published during the latest 30-day period. No daily mail and no unrelated announcements.' : 'Yalnızca son 30 günlük dönemde yayınlanan podcast bölümlerini al. Günlük posta ve ilgisiz duyuru yok.'); ?></p>
+                <p><?php echo esc_html($english ? 'Receive podcast episodes from the latest 30 days and upcoming RadioTEDU ticketed events. No daily mail or unrelated announcements.' : 'Son 30 günde yayınlanan podcast bölümlerini ve yaklaşan RadioTEDU biletli etkinliklerini al. Günlük posta ve ilgisiz duyuru yok.'); ?></p>
             </div>
             <form class="rt-newsletter__form" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" data-rt-newsletter-form>
                 <input type="hidden" name="action" value="radiotedu_newsletter_subscribe">
@@ -144,8 +144,9 @@ final class RadioTEDU_Newsletter
                 </div>
                 <label class="rt-newsletter__consent">
                     <input type="checkbox" name="consent" value="1" required>
-                    <span><?php echo esc_html($english ? 'I consent to receiving the monthly RadioTEDU podcast newsletter. I can unsubscribe at any time.' : 'Aylık RadioTEDU podcast bültenini almayı kabul ediyorum. İstediğim zaman abonelikten çıkabilirim.'); ?></span>
+                    <span><?php echo esc_html($english ? 'I agree to receive the monthly RadioTEDU podcast newsletter and ticketed event updates by email. I can unsubscribe at any time.' : 'Aylık RadioTEDU podcast bültenini ve biletli etkinlik duyurularını e-posta ile almayı kabul ediyorum. İstediğim zaman abonelikten çıkabilirim.'); ?></span>
                 </label>
+                <p class="rt-newsletter__privacy" style="margin:10px 0 0;font-size:12px;line-height:1.5;"><?php echo esc_html($english ? 'This consent covers only the monthly podcast newsletter and ticketed event updates. See our ' : 'Bu izin yalnızca aylık podcast bülteni ve biletli etkinlik duyurularını kapsar. Ayrıntılar için '); ?><a href="<?php echo esc_url(home_url('/gizlilik-politikasi/')); ?>"><?php echo esc_html($english ? 'privacy notice (Turkish)' : 'Gizlilik Politikası'); ?></a>.</p>
                 <p class="rt-newsletter__status" role="status" aria-live="polite" data-rt-newsletter-status><?php
                     if ($status === 'subscribed') {
                         echo esc_html($english ? 'Your monthly subscription is active.' : 'Aylık aboneliğin etkinleştirildi.');
@@ -214,6 +215,12 @@ final class RadioTEDU_Newsletter
             return;
         }
 
+        $issueDecision = sanitize_key((string) ($_REQUEST['issue_decision'] ?? ''));
+        if ($issueDecision !== '') {
+            self::render_issue_decision($issueDecision);
+            return;
+        }
+
         status_header(200);
         nocache_headers();
         $token = self::token((string) ($_REQUEST['token'] ?? ''));
@@ -273,6 +280,57 @@ final class RadioTEDU_Newsletter
                     </form>
                 </div>
                 <a class="rt-newsletter-manage__account" href="<?php echo esc_url(home_url($english ? '/en/login/' : '/giris/')); ?>"><?php echo esc_html($english ? 'Continue to RadioTEDU ERP sign-in' : 'RadioTEDU ERP girişine devam et'); ?></a>
+            <?php endif; ?>
+        </section>
+        <?php
+        get_footer();
+        exit;
+    }
+
+    private static function render_issue_decision(string $decision): void
+    {
+        status_header(200);
+        nocache_headers();
+        $issueKey = sanitize_text_field(wp_unslash((string) ($_REQUEST['issue'] ?? '')));
+        $decisionToken = self::token((string) ($_REQUEST['decision_token'] ?? ''));
+        $validIssue = preg_match('/^\d{4}-\d{2}-\d{2}$/', $issueKey) === 1;
+        $valid = $decision === 'reject'
+            && $validIssue
+            && $decisionToken !== ''
+            && hash_equals(self::issue_decision_token($issueKey, $decision), $decisionToken);
+        $message = '';
+        $saved = $valid ? get_option(self::issue_decision_option($issueKey), '') : '';
+
+        if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nonce = sanitize_text_field(wp_unslash((string) ($_POST['newsletter_issue_nonce'] ?? '')));
+            if (wp_verify_nonce($nonce, 'radiotedu_newsletter_issue_' . $issueKey . '_' . $decision)) {
+                update_option(self::issue_decision_option($issueKey), 'rejected', false);
+                $saved = 'rejected';
+                $message = 'Bu ayki podcast bülteni gönderilmeyecek.';
+            } else {
+                $message = 'İşlem doğrulanamadı. E-postadaki bağlantıyı yeniden açıp tekrar deneyin.';
+            }
+        }
+
+        get_header();
+        ?>
+        <section class="rt-newsletter-manage">
+            <p class="rt-kicker">RADIOTEDU / BÜLTEN ONAYI</p>
+            <h1><?php echo esc_html($valid ? wp_date('F Y', strtotime($issueKey), new DateTimeZone('Europe/Istanbul')) : 'Bağlantı doğrulanamadı'); ?></h1>
+            <?php if (!$valid): ?>
+                <p>Bu onay bağlantısı geçersiz veya süresi dolmuş.</p>
+            <?php elseif ($saved === 'rejected'): ?>
+                <p class="rt-newsletter-manage__notice" role="status">Bu ayki podcast bülteni gönderilmeyecek.</p>
+            <?php else: ?>
+                <?php if ($message !== ''): ?><p class="rt-newsletter-manage__notice" role="status"><?php echo esc_html($message); ?></p><?php endif; ?>
+                <p>Bu ayki podcast bülteninin gönderilmesini durdurmak istiyor musunuz?</p>
+                <form method="post" action="<?php echo esc_url(self::issue_decision_url($issueKey, $decision)); ?>">
+                    <?php wp_nonce_field('radiotedu_newsletter_issue_' . $issueKey . '_' . $decision, 'newsletter_issue_nonce'); ?>
+                    <input type="hidden" name="issue" value="<?php echo esc_attr($issueKey); ?>">
+                    <input type="hidden" name="issue_decision" value="reject">
+                    <input type="hidden" name="decision_token" value="<?php echo esc_attr($decisionToken); ?>">
+                    <button class="rt-button rt-button--primary" type="submit">Bu ay bülteni gönderme</button>
+                </form>
             <?php endif; ?>
         </section>
         <?php
@@ -353,11 +411,82 @@ final class RadioTEDU_Newsletter
                 'ends_at' => $end->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
                 'location' => substr(sanitize_text_field((string) ($event['location'] ?? '')), 0, 190),
                 'image_url' => esc_url_raw((string) ($event['image_url'] ?? '')),
+                'ticket_url' => esc_url_raw((string) ($event['url'] ?? '')),
+                'category' => substr(sanitize_text_field((string) ($event['category'] ?? '')), 0, 60),
             ];
         }
         usort($clean, static fn(array $left, array $right): int => strcmp($left['starts_at'], $right['starts_at']));
         update_option('radiotedu_newsletter_upcoming_events', $clean, false);
         return ['seen' => count($clean)];
+    }
+
+    public static function sync_ticket_feed(): array
+    {
+        $response = wp_remote_get(home_url('/bilet/feed.php'), [
+            'timeout' => 8,
+            'redirection' => 2,
+            'headers' => ['Accept' => 'application/json'],
+        ]);
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return ['ok' => false, 'seen' => 0];
+        }
+
+        $feed = json_decode((string) wp_remote_retrieve_body($response), true);
+        if (!is_array($feed) || !is_array($feed['upcoming'] ?? null)) {
+            return ['ok' => false, 'seen' => 0];
+        }
+
+        $timezone = new DateTimeZone('Europe/Istanbul');
+        $clean = [];
+        foreach (array_slice($feed['upcoming'], 0, 24) as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+            $id = absint($event['id'] ?? 0);
+            $title = sanitize_text_field((string) ($event['title'] ?? ''));
+            $date = sanitize_text_field((string) ($event['date'] ?? ''));
+            if ($id < 1 || $title === '' || $date === '') {
+                continue;
+            }
+            try {
+                $start = new DateTimeImmutable($date, $timezone);
+                $endTime = sanitize_text_field((string) ($event['end_time'] ?? ''));
+                $end = $endTime !== ''
+                    ? new DateTimeImmutable($start->format('Y-m-d') . ' ' . $endTime, $timezone)
+                    : $start;
+                if ($end < $start) {
+                    $end = $end->modify('+1 day');
+                }
+            } catch (Throwable) {
+                continue;
+            }
+
+            $ticketUrl = esc_url_raw((string) ($event['url'] ?? ''));
+            $ticketHost = wp_parse_url($ticketUrl, PHP_URL_HOST);
+            $siteHost = wp_parse_url(home_url('/'), PHP_URL_HOST);
+            if (!is_string($ticketHost) || !is_string($siteHost) || strtolower($ticketHost) !== strtolower($siteHost)) {
+                $ticketUrl = home_url('/bilet/');
+            }
+            $clean[] = [
+                'id' => 'bilet-' . $id,
+                'title' => substr($title, 0, 190),
+                'description' => wp_trim_words(wp_strip_all_tags((string) ($event['description'] ?? '')), 30),
+                'starts_at' => $start->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
+                'ends_at' => $end->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
+                'location' => substr(sanitize_text_field((string) ($event['location'] ?? '')), 0, 190),
+                'image_url' => esc_url_raw((string) ($event['image'] ?? '')),
+                'ticket_url' => $ticketUrl,
+                'category' => substr(sanitize_text_field((string) ($event['category'] ?? '')), 0, 60),
+                'tedu_price' => is_numeric($event['tedu_price'] ?? null) ? (float) $event['tedu_price'] : null,
+                'external_price' => is_numeric($event['external_price'] ?? null) ? (float) $event['external_price'] : null,
+                'tedu_only' => !empty($event['tedu_only']),
+            ];
+        }
+
+        usort($clean, static fn(array $left, array $right): int => strcmp($left['starts_at'], $right['starts_at']));
+        update_option('radiotedu_newsletter_ticket_events', $clean, false);
+        update_option('radiotedu_newsletter_ticket_feed_checked_at', gmdate('Y-m-d H:i:s'), false);
+        return ['ok' => true, 'seen' => count($clean)];
     }
 
     public static function run_scheduled(?DateTimeImmutable $clock = null): array
@@ -367,6 +496,8 @@ final class RadioTEDU_Newsletter
         if (self::is_paused()) {
             return ['paused' => true, 'queued' => 0, 'sent' => 0];
         }
+
+        $ticketSync = self::sync_ticket_feed();
 
         $start = new DateTimeImmutable((string) self::$config['production_start'], $timezone);
         $firstThisMonth = $now->modify('first day of this month')->setTime((int) self::$config['send_hour'], 0);
@@ -381,30 +512,34 @@ final class RadioTEDU_Newsletter
         }
 
         $queued = 0;
+        $sent = 0;
         $currentIssue = $firstThisMonth;
-        if ($currentIssue >= $start && $now >= $currentIssue && $now < $currentIssue->modify('+36 hours')) {
-            $queued = self::ensure_issue_queue($currentIssue);
+        if (!self::is_distribution_held()) {
+            if ($currentIssue >= $start && $now >= $currentIssue && $now < $currentIssue->modify('+36 hours')) {
+                $queued = self::ensure_issue_queue($currentIssue);
+            }
+            $sent = self::process_queue($now);
         }
-
-        $sent = self::process_queue($now);
-        return ['paused' => false, 'queued' => $queued, 'sent' => $sent];
+        return ['paused' => false, 'distribution_held' => self::is_distribution_held(), 'ticket_feed' => $ticketSync, 'queued' => $queued, 'sent' => $sent];
     }
 
     public static function send_test(string $recipient, int $windowDays = 30): bool
     {
         global $wpdb;
         $recipient = strtolower(sanitize_email($recipient));
-        if (!hash_equals(strtolower((string) self::$config['test_recipient']), $recipient)) {
-            throw new RuntimeException('Manual newsletter tests are restricted to the configured test recipient.');
+        if (!self::is_test_recipient($recipient)) {
+            throw new RuntimeException('Manual newsletter tests are restricted to the approved test recipients.');
         }
         $windowDays = $windowDays === 90 ? 90 : 30;
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul'));
-        $issueDate = $now->setTime((int) self::$config['send_hour'], 0);
+        $issueDate = $now;
         $issueKey = $issueDate->format('Y-m-d');
+        $testKind = 'test-' . $windowDays . '-v2';
         $recipientHash = self::email_hash($recipient);
         $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM " . self::deliveries_table() . " WHERE issue_key = %s AND kind = 'test' AND recipient_hash = %s AND status = 'sent'",
+            "SELECT id FROM " . self::deliveries_table() . " WHERE issue_key = %s AND kind = %s AND recipient_hash = %s AND status = 'sent'",
             $issueKey,
+            $testKind,
             $recipientHash
         ));
         if ($existing) {
@@ -413,9 +548,10 @@ final class RadioTEDU_Newsletter
         $episodes = self::episode_snapshot($issueDate->modify('-' . $windowDays . ' days'), $issueDate);
         $ok = self::send_message($recipient, 'tr', $issueDate, $episodes, 'test', 'TEST / ', $windowDays);
         $wpdb->query($wpdb->prepare(
-            "INSERT INTO " . self::deliveries_table() . " (issue_key,subscriber_id,recipient_hash,kind,language,status,attempt_count,scheduled_at,sent_at,last_error) VALUES (%s,0,%s,'test','tr',%s,1,%s,%s,%s) ON DUPLICATE KEY UPDATE status=VALUES(status),attempt_count=attempt_count+1,sent_at=VALUES(sent_at),last_error=VALUES(last_error)",
+            "INSERT INTO " . self::deliveries_table() . " (issue_key,subscriber_id,recipient_hash,kind,language,status,attempt_count,scheduled_at,sent_at,last_error) VALUES (%s,0,%s,%s,'tr',%s,1,%s,%s,%s) ON DUPLICATE KEY UPDATE status=VALUES(status),attempt_count=attempt_count+1,sent_at=VALUES(sent_at),last_error=VALUES(last_error)",
             $issueKey,
             $recipientHash,
+            $testKind,
             $ok ? 'sent' : 'failed',
             gmdate('Y-m-d H:i:s'),
             $ok ? gmdate('Y-m-d H:i:s') : null,
@@ -439,16 +575,24 @@ final class RadioTEDU_Newsletter
         global $wpdb;
         return [
             'paused' => self::is_paused(),
+            'distribution_held' => self::is_distribution_held(),
             'production_start' => (string) self::$config['production_start'],
-            'active_subscribers' => (int) $wpdb->get_var("SELECT COUNT(*) FROM " . self::subscribers_table() . " WHERE status = 'active' AND (source_web = 1 OR source_erp = 1)"),
+            'active_subscribers' => (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM " . self::subscribers_table() . " WHERE status = 'active' AND source_web = 1 AND consent_version = %s AND consent_at IS NOT NULL",
+                self::CONSENT_VERSION
+            )),
             'queued_deliveries' => (int) $wpdb->get_var("SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE status = 'queued'"),
             'upcoming_events' => count(self::upcoming_events()),
+            'ticket_feed_checked_at' => (string) get_option('radiotedu_newsletter_ticket_feed_checked_at', ''),
         ];
     }
 
     private static function ensure_issue_queue(DateTimeImmutable $issueDate): int
     {
         global $wpdb;
+        if (self::is_issue_rejected($issueDate)) {
+            return 0;
+        }
         $issueKey = $issueDate->format('Y-m-d');
         $issue = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . self::issues_table() . " WHERE issue_key = %s", $issueKey), ARRAY_A);
         if (!is_array($issue)) {
@@ -470,7 +614,10 @@ final class RadioTEDU_Newsletter
             return 0;
         }
 
-        $eligible = $wpdb->get_results("SELECT id, email_hash, language FROM " . self::subscribers_table() . " WHERE status = 'active' AND (source_web = 1 OR source_erp = 1)", ARRAY_A);
+        $eligible = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, email_hash, language FROM " . self::subscribers_table() . " WHERE status = 'active' AND source_web = 1 AND consent_version = %s AND consent_at IS NOT NULL",
+            self::CONSENT_VERSION
+        ), ARRAY_A);
         $queued = 0;
         foreach ($eligible as $subscriber) {
             $inserted = $wpdb->query($wpdb->prepare(
@@ -493,21 +640,28 @@ final class RadioTEDU_Newsletter
         global $wpdb;
         $limit = min(self::MAX_BATCH, max(1, (int) self::$config['batch_size']));
         $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT d.*, s.email_ciphertext, s.management_token_hash, s.status AS subscriber_status, s.source_web, s.source_erp, i.episode_ids FROM " . self::deliveries_table() . " d JOIN " . self::subscribers_table() . " s ON s.id = d.subscriber_id JOIN " . self::issues_table() . " i ON i.issue_key = d.issue_key WHERE d.status = 'queued' AND d.kind = 'issue' AND d.scheduled_at <= %s ORDER BY d.id ASC LIMIT %d",
+            "SELECT d.*, s.email_ciphertext, s.management_token_hash, s.status AS subscriber_status, s.source_web, s.source_erp, s.consent_version, s.consent_at, i.episode_ids FROM " . self::deliveries_table() . " d JOIN " . self::subscribers_table() . " s ON s.id = d.subscriber_id JOIN " . self::issues_table() . " i ON i.issue_key = d.issue_key WHERE d.status = 'queued' AND d.kind = 'issue' AND d.scheduled_at <= %s ORDER BY d.id ASC LIMIT %d",
             gmdate('Y-m-d H:i:s'),
             $limit
         ), ARRAY_A);
         $sent = 0;
         foreach ($rows as $row) {
-            if (self::is_paused()) {
+            if (self::is_paused() || self::is_distribution_held()) {
                 break;
             }
-            if ($row['subscriber_status'] !== 'active' || ((int) $row['source_web'] !== 1 && (int) $row['source_erp'] !== 1)) {
+            $issueDate = new DateTimeImmutable((string) $row['issue_key'] . ' ' . (int) self::$config['send_hour'] . ':00:00', new DateTimeZone('Europe/Istanbul'));
+            if (self::is_issue_rejected($issueDate)) {
+                $wpdb->update(self::deliveries_table(), ['status' => 'skipped', 'last_error' => 'This issue was rejected.'], ['id' => (int) $row['id']]);
+                continue;
+            }
+            if ($row['subscriber_status'] !== 'active'
+                || (int) $row['source_web'] !== 1
+                || (string) $row['consent_version'] !== self::CONSENT_VERSION
+                || empty($row['consent_at'])) {
                 $wpdb->update(self::deliveries_table(), ['status' => 'skipped', 'last_error' => 'Subscriber is not eligible.'], ['id' => (int) $row['id']]);
                 continue;
             }
             $email = self::decrypt_email((string) $row['email_ciphertext']);
-            $issueDate = new DateTimeImmutable((string) $row['issue_key'] . ' ' . (int) self::$config['send_hour'] . ':00:00', new DateTimeZone('Europe/Istanbul'));
             $ids = json_decode((string) $row['episode_ids'], true);
             $episodes = self::episodes_by_ids(is_array($ids) ? array_map('absint', $ids) : []);
             $ok = self::send_message($email, self::language((string) $row['language']), $issueDate, $episodes, 'issue');
@@ -560,7 +714,7 @@ final class RadioTEDU_Newsletter
         }
         $now = new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul'));
         $start = new DateTimeImmutable((string) self::$config['production_start'], new DateTimeZone('Europe/Istanbul'));
-        if ($kind === 'test' && !hash_equals(strtolower((string) self::$config['test_recipient']), $recipient)) {
+        if ($kind === 'test' && !self::is_test_recipient($recipient)) {
             return false;
         }
         if ($kind === 'preview' && (!hash_equals(strtolower((string) self::$config['preview_recipient']), $recipient) || $now < $start->modify('-2 days'))) {
@@ -580,6 +734,12 @@ final class RadioTEDU_Newsletter
             : ($language === 'en'
                 ? 'RadioTEDU Monthly Podcasts · ' . $issueDate->format('F Y')
                 : 'RadioTEDU Aylık Podcastler · ' . wp_date('F Y', $issueDate->getTimestamp(), new DateTimeZone('Europe/Istanbul'))));
+        if ($kind === 'test') {
+            $subject = $subjectPrefix . ($language === 'en'
+                ? 'RadioTEDU Podcast Selection · The Latest ' . $windowDays . ' Days'
+                : 'RadioTEDU Podcast Seçkisi · Son ' . $windowDays . ' Gün');
+        }
+        $subject = self::repair_email_text_encoding($subject);
         $html = self::email_html($language, $issueDate, $episodes, self::upcoming_events(), $manageUrl, $kind, $windowDays);
         $headers = [
             'Content-Type: text/html; charset=UTF-8',
@@ -589,6 +749,25 @@ final class RadioTEDU_Newsletter
         return wp_mail($recipient, $subject, $html, $headers);
     }
 
+    private static function repair_email_text_encoding(string $text): string
+    {
+        $repairSegment = static function (string $segment): string {
+            if (!preg_match('/(?:Ã.|Ä.|Å.|Â.|â€)/u', $segment) || !function_exists('iconv')) {
+                return $segment;
+            }
+            $decoded = @iconv('Windows-1252', 'UTF-8//IGNORE', $segment);
+            return is_string($decoded) ? $decoded : $segment;
+        };
+
+        if (!str_contains($text, '<')) {
+            return $repairSegment($text);
+        }
+        $repaired = preg_replace_callback('/>([^<]+)</u', static function (array $matches) use ($repairSegment): string {
+            return '>' . $repairSegment($matches[1]) . '<';
+        }, $text);
+        return is_string($repaired) ? $repaired : $text;
+    }
+
     private static function email_html(string $language, DateTimeImmutable $issueDate, array $episodes, array $events, string $manageUrl, string $kind, int $windowDays = 30): string
     {
         $english = $language === 'en';
@@ -596,7 +775,11 @@ final class RadioTEDU_Newsletter
         $technologyUrl = home_url($english ? '/en/technology/' : '/teknoloji/');
         $eventsUrl = home_url($english ? '/en/events/' : '/bilet/');
         $logo = get_theme_file_uri('/assets/images/radiotedu-logo.png');
-        $windowEnd = $kind === 'preview' ? new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul')) : $issueDate;
+        $privacyUrl = home_url('/gizlilik-politikasi/');
+        $instagramUrl = 'https://www.instagram.com/radiotedu/';
+        $youtubeUrl = 'https://www.youtube.com/@RadioTEDU';
+        $spotifyUrl = 'https://open.spotify.com/user/31qub2lbtxckv7cjzuxgcv7qes4a/playlists';
+        $windowEnd = in_array($kind, ['preview', 'test'], true) ? new DateTimeImmutable('now', new DateTimeZone('Europe/Istanbul')) : $issueDate;
         $windowStart = $windowEnd->modify('-' . $windowDays . ' days');
         $title = $english ? 'The latest ' . $windowDays . ' days in podcasts.' : 'Podcastlerle son ' . $windowDays . ' gün.';
         $period = $windowStart->format('d.m.Y') . ' · ' . $windowEnd->format('d.m.Y');
@@ -607,6 +790,11 @@ final class RadioTEDU_Newsletter
         <body style="margin:0;background:#f2efe8;color:#11100f;font-family:Arial,Helvetica,sans-serif;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f2efe8;"><tr><td align="center">
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:680px;background:#fffdf8;">
+                <?php if ($kind === 'preview'): ?>
+                    <tr><td style="padding:12px 20px;background:#11100f;color:#ffffff;font-size:13px;font-weight:700;">
+                        <a href="<?php echo esc_url(self::issue_decision_url($issueDate->format('Y-m-d'), 'reject')); ?>" style="display:inline-block;background:#ed1c24;color:#ffffff;text-decoration:none;padding:12px 16px;font-weight:700;"><?php echo esc_html($english ? 'DO NOT SEND THIS MONTH' : 'BU AY BÜLTENİ GÖNDERME'); ?></a>
+                    </td></tr>
+                <?php endif; ?>
                 <tr><td style="background:#ed1c24;padding:12px 20px;color:#ffffff;font-size:14px;font-weight:700;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
                         <td><?php echo esc_html($english ? 'Discover RadioTEDU technology!' : 'RadioTEDU’nün teknolojisini keşfet!'); ?></td>
@@ -643,6 +831,7 @@ final class RadioTEDU_Newsletter
                     </td></tr>
                     <?php foreach ($events as $event): ?>
                         <?php
+                        $eventUrl = !empty($event['ticket_url']) ? (string) $event['ticket_url'] : $eventsUrl;
                         try {
                             $eventStart = (new DateTimeImmutable((string) $event['starts_at']))->setTimezone(new DateTimeZone('Europe/Istanbul'));
                             $eventDate = wp_date($english ? 'F j, Y · H:i' : 'd.m.Y · H:i', $eventStart->getTimestamp(), new DateTimeZone('Europe/Istanbul'));
@@ -652,12 +841,13 @@ final class RadioTEDU_Newsletter
                         ?>
                         <tr><td style="padding:20px 36px;border-top:1px solid #d4cec4;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
-                                <?php if (!empty($event['image_url'])): ?><td width="104" valign="top" style="padding-right:20px;"><a href="<?php echo esc_url($eventsUrl); ?>"><img src="<?php echo esc_url((string) $event['image_url']); ?>" width="104" height="104" alt="" style="display:block;width:104px;height:104px;object-fit:cover;background:#11100f;"></a></td><?php endif; ?>
+                                <?php if (!empty($event['image_url'])): ?><td width="104" valign="top" style="padding-right:20px;"><a href="<?php echo esc_url($eventUrl); ?>"><img src="<?php echo esc_url((string) $event['image_url']); ?>" width="104" height="104" alt="" style="display:block;width:104px;height:104px;object-fit:cover;background:#11100f;"></a></td><?php endif; ?>
                                 <td valign="top">
+                                    <?php if (!empty($event['category'])): ?><p style="margin:0 0 6px;color:#ed1c24;font-size:10px;font-weight:700;letter-spacing:1px;"><?php echo esc_html((string) $event['category']); ?></p><?php endif; ?>
                                     <h3 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.1;font-weight:400;"><?php echo esc_html((string) $event['title']); ?></h3>
                                     <p style="margin:0 0 8px;color:#ed1c24;font-size:12px;font-weight:700;"><?php echo esc_html($eventDate); ?><?php if (!empty($event['location'])): ?> · <?php echo esc_html((string) $event['location']); ?><?php endif; ?></p>
                                     <?php if (!empty($event['description'])): ?><p style="margin:0 0 11px;color:#66615a;font-size:13px;line-height:1.45;"><?php echo esc_html((string) $event['description']); ?></p><?php endif; ?>
-                                    <a href="<?php echo esc_url($eventsUrl); ?>" style="display:inline-block;border:1px solid #11100f;color:#11100f;text-decoration:none;padding:9px 13px;font-size:11px;font-weight:700;"><?php echo esc_html($english ? 'VIEW EVENTS' : 'ETKİNLİKLERİ GÖR'); ?></a>
+                                    <a href="<?php echo esc_url($eventUrl); ?>" style="display:inline-block;border:1px solid #11100f;color:#11100f;text-decoration:none;padding:9px 13px;font-size:11px;font-weight:700;"><?php echo esc_html($english ? 'TICKETS & DETAILS' : 'BİLET VE DETAYLAR'); ?></a>
                                 </td>
                             </tr></table>
                         </td></tr>
@@ -671,7 +861,22 @@ final class RadioTEDU_Newsletter
             </table>
         </td></tr></table></body></html>
         <?php
-        return (string) ob_get_clean();
+        $html = (string) ob_get_clean();
+        if ($kind === 'test') {
+            $testLabel = $english ? $windowDays . '-DAY TEST SELECTION' : $windowDays . ' GÜNLÜK TEST SEÇKİSİ';
+            $currentLabel = $english ? 'MONTHLY PODCAST LETTER' : 'AYLIK PODCAST MEKTUBU';
+            $html = str_replace($currentLabel, $testLabel, $html);
+        }
+        $socialFooter = '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f2efe8;"><tr><td align="center" style="padding:16px 20px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:680px;background:#fffdf8;"><tr><td align="center" style="padding:20px 16px;border-top:1px solid #d4cec4;font:12px/1.7 Arial,Helvetica,sans-serif;color:#11100f;">'
+            . esc_html($english ? 'Follow RadioTEDU' : "RadioTEDU'yu takip et") . ' · '
+            . '<a href="' . esc_url($instagramUrl) . '" style="color:#11100f;">Instagram</a> · '
+            . '<a href="' . esc_url($youtubeUrl) . '" style="color:#11100f;">YouTube</a> · '
+            . '<a href="' . esc_url($spotifyUrl) . '" style="color:#11100f;">Spotify</a>'
+            . '<p style="margin:10px 0 0;color:#66615a;">' . esc_html($english ? 'You receive this monthly selection because you chose to subscribe. Unsubscribe at any time.' : 'Bu aylık seçkiyi isteyerek abone olduğun için alıyorsun. İstediğin zaman abonelikten çıkabilirsin.') . '</p>'
+            . '<p style="margin:8px 0 0;"><a href="' . esc_url($privacyUrl) . '" style="color:#66615a;">' . esc_html($english ? 'Privacy notice (Turkish)' : 'Gizlilik bildirimi') . '</a></p>'
+            . '</td></tr></table></td></tr></table>';
+        $html = str_replace('</body></html>', $socialFooter . '</body></html>', $html);
+        return self::repair_email_text_encoding($html);
     }
 
     private static function episode_snapshot(DateTimeImmutable $start, DateTimeImmutable $end): array
@@ -695,21 +900,25 @@ final class RadioTEDU_Newsletter
     private static function upcoming_events(): array
     {
         $events = get_option('radiotedu_newsletter_upcoming_events', []);
-        if (!is_array($events)) {
-            return [];
-        }
+        $ticketEvents = get_option('radiotedu_newsletter_ticket_events', []);
+        $events = array_merge(is_array($events) ? $events : [], is_array($ticketEvents) ? $ticketEvents : []);
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-        $upcoming = array_values(array_filter($events, static function ($event) use ($now): bool {
+        $byId = [];
+        foreach ($events as $event) {
             if (!is_array($event) || empty($event['title']) || empty($event['starts_at'])) {
-                return false;
+                continue;
             }
             try {
                 $end = new DateTimeImmutable((string) ($event['ends_at'] ?? $event['starts_at']));
-                return $end >= $now;
+                if ($end >= $now) {
+                    $key = (string) ($event['id'] ?? md5((string) $event['title'] . '|' . (string) $event['starts_at']));
+                    $byId[$key] = $event;
+                }
             } catch (Throwable) {
-                return false;
+                continue;
             }
-        }));
+        }
+        $upcoming = array_values($byId);
         usort($upcoming, static fn(array $left, array $right): int => strcmp((string) $left['starts_at'], (string) $right['starts_at']));
         return array_slice($upcoming, 0, 8);
     }
@@ -845,7 +1054,7 @@ final class RadioTEDU_Newsletter
 
     private static function manage_url(string $token, string $language): string
     {
-        $path = $language === 'en' ? '/en/erp/newsletter/' : '/erp/newsletter/';
+        $path = $language === 'en' ? '/en/newsletter/preferences/' : '/bulten/tercihler/';
         return add_query_arg(['token' => $token, 'lang' => $language], home_url($path));
     }
 
@@ -922,20 +1131,64 @@ final class RadioTEDU_Newsletter
         return is_file((string) self::$config['pause_file']);
     }
 
+    private static function is_distribution_held(): bool
+    {
+        return is_file((string) self::$config['send_hold_file']);
+    }
+
+    private static function issue_decision_option(string $issueKey): string
+    {
+        return 'radiotedu_newsletter_issue_decision_' . $issueKey;
+    }
+
+    private static function is_issue_rejected(DateTimeImmutable $issueDate): bool
+    {
+        return get_option(self::issue_decision_option($issueDate->format('Y-m-d')), '') === 'rejected';
+    }
+
+    private static function issue_decision_token(string $issueKey, string $decision): string
+    {
+        return hash_hmac('sha256', 'radiotedu-newsletter-issue|' . $issueKey . '|' . $decision, wp_salt('auth'));
+    }
+
+    private static function issue_decision_url(string $issueKey, string $decision): string
+    {
+        return add_query_arg([
+            'issue_decision' => $decision,
+            'issue' => $issueKey,
+            'decision_token' => self::issue_decision_token($issueKey, $decision),
+        ], home_url('/bulten/tercihler/'));
+    }
+
+    private static function is_test_recipient(string $recipient): bool
+    {
+        foreach ((array) self::$config['test_recipients'] as $allowedRecipient) {
+            if (hash_equals(strtolower((string) $allowedRecipient), strtolower($recipient))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static function load_config(): array
     {
         $defaults = [
             'production_start' => '2026-10-01 10:00:00',
             'send_hour' => 10,
             'preview_recipient' => 'tuna.ozsari@tedu.edu.tr',
-            'test_recipient' => 'arda.akgul@tedu.edu.tr',
+            'test_recipients' => ['arda.akgul@tedu.edu.tr', 'tuna.ozsari@tedu.edu.tr'],
             'batch_size' => 5,
             'delay_seconds' => 8,
             'pause_file' => 'C:/RadioTEDU/state/newsletter-paused.flag',
+            'send_hold_file' => 'C:/RadioTEDU/state/newsletter-send-held.flag',
         ];
         $path = 'C:/RadioTEDU/config/newsletter.php';
         $custom = is_file($path) ? require $path : [];
-        return array_merge($defaults, is_array($custom) ? $custom : []);
+        $config = array_merge($defaults, is_array($custom) ? $custom : []);
+        $config['preview_recipient'] = $defaults['preview_recipient'];
+        $config['test_recipients'] = $defaults['test_recipients'];
+        $config['send_hold_file'] = $defaults['send_hold_file'];
+        return $config;
     }
 
     private static function subscribers_table(): string

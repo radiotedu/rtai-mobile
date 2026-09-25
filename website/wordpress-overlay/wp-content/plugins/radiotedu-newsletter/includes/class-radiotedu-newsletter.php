@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 final class RadioTEDU_Newsletter
 {
     private const CONSENT_VERSION = 'newsletter-2026-09-25-podcasts-tickets';
-    private const MAX_BATCH = 5;
+    private const MAX_BATCH = 250;
 
     private static array $config = [];
 
@@ -578,7 +578,7 @@ final class RadioTEDU_Newsletter
             'distribution_held' => self::is_distribution_held(),
             'production_start' => (string) self::$config['production_start'],
             'active_subscribers' => (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM " . self::subscribers_table() . " WHERE status = 'active' AND source_web = 1 AND consent_version = %s AND consent_at IS NOT NULL",
+                "SELECT COUNT(*) FROM " . self::subscribers_table() . " WHERE status = 'active' AND (source_web = 1 OR source_erp = 1) AND consent_version = %s AND consent_at IS NOT NULL",
                 self::CONSENT_VERSION
             )),
             'queued_deliveries' => (int) $wpdb->get_var("SELECT COUNT(*) FROM " . self::deliveries_table() . " WHERE status = 'queued'"),
@@ -615,7 +615,7 @@ final class RadioTEDU_Newsletter
         }
 
         $eligible = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, email_hash, language FROM " . self::subscribers_table() . " WHERE status = 'active' AND source_web = 1 AND consent_version = %s AND consent_at IS NOT NULL",
+            "SELECT id, email_hash, language FROM " . self::subscribers_table() . " WHERE status = 'active' AND (source_web = 1 OR source_erp = 1) AND consent_version = %s AND consent_at IS NOT NULL",
             self::CONSENT_VERSION
         ), ARRAY_A);
         $queued = 0;
@@ -645,17 +645,35 @@ final class RadioTEDU_Newsletter
             $limit
         ), ARRAY_A);
         $sent = 0;
+        $timezone = new DateTimeZone('Europe/Istanbul');
+        $expiredIssues = [];
         foreach ($rows as $row) {
             if (self::is_paused() || self::is_distribution_held()) {
                 break;
             }
-            $issueDate = new DateTimeImmutable((string) $row['issue_key'] . ' ' . (int) self::$config['send_hour'] . ':00:00', new DateTimeZone('Europe/Istanbul'));
+            $issueDate = new DateTimeImmutable((string) $row['issue_key'] . ' ' . (int) self::$config['send_hour'] . ':00:00', $timezone);
+            $issueKey = $issueDate->format('Y-m-d');
+            $deadline = $issueDate->modify('+1 hour');
+            if (new DateTimeImmutable('now', $timezone) >= $deadline) {
+                if (!isset($expiredIssues[$issueKey])) {
+                    $wpdb->update(self::deliveries_table(), [
+                        'status' => 'skipped',
+                        'last_error' => 'The one-hour delivery window ended.',
+                    ], [
+                        'issue_key' => $issueKey,
+                        'kind' => 'issue',
+                        'status' => 'queued',
+                    ]);
+                    $expiredIssues[$issueKey] = true;
+                }
+                continue;
+            }
             if (self::is_issue_rejected($issueDate)) {
                 $wpdb->update(self::deliveries_table(), ['status' => 'skipped', 'last_error' => 'This issue was rejected.'], ['id' => (int) $row['id']]);
                 continue;
             }
             if ($row['subscriber_status'] !== 'active'
-                || (int) $row['source_web'] !== 1
+                || ((int) $row['source_web'] !== 1 && (int) $row['source_erp'] !== 1)
                 || (string) $row['consent_version'] !== self::CONSENT_VERSION
                 || empty($row['consent_at'])) {
                 $wpdb->update(self::deliveries_table(), ['status' => 'skipped', 'last_error' => 'Subscriber is not eligible.'], ['id' => (int) $row['id']]);
@@ -1173,12 +1191,12 @@ final class RadioTEDU_Newsletter
     private static function load_config(): array
     {
         $defaults = [
-            'production_start' => '2026-10-01 10:00:00',
-            'send_hour' => 10,
+            'production_start' => '2026-10-01 08:00:00',
+            'send_hour' => 8,
             'preview_recipient' => 'tuna.ozsari@tedu.edu.tr',
             'test_recipients' => ['arda.akgul@tedu.edu.tr', 'tuna.ozsari@tedu.edu.tr'],
-            'batch_size' => 5,
-            'delay_seconds' => 8,
+            'batch_size' => 250,
+            'delay_seconds' => 15,
             'pause_file' => 'C:/RadioTEDU/state/newsletter-paused.flag',
             'send_hold_file' => 'C:/RadioTEDU/state/newsletter-send-held.flag',
         ];

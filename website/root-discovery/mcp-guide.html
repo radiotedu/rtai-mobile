@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="RadioTEDU MCP sunucusuna bağlanın; podcast serilerini ve bölümlerini ajanınızla adım adım keşfedin.">
+  <link rel="canonical" href="https://radiotedu.com/mcp">
+  <title>RadioTEDU MCP | Podcast keşfi ve ajan bağlantısı</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0b0b0c;
+      --paper: #f7f7f4;
+      --white: #fff;
+      --line: #c9c9c3;
+      --muted: #51514e;
+      --red: #ed1c24;
+      --red-dark: #b20e17;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--paper); }
+    body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.65; }
+    a { color: var(--red-dark); text-decoration-thickness: 1px; text-underline-offset: .2em; overflow-wrap: anywhere; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible, summary:focus-visible { outline: 3px solid var(--red-dark); outline-offset: 4px; }
+    code, pre { font-family: Consolas, "SFMono-Regular", Menlo, monospace; }
+    code { font-size: .94em; overflow-wrap: anywhere; }
+    .skip-link { position: absolute; inset: .75rem auto auto .75rem; z-index: 2; padding: .5rem .75rem; transform: translateY(-180%); background: var(--white); color: var(--ink); }
+    .skip-link:focus { transform: none; }
+    .shell { width: min(100% - 2.5rem, 75rem); margin-inline: auto; }
+    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding: 1.1rem 0; border-bottom: 1px solid var(--ink); }
+    .wordmark { color: var(--ink); font-size: .9rem; font-weight: 900; letter-spacing: .02em; text-decoration: none; }
+    .wordmark span { color: var(--red-dark); }
+    nav { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font-size: .92rem; }
+    nav a { color: var(--ink); }
+    .folio { margin: 0; color: var(--red-dark); font-size: .74rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(16rem, .75fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; padding: clamp(3rem, 8vw, 6.5rem) 0; border-bottom: 3px solid var(--ink); }
+    h1 { max-width: 12ch; margin: .45rem 0 1rem; font-size: clamp(2.7rem, 7vw, 5.8rem); line-height: .98; letter-spacing: -.055em; }
+    h2 { margin: 0 0 1rem; font-size: clamp(1.65rem, 3vw, 2.55rem); line-height: 1.1; letter-spacing: -.035em; }
+    h3 { margin: 0 0 .4rem; font-size: 1.1rem; line-height: 1.25; }
+    p { margin: .5rem 0 1rem; }
+    .lede { max-width: 58ch; color: var(--muted); font-size: clamp(1.05rem, 1.7vw, 1.25rem); }
+    .endpoint { padding: 1.5rem; border: 1px solid var(--ink); background: var(--white); box-shadow: 7px 7px 0 var(--red); }
+    .endpoint-label { margin: 0 0 .4rem; color: var(--muted); font-size: .76rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .endpoint code { display: block; padding: .7rem 0; font-size: clamp(.98rem, 2vw, 1.12rem); font-weight: 750; }
+    .endpoint ul { margin: .6rem 0 0; padding: .7rem 0 0 1.1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .93rem; }
+    .band { display: grid; grid-template-columns: minmax(12rem, .62fr) minmax(0, 1.38fr); gap: clamp(1.5rem, 6vw, 5rem); padding: clamp(2.8rem, 6vw, 5rem) 0; border-bottom: 1px solid var(--ink); }
+    .band-heading { align-self: start; }
+    .band-heading .folio { margin-bottom: .7rem; }
+    .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { position: relative; margin: 0; padding: 0 0 1.45rem 2.7rem; border-left: 1px solid var(--line); counter-increment: step; }
+    .steps li:last-child { padding-bottom: 0; border-left-color: transparent; }
+    .steps li::before { content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: -.15rem; width: 2rem; color: var(--red-dark); font-family: Consolas, monospace; font-size: .86rem; font-weight: 800; }
+    .steps p { max-width: 62ch; color: var(--muted); }
+    .query-examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+    .query-example { min-width: 0; padding-top: 1rem; border-top: 2px solid var(--ink); }
+    .query-example p { color: var(--muted); }
+    pre { max-width: 100%; margin: .8rem 0; padding: 1rem; overflow-x: auto; border-left: 3px solid var(--red); background: #eeeee9; color: var(--ink); font-size: .88rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .prompt { max-width: 68ch; margin: 1.2rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid var(--red); font-size: 1.08rem; font-weight: 650; }
+    .result-note { color: var(--muted); font-size: .94rem; }
+    .tool-list { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 2rem; }
+    .tool-list ul, .source-list { margin: .4rem 0 0; padding-left: 1.15rem; }
+    .tool-list li, .source-list li { margin: .48rem 0; }
+    .privacy-note { padding: 1.2rem 1.25rem; border-left: 4px solid var(--red); background: #eeeee9; }
+    .privacy-note p:last-child { margin-bottom: 0; }
+    .source-groups { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.5rem, 5vw, 4rem); }
+    .source-groups section { min-width: 0; }
+    .source-groups h3 { padding-bottom: .65rem; border-bottom: 1px solid var(--ink); }
+    .private-note { color: var(--muted); font-size: .92rem; }
+    details { padding: 1.1rem 0; border-top: 1px solid var(--ink); }
+    summary { width: fit-content; color: var(--ink); cursor: pointer; font-weight: 800; }
+    details[open] summary { margin-bottom: .8rem; }
+    .english-copy { max-width: 75ch; }
+    footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 2rem; padding: 1.5rem 0 2.5rem; color: var(--muted); font-size: .88rem; }
+    footer p { margin: 0; }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 1.4rem, 75rem); }
+      .masthead { align-items: flex-start; flex-direction: column; }
+      nav { gap: .4rem 1rem; }
+      .hero, .band { grid-template-columns: 1fr; }
+      .hero { gap: 1.75rem; padding: 3rem 0; }
+      .band { gap: 1rem; padding: 2.5rem 0; }
+    }
+    @media (max-width: 560px) {
+      .query-examples, .tool-list, .source-groups { grid-template-columns: 1fr; }
+      h1 { font-size: clamp(2.55rem, 14vw, 4.3rem); }
+      .endpoint { padding: 1.1rem; }
+      pre { font-size: .8rem; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ana içeriğe geç</a>
+  <div class="shell">
+    <header class="masthead">
+      <a class="wordmark" href="/" aria-label="RadioTEDU ana sayfa">Radio<span>TEDU</span></a>
+      <nav aria-label="Site bağlantıları">
+        <a href="/podcastler/">Podcast arşivi</a>
+        <a href="/agents.html">Ajan rehberi</a>
+        <a href="/gizlilik-politikasi/">Gizlilik politikası</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <header class="hero">
+        <div>
+          <p class="folio">RadioTEDU · MCP rehberi</p>
+          <h1>Podcast'leri ajanınızla keşfedin.</h1>
+          <p class="lede">RadioTEDU'nun açık podcast kataloğunu ve yayımlanmış bölümlerini bir MCP istemcisinden arayın. İnsanlar için bağlantı adımları, ajanlar için araç ve kaynak adları burada.</p>
+        </div>
+        <aside class="endpoint" aria-label="MCP bağlantı bilgileri">
+          <p class="endpoint-label">Streamable HTTP uç noktası</p>
+          <code>https://radiotedu.com/mcp</code>
+          <ul>
+            <li>Herkese açık okuma araçları için hesap gerekmez.</li>
+            <li>MCP protokolü: <code>2025-06-18</code></li>
+            <li>Podcast kataloğu: <code>radiotedu://podcasts</code></li>
+          </ul>
+        </aside>
+      </header>
+
+      <section class="band" id="baglanti">
+        <div class="band-heading">
+          <p class="folio">01 / Bağlantı</p>
+          <h2>MCP istemcisine ekleyin</h2>
+        </div>
+        <ol class="steps">
+          <li>
+            <h3>Ajan uygulamanızın MCP ayarlarını açın</h3>
+            <p>“Remote MCP server” veya benzer adlı sunucu ekleme seçeneğini bulun. Menü adı uygulamaya göre değişebilir.</p>
+          </li>
+          <li>
+            <h3>Streamable HTTP'yi seçin</h3>
+            <p>Sunucu adı olarak <code>RadioTEDU</code>, adres olarak <code>https://radiotedu.com/mcp</code> girin. Herkese açık bilgi araçları için kimlik doğrulama başlığı gerekmez.</p>
+          </li>
+          <li>
+            <h3>Bağlantıyı kaydedip podcast isteyin</h3>
+            <p>İstemci bağlantı sırasında MCP'yi başlatır ve araçları listeler. Aşağıdaki doğal dil örneğini ajana verebilir veya araç çağrısını kendiniz hazırlayabilirsiniz.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="band" id="podcast-kesfet">
+        <div class="band-heading">
+          <p class="folio">02 / Podcast keşfi</p>
+          <h2>Seriden bölüme ilerleyin</h2>
+          <p class="result-note">Seri kataloğu ve bölüm araması ayrı filtreler kullanır. Sonuçlardaki resmi RadioTEDU bağlantısını açarak dinleme sayfasına geçin.</p>
+        </div>
+        <div>
+          <p class="prompt">“RadioTEDU'da kampüs yaşamı hakkında podcast serilerini bul. Önce katalogda ara, sonra yayımlanmış ilgili bölümleri listele. Resmi bağlantıları ver ve sonuç yoksa bunu açıkça söyle.”</p>
+          <div class="query-examples">
+            <article class="query-example">
+              <h3>Podcast serisi ara</h3>
+              <p><code>search_content</code> aracını seri türü filtresiyle çağırın. Konu sorgusunu Türkçe, İngilizce veya Fransızca yazabilirsiniz.</p>
+              <pre><code>{
+  "query": "kampüs yaşamı",
+  "type": "rt_podcast_show",
+  "page": 1,
+  "per_page": 10
+}</code></pre>
+            </article>
+            <article class="query-example">
+              <h3>Yayımlanmış bölümleri ara</h3>
+              <p>Belirli bir konuya ait bölüm ararken <code>rt_podcast_episode</code> filtresini kullanın.</p>
+              <pre><code>{
+  "query": "sürdürülebilirlik",
+  "type": "rt_podcast_episode",
+  "page": 1,
+  "per_page": 10
+}</code></pre>
+            </article>
+          </div>
+          <p class="result-note">Tüm serileri görmek için <code>get_podcasts</code> aracını veya <code>radiotedu://podcasts</code> kaynağını okuyun. Arama yanıtındaki <code>has_more</code> ve <code>next_page</code> alanlarını izleyerek sonraki sayfaları isteyin. Bir sonuçtaki başlık, kısa açıklama ve kanonik URL'yi koruyun; bulunmayan bilgileri tahmin etmeyin.</p>
+        </div>
+      </section>
+
+      <section class="band" id="diger-araclar">
+        <div class="band-heading">
+          <p class="folio">03 / Diğer kullanım</p>
+          <h2>Yayını ve programı sorun</h2>
+        </div>
+        <div class="tool-list">
+          <div>
+            <h3>Canlı yayın</h3>
+            <ul>
+              <li><code>get_stations</code>: açık radyo kanalları</li>
+              <li><code>get_now_playing</code>: seçilen kanaldaki güncel parça ve zaman bilgisi</li>
+              <li><code>get_broadcast_schedule</code>: yayımlanmış yayın akışı</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Diğer herkese açık bilgiler</h3>
+            <ul>
+              <li><code>get_station_status</code>: İngilizce ve Fransızca AI istasyon durumu</li>
+              <li><code>get_focus_presets</code>: odak kanalları ve çalışma seçenekleri</li>
+              <li><code>check_studio_availability</code>: oda bilgisi ve toplu uygunluk özeti</li>
+            </ul>
+            <p class="result-note">Araç şemaları için MCP istemcisinde <code>tools/list</code>, kaynaklar için <code>resources/list</code>, hazır istemler için <code>prompts/list</code> çağırın. Sunucu kartı: <a href="/.well-known/mcp/server-card.json">/.well-known/mcp/server-card.json</a>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="band" id="gizlilik">
+        <div class="band-heading">
+          <p class="folio">04 / Veri ve onay</p>
+          <h2>Aramayı kamuya açık içerikle sınırlayın</h2>
+        </div>
+        <div class="privacy-note">
+          <p>Podcast kataloğu, arama ve yayın bilgileri kamuya açık içerik içindir; bunları okumak için hesap açmanız gerekmez. Arama sorgularına kişisel veya hassas bilgi eklemeyin. Daha fazla bilgi için <a href="/gizlilik-politikasi/">RadioTEDU gizlilik politikasına</a> bakın.</p>
+          <p><code>book_studio_slot</code> bir ERP rezervasyonu oluşturur; okuma aracı değildir. Yalnızca kullanıcı tam gün ve saati, katılımcı sayısını ve rezervasyonu açıkça onayladıktan sonra kullanılabilir. Kimlik, oturum açılmış hesaptan alınır. Rezervasyon amacına hassas bilgi yazmayın.</p>
+          <p>Stüdyo uygunluk aracı yalnızca oda bilgisi ve toplu uygunluk verir; kişi adları, iletişim bilgileri veya tekil rezervasyon kayıtlarını sunmaz.</p>
+        </div>
+      </section>
+
+      <section class="band" id="kaynaklar">
+        <div class="band-heading">
+          <p class="folio">05 / Kaynak dosyaları</p>
+          <h2>Belgeler ve uygulama kaynakları</h2>
+        </div>
+        <div class="source-groups">
+          <section aria-labelledby="public-sources">
+            <h3 id="public-sources">Herkese açık belgeler</h3>
+            <ul class="source-list">
+              <li><a href="/.well-known/mcp/server-card.json">MCP sunucu kartı</a></li>
+              <li><a href="/.well-known/agent-skills/radiotedu-discovery/SKILL.md">Ajan keşif becerisi</a></li>
+              <li><a href="/agents.html">Ajanlar için genel bağlantı rehberi</a></li>
+              <li><a href="https://github.com/radiotedu/rtai-mobile/blob/main/website/root-discovery/radiotedu-mcp.php">MCP sunucu uygulama dosyası</a> · açık kaynak deposu</li>
+              <li><a href="https://github.com/radiotedu/rtai-mobile/blob/main/website/root-discovery/mcp-guide.html">Bu rehberin kaynak dosyası</a></li>
+            </ul>
+          </section>
+          <section aria-labelledby="maintainer-sources">
+            <h3 id="maintainer-sources">ERP entegrasyon referansları</h3>
+            <ul class="source-list">
+              <li><a href="https://github.com/akgularda/radiotedu-erp/blob/main/README.md">ERP proje README dosyası</a></li>
+              <li><a href="https://github.com/akgularda/radiotedu-erp/blob/main/app/Http/Controllers/AvailabilityController.php">Uygunluk denetleyicisi</a></li>
+              <li><a href="https://github.com/akgularda/radiotedu-erp/blob/main/app/Http/Controllers/Api/SsoProfileController.php">Oturum profili denetleyicisi</a></li>
+            </ul>
+            <p class="private-note">ERP deposu özeldir; bu bağlantıları açmak için GitHub erişim yetkisi gerekir. Podcast keşfetmek veya MCP'ye bağlanmak için bu depoya erişmeniz gerekmez.</p>
+          </section>
+        </div>
+      </section>
+
+      <details lang="en">
+        <summary>English guide</summary>
+        <div class="english-copy">
+          <h2>Connect and discover RadioTEDU podcasts</h2>
+          <p>Add a remote MCP server in your MCP-capable client. Select Streamable HTTP and enter <code>https://radiotedu.com/mcp</code>. Public read-only tools do not require an account or authentication header.</p>
+          <p>Use <code>get_podcasts</code> or the <code>radiotedu://podcasts</code> resource to browse the series catalog. Use <code>search_content</code> with <code>type: "rt_podcast_show"</code> to find a series, or <code>type: "rt_podcast_episode"</code> to find published episodes. Search queries may be in Turkish, English, or French. Follow the canonical RadioTEDU URL in each result and request the next page when <code>has_more</code> is true.</p>
+          <p>Studio booking changes ERP data and requires an authenticated account plus explicit confirmation of the complete booking details. Do not put sensitive data in a search query or booking purpose. Read the <a href="/gizlilik-politikasi/">privacy policy</a>.</p>
+        </div>
+      </details>
+    </main>
+
+    <footer>
+      <p>RadioTEDU · TED University student radio and media laboratory</p>
+      <p><a href="/podcastler/">Podcast arşivi</a> · <a href="/agents.html">Ajan rehberi</a> · <a href="/">Ana sayfa</a></p>
+    </footer>
+  </div>
+</body>
+</html>

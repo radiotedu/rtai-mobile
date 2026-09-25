@@ -164,7 +164,7 @@ Public informational pages may be fetched where [robots.txt](https://radiotedu.c
   - RadioTEDU Energize: https://stream.radiotedu.com/energize
   - RadioTEDU Main Character: https://stream.radiotedu.com/maincharacter
 - Agent Interactivity & Machine-Readable Interfaces:
-  - Model Context Protocol (MCP) Streamable HTTP: https://radiotedu.com/mcp
+  - MCP Streamable HTTP endpoint, human connection steps, and podcast discovery guide: https://radiotedu.com/mcp
   - MCP Server Card: https://radiotedu.com/.well-known/mcp/server-card.json
   - Agent Skills: https://radiotedu.com/.well-known/agent-skills/radiotedu-discovery/SKILL.md
   - Public REST API: https://radiotedu.com/wp-json/radiotedu/v1/

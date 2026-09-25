@@ -1,6 +1,29 @@
 <?php
 declare(strict_types=1);
 
+// Serve the human guide only to HTML requests. MCP POST requests keep the existing JSON-RPC path.
+$requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? ''));
+$acceptHeader = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+if (($requestMethod === 'GET' || $requestMethod === 'HEAD')
+    && str_contains($acceptHeader, 'text/html')
+    && !str_contains($acceptHeader, 'text/event-stream')) {
+    header('Vary: Accept');
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: public, max-age=300, stale-while-revalidate=600');
+    header('X-Content-Type-Options: nosniff');
+    header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    $guidePath = __DIR__ . '/mcp-guide.html';
+    if (!is_file($guidePath) || !is_readable($guidePath)) {
+        http_response_code(503);
+        exit;
+    }
+    if ($requestMethod === 'GET') {
+        readfile($guidePath);
+    }
+    exit;
+}
+
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 

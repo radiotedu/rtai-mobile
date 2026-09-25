@@ -41,6 +41,7 @@ Allow: /llms-ai.txt
 Allow: /rtai/
 Allow: /technology/
 Allow: /teknoloji/
+Allow: /mcp
 Allow: /agents.html
 Allow: /.well-known/ai-catalog.json
 Allow: /.well-known/mcp/

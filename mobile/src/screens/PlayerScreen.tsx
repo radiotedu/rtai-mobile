@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Animated,
   Image,
   Modal,
@@ -43,6 +44,7 @@ import {
 } from '../services/radioFavorites';
 import {useMetadata} from '../context/MetadataContext';
 import {useChannels} from '../context/ChannelContext';
+import {useAuth} from '../context/AuthContext';
 import {useStreamPreferences} from '../hooks/useStreamPreferences';
 import type {StreamQualityPreference} from '../services/streamPreferences';
 import {useTranslation} from 'react-i18next';
@@ -54,6 +56,10 @@ import LyricsShareModal from '../components/LyricsShareModal';
 import {CampusJamModal} from '../components/CampusJamModal';
 import {MediaRouteButton} from '../components/MediaRouteButton';
 import NetInfo from '@react-native-community/netinfo';
+import {
+  setMemberFavoriteForAccount,
+  syncRadioFavoritesForAccount,
+} from '../services/memberLibraryService';
 
 const FALLBACK_ARTWORK = 'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
 
@@ -80,6 +86,8 @@ const PlayerScreen = ({route}: any) => {
   const playbackState = usePlaybackState();
   const {metadata} = useMetadata();
   const {activeChannels} = useChannels();
+  const {user} = useAuth();
+  const memberAccountId = user && !user.is_guest ? user.id : null;
   const {preferences, setPreferences} = useStreamPreferences();
   const {i18n} = useTranslation();
   const copy = (key: string, values: Record<string, string | number> = {}) =>
@@ -123,11 +131,50 @@ const PlayerScreen = ({route}: any) => {
 
   useEffect(() => {
     const unsubscribe = subscribeFavoriteChannelIds(setFavoriteIds);
+    let isCurrent = true;
     loadFavoriteChannelIds()
-      .then(setFavoriteIds)
+      .then(ids => {
+        if (isCurrent && !memberAccountId) {
+          setFavoriteIds(ids);
+        }
+      })
       .catch(() => {});
-    return unsubscribe;
-  }, []);
+    return () => {
+      isCurrent = false;
+      unsubscribe();
+    };
+  }, [memberAccountId]);
+
+  useEffect(() => {
+    if (!memberAccountId) {
+      return;
+    }
+
+    setFavoriteIds([]);
+    let isCurrent = true;
+    const syncFavorites = async () => {
+      try {
+        const ids = await syncRadioFavoritesForAccount(memberAccountId, RADIO_CHANNELS);
+        if (isCurrent) {
+          setFavoriteIds(ids);
+        }
+      } catch (error) {
+        logSafeError('player.memberFavoritesSync', error);
+      }
+    };
+
+    void syncFavorites();
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        void syncFavorites();
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+      appStateSubscription.remove();
+    };
+  }, [memberAccountId]);
 
   const channelList = activeChannels.length ? activeChannels : RADIO_CHANNELS;
 
@@ -360,6 +407,19 @@ const PlayerScreen = ({route}: any) => {
     const next = toggleFavoriteChannelId(favoriteIds, currentChannel.id);
     setFavoriteIds(next);
     saveFavoriteChannelIds(next).catch(() => {});
+    if (memberAccountId) {
+      void setMemberFavoriteForAccount(
+        memberAccountId,
+        {
+          kind: 'station',
+          contentId: currentChannel.id,
+          title: currentChannel.name,
+          subtitle: currentChannel.description,
+          artworkUrl: currentChannel.artwork,
+        },
+        next.includes(currentChannel.id),
+      );
+    }
   };
 
   const applyQualityChange = async (quality: StreamQualityPreference) => {

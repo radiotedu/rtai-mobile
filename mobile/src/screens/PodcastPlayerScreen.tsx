@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -20,6 +20,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {COLORS, SPACING} from '../theme/theme';
 import {logSafeError} from '../utils/safeLog';
+import {useAuth} from '../context/AuthContext';
 import {
   PODCAST_ID_PREFIX,
   buildPodcastTrack,
@@ -30,6 +31,11 @@ import {
 import {Podcast} from '../services/podcastService';
 import PodcastDownloadButton from '../components/PodcastDownloadButton';
 import {formatTimestamp} from '../utils/playbackTime';
+import {
+  findMemberEpisodeProgress,
+  loadMemberLibraryForAccount,
+  saveMemberEpisodeProgressForAccount,
+} from '../services/memberLibraryService';
 
 const FALLBACK_PODCAST_ARTWORK =
   'https://radiotedu.com/wp-content/uploads/2026/08/radiotedu-station-logos-v2/radiotedu.png';
@@ -42,6 +48,8 @@ export const PodcastPlayerScreen: React.FC = () => {
   const activeTrack = useActiveTrack();
   const playbackState = usePlaybackState();
   const progress = useProgress(300);
+  const {user} = useAuth();
+  const memberAccountId = user && !user.is_guest ? user.id : null;
 
   const routePodcast: Podcast | undefined = route.params?.podcast;
   const routePodcastId: string | undefined = route.params?.podcastId;
@@ -131,6 +139,126 @@ export const PodcastPlayerScreen: React.FC = () => {
       description: '',
     };
   }, [routePodcast, routePodcastId, activeTrack?.id, activeTrack?.url, displayTitle, displayHost, displayArtwork, displayDate]);
+
+  const activePodcastId =
+    typeof activeTrack?.id === 'string' && activeTrack.id.startsWith(PODCAST_ID_PREFIX)
+      ? activeTrack.id.slice(PODCAST_ID_PREFIX.length)
+      : '';
+  const episodeId = routePodcast?.id || routePodcastId || activePodcastId;
+  const isCurrentEpisode =
+    !!episodeId && activeTrack?.id === `${PODCAST_ID_PREFIX}${episodeId}`;
+  const memberEpisodeSyncKey =
+    memberAccountId && isCurrentEpisode ? `${memberAccountId}:${episodeId}` : null;
+  const [resumeReadyKey, setResumeReadyKey] = useState<string | null>(null);
+  const resumeRequestedKeyRef = useRef<string | null>(null);
+  const progressSaveRef = useRef<{
+    key: string;
+    savedAt: number;
+    position: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!memberEpisodeSyncKey || !memberAccountId) {
+      setResumeReadyKey(null);
+      resumeRequestedKeyRef.current = null;
+      progressSaveRef.current = null;
+      return;
+    }
+    if (resumeRequestedKeyRef.current === memberEpisodeSyncKey) {
+      return;
+    }
+
+    resumeRequestedKeyRef.current = memberEpisodeSyncKey;
+    let isCurrent = true;
+    setResumeReadyKey(null);
+
+    const restoreProgress = async () => {
+      try {
+        const library = await loadMemberLibraryForAccount(memberAccountId);
+        if (!isCurrent) {
+          return;
+        }
+
+        const saved = findMemberEpisodeProgress(library, episodeId);
+        if (
+          saved &&
+          !saved.completed &&
+          saved.position_seconds > 5 &&
+          (!saved.duration_seconds || saved.position_seconds < saved.duration_seconds - 10)
+        ) {
+          const local = await TrackPlayer.getProgress();
+          if (isCurrent && local.position < 3) {
+            await TrackPlayer.seekTo(saved.position_seconds);
+          }
+        }
+      } catch (error) {
+        logSafeError('podcastPlayer.memberProgressRestore', error);
+      } finally {
+        if (isCurrent) {
+          setResumeReadyKey(memberEpisodeSyncKey);
+        }
+      }
+    };
+
+    void restoreProgress();
+    return () => {
+      isCurrent = false;
+    };
+  }, [memberEpisodeSyncKey, memberAccountId, episodeId]);
+
+  useEffect(() => {
+    if (
+      !memberEpisodeSyncKey ||
+      !memberAccountId ||
+      resumeReadyKey !== memberEpisodeSyncKey ||
+      !isCurrentEpisode ||
+      progress.duration <= 0 ||
+      progress.position <= 0
+    ) {
+      return;
+    }
+
+    const now = Date.now();
+    const previous = progressSaveRef.current;
+    const sameEpisode = previous?.key === memberEpisodeSyncKey;
+    const previousPosition = sameEpisode ? (previous?.position ?? -1) : -1;
+    const shouldSavePaused =
+      (state === State.Paused || state === State.Stopped) &&
+      Math.abs(progress.position - previousPosition) > 1;
+    const shouldSaveWhilePlaying =
+      isPlaying && (!sameEpisode || now - (previous?.savedAt ?? 0) >= 15000);
+    if (!shouldSavePaused && !shouldSaveWhilePlaying) {
+      return;
+    }
+
+    progressSaveRef.current = {
+      key: memberEpisodeSyncKey,
+      savedAt: now,
+      position: progress.position,
+    };
+    void saveMemberEpisodeProgressForAccount(memberAccountId, {
+      episodeId,
+      positionSeconds: Math.floor(progress.position),
+      durationSeconds: Math.floor(progress.duration),
+      completed: progress.duration - progress.position <= 10,
+      title: currentPodcastItem.title,
+      subtitle: currentPodcastItem.feedTitle,
+      artworkUrl: currentPodcastItem.imageUrl,
+    });
+  }, [
+    memberEpisodeSyncKey,
+    resumeReadyKey,
+    isCurrentEpisode,
+    state,
+    isPlaying,
+    progress.position,
+    progress.duration,
+    memberAccountId,
+    episodeId,
+    currentPodcastItem.title,
+    currentPodcastItem.feedTitle,
+    currentPodcastItem.imageUrl,
+  ]);
 
   const togglePlayback = useCallback(async () => {
     try {

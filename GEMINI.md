@@ -1448,3 +1448,14 @@ Terminal release refresh authorized by user: persistent local favorites (separat
 Terminal visual follow-up: user requested the supplied minimal terminal reference. The layout now uses a single station column at every width, charcoal background, restrained coral highlights, an accented active tab, quieter dividers and essential playback shortcuts. Removed misleading unconnected DSP/recap/diagnostics action labels; existing keyboard handlers are unchanged. The source-rendered preview uses sample metadata and is not a live session capture. Terminal tests and syntax checks pass. This follow-up does not replace already published 1.3.11 release assets.
 
 User explicitly requested complete removal of podcast transcripts, question/knowledge cards and related features. Removed transcript viewer, sample data, timecapsules and transcript analytics; retain ordinary podcast playback/downloads. Do not restore these features. Nearby Jam uses native Android Nearby Connections and validated invite links. Campus proximity is opt-in and uses the official TEDU map viewport as a broad nearby area; listening context is user-selected because previous micro-zone coordinates were unverified. Source tests: 121 suites, 556 tests; TypeScript, lint error checks and static Android audit pass. Build and exact-candidate emulator checks run in GitHub Actions; do not package an old APK by replacing only its JS bundle.
+
+## 2026-09-26 mobile API and member library sync
+
+- User-visible outcome: registered RadioTEDU accounts sync radio station favorites across devices; the podcast player resumes unfinished episodes and saves listening progress through the member library API. Current native account, Gold, and public link routes are documented.
+- Source files changed: `mobile/src/screens/PlayerScreen.tsx`, `mobile/src/screens/PodcastPlayerScreen.tsx`, `mobile/src/services/memberLibraryService.ts`, and `docs/API_CONFIGURATION.md`. This note is appended to `GEMINI.md`.
+- Backup: original player screens and API documentation are in `C:\RadioTEDU\backups\rtai-mobile-api-refresh-20260926`.
+- Deployment/cache action: none; source-only GitHub update, no live files or caches changed.
+- Tests/build: none run per the user's instruction not to build. `git diff --cached --check` passed.
+- Known limitation: protected production routes returned `401` without a session, so authenticated account and Gold transactions were not exercised. The production `/vote/` route returned `404` on the read-only check; do not guess a replacement URL.
+- Implementation commit pushed to `main`: `b02717c`.
+- No email or notifications sent. ERP, production databases, and the Audio Library were not touched.

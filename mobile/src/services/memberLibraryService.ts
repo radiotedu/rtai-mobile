@@ -320,9 +320,10 @@ export async function loadMemberListeningHistoryForAccount(
   const safeLimit = Math.max(1, Math.min(200, Math.floor(limit)));
   const response = await api.get(`/profile/history?limit=${safeLimit}`);
   const data = response.data?.data;
-  return Array.isArray(data?.items)
-    ? data.items.map(normalizeHistoryItem).filter((item): item is MemberListeningHistoryItem => item !== null)
-    : [];
+  const items: unknown[] = Array.isArray(data?.items) ? data.items as unknown[] : [];
+  return items
+    .map(normalizeHistoryItem)
+    .filter((item): item is MemberListeningHistoryItem => item !== null);
 }
 
 export async function setMemberFavoriteForAccount(

@@ -381,7 +381,7 @@ const PodcastScreen = () => {
               Geçmiş
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
         {loading && page === 1 ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={COLORS.primary} />

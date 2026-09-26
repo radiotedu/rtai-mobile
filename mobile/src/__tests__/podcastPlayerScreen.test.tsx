@@ -4,6 +4,7 @@ import {PodcastPlayerScreen} from '../screens/PodcastPlayerScreen';
 
 jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');
 jest.mock('react-i18next', () => ({
+  ...jest.requireActual('react-i18next'),
   useTranslation: () => ({
     t: (key: string, opts?: any) => opts?.defaultValue || key,
     i18n: {language: 'tr'},

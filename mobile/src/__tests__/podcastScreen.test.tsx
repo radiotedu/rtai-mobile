@@ -48,6 +48,7 @@ jest.mock('@react-navigation/native', () => {
 });
 
 jest.mock('react-i18next', () => ({
+  ...jest.requireActual('react-i18next'),
   useTranslation: () => ({
     t: (k: string, opts?: any) => opts?.defaultValue || k,
     i18n: {language: 'tr'},

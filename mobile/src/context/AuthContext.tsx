@@ -364,9 +364,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         invalidateErpAttempt();
         await clearPendingErpLoginPkce();
         try {
+            const normalizedEmail = email.trim().toLowerCase();
             const response = await axios.post(
                 `${API_URL}/auth/login`,
-                {email, password},
+                {email: normalizedEmail, password},
                 {timeout: AUTH_REQUEST_TIMEOUT_MS},
             );
             await persistSession(response.data.data);

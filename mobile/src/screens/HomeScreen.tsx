@@ -73,7 +73,7 @@ const HomeScreen = () => {
       return [] as AppEvent[];
     });
 
-    if (!user) {
+    if (!user || user.is_guest) {
       setHome(null);
       setErpIdentity(null);
       const events = await eventsPromise;
@@ -85,12 +85,10 @@ const HomeScreen = () => {
     setLoading(true);
     setLoadFailed(false);
     try {
-      const identityRequest = user.is_guest
-        ? Promise.resolve(null)
-        : fetchErpIdentityStatus().catch(error => {
-          logSafeError('home.erp-identity', error);
-          return null;
-        });
+      const identityRequest = fetchErpIdentityStatus().catch(error => {
+        logSafeError('home.erp-identity', error);
+        return null;
+      });
       const [nextHome, nextIdentity, nextEvents] = await Promise.all([
         fetchGamificationHome(),
         identityRequest,

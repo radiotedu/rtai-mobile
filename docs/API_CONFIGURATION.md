@@ -19,8 +19,8 @@ The native client uses `https://radiotedu.com/jukebox/api/v1` as its REST base. 
 
 ## Account and Gold
 
-- `POST /auth/login`, `POST /auth/register`, and `POST /auth/guest` create native sessions; `POST /auth/refresh`, `GET /auth/me`, `POST /auth/logout`, and account lifecycle routes maintain them.
-- The authenticated profile includes `gold_balance`. The app also calls `POST /economy/listening/start` and `POST /economy/listening/heartbeat` for server-calculated listening rewards; economy rules and summary are read from `/economy/rules` and `/economy/summary`.
+- `POST /auth/login`, `POST /auth/register`, and `POST /auth/guest` create native sessions; `POST /auth/refresh`, `GET /auth/me`, `POST /auth/logout`, and account lifecycle routes maintain them. Website password sign-in uses `/auth/web/login`; both login routes resolve the same RadioTEDU account and password, while the website keeps its session in HTTP-only cookies and the app stores its Bearer tokens in Keychain.
+- The app reads Gold totals through `/gamification/home` and `/gamification/me`, and uses `/economy/listening/start` plus `/economy/listening/heartbeat` for server-calculated listening rewards. Requests use the shared Axios client, which sends the native Bearer token and rotates it through `/auth/refresh` when needed.
 - Native Jukebox requests use the same API token. The Social WebView keeps its own same-origin, HTTP-only cookie session. The native Bearer token is not forwarded into that WebView.
 - A live request without a session returns `401` on protected account, Gold, and member-library routes. That confirms the route is protected and reachable; it does not prove a signed-in production transaction succeeded.
 

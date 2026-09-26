@@ -1459,3 +1459,10 @@ User explicitly requested complete removal of podcast transcripts, question/know
 - Known limitation: protected production routes returned `401` without a session, so authenticated account and Gold transactions were not exercised. The production `/vote/` route returned `404` on the read-only check; do not guess a replacement URL.
 - Implementation commit pushed to `main`: `b02717c`.
 - No email or notifications sent. ERP, production databases, and the Audio Library were not touched.
+
+## 2026-09-26 Native account and Gold follow-up
+
+- The website password form uses `/auth/web/login`; native email/password login uses `/auth/login`. The current API source routes both through the same account store and password verifier. The website keeps HTTP-only cookies, while the app stores Bearer tokens in Keychain; an existing browser session is not automatically copied into the app.
+- Native login now trims and lowercases the email before submission, and the email field disables keyboard autocorrect. Guest sessions skip member Gold home requests.
+- Updated `docs/API_CONFIGURATION.md` to describe the endpoints the app actually calls. The Jukebox API source and production service were not changed.
+- No Android build or tests run. `git diff --check` passed. A registered member login and authenticated Gold transaction remain unverified; the previous live probe used a guest session and did not exercise the app's gamification home route.

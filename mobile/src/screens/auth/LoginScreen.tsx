@@ -38,14 +38,14 @@ const LoginScreen = () => {
     const copy = (key: string) => authCopy(i18n.language, key);
 
     const handleLogin = async () => {
-        if (!email || !password) {
+        if (!email.trim() || !password) {
             Alert.alert(copy('login.errorTitle'), copy('login.missingFields'));
             return;
         }
 
         setIsLoading(true);
         try {
-            await login(email, password);
+            await login(email.trim(), password);
             // Navigation state will automatically update via AuthContext
         } catch (error: any) {
             logSafeError('auth.login', error);
@@ -150,6 +150,7 @@ const LoginScreen = () => {
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                autoCorrect={false}
                             />
                         </View>
 

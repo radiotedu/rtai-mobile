@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
+  ScrollView,
   Text,
   StyleSheet,
   FlatList,
@@ -46,12 +47,25 @@ import {
 import {openPodcastPlayer} from '../navigation/navigationRef';
 import {useTranslation} from 'react-i18next';
 import {appCopy} from '../i18n/appCopy';
+import {useOptionalAuth} from '../context/AuthContext';
+import {
+  loadMemberLibraryForAccount,
+  loadMemberListeningHistoryForAccount,
+  type MemberFavorite,
+  type MemberListeningHistoryItem,
+} from '../services/memberLibraryService';
 
 const PodcastScreen = () => {
   const route = useRoute();
   const selectedId = (route.params as {podcastId?: string} | undefined)?.podcastId;
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
+  const memberAccountId = user && !user.is_guest ? user.id : null;
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
-  const [filterMode, setFilterMode] = useState<'all' | 'downloaded'>('all');
+  const [catalogPodcasts, setCatalogPodcasts] = useState<Podcast[]>([]);
+  const [memberFavorites, setMemberFavorites] = useState<MemberFavorite[]>([]);
+  const [memberHistory, setMemberHistory] = useState<MemberListeningHistoryItem[]>([]);
+  const [filterMode, setFilterMode] = useState<'all' | 'downloaded' | 'favorites' | 'history'>('all');
   const [downloadedIds, setDownloadedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -67,10 +81,26 @@ const PodcastScreen = () => {
     let list = podcasts;
     if (filterMode === 'downloaded') {
       list = podcasts.filter(podcast => downloadedIds.includes(podcast.id));
+    } else if (filterMode === 'favorites') {
+      const favoriteIds = new Set(memberFavorites
+        .filter(favorite => favorite.kind === 'podcast_episode')
+        .map(favorite => favorite.content_id));
+      const catalog = catalogPodcasts.length ? catalogPodcasts : podcasts;
+      list = catalog.filter(podcast => favoriteIds.has(podcast.id));
+    } else if (filterMode === 'history') {
+      const catalog = catalogPodcasts.length ? catalogPodcasts : podcasts;
+      const catalogById = new Map<string, Podcast>();
+      catalog.forEach(podcast => catalogById.set(podcast.id, podcast));
+      const recentIds = [...new Set(memberHistory
+        .filter(item => item.kind === 'podcast_episode')
+        .map(item => item.content_id))];
+      list = recentIds
+        .map(id => catalogById.get(id))
+        .filter((podcast): podcast is Podcast => Boolean(podcast));
     }
     const selected = list.find(podcast => podcast.id === selectedId);
     return selected ? [selected, ...list.filter(podcast => podcast.id !== selectedId)] : list;
-  }, [podcasts, selectedId, filterMode, downloadedIds]);
+  }, [podcasts, catalogPodcasts, memberFavorites, memberHistory, selectedId, filterMode, downloadedIds]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -91,9 +121,30 @@ const PodcastScreen = () => {
     useCallback(() => {
       loadPodcasts(1, false, hasLoadedRef.current);
       hasLoadedRef.current = true;
+      let isCurrent = true;
+      if (memberAccountId) {
+        void loadMemberLibraryForAccount(memberAccountId)
+          .then(library => {
+            if (isCurrent) {
+              setMemberFavorites(library.favorites);
+            }
+          })
+          .catch(error => logSafeError('podcasts.memberLibrary', error));
+        void loadMemberListeningHistoryForAccount(memberAccountId)
+          .then(history => {
+            if (isCurrent) setMemberHistory(history);
+          })
+          .catch(error => logSafeError('podcasts.memberHistory', error));
+      } else {
+        setMemberFavorites([]);
+        setMemberHistory([]);
+      }
+      return () => {
+        isCurrent = false;
+      };
       // loadPodcasts is declared below and intentionally remains stable for this focus listener.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+    }, [memberAccountId]),
   );
 
   const loadPodcasts = async (
@@ -115,7 +166,9 @@ const PodcastScreen = () => {
       // via the add-and-play fallback in handlePodcastPress.
       if (!append) {
         const completeCatalog = await fetchAllPodcasts();
-        setCachedPodcasts(completeCatalog.length > 0 ? completeCatalog : items);
+        const catalog = completeCatalog.length > 0 ? completeCatalog : items;
+        setCatalogPodcasts(catalog);
+        setCachedPodcasts(catalog);
       }
       setPage(pageToLoad);
     } catch (e) {
@@ -196,6 +249,7 @@ const PodcastScreen = () => {
   };
 
   const renderFooter = () => {
+    if (filterMode === 'favorites' || filterMode === 'history') return <View style={{ height: 24 }} />;
     if (!hasMore) return <View style={{ height: 40 }} />;
 
     return (
@@ -255,7 +309,11 @@ const PodcastScreen = () => {
     <PageTransition>
       <SafeAreaView style={styles.container}>
         <GlobalHeader />
-        <View style={styles.filterBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterBar}
+          contentContainerStyle={styles.filterBarContent}>
           <TouchableOpacity
             style={[styles.filterPill, filterMode === 'all' && styles.filterPillActive]}
             onPress={() => setFilterMode('all')}
@@ -287,6 +345,42 @@ const PodcastScreen = () => {
               İndirilenler ({downloadedIds.length})
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterPill, filterMode === 'favorites' && styles.filterPillActive]}
+            onPress={() => setFilterMode('favorites')}
+            accessibilityRole="tab"
+            accessibilityLabel="Podcast favorilerim">
+            <Icon
+              name="heart"
+              size={15}
+              color={filterMode === 'favorites' ? '#fff' : COLORS.textMuted}
+            />
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === 'favorites' && styles.filterPillTextActive,
+              ]}>
+              Favoriler ({memberFavorites.filter(item => item.kind === 'podcast_episode').length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterPill, filterMode === 'history' && styles.filterPillActive]}
+            onPress={() => setFilterMode('history')}
+            accessibilityRole="tab"
+            accessibilityLabel="Dinleme geçmişim">
+            <Icon
+              name="history"
+              size={15}
+              color={filterMode === 'history' ? '#fff' : COLORS.textMuted}
+            />
+            <Text
+              style={[
+                styles.filterPillText,
+                filterMode === 'history' && styles.filterPillTextActive,
+              ]}>
+              Geçmiş
+            </Text>
+          </TouchableOpacity>
         </View>
         {loading && page === 1 ? (
           <View style={styles.centered}>
@@ -306,7 +400,11 @@ const PodcastScreen = () => {
               <View style={styles.emptyContainer}>
                 <Icon name="microphone-off" size={48} color={COLORS.surface} />
                 <Text style={styles.emptyText}>
-                  {copy('podcast.empty')}
+                  {filterMode === 'favorites'
+                    ? 'Henüz favori podcastin yok.'
+                    : filterMode === 'history'
+                      ? 'Henüz dinleme geçmişin yok.'
+                      : copy('podcast.empty')}
                 </Text>
                 <TouchableOpacity
                   style={styles.retryButton}
@@ -376,13 +474,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   filterBar: {
+    flexGrow: 0,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  filterBarContent: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.background,
     gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   filterPill: {
     flexDirection: 'row',

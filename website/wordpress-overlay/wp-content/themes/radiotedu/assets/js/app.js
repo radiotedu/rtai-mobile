@@ -22,6 +22,8 @@
         profile: null,
         navigationController: null,
         progressTimer: null,
+        progressReady: true,
+        memberLibraryRequestId: 0,
         accountModalTrigger: null,
         verifiedListening: null,
         verifiedListeningTimer: null,
@@ -347,6 +349,61 @@
         } catch (_) { /* storage may be disabled */ }
     };
 
+    const currentMemberLibraryKey = () => [
+        state.session?.id || state.session?.user_id || state.session?.email || '',
+        state.kind || '',
+        state.id || '',
+        state.src || '',
+    ].join(':');
+
+    const syncCurrentMediaLibrary = async () => {
+        const requestId = ++state.memberLibraryRequestId;
+        const key = currentMemberLibraryKey();
+        if (!state.session || !state.kind || !state.id) {
+            els.favorite.classList.remove('is-active');
+            els.favorite.setAttribute('aria-pressed', 'false');
+            state.progressReady = true;
+            return;
+        }
+
+        if (state.kind === 'podcast') state.progressReady = false;
+        try {
+            const library = await accountFetch('profile/library');
+            if (requestId !== state.memberLibraryRequestId || key !== currentMemberLibraryKey()) return;
+
+            const favoriteKind = state.kind === 'podcast' ? 'podcast_episode' : 'station';
+            const isFavorite = (library.favorites || []).some((item) =>
+                item.kind === favoriteKind && String(item.content_id) === String(state.id),
+            );
+            els.favorite.classList.toggle('is-active', isFavorite);
+            els.favorite.setAttribute('aria-pressed', String(isFavorite));
+
+            if (state.kind === 'podcast' && Number.isFinite(audio.duration) && audio.duration > 0 && audio.currentTime < 3) {
+                const saved = (library.progress || []).find((item) => String(item.content_id) === String(state.id));
+                const position = Number(saved?.position_seconds);
+                const savedDuration = Number(saved?.duration_seconds);
+                if (
+                    saved &&
+                    saved.completed !== true &&
+                    Number.isFinite(position) &&
+                    position > 5 &&
+                    position < audio.duration - 10 &&
+                    (!Number.isFinite(savedDuration) || savedDuration <= 0 || position < savedDuration - 10)
+                ) {
+                    audio.currentTime = position;
+                    els.current.textContent = formatTime(audio.currentTime);
+                    els.seek.value = String((audio.currentTime / audio.duration) * 100);
+                }
+            }
+        } catch (_) {
+            // Playback remains available if account data cannot be reached.
+        } finally {
+            if (requestId === state.memberLibraryRequestId && key === currentMemberLibraryKey()) {
+                state.progressReady = state.kind !== 'podcast' || (Number.isFinite(audio.duration) && audio.duration > 0);
+            }
+        }
+    };
+
     const stopStationMetadata = () => {
         window.clearInterval(state.metadataTimer);
         state.metadataTimer = null;
@@ -464,6 +521,7 @@
                     content_id: state.id,
                     title: state.title,
                     subtitle: state.subtitle,
+                    artwork_url: state.artwork,
                     event_type: eventType,
                     position_seconds: state.kind === 'podcast' ? Math.floor(audio.currentTime || 0) : null,
                     duration_seconds: state.kind === 'podcast' && Number.isFinite(audio.duration) ? Math.floor(audio.duration) : null,
@@ -473,14 +531,14 @@
     };
 
     const saveProgress = async () => {
-        if (!state.session || state.kind !== 'podcast' || !state.id || !Number.isFinite(audio.duration)) return;
+        if (!state.session || state.kind !== 'podcast' || !state.id || !state.progressReady || !Number.isFinite(audio.duration)) return;
         try {
             await accountFetch(`profile/progress/${encodeURIComponent(state.id)}`, {
                 method: 'PUT',
                 body: JSON.stringify({
                     position_seconds: Math.floor(audio.currentTime),
                     duration_seconds: Math.floor(audio.duration),
-                    completed: audio.duration > 0 && audio.currentTime / audio.duration >= 0.95,
+                    completed: audio.duration > 0 && audio.duration - audio.currentTime <= 10,
                     title: state.title,
                     subtitle: state.subtitle,
                     artwork_url: state.artwork,
@@ -500,7 +558,16 @@
             return;
         }
         const changed = state.src !== data.src;
+        if (changed) {
+            void saveProgress();
+            window.clearInterval(state.progressTimer);
+            state.progressTimer = null;
+            state.memberLibraryRequestId += 1;
+            els.favorite.classList.remove('is-active');
+            els.favorite.setAttribute('aria-pressed', 'false');
+        }
         Object.assign(state, data);
+        state.progressReady = state.kind !== 'podcast' || !state.session;
         state.liveMetadata = null;
         clearLyrics();
         if (changed) {
@@ -513,10 +580,10 @@
         }
         updatePlayer();
         startStationMetadata();
+        if (state.kind !== 'podcast') void syncCurrentMediaLibrary();
         if (autoplay) {
             try {
                 await audio.play();
-                recordHistory('play');
             } catch (_) {
                 showStatus(config.labels?.error || 'Ses başlatılamadı.');
             }
@@ -613,6 +680,7 @@
         els.toggle.setAttribute('aria-label', t('Duraklat', 'Pause'));
         startProgressTimer();
         startVerifiedListening();
+        recordHistory(audio.currentTime > 5 ? 'resume' : 'play');
         trackPlayerAnalytics('playback_start', {
             position_seconds: Math.max(0, Math.floor(audio.currentTime || 0)),
             playback_mode: state.kind === 'podcast' ? 'on_demand' : 'live',
@@ -642,7 +710,10 @@
         stopVerifiedListening();
         showStatus(config.labels?.offline || 'Yayın geçici olarak çevrimdışı');
     });
-    audio.addEventListener('loadedmetadata', () => { els.duration.textContent = formatTime(audio.duration); });
+    audio.addEventListener('loadedmetadata', () => {
+        els.duration.textContent = formatTime(audio.duration);
+        if (state.kind === 'podcast') void syncCurrentMediaLibrary();
+    });
     audio.addEventListener('timeupdate', () => {
         els.current.textContent = formatTime(audio.currentTime);
         els.duration.textContent = formatTime(audio.duration);
@@ -671,7 +742,7 @@
         try {
             await accountFetch(`profile/favorites/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`, {
                 method: active ? 'DELETE' : 'PUT',
-                body: active ? undefined : JSON.stringify({ title: state.id === id ? state.title : button.dataset.title || '', artwork_url: state.id === id ? state.artwork : button.dataset.artwork || '' }),
+                body: active ? undefined : JSON.stringify({ title: state.id === id ? state.title : button.dataset.title || '', subtitle: state.id === id ? state.subtitle : button.dataset.subtitle || '', artwork_url: state.id === id ? state.artwork : button.dataset.artwork || '' }),
             });
             button.classList.toggle('is-active', !active);
             button.setAttribute('aria-pressed', String(!active));
@@ -973,6 +1044,7 @@
             state.csrf = null;
         }
         renderAccountHeader();
+        if (state.kind && state.id) void syncCurrentMediaLibrary();
         if (state.session && state.kind === 'station' && !audio.paused && !state.verifiedListening) {
             queueMicrotask(() => startVerifiedListening());
         }

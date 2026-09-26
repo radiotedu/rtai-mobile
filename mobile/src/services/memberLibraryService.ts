@@ -27,6 +27,19 @@ export type MemberEpisodeProgress = {
   updated_at?: string;
 };
 
+export type MemberListeningHistoryItem = {
+  id: number;
+  kind: MemberFavoriteKind;
+  content_id: string;
+  title?: string | null;
+  subtitle?: string | null;
+  artwork_url?: string | null;
+  event_type: 'play' | 'resume' | 'complete';
+  position_seconds?: number | null;
+  duration_seconds?: number | null;
+  listened_at?: string;
+};
+
 export type MemberLibrary = {
   favorites: MemberFavorite[];
   progress: MemberEpisodeProgress[];
@@ -48,6 +61,17 @@ export type EpisodeProgressInput = {
   title?: string;
   subtitle?: string;
   artworkUrl?: string;
+};
+
+export type ListeningHistoryInput = {
+  kind: MemberFavoriteKind;
+  contentId: string;
+  title?: string;
+  subtitle?: string;
+  artworkUrl?: string;
+  eventType?: 'play' | 'resume' | 'complete';
+  positionSeconds?: number | null;
+  durationSeconds?: number | null;
 };
 
 type FavoriteMutation = {
@@ -137,6 +161,38 @@ function normalizeProgress(value: unknown): MemberEpisodeProgress | null {
     subtitle: cleanText(record.subtitle) ?? null,
     artwork_url: cleanText(record.artwork_url) ?? null,
     updated_at: typeof record.updated_at === 'string' ? record.updated_at : undefined,
+  };
+}
+
+function normalizeHistoryItem(value: unknown): MemberListeningHistoryItem | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const kind = record.kind;
+  const contentId = record.content_id;
+  const eventType = record.event_type;
+  if (
+    (kind !== 'station' && kind !== 'podcast_show' && kind !== 'podcast_episode') ||
+    typeof contentId !== 'string' ||
+    !contentId.trim() ||
+    (eventType !== 'play' && eventType !== 'resume' && eventType !== 'complete')
+  ) {
+    return null;
+  }
+  const position = record.position_seconds == null ? null : Number(record.position_seconds);
+  const duration = record.duration_seconds == null ? null : Number(record.duration_seconds);
+  return {
+    id: Number.isFinite(Number(record.id)) ? Number(record.id) : 0,
+    kind,
+    content_id: contentId,
+    title: cleanText(record.title) ?? null,
+    subtitle: cleanText(record.subtitle) ?? null,
+    artwork_url: cleanText(record.artwork_url) ?? null,
+    event_type: eventType,
+    position_seconds: position != null && Number.isFinite(position) ? Math.max(0, Math.floor(position)) : null,
+    duration_seconds: duration != null && Number.isFinite(duration) ? Math.max(0, Math.floor(duration)) : null,
+    listened_at: typeof record.listened_at === 'string' ? record.listened_at : undefined,
   };
 }
 
@@ -253,6 +309,22 @@ export async function loadMemberLibraryForAccount(accountId: string): Promise<Me
   return normalizeLibrary(response.data?.data);
 }
 
+export async function loadMemberListeningHistoryForAccount(
+  accountId: string,
+  limit: number = 100,
+): Promise<MemberListeningHistoryItem[]> {
+  const owner = accountKey(accountId);
+  if (!owner) {
+    throw new Error('A registered RadioTEDU account is required.');
+  }
+  const safeLimit = Math.max(1, Math.min(200, Math.floor(limit)));
+  const response = await api.get(`/profile/history?limit=${safeLimit}`);
+  const data = response.data?.data;
+  return Array.isArray(data?.items)
+    ? data.items.map(normalizeHistoryItem).filter((item): item is MemberListeningHistoryItem => item !== null)
+    : [];
+}
+
 export async function setMemberFavoriteForAccount(
   accountId: string,
   favorite: FavoriteInput,
@@ -309,6 +381,33 @@ export async function saveMemberEpisodeProgressForAccount(
   } catch {
     // Keep the most recent progress locally for a retry on the next library load.
   }
+}
+
+export async function recordMemberListeningHistoryForAccount(
+  accountId: string,
+  event: ListeningHistoryInput,
+): Promise<void> {
+  const owner = accountKey(accountId);
+  const contentId = String(event.contentId ?? '').trim();
+  if (!owner || !contentId) {
+    return;
+  }
+  const clampSeconds = (value: number | null | undefined) => {
+    if (value == null || !Number.isFinite(value)) {
+      return null;
+    }
+    return Math.max(0, Math.min(MAX_PROGRESS_SECONDS, Math.floor(value)));
+  };
+  await api.post('/profile/history', {
+    kind: event.kind,
+    content_id: contentId,
+    title: cleanText(event.title),
+    subtitle: cleanText(event.subtitle),
+    artwork_url: cleanText(event.artworkUrl),
+    event_type: event.eventType ?? 'play',
+    position_seconds: clampSeconds(event.positionSeconds),
+    duration_seconds: clampSeconds(event.durationSeconds),
+  });
 }
 
 export function findMemberEpisodeProgress(

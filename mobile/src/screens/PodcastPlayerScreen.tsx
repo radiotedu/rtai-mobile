@@ -20,7 +20,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 import {COLORS, SPACING} from '../theme/theme';
 import {logSafeError} from '../utils/safeLog';
-import {useAuth} from '../context/AuthContext';
+import {useOptionalAuth} from '../context/AuthContext';
 import {
   PODCAST_ID_PREFIX,
   buildPodcastTrack,
@@ -34,7 +34,9 @@ import {formatTimestamp} from '../utils/playbackTime';
 import {
   findMemberEpisodeProgress,
   loadMemberLibraryForAccount,
+  recordMemberListeningHistoryForAccount,
   saveMemberEpisodeProgressForAccount,
+  setMemberFavoriteForAccount,
 } from '../services/memberLibraryService';
 
 const FALLBACK_PODCAST_ARTWORK =
@@ -48,13 +50,16 @@ export const PodcastPlayerScreen: React.FC = () => {
   const activeTrack = useActiveTrack();
   const playbackState = usePlaybackState();
   const progress = useProgress(300);
-  const {user} = useAuth();
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
   const memberAccountId = user && !user.is_guest ? user.id : null;
 
   const routePodcast: Podcast | undefined = route.params?.podcast;
   const routePodcastId: string | undefined = route.params?.podcastId;
 
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [isMemberFavorite, setIsMemberFavorite] = useState(false);
+  const [favoriteSaving, setFavoriteSaving] = useState(false);
 
   const state = playbackState?.state;
   const isPlaying = state === State.Playing;
@@ -156,10 +161,13 @@ export const PodcastPlayerScreen: React.FC = () => {
     savedAt: number;
     position: number;
   } | null>(null);
+  const playbackHistoryRef = useRef<{key: string; isPlaying: boolean} | null>(null);
+  const completedHistoryKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!memberEpisodeSyncKey || !memberAccountId) {
       setResumeReadyKey(null);
+      setIsMemberFavorite(false);
       resumeRequestedKeyRef.current = null;
       progressSaveRef.current = null;
       return;
@@ -171,6 +179,7 @@ export const PodcastPlayerScreen: React.FC = () => {
     resumeRequestedKeyRef.current = memberEpisodeSyncKey;
     let isCurrent = true;
     setResumeReadyKey(null);
+    setIsMemberFavorite(false);
 
     const restoreProgress = async () => {
       try {
@@ -179,6 +188,9 @@ export const PodcastPlayerScreen: React.FC = () => {
           return;
         }
 
+        setIsMemberFavorite(library.favorites.some(
+          favorite => favorite.kind === 'podcast_episode' && favorite.content_id === episodeId,
+        ));
         const saved = findMemberEpisodeProgress(library, episodeId);
         if (
           saved &&
@@ -260,6 +272,106 @@ export const PodcastPlayerScreen: React.FC = () => {
     currentPodcastItem.imageUrl,
   ]);
 
+  useEffect(() => {
+    if (!memberAccountId || !memberEpisodeSyncKey || !isCurrentEpisode) {
+      playbackHistoryRef.current = null;
+      return;
+    }
+
+    const previous = playbackHistoryRef.current;
+    const shouldRecord = previous?.key === memberEpisodeSyncKey
+      ? !previous.isPlaying && isPlaying
+      : isPlaying;
+    playbackHistoryRef.current = {key: memberEpisodeSyncKey, isPlaying};
+    if (!shouldRecord) {
+      return;
+    }
+
+    void recordMemberListeningHistoryForAccount(memberAccountId, {
+      kind: 'podcast_episode',
+      contentId: episodeId,
+      title: currentPodcastItem.title,
+      subtitle: currentPodcastItem.feedTitle,
+      artworkUrl: currentPodcastItem.imageUrl,
+      eventType: progress.position > 5 ? 'resume' : 'play',
+      positionSeconds: Math.floor(progress.position),
+      durationSeconds: progress.duration > 0 ? Math.floor(progress.duration) : null,
+    }).catch(error => logSafeError('podcastPlayer.memberHistory', error));
+  }, [
+    memberAccountId,
+    memberEpisodeSyncKey,
+    isCurrentEpisode,
+    isPlaying,
+    progress.position,
+    progress.duration,
+    episodeId,
+    currentPodcastItem.title,
+    currentPodcastItem.feedTitle,
+    currentPodcastItem.imageUrl,
+  ]);
+
+  useEffect(() => {
+    if (
+      !memberAccountId ||
+      !memberEpisodeSyncKey ||
+      !isCurrentEpisode ||
+      state !== State.Ended ||
+      completedHistoryKeyRef.current === memberEpisodeSyncKey
+    ) {
+      return;
+    }
+
+    completedHistoryKeyRef.current = memberEpisodeSyncKey;
+    void recordMemberListeningHistoryForAccount(memberAccountId, {
+      kind: 'podcast_episode',
+      contentId: episodeId,
+      title: currentPodcastItem.title,
+      subtitle: currentPodcastItem.feedTitle,
+      artworkUrl: currentPodcastItem.imageUrl,
+      eventType: 'complete',
+      positionSeconds: Math.floor(progress.position),
+      durationSeconds: progress.duration > 0 ? Math.floor(progress.duration) : null,
+    }).catch(error => logSafeError('podcastPlayer.memberHistoryComplete', error));
+  }, [
+    memberAccountId,
+    memberEpisodeSyncKey,
+    isCurrentEpisode,
+    state,
+    episodeId,
+    currentPodcastItem.title,
+    currentPodcastItem.feedTitle,
+    currentPodcastItem.imageUrl,
+    progress.position,
+    progress.duration,
+  ]);
+
+  const toggleFavorite = useCallback(async () => {
+    if (!memberAccountId || !episodeId) {
+      return;
+    }
+    const nextActive = !isMemberFavorite;
+    setIsMemberFavorite(nextActive);
+    setFavoriteSaving(true);
+    try {
+      await setMemberFavoriteForAccount(memberAccountId, {
+        kind: 'podcast_episode',
+        contentId: episodeId,
+        title: currentPodcastItem.title,
+        subtitle: currentPodcastItem.feedTitle,
+        artworkUrl: currentPodcastItem.imageUrl,
+      }, nextActive);
+    } finally {
+      setFavoriteSaving(false);
+    }
+  }, [
+    memberAccountId,
+    episodeId,
+    isMemberFavorite,
+    currentPodcastItem.title,
+    currentPodcastItem.feedTitle,
+    currentPodcastItem.imageUrl,
+  ]);
+
   const togglePlayback = useCallback(async () => {
     try {
       const {state: current} = await TrackPlayer.getPlaybackState();
@@ -321,6 +433,26 @@ export const PodcastPlayerScreen: React.FC = () => {
         </View>
 
         <View style={styles.topBarRight}>
+          {memberAccountId ? (
+            <TouchableOpacity
+              onPress={toggleFavorite}
+              disabled={favoriteSaving || !episodeId}
+              style={styles.favoriteButton}
+              accessibilityRole="button"
+              accessibilityLabel={isMemberFavorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+              accessibilityState={{selected: isMemberFavorite, disabled: favoriteSaving || !episodeId}}
+              testID="podcast-player-favorite">
+              {favoriteSaving ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Icon
+                  name={isMemberFavorite ? 'heart' : 'heart-outline'}
+                  size={23}
+                  color={isMemberFavorite ? COLORS.primary : COLORS.text}
+                />
+              )}
+            </TouchableOpacity>
+          ) : null}
           <PodcastDownloadButton podcast={currentPodcastItem} size={22} />
         </View>
       </View>
@@ -475,6 +607,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  favoriteButton: {
+    width: 34,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,

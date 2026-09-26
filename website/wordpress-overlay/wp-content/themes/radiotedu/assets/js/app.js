@@ -81,13 +81,13 @@
         if (state.csrf && !['GET', 'HEAD'].includes(String(options.method || 'GET').toUpperCase())) {
             headers.set('X-RadioTEDU-CSRF', state.csrf);
         }
-        const response = await fetch(`${config.accountBase || '/jukebox/api/v1/'}${path.replace(/^\//, '')}`, {
+        const response = await fetch(`${config.accountBase || '/social/api/v1/'}${path.replace(/^\//, '')}`, {
             ...options,
             headers,
             credentials: 'same-origin',
         });
         if (response.status === 401 && mayRefresh && !String(path).includes('auth/web/refresh')) {
-            const refreshed = await fetch(`${config.accountBase || '/jukebox/api/v1/'}auth/web/refresh`, {
+            const refreshed = await fetch(`${config.accountBase || '/social/api/v1/'}auth/web/refresh`, {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
@@ -349,61 +349,6 @@
         } catch (_) { /* storage may be disabled */ }
     };
 
-    const currentMemberLibraryKey = () => [
-        state.session?.id || state.session?.user_id || state.session?.email || '',
-        state.kind || '',
-        state.id || '',
-        state.src || '',
-    ].join(':');
-
-    const syncCurrentMediaLibrary = async () => {
-        const requestId = ++state.memberLibraryRequestId;
-        const key = currentMemberLibraryKey();
-        if (!state.session || !state.kind || !state.id) {
-            els.favorite.classList.remove('is-active');
-            els.favorite.setAttribute('aria-pressed', 'false');
-            state.progressReady = true;
-            return;
-        }
-
-        if (state.kind === 'podcast') state.progressReady = false;
-        try {
-            const library = await accountFetch('profile/library');
-            if (requestId !== state.memberLibraryRequestId || key !== currentMemberLibraryKey()) return;
-
-            const favoriteKind = state.kind === 'podcast' ? 'podcast_episode' : 'station';
-            const isFavorite = (library.favorites || []).some((item) =>
-                item.kind === favoriteKind && String(item.content_id) === String(state.id),
-            );
-            els.favorite.classList.toggle('is-active', isFavorite);
-            els.favorite.setAttribute('aria-pressed', String(isFavorite));
-
-            if (state.kind === 'podcast' && Number.isFinite(audio.duration) && audio.duration > 0 && audio.currentTime < 3) {
-                const saved = (library.progress || []).find((item) => String(item.content_id) === String(state.id));
-                const position = Number(saved?.position_seconds);
-                const savedDuration = Number(saved?.duration_seconds);
-                if (
-                    saved &&
-                    saved.completed !== true &&
-                    Number.isFinite(position) &&
-                    position > 5 &&
-                    position < audio.duration - 10 &&
-                    (!Number.isFinite(savedDuration) || savedDuration <= 0 || position < savedDuration - 10)
-                ) {
-                    audio.currentTime = position;
-                    els.current.textContent = formatTime(audio.currentTime);
-                    els.seek.value = String((audio.currentTime / audio.duration) * 100);
-                }
-            }
-        } catch (_) {
-            // Playback remains available if account data cannot be reached.
-        } finally {
-            if (requestId === state.memberLibraryRequestId && key === currentMemberLibraryKey()) {
-                state.progressReady = state.kind !== 'podcast' || (Number.isFinite(audio.duration) && audio.duration > 0);
-            }
-        }
-    };
-
     const stopStationMetadata = () => {
         window.clearInterval(state.metadataTimer);
         state.metadataTimer = null;
@@ -530,6 +475,61 @@
         } catch (_) { /* listening must not fail because history failed */ }
     };
 
+    const currentMemberLibraryKey = () => [
+        state.session?.id || state.session?.user_id || state.session?.email || '',
+        state.kind || '',
+        state.id || '',
+        state.src || '',
+    ].join(':');
+
+    const syncCurrentMediaLibrary = async () => {
+        const requestId = ++state.memberLibraryRequestId;
+        const key = currentMemberLibraryKey();
+        if (!state.session || !state.kind || !state.id) {
+            els.favorite.classList.remove('is-active');
+            els.favorite.setAttribute('aria-pressed', 'false');
+            state.progressReady = true;
+            return;
+        }
+
+        if (state.kind === 'podcast') state.progressReady = false;
+        try {
+            const library = await accountFetch('profile/library');
+            if (requestId !== state.memberLibraryRequestId || key !== currentMemberLibraryKey()) return;
+
+            const favoriteKind = state.kind === 'podcast' ? 'podcast_episode' : 'station';
+            const isFavorite = (library.favorites || []).some((item) =>
+                item.kind === favoriteKind && String(item.content_id) === String(state.id),
+            );
+            els.favorite.classList.toggle('is-active', isFavorite);
+            els.favorite.setAttribute('aria-pressed', String(isFavorite));
+
+            if (state.kind === 'podcast' && Number.isFinite(audio.duration) && audio.duration > 0 && audio.currentTime < 3) {
+                const saved = (library.progress || []).find((item) => String(item.content_id) === String(state.id));
+                const position = Number(saved?.position_seconds);
+                const savedDuration = Number(saved?.duration_seconds);
+                if (
+                    saved &&
+                    saved.completed !== true &&
+                    Number.isFinite(position) &&
+                    position > 5 &&
+                    position < audio.duration - 10 &&
+                    (!Number.isFinite(savedDuration) || savedDuration <= 0 || position < savedDuration - 10)
+                ) {
+                    audio.currentTime = position;
+                    els.current.textContent = formatTime(audio.currentTime);
+                    els.seek.value = String((audio.currentTime / audio.duration) * 100);
+                }
+            }
+        } catch (_) {
+            // Playback remains available if account data cannot be reached.
+        } finally {
+            if (requestId === state.memberLibraryRequestId && key === currentMemberLibraryKey()) {
+                state.progressReady = state.kind !== 'podcast' || (Number.isFinite(audio.duration) && audio.duration > 0);
+            }
+        }
+    };
+
     const saveProgress = async () => {
         if (!state.session || state.kind !== 'podcast' || !state.id || !state.progressReady || !Number.isFinite(audio.duration)) return;
         try {
@@ -593,8 +593,16 @@
     els.toggle.addEventListener('click', async () => {
         if (!audio.src && state.src) audio.src = state.src;
         if (!audio.src) {
-            const first = document.querySelector('[data-rt-play="station"]');
-            if (first) first.click();
+            const target = document.querySelector('[data-rt-play="station"][data-id="radiotedu-main"]')
+                || document.querySelector('[data-rt-play="station"]');
+            if (target) {
+                target.click();
+                return;
+            }
+            if (config.defaultStation) {
+                await loadMedia(config.defaultStation, true);
+                return;
+            }
             return;
         }
         if (audio.paused) {
@@ -635,8 +643,20 @@
 
     const stopVerifiedListening = () => {
         if (state.verifiedListeningTimer) window.clearInterval(state.verifiedListeningTimer);
+        if (state.verifiedListeningRetryTimer) window.clearTimeout(state.verifiedListeningRetryTimer);
         state.verifiedListeningTimer = null;
+        state.verifiedListeningRetryTimer = null;
         state.verifiedListening = null;
+        state.verifiedListeningStarting = false;
+        state.verifiedListeningGeneration = (state.verifiedListeningGeneration || 0) + 1;
+    };
+
+    const retryVerifiedListening = () => {
+        if (state.verifiedListeningRetryTimer || !state.session || state.kind !== 'station' || audio.paused) return;
+        state.verifiedListeningRetryTimer = window.setTimeout(() => {
+            state.verifiedListeningRetryTimer = null;
+            if (!state.verifiedListening && !state.verifiedListeningStarting) startVerifiedListening();
+        }, 30_000);
     };
 
     const sendVerifiedListeningHeartbeat = async () => {
@@ -656,23 +676,32 @@
             }
         } catch (_) {
             stopVerifiedListening();
+            retryVerifiedListening();
         } finally {
             proof.inFlight = false;
         }
     };
 
     const startVerifiedListening = async () => {
+        if (state.verifiedListeningStarting) return;
         stopVerifiedListening();
         if (!state.session || state.kind !== 'station' || audio.paused) return;
+        const generation = state.verifiedListeningGeneration;
+        state.verifiedListeningStarting = true;
         const clientSessionId = globalThis.crypto?.randomUUID?.() || `web-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         try {
             const data = await accountFetch('economy/listening/start', {
                 method: 'POST',
                 body: JSON.stringify({ client_session_id: clientSessionId, channel_id: verifiedChannelId() }),
             });
+            if (generation !== state.verifiedListeningGeneration || state.kind !== 'station' || audio.paused) return;
             state.verifiedListening = { sessionId: data.session.id, nonce: data.nonce, inFlight: false };
             state.verifiedListeningTimer = window.setInterval(sendVerifiedListeningHeartbeat, 25_000);
-        } catch (_) { /* playback continues without a reward session */ }
+        } catch (_) {
+            if (generation === state.verifiedListeningGeneration) retryVerifiedListening();
+        } finally {
+            if (generation === state.verifiedListeningGeneration) state.verifiedListeningStarting = false;
+        }
     };
 
     audio.addEventListener('play', () => {
@@ -873,7 +902,19 @@
         if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
         if (anchor.target || anchor.download || anchor.dataset.noPjax !== undefined) return false;
         const url = new URL(anchor.href, location.href);
-        if (url.origin !== location.origin || url.pathname.startsWith('/wp-admin') || url.pathname.startsWith('/wp-login') || url.pathname.startsWith('/wp-json') || url.pathname.startsWith('/jukebox') || url.pathname.startsWith('/ai') || url.pathname.startsWith('/teknoloji') || url.pathname.startsWith('/bilet')) return false;
+        if (url.origin !== location.origin ||
+            url.pathname.startsWith('/wp-admin') ||
+            url.pathname.startsWith('/wp-login') ||
+            url.pathname.startsWith('/wp-json') ||
+            url.pathname.startsWith('/jukebox') ||
+            url.pathname.startsWith('/ai') ||
+            url.pathname.startsWith('/teknoloji') ||
+            url.pathname.startsWith('/technology') ||
+            url.pathname.startsWith('/bilet') ||
+            url.pathname.startsWith('/econ') ||
+            url.pathname.startsWith('/en/econ') ||
+            location.pathname.startsWith('/econ') ||
+            location.pathname.startsWith('/en/econ')) return false;
         if (url.pathname === location.pathname && url.search === location.search && url.hash) return false;
         return true;
     };
@@ -895,6 +936,7 @@
         initDynamicSections();
         const main = document.querySelector('[data-rt-page]');
         main?.focus({ preventScroll: true });
+        document.querySelectorAll('body > .econ-ticker-bar, body > .econ-reader-modal, body > .econ-pdf-modal, body > .econ-spotify-modal').forEach((el) => el.remove());
         document.dispatchEvent(new CustomEvent('radiotedu:routechange'));
         trackPlayerAnalytics('page_view', { page_title: document.title.slice(0, 120) });
     };
@@ -1006,7 +1048,7 @@
         }
     };
     const authMarkup = (mode) => mode === 'kayit'
-        ? `<section class="rt-auth-card"><div class="rt-auth-card__intro"><h3>${t('Hesabını oluştur', 'Create your account')}</h3><p>${t('Favorilerin ve dinleme geçmişin her cihazda seninle olsun.', 'Keep your favourites and listening history across devices.')}</p></div><form class="rt-form" data-rt-auth="register"><label><span>${t('Görünen ad', 'Display name')}</span><span class="rt-field"><input type="text" name="display_name" autocomplete="name" required maxlength="60"></span></label><label><span>${t('E-posta adresi', 'Email address')}</span><span class="rt-field"><input type="email" name="email" autocomplete="email" inputmode="email" required data-rt-registration-email></span></label><label class="rt-registration-age" data-rt-registration-age hidden><span>${t('Yaşınız', 'Your age')}</span><span class="rt-field"><input type="number" name="age" min="18" max="120" step="1" inputmode="numeric" disabled></span><small class="rt-form__age-note">${t('TEDU dışındaki e-posta adresleriyle kayıt için 18 yaşında veya daha büyük olmalısınız.', 'You must be 18 or older to register with a non-TEDU email address.')}</small></label><label><span>${t('Şifre', 'Password')}</span><span class="rt-field"><input type="password" name="password" autocomplete="new-password" required minlength="8" data-rt-password-input><button class="rt-password-toggle" type="button" data-rt-password-toggle aria-label="${t('Şifreyi göster', 'Show password')}">${t('Göster', 'Show')}</button></span></label><small class="rt-form__hint">${t('En az 8 karakter kullan.', 'Use at least 8 characters.')}</small><label class="rt-form__legal"><input type="checkbox" name="legal_acknowledgement" required><span>${t('', 'I accept the ')}<a href="${route('kullanim-kosullari', 'terms')}" target="_blank" rel="noopener">${t('Kullanım Koşulları’nı', 'Terms of Use')}</a>${t(' kabul ediyor ve ', ' and acknowledge that I have read the ')}<a href="${route('gizlilik-politikasi', 'privacy')}" target="_blank" rel="noopener">${t('Gizlilik Politikası’nı', 'Privacy Notice')}</a>${t(' okuduğumu onaylıyorum.', '.')}</span></label><label class="rt-form__legal rt-form__newsletter"><input type="checkbox" name="newsletter_opt_in" value="1"><span>${t('Aylık RadioTEDU podcast bültenini ve gelecek etkinlikleri e-posta ile almak istiyorum. İstediğim zaman abonelikten çıkabilirim.', 'I want to receive the monthly RadioTEDU podcast newsletter and upcoming events by email. I can unsubscribe at any time.')}</span></label><input type="hidden" name="terms_version" value="2026-08-11"><input type="hidden" name="privacy_version" value="2026-08-11">${authMessage()}<button class="rt-button rt-button--primary" type="submit"><span>${t('Hesap oluştur', 'Create account')}</span><i aria-hidden="true">→</i></button></form><p class="rt-auth-card__switch">${t('Zaten hesabın var mı?', 'Already have an account?')} <a data-rt-account-switch href="${route('giris', 'login')}">${t('Giriş yap', 'Sign in')}</a></p></section>`
+        ? `<section class="rt-auth-card"><div class="rt-auth-card__intro"><h3>${t('Hesabını oluştur', 'Create your account')}</h3><p>${t('Favorilerin ve dinleme geçmişin her cihazda seninle olsun.', 'Keep your favourites and listening history across devices.')}</p></div><form class="rt-form" data-rt-auth="register"><label><span>${t('Görünen ad', 'Display name')}</span><span class="rt-field"><input type="text" name="display_name" autocomplete="name" required maxlength="60"></span></label><label><span>${t('E-posta adresi', 'Email address')}</span><span class="rt-field"><input type="email" name="email" autocomplete="email" inputmode="email" required data-rt-registration-email></span></label><label class="rt-registration-age" data-rt-registration-age hidden><span>${t('Yaşınız', 'Your age')}</span><span class="rt-field"><input type="number" name="age" min="18" max="120" step="1" inputmode="numeric" disabled></span><small class="rt-form__age-note">${t('TEDU dışındaki e-posta adresleriyle kayıt için 18 yaşında veya daha büyük olmalısınız.', 'You must be 18 or older to register with a non-TEDU email address.')}</small></label><label><span>${t('Şifre', 'Password')}</span><span class="rt-field"><input type="password" name="password" autocomplete="new-password" required minlength="8" data-rt-password-input><button class="rt-password-toggle" type="button" data-rt-password-toggle aria-label="${t('Şifreyi göster', 'Show password')}">${t('Göster', 'Show')}</button></span></label><small class="rt-form__hint">${t('En az 8 karakter kullan.', 'Use at least 8 characters.')}</small><label class="rt-form__legal"><input type="checkbox" name="legal_acknowledgement" required><span>${t('', 'I accept the ')}<a href="${route('kullanim-kosullari', 'terms')}#uyelik-sozlesmesi" target="_blank" rel="noopener">${t('Kullanım Koşulları ve Üyelik Sözleşmesi’ni', 'Terms of Use and Membership Agreement')}</a>${t(' kabul ediyor ve ', ' and acknowledge that I have read the ')}<a href="${route('gizlilik-politikasi', 'privacy')}" target="_blank" rel="noopener">${t('Gizlilik Politikası’nı', 'Privacy Notice')}</a>${t(' okuduğumu onaylıyorum.', '.')}</span></label><label class="rt-form__legal rt-form__newsletter"><input type="checkbox" name="newsletter_opt_in" value="1"><span>${t('Aylık RadioTEDU podcast bültenini ve gelecek etkinlikleri e-posta ile almak istiyorum. İstediğim zaman abonelikten çıkabilirim.', 'I want to receive the monthly RadioTEDU podcast newsletter and upcoming events by email. I can unsubscribe at any time.')}</span></label><input type="hidden" name="terms_version" value="2026-09-26"><input type="hidden" name="privacy_version" value="2026-09-26">${authMessage()}<button class="rt-button rt-button--primary" type="submit"><span>${t('Hesap oluştur', 'Create account')}</span><i aria-hidden="true">→</i></button></form><p class="rt-auth-card__switch">${t('Zaten hesabın var mı?', 'Already have an account?')} <a data-rt-account-switch href="${route('giris', 'login')}">${t('Giriş yap', 'Sign in')}</a></p></section>`
         : `<section class="rt-auth-card"><div class="rt-auth-card__intro"><h3>${t('Hesabınla devam et', 'Continue with your account')}</h3><p>${t('Favorilerine ve kaldığın bölümlere yeniden ulaş.', 'Return to your favourites and unfinished episodes.')}</p></div><form class="rt-form" data-rt-auth="login"><label><span>${t('E-posta adresi', 'Email address')}</span><span class="rt-field"><input type="email" name="email" autocomplete="email" inputmode="email" required></span></label><label><span>${t('Şifre', 'Password')}</span><span class="rt-field"><input type="password" name="password" autocomplete="current-password" required minlength="8" data-rt-password-input><button class="rt-password-toggle" type="button" data-rt-password-toggle aria-label="${t('Şifreyi göster', 'Show password')}">${t('Göster', 'Show')}</button></span></label><p class="rt-form__legal-note">${t('Devam ederek ', 'By continuing, you accept the ')}<a href="${route('kullanim-kosullari', 'terms')}" target="_blank" rel="noopener">${t('Kullanım Koşulları’nı', 'Terms of Use')}</a>${t(' kabul eder ve ', ' and acknowledge that you have read the ')}<a href="${route('gizlilik-politikasi', 'privacy')}" target="_blank" rel="noopener">${t('Gizlilik Politikası’nı', 'Privacy Notice')}</a>${t(' okuduğunuzu onaylarsınız.', '.')}</p>${authMessage()}<button class="rt-button rt-button--primary" type="submit"><span>${t('Giriş yap', 'Sign in')}</span><i aria-hidden="true">→</i></button></form><div class="rt-auth-divider"><span>${t('ekip girişi', 'team sign-in')}</span></div><button class="rt-button rt-button--ghost" type="button" data-rt-erp-login><span class="rt-erp-mark" aria-hidden="true">R</span><span>${t('RadioTEDU ekibinden misin?', 'Are you on the RadioTEDU team?')}</span></button><p class="rt-auth-card__switch">${t('Hesabın yok mu?', 'New here?')} <a data-rt-account-switch href="${route('kayit', 'register')}">${t('Kayıt ol', 'Create account')}</a></p></section>`;
 
     const isTeduEmailAddress = (email) => {

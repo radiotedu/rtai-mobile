@@ -1,11 +1,57 @@
-import { Router, type Response } from 'express';
+import { Router, type NextFunction, type RequestHandler, type Response } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import { db } from '../db';
-import type { AuthRequest } from '../middleware/auth';
+import { authenticateAccessToken, extractBearerToken, type AuthRequest } from '../middleware/auth';
 import { requireWebCsrf, webAuthMiddleware } from '../services/webSession';
 import { sendError, sendSuccess } from '../utils/response';
 
 const router = Router();
+
+type LibraryAuthRequest = AuthRequest & { webCookieAuth?: boolean };
+
+function verifyJukeboxAccessToken(token: string) {
+    const encodedSecret = String(process.env.JUKEBOX_JWT_SECRET_B64 ?? '').trim();
+    if (!encodedSecret) throw new Error('Jukebox token validation is not configured');
+    const secret = Buffer.from(encodedSecret, 'base64').toString('utf8');
+    const decoded = jwt.verify(token, secret, {
+        algorithms: ['HS256'],
+        issuer: process.env.JUKEBOX_JWT_ISSUER?.trim() || 'radiotedu-api',
+        audience: process.env.JUKEBOX_JWT_AUDIENCE?.trim() || 'radiotedu-client',
+    });
+    if (
+        typeof decoded === 'string' ||
+        typeof decoded.id !== 'string' || !decoded.id.trim() ||
+        typeof decoded.email !== 'string' || !decoded.email.trim() ||
+        typeof decoded.role !== 'string' || !decoded.role.trim()
+    ) {
+        throw new Error('Invalid Jukebox access token');
+    }
+    return decoded as NonNullable<AuthRequest['user']>;
+}
+
+function libraryAuthMiddleware(req: LibraryAuthRequest, res: Response, next: NextFunction) {
+    const authorization = String(req.headers.authorization ?? '');
+    const hasBearer = /^Bearer\s+/i.test(authorization);
+    const token = extractBearerToken(authorization);
+    if (!hasBearer) return webAuthMiddleware(req, res, next);
+    if (!token) return sendError(res, 'No token provided', 401);
+
+    void authenticateAccessToken(token)
+        .then((claims) => {
+            req.user = claims;
+            return next();
+        })
+        .catch((error: unknown) => {
+            if (!(error instanceof jwt.JsonWebTokenError)) return next(error);
+            try {
+                req.user = verifyJukeboxAccessToken(token);
+                return next();
+            } catch {
+                return sendError(res, 'Invalid or expired token', 401);
+            }
+        });
+}
 const contentKind = z.enum(['station', 'podcast_show', 'podcast_episode']);
 const identifier = z.string().trim().min(1).max(255);
 const optionalText = z.string().trim().max(500).optional().nullable();
@@ -43,7 +89,7 @@ function validationError(res: Response, error: unknown) {
     return sendError(res, message, 400);
 }
 
-router.get('/library', webAuthMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/library', libraryAuthMiddleware, async (req: AuthRequest, res: Response) => {
     const [favorites, progress] = await Promise.all([
         db.query(
             `SELECT kind, content_id, title, subtitle, artwork_url, created_at
@@ -64,7 +110,7 @@ router.get('/library', webAuthMiddleware, async (req: AuthRequest, res: Response
     return sendSuccess(res, { favorites: favorites.rows, progress: progress.rows });
 });
 
-router.put('/favorites/:kind/:contentId', webAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
+router.put('/favorites/:kind/:contentId', libraryAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
     try {
         const kind = contentKind.parse(req.params.kind);
         const contentId = identifier.parse(req.params.contentId);
@@ -86,7 +132,7 @@ router.put('/favorites/:kind/:contentId', webAuthMiddleware, requireWebCsrf, asy
     }
 });
 
-router.delete('/favorites/:kind/:contentId', webAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
+router.delete('/favorites/:kind/:contentId', libraryAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
     try {
         const kind = contentKind.parse(req.params.kind);
         const contentId = identifier.parse(req.params.contentId);
@@ -100,7 +146,7 @@ router.delete('/favorites/:kind/:contentId', webAuthMiddleware, requireWebCsrf, 
     }
 });
 
-router.put('/progress/:episodeId', webAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
+router.put('/progress/:episodeId', libraryAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
     try {
         const episodeId = identifier.parse(req.params.episodeId);
         const body = progressBody.parse(req.body);
@@ -134,7 +180,7 @@ router.put('/progress/:episodeId', webAuthMiddleware, requireWebCsrf, async (req
     }
 });
 
-router.get('/history', webAuthMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/history', libraryAuthMiddleware, async (req: AuthRequest, res: Response) => {
     const parsedLimit = Number.parseInt(String(req.query.limit ?? '50'), 10);
     const limit = Math.max(1, Math.min(Number.isFinite(parsedLimit) ? parsedLimit : 50, 200));
     const result = await db.query(
@@ -149,7 +195,7 @@ router.get('/history', webAuthMiddleware, async (req: AuthRequest, res: Response
     return sendSuccess(res, { items: result.rows });
 });
 
-router.post('/history', webAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
+router.post('/history', libraryAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
     try {
         const body = historyBody.parse(req.body);
         const result = await db.query(
@@ -176,7 +222,7 @@ router.post('/history', webAuthMiddleware, requireWebCsrf, async (req: AuthReque
     }
 });
 
-router.delete('/history', webAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
+router.delete('/history', libraryAuthMiddleware, requireWebCsrf, async (req: AuthRequest, res: Response) => {
     const result = await db.query('DELETE FROM listening_history WHERE user_id = $1', [req.user!.id]);
     return sendSuccess(res, { removed: result.rowCount ?? 0 }, 'Listening history cleared');
 });

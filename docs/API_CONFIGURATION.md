@@ -40,3 +40,6 @@ The mobile player syncs station favorites at account sign-in and when the app re
 - Voting and `/juke-local/controller/` remain separate WebViews and protocols. Their page caches are disabled so a visit loads the deployed website.
 - The app currently points Voting to `/vote/`, matching the repository's route guide. A read-only production check on 26 September 2026 returned `404` for that URL (while `/vote` redirected to it); confirm the website route before changing the app to a guessed alternative.
 - Keep the `/jukebox` REST and Socket.IO base paths unchanged unless the deployed backend route is deliberately migrated.
+## Backend member-library authentication
+
+The Social API serves the member-library routes used by both the website and native app. It accepts the website's existing session tokens and the native app's Jukebox Bearer tokens. Configure JUKEBOX_JWT_SECRET_B64 in the Social API's restricted service environment as the base64 encoding of the active Jukebox JWT_SECRET; JUKEBOX_JWT_ISSUER and JUKEBOX_JWT_AUDIENCE must match the Jukebox values. Keep these secrets out of source control.
